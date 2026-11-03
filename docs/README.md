@@ -16,6 +16,7 @@ Este índice separa decisões de arquitetura, integrações, evidências do disp
 - [Identificação do relógio](IDENTIFICACAO-DO-RELOGIO.md)
 - [Perfil GT3 Maxx](PERFIL-GT3-MAXX.md)
 - [Captura BLE de 03/11/2026](CAPTURA-BLE-GT3-MAX-2026-11-03.md)
+- [Perfil BLE candidato NUS/AB](PROTOCOLO-BLE-CANDIDATO.md) — comparação de UUIDs, fixture pública, parser e limites de validação.
 
 ## Governança e versões
 - [Diário de bordo](DIARIO-DE-BORDO.md) — decisões, entregas, riscos e validações.
