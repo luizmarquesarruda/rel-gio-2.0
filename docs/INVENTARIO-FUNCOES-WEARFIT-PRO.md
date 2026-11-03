@@ -21,7 +21,29 @@ Usar o Wearfit Pro como referência funcional para o Relógio 2.0, sem copiar pr
 | Alertas | WhatsApp e WhatsApp Business | NotificationListenerService | P0 | Planejado nesta documentação; não implementado |
 | Alertas | Outros apps | NotificationListenerService + filtros | P1 | Planejado |
 | Recursos | Lembrete sedentário, alarme, encontrar telefone/relógio | BLE/firmware específico | P2 | Sem protocolo comprovado |
+| Saúde | Respiração, stress/fadiga e temperatura | Wearfit Pro/BLE | P2 | Não implementado; estimativas exigem validação |
+| Saúde | Glicose, MET e ciclo menstrual | Wearfit Pro/app | P3 | Não priorizar; disponibilidade/dispositivo e significado precisam ser comprovados |
+| Atividade | Reconhecimento automático e metas | Wearfit Pro/driver | P1 | Planejado |
+| Bem-estar | Lembrete de saúde e treino respiratório | Wearfit Pro/driver | P2 | Planejado |
+| Controles | Música, câmera remota, cronômetro e timer | Android/BLE | P3 | Não implementado |
+| Dispositivo | Encontrar telefone, alarme e configurações de tela | Android/BLE | P2 | Não implementado |
 | Ambiente | Clima e localização | Serviço online e localização Android | P3 | Fora do escopo atual; dados sensíveis e dependência de rede |
+| Configuração crítica | OTA, reset, restauração de fábrica e ajustes de firmware | BLE proprietário | Fora de escopo | Bloqueado por risco; não implementar |
+| Pagamento/identidade | Alipay, cartão de acesso e dados de contato | Firmware/serviço externo | Fora de escopo | Não implementar sem exigência explícita e avaliação de segurança |
+
+## Priorização de engenharia
+
+**P0 — base funcional:** conexão/estado/bateria quando comprovados, passos, referência de horário, notificações Android (WhatsApp e apps escolhidos pelo usuário).
+
+**P1 — saúde e atividade com boa proveniência:** frequência cardíaca, sono, sessões de exercício, histórico e metas. Só exibir quando a origem e o dispositivo produtor estiverem identificados.
+
+**P2 — métricas estimadas e conforto:** SpO2, pressão, temperatura, respiração, stress/fadiga e lembretes. Tratar como estimativas do wearable; nunca diagnóstico ou orientação clínica.
+
+**P3 — conveniência:** música, câmera remota, alarmes, cronômetro, timer, encontrar telefone, mostradores e configurações de tela. Implementar somente se o benefício superar o custo de manter um protocolo proprietário.
+
+**Bloqueado:** OTA/DFU, reset/restauração, configuração de firmware, pagamento/cartões de acesso e qualquer escrita desconhecida. Estes itens não fazem parte do escopo seguro atual.
+
+As funções anunciadas no site são um catálogo de recursos do ecossistema, não uma garantia de que o GT3 MAX tenha todos os sensores ou recursos.
 
 ## Evidência pública do Wearfit Pro
 
@@ -39,6 +61,10 @@ A declaração de privacidade do Wearfit Pro menciona que aplicações de tercei
 
 ## Fontes
 
+- Wearfit Pro — App Function: https://wearfit.app/wearfit-pro-app-function/
+- Wearfit Pro — FAQ (ferramentas e configurações): https://wearfit.app/frequently-asked-questions-about-wearfit-pro-app/
+- Wearfit Pro — Sleep monitoring: https://wearfit.app/sleep-monitoring/
+- Wearfit Pro — Heart rate: https://wearfit.app/measure-heart-rate/
 - Wearfit Pro — Message notification: https://wearfit.app/message-notification/
 - Wearfit Pro — Privacy statement: https://wearfit.app/statement-on-wearfit-pro-and-privacy/
 - Android — Health Connect / Fit migration: https://developer.android.com/health-and-fitness/health-connect/migration/fit
