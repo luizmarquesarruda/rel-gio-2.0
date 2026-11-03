@@ -1,42 +1,58 @@
 # Relógio 2.0
 
-Aplicativo Android para acompanhar e organizar os dados de um smartwatch atualmente pareado pelo Wearfit Pro.
+Aplicativo Android para investigar e acompanhar dados de um smartwatch atualmente pareado pelo Wearfit Pro.
 
-> **Estado inicial:** projeto em descoberta técnica. O modelo exato do relógio e o protocolo BLE ainda não foram identificados. Nenhum comando de escrita no dispositivo será implementado antes da validação do protocolo.
+## Estado atual
 
-## Objetivos da primeira versão
+A primeira fase de implementação é uma prova de conceito Android nativa (Kotlin) para BLE/GATT. Ela existe para validar a comunicação no Samsung Galaxy A06 antes de consolidar a arquitetura de produção.
 
-- Identificar o relógio e seu estado de conexão.
-- Investigar acesso autorizado a passos, frequência cardíaca, sono, atividades e bateria.
-- Exibir claramente origem, horário e confiabilidade de cada dado.
-- Manter histórico local e exportação dos dados.
-- Não depender de acesso não documentado à conta ou aos servidores do Wearfit Pro.
+O relógio foi observado no nRF Connect como **GT3 MAX**. A conexão BLE e a descoberta GATT funcionaram. Uma notificação bruta de 8 bytes foi recebida pelo Nordic UART TX, mas seu significado permanece **não validado**. As características proprietárias lidas retornaram 0 bytes. Não há protocolo de sensores comprovado.
 
-## Estratégia de integração
+## O que a primeira versão faz
 
-1. Identificar modelo, fabricante e chipset do relógio.
-2. Verificar se existe SDK oficial ou mecanismo documentado de integração com Wearfit Pro.
-3. Inspecionar os serviços e características BLE em modo somente leitura.
-4. Implementar um adaptador específico para o dispositivo confirmado.
-5. Validar os dados comparando-os com o Wearfit Pro.
+- Solicita permissões Bluetooth conforme a versão do Android.
+- Procura dispositivos BLE próximos.
+- Mostra nome e RSSI, ocultando parte do endereço MAC na interface.
+- Conecta ao dispositivo escolhido e enumera serviços, características, propriedades e descritores GATT.
+- Permite leitura explícita de características que declaram a propriedade Read.
+- Permite inscrição explícita em notificações por meio do descritor padrão CCCD (0x2902).
+- Registra localmente na tela os bytes recebidos em hexadecimal.
 
-A declaração de privacidade do Wearfit Pro descreve compartilhamento autorizado de dados com aplicações de terceiros, mas não equivale a uma especificação pública de SDK/API. A integração direta por BLE também depende do modelo e do firmware.
+## O que ela não faz
 
-## Segurança e privacidade
+- Não escreve dados em características do relógio.
+- Não envia comandos pela Nordic UART RX.
+- Não toca no Secure DFU/OTA, reset, calibração ou configuração.
+- Não interpreta pacotes desconhecidos como frequência cardíaca, passos, sono, SpO2 ou pressão.
+- Não acessa servidores ou dados privados do Wearfit Pro.
+- Não persiste ou transmite dados de saúde.
 
-- Solicitar apenas permissões Android necessárias.
-- Não coletar localização continuamente.
-- Não transmitir dados de saúde para servidores externos por padrão.
-- Não gravar características BLE desconhecidas.
-- Não executar atualização de firmware, reset ou comandos de configuração.
-- Armazenar dados localmente e permitir sua exclusão/exportação.
+A inscrição em notificações altera somente a assinatura padrão do descritor CCCD. Não é uma escrita de payload em uma característica proprietária.
+
+## Construção e artefato
+
+O workflow **Android CI** executa testes unitários e gera um APK debug em pull requests para `main` ou por execução manual. O arquivo é publicado como artefato do GitHub Actions por 14 dias; não é uma versão de produção assinada.
+
+Arquivo esperado: `app/build/outputs/apk/debug/app-debug.apk`.
+
+## Como usar a prova de conceito
+
+1. Instale o APK debug no Android.
+2. Ative o Bluetooth.
+3. Toque em **Procurar relógio** e conceda a permissão de dispositivos próximos.
+4. Selecione **GT3 MAX**.
+5. Aguarde a descoberta GATT.
+6. Use **Ler** somente nas características com Read.
+7. Use **Ouvir** somente quando quiser observar notificações; o app não apresenta botão de escrita de característica.
 
 ## Documentação
 
-- [Plano técnico e arquitetura](docs/ARQUITETURA.md)
-- [Pesquisa de integração Wearfit Pro](docs/PESQUISA-WEARFIT-PRO.md)
-- [Identificação do relógio e testes](docs/IDENTIFICACAO-DO-RELOGIO.md)
+- [Arquitetura](docs/ARQUITETURA.md)
+- [Pesquisa Wearfit Pro](docs/PESQUISA-WEARFIT-PRO.md)
+- [Identificação do relógio](docs/IDENTIFICACAO-DO-RELOGIO.md)
+- [Perfil do GT3 Maxx](docs/PERFIL-GT3-MAXX.md)
+- [Captura BLE de 03/11/2026](docs/CAPTURA-BLE-GT3-MAX-2026-11-03.md)
 
-## Próximo bloqueio
+## Segurança e privacidade
 
-Precisamos do nome/modelo exibido em **Wearfit Pro → Dispositivo** (ou foto dessa tela e da seção “Sobre”). Sem isso, qualquer implementação específica de protocolo seria especulativa.
+A descoberta BLE não deriva localização física. Não guardar endereço MAC em relatórios públicos. Não assumir que nome comercial identifica chipset ou protocolo. Pressão estimada, SpO2 e outras estimativas de smartwatch não são diagnósticos médicos.
