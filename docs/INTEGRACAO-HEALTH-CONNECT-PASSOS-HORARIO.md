@@ -7,6 +7,7 @@ O aplicativo usa Health Connect (Conexão Saúde) como camada Android para ler a
 - Permissão solicitada: `android.permission.health.READ_STEPS`.
 - Acesso somente após consentimento explícito.
 - Consulta o total agregado desde o início do dia no fuso horário local até o momento da leitura.
+- Atualiza automaticamente a cada 60 segundos enquanto o aplicativo está aberto; ao sair da tela, interrompe as consultas periódicas.
 - Não grava passos no Health Connect nesta fase.
 - O total pode incluir dados do telefone e de aplicativos/dispositivos que publiquem passos no Health Connect.
 - A presença dos passos do GT3 MAX depende de o Wearfit Pro ou outro componente publicar esses dados no Health Connect. Isso ainda não foi confirmado neste aparelho.
