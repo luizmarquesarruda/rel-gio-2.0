@@ -190,8 +190,14 @@ class NotificationCenterActivity : Activity() {
                 isChecked = packageName in allowed
                 setOnCheckedChangeListener { _, checked ->
                     val next = NotificationCaptureSettings.allowedPackages(this@NotificationCenterActivity).toMutableSet()
-                    if (checked) next.add(packageName) else next.remove(packageName)
+                    if (checked) {
+                        next.add(packageName)
+                    } else {
+                        next.remove(packageName)
+                        NotificationCaptureStore.removePackage(packageName)
+                    }
                     NotificationCaptureSettings.setAllowedPackages(this@NotificationCenterActivity, next)
+                    renderEvents()
                 }
             }
             appList.addView(checkBox)
