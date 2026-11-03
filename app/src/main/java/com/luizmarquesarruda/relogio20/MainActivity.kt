@@ -501,7 +501,7 @@ class MainActivity : Activity() {
             return
         }
         val started = if (Build.VERSION.SDK_INT >= 33) {
-            gatt.readCharacteristic(characteristic) == BluetoothStatusCodes.SUCCESS
+            gatt.readCharacteristic(characteristic)
         } else {
             @Suppress("DEPRECATION")
             gatt.readCharacteristic(characteristic)
