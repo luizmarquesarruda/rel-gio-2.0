@@ -565,10 +565,12 @@ class MainActivity : ComponentActivity() {
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 updateStatus("Relógio desconectado.")
                 appendLog("Conexão GATT encerrada.")
-                gattOperationQueue.reset()
-                pendingNotifications.clear()
-                activeNotifications.clear()
-                if (bluetoothGatt === gatt) bluetoothGatt = null
+                if (bluetoothGatt === gatt) {
+                    gattOperationQueue.reset()
+                    pendingNotifications.clear()
+                    activeNotifications.clear()
+                    bluetoothGatt = null
+                }
                 runCatching { gatt.close() }
             }
         }
@@ -590,6 +592,7 @@ class MainActivity : ComponentActivity() {
             characteristic: BluetoothGattCharacteristic,
             status: Int
         ) {
+            if (bluetoothGatt !== gatt) return
             val value = characteristic.value ?: byteArrayOf()
             handleRead(characteristic.uuid.toString(), status, value)
             completeGattOperation(gatt)
@@ -601,6 +604,7 @@ class MainActivity : ComponentActivity() {
             value: ByteArray,
             status: Int
         ) {
+            if (bluetoothGatt !== gatt) return
             handleRead(characteristic.uuid.toString(), status, value)
             completeGattOperation(gatt)
         }
@@ -626,6 +630,7 @@ class MainActivity : ComponentActivity() {
             descriptor: BluetoothGattDescriptor,
             status: Int
         ) {
+            if (bluetoothGatt !== gatt) return
             val characteristic = descriptor.characteristic
             val key = characteristic.service.uuid.toString() + "/" +
                 characteristic.uuid.toString()
