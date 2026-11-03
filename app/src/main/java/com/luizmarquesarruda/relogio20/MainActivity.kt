@@ -72,6 +72,7 @@ class MainActivity : ComponentActivity() {
     private var bluetoothAdapter: BluetoothAdapter? = null
     private var bluetoothGatt: BluetoothGatt? = null
     private var currentScanCallback: ScanCallback? = null
+    private var scanStopTask: Runnable? = null
     private val handler = Handler(Looper.getMainLooper())
     private val clockTicker = object : Runnable {
         override fun run() {
@@ -88,6 +89,8 @@ class MainActivity : ComponentActivity() {
     private val scanResults = linkedMapOf<String, ScanResult>()
     private val logLines = mutableListOf<String>()
     private val activeNotifications = mutableSetOf<String>()
+    private val pendingNotifications = mutableSetOf<String>()
+    private val gattOperationQueue = SerialGattOperationQueue()
 
     private val cccdUuid: UUID =
         UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
@@ -155,7 +158,7 @@ class MainActivity : ComponentActivity() {
         val healthActions = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
         }
-        healthActions.addView(makeButton("Conectar Google Fit / Saúde") {
+        healthActions.addView(makeButton("Conectar Health Connect") {
             connectHealthConnect()
         }, LinearLayout.LayoutParams(0, dp(48), 1f))
         healthActions.addView(makeButton("Atualizar passos") {
@@ -272,7 +275,8 @@ class MainActivity : ComponentActivity() {
             try {
                 val granted = client.permissionController.getGrantedPermissions()
                 if (!granted.containsAll(stepReadPermissions)) {
-                    healthPermissionLauncher.launch(stepReadPermissions)
+                    stepsView.text = "Passos hoje: sem acesso"
+                    healthStatusView.text = "Permissão READ_STEPS ausente. Use Conectar Health Connect para autorizar."
                     return@launch
                 }
                 val zone = ZoneId.systemDefault()
@@ -284,12 +288,17 @@ class MainActivity : ComponentActivity() {
                         timeRangeFilter = TimeRangeFilter.between(start, end)
                     )
                 )
-                val count = response[StepsRecord.COUNT_TOTAL] ?: 0L
-                stepsView.text = "Passos hoje: " + String.format(Locale.getDefault(), "%,d", count)
-                healthStatusView.text =
-                    "Dados agregados do Health Connect • atualizado " +
-                    SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
-                appendLog("Total de passos de hoje no Health Connect: " + count)
+                val count = response[StepsRecord.COUNT_TOTAL]
+                stepsView.text = StepsCountFormatter.label(count)
+                if (count == null) {
+                    healthStatusView.text = "Health Connect não retornou registros de passos para hoje."
+                    appendLog("Health Connect sem registros de passos hoje; valor mantido como indisponível, não como zero.")
+                } else {
+                    healthStatusView.text =
+                        "Dados agregados do Health Connect • atualizado " +
+                        SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+                    appendLog("Total agregado de passos de hoje no Health Connect: " + count)
+                }
             } catch (error: SecurityException) {
                 healthStatusView.text = "Acesso aos passos revogado ou não autorizado."
                 appendLog("Permissão READ_STEPS ausente: " + (error.message ?: "sem detalhes"))
@@ -428,6 +437,7 @@ class MainActivity : ComponentActivity() {
         val callback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
                 runOnUiThread {
+                    if (currentScanCallback !== this) return@runOnUiThread
                     val name = result.scanRecord?.deviceName
                         ?: runCatching { result.device.name }.getOrNull()
                         ?: "Dispositivo sem nome"
@@ -439,6 +449,9 @@ class MainActivity : ComponentActivity() {
 
             override fun onScanFailed(errorCode: Int) {
                 runOnUiThread {
+                    if (currentScanCallback !== this) return@runOnUiThread
+                    scanStopTask?.let(handler::removeCallbacks)
+                    scanStopTask = null
                     updateStatus("Falha na busca BLE (código " + errorCode + ").")
                     appendLog("Falha no scan BLE: " + errorCode)
                     currentScanCallback = null
@@ -454,21 +467,27 @@ class MainActivity : ComponentActivity() {
                 .build(),
             callback
         )
-        handler.postDelayed({
-            stopBleScan()
-            updateStatus("Busca concluída. Dispositivos encontrados: " + scanResults.size)
-            appendLog("Busca BLE concluída. Total: " + scanResults.size)
-            renderScanResults()
-        }, SCAN_DURATION_MS)
+        val timeout = Runnable {
+            if (currentScanCallback === callback) {
+                stopBleScan()
+                updateStatus("Busca concluída. Dispositivos encontrados: " + scanResults.size)
+                appendLog("Busca BLE concluída. Total: " + scanResults.size)
+                renderScanResults()
+            }
+        }
+        scanStopTask = timeout
+        handler.postDelayed(timeout, SCAN_DURATION_MS)
     }
 
     @SuppressLint("MissingPermission")
     private fun stopBleScan() {
+        scanStopTask?.let(handler::removeCallbacks)
+        scanStopTask = null
         val callback = currentScanCallback ?: return
+        currentScanCallback = null
         runCatching {
             bluetoothAdapter?.bluetoothLeScanner?.stopScan(callback)
         }
-        currentScanCallback = null
     }
 
     private fun renderScanResults() {
@@ -514,9 +533,11 @@ class MainActivity : ComponentActivity() {
             requestBlePermissions()
             return
         }
+        gattOperationQueue.reset()
+        pendingNotifications.clear()
+        activeNotifications.clear()
         runCatching { bluetoothGatt?.close() }
         bluetoothGatt = null
-        activeNotifications.clear()
         updateStatus("Conectando ao dispositivo BLE...")
         appendLog("Solicitada conexão BLE com " +
             (runCatching { device.name }.getOrNull() ?: "dispositivo sem nome") +
@@ -544,6 +565,8 @@ class MainActivity : ComponentActivity() {
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 updateStatus("Relógio desconectado.")
                 appendLog("Conexão GATT encerrada.")
+                gattOperationQueue.reset()
+                pendingNotifications.clear()
                 activeNotifications.clear()
                 if (bluetoothGatt === gatt) bluetoothGatt = null
                 runCatching { gatt.close() }
@@ -569,6 +592,7 @@ class MainActivity : ComponentActivity() {
         ) {
             val value = characteristic.value ?: byteArrayOf()
             handleRead(characteristic.uuid.toString(), status, value)
+            completeGattOperation(gatt)
         }
 
         override fun onCharacteristicRead(
@@ -578,6 +602,7 @@ class MainActivity : ComponentActivity() {
             status: Int
         ) {
             handleRead(characteristic.uuid.toString(), status, value)
+            completeGattOperation(gatt)
         }
 
         @Deprecated("Deprecated by Android API 33")
@@ -601,8 +626,21 @@ class MainActivity : ComponentActivity() {
             descriptor: BluetoothGattDescriptor,
             status: Int
         ) {
-            appendLog("Inscrição de notificação: descritor " +
-                descriptor.uuid.toString() + ", status=" + status)
+            val characteristic = descriptor.characteristic
+            val key = characteristic.service.uuid.toString() + "/" +
+                characteristic.uuid.toString()
+            val wasPending = pendingNotifications.remove(key)
+            if (wasPending && status == BluetoothGatt.GATT_SUCCESS) {
+                activeNotifications.add(key)
+                appendLog("Notificação confirmada pelo callback GATT para " + characteristic.uuid)
+            } else if (wasPending) {
+                activeNotifications.remove(key)
+                gatt.setCharacteristicNotification(characteristic, false)
+                appendLog("Falha na confirmação do CCCD para " + characteristic.uuid + ". Status: " + status)
+            } else {
+                appendLog("Callback de descritor sem inscrição pendente: " + descriptor.uuid)
+            }
+            completeGattOperation(gatt)
         }
     }
 
@@ -681,15 +719,23 @@ class MainActivity : ComponentActivity() {
             appendLog("Leitura cancelada: sem conexão GATT.")
             return
         }
-        val started = if (Build.VERSION.SDK_INT >= 33) {
-            gatt.readCharacteristic(characteristic)
-        } else {
-            @Suppress("DEPRECATION")
-            gatt.readCharacteristic(characteristic)
+        gattOperationQueue.enqueue {
+            if (bluetoothGatt !== gatt) {
+                appendLog("Leitura descartada: conexão GATT mudou antes da execução.")
+                false
+            } else {
+                val started = if (Build.VERSION.SDK_INT >= 33) {
+                    gatt.readCharacteristic(characteristic) == BluetoothStatusCodes.SUCCESS
+                } else {
+                    @Suppress("DEPRECATION")
+                    gatt.readCharacteristic(characteristic)
+                }
+                appendLog("Leitura solicitada para " + characteristic.uuid +
+                    ". Iniciada: " + started)
+                if (!started) appendLog("O Android não iniciou a leitura.")
+                started
+            }
         }
-        appendLog("Leitura solicitada para " + characteristic.uuid +
-            ". Iniciada: " + started)
-        if (!started) appendLog("O Android não iniciou a leitura.")
     }
 
     @SuppressLint("MissingPermission")
@@ -699,8 +745,12 @@ class MainActivity : ComponentActivity() {
     ) {
         val key = characteristic.service.uuid.toString() + "/" +
             characteristic.uuid.toString()
-        if (activeNotifications.contains(key)) {
-            appendLog("Notificação já solicitada para " + characteristic.uuid)
+        if (activeNotifications.contains(key) || pendingNotifications.contains(key)) {
+            appendLog("Notificação já ativa ou pendente para " + characteristic.uuid)
+            return
+        }
+        if (bluetoothGatt !== gatt) {
+            appendLog("Inscrição cancelada: conexão GATT não é mais a atual.")
             return
         }
 
@@ -711,12 +761,6 @@ class MainActivity : ComponentActivity() {
             return
         }
 
-        val localEnabled = gatt.setCharacteristicNotification(characteristic, true)
-        if (!localEnabled) {
-            appendLog("Android recusou a inscrição local em " + characteristic.uuid)
-            return
-        }
-
         val descriptorValue =
             if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0) {
                 BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
@@ -724,28 +768,50 @@ class MainActivity : ComponentActivity() {
                 BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
             }
 
-        val writeStatus = if (Build.VERSION.SDK_INT >= 33) {
-            gatt.writeDescriptor(descriptor, descriptorValue)
-        } else {
-            @Suppress("DEPRECATION")
-            run {
-                descriptor.value = descriptorValue
-                if (gatt.writeDescriptor(descriptor)) {
-                    BluetoothStatusCodes.SUCCESS
+        pendingNotifications.add(key)
+        gattOperationQueue.enqueue {
+            if (bluetoothGatt !== gatt) {
+                pendingNotifications.remove(key)
+                appendLog("Inscrição descartada: conexão GATT mudou antes da execução.")
+                false
+            } else {
+                val localEnabled = gatt.setCharacteristicNotification(characteristic, true)
+                if (!localEnabled) {
+                    pendingNotifications.remove(key)
+                    appendLog("Android recusou a inscrição local em " + characteristic.uuid)
+                    false
                 } else {
-                    BluetoothStatusCodes.ERROR_UNKNOWN
+                    val writeStatus = if (Build.VERSION.SDK_INT >= 33) {
+                        gatt.writeDescriptor(descriptor, descriptorValue)
+                    } else {
+                        @Suppress("DEPRECATION")
+                        run {
+                            descriptor.value = descriptorValue
+                            if (gatt.writeDescriptor(descriptor)) {
+                                BluetoothStatusCodes.SUCCESS
+                            } else {
+                                BluetoothStatusCodes.ERROR_UNKNOWN
+                            }
+                        }
+                    }
+                    if (writeStatus == BluetoothStatusCodes.SUCCESS) {
+                        appendLog("CCCD solicitado para " + characteristic.uuid +
+                            "; aguardando confirmação do callback GATT.")
+                        true
+                    } else {
+                        pendingNotifications.remove(key)
+                        gatt.setCharacteristicNotification(characteristic, false)
+                        appendLog("Falha ao solicitar CCCD. Código: " + writeStatus)
+                        false
+                    }
                 }
             }
         }
+    }
 
-        if (writeStatus == BluetoothStatusCodes.SUCCESS) {
-            activeNotifications.add(key)
-            appendLog("Inscrição solicitada em " + characteristic.uuid +
-                " pelo CCCD padrão. Nenhum byte foi escrito na característica.")
-        } else {
-            gatt.setCharacteristicNotification(characteristic, false)
-            appendLog("Falha ao solicitar notificação. Código: " + writeStatus)
-        }
+    private fun completeGattOperation(gatt: BluetoothGatt) {
+        if (bluetoothGatt !== gatt) return
+        gattOperationQueue.onOperationCompleted()
     }
 
     private fun handleRead(uuid: String, status: Int, value: ByteArray) {
@@ -769,6 +835,9 @@ class MainActivity : ComponentActivity() {
             return
         }
         appendLog("Desconexão solicitada pelo usuário.")
+        gattOperationQueue.reset()
+        pendingNotifications.clear()
+        activeNotifications.clear()
         gatt.disconnect()
         updateStatus("Desconectando...")
     }
@@ -788,6 +857,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         stopBleScan()
+        gattOperationQueue.reset()
+        pendingNotifications.clear()
         healthScope.cancel()
         runCatching { bluetoothGatt?.disconnect() }
         runCatching { bluetoothGatt?.close() }
