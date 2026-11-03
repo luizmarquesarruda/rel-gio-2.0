@@ -56,11 +56,27 @@ Arquivo esperado: `app/build/outputs/apk/debug/app-debug.apk`.
 
 ## Documentação
 
+Consulte o [índice completo da documentação](docs/README.md).
+
+- [Mapa de módulos](docs/MAPA-DE-MODULOS.md)
+- [Inventário de funções Wearfit Pro](docs/INVENTARIO-FUNCOES-WEARFIT-PRO.md)
+- [Integração Android, WhatsApp e notificações](docs/INTEGRACAO-NOTIFICACOES-ANDROID-WHATSAPP.md)
+- [Diário de bordo](docs/DIARIO-DE-BORDO.md)
+- [Changelog](CHANGELOG.md)
+- [Versão](VERSION)
 - [Arquitetura](docs/ARQUITETURA.md)
 - [Pesquisa Wearfit Pro](docs/PESQUISA-WEARFIT-PRO.md)
 - [Identificação do relógio](docs/IDENTIFICACAO-DO-RELOGIO.md)
 - [Perfil do GT3 Maxx](docs/PERFIL-GT3-MAXX.md)
 - [Captura BLE de 03/11/2026](docs/CAPTURA-BLE-GT3-MAX-2026-11-03.md)
+
+## Notificações Android
+
+A integração está especificada, mas ainda não implementada. O desenho usa NotificationListenerService com permissão especial concedida pelo usuário, filtro por aplicativo e retenção local efêmera. O conteúdo capturado não será enviado ao relógio até que o protocolo BLE de notificações do GT3 MAX seja conhecido e validado.
+
+## Versão do aplicativo
+
+Versão de desenvolvimento registrada: `0.2.0-alpha.1`. Não é release estável e aguarda validação do CI e testes físicos.
 
 ## Segurança e privacidade
 
