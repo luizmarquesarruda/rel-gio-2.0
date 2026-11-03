@@ -2,7 +2,21 @@ package com.luizmarquesarruda.relogio20
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
+import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.health.connect.client.HealthConnectClient
+import androidx.health.connect.client.PermissionController
+import androidx.health.connect.client.permission.HealthPermission
+import androidx.health.connect.client.records.StepsRecord
+import androidx.health.connect.client.request.AggregateRequest
+import androidx.health.connect.client.time.TimeRangeFilter
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.ZoneId
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
@@ -31,10 +45,29 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 
-class MainActivity : Activity() {
+class MainActivity : ComponentActivity() {
     private lateinit var content: LinearLayout
     private lateinit var statusView: TextView
     private lateinit var logView: TextView
+    private lateinit var clockView: TextView
+    private lateinit var stepsView: TextView
+    private lateinit var healthStatusView: TextView
+    private var healthConnectClient: HealthConnectClient? = null
+    private val healthScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val stepReadPermissions = setOf(
+        HealthPermission.getReadPermission(StepsRecord::class)
+    )
+    private val healthPermissionLauncher = registerForActivityResult(
+        PermissionController.createRequestPermissionResultContract()
+    ) { granted ->
+        if (granted.containsAll(stepReadPermissions)) {
+            appendLog("Permissão READ_STEPS concedida no Health Connect.")
+            readTodaySteps()
+        } else {
+            healthStatusView.text = "Permissão de passos não concedida."
+            appendLog("Acesso aos passos negado pelo usuário.")
+        }
+    }
     private var bluetoothAdapter: BluetoothAdapter? = null
     private var bluetoothGatt: BluetoothGatt? = null
     private var currentScanCallback: ScanCallback? = null
@@ -80,6 +113,47 @@ class MainActivity : Activity() {
             setTextColor(0xFF526170.toInt())
         }
         root.addView(subtitle)
+
+        clockView = TextView(this).apply {
+            textSize = 18f
+            setTextColor(0xFF17212B.toInt())
+            setPadding(0, dp(12), 0, dp(4))
+        }
+        root.addView(clockView)
+        updatePhoneClock()
+
+        stepsView = TextView(this).apply {
+            text = "Passos hoje: aguardando conexão"
+            textSize = 24f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTextColor(0xFF17212B.toInt())
+            setPadding(0, dp(8), 0, dp(4))
+        }
+        root.addView(stepsView)
+
+        healthStatusView = TextView(this).apply {
+            text = "Fonte: Conexão Saúde (Health Connect)"
+            textSize = 12f
+            setTextColor(0xFF526170.toInt())
+            setPadding(0, 0, 0, dp(8))
+        }
+        root.addView(healthStatusView)
+
+        val healthActions = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+        }
+        healthActions.addView(makeButton("Conectar Google Fit / Saúde") {
+            connectHealthConnect()
+        }, LinearLayout.LayoutParams(0, dp(48), 1f))
+        healthActions.addView(makeButton("Atualizar passos") {
+            readTodaySteps()
+        }, LinearLayout.LayoutParams(0, dp(48), 1f).apply {
+            marginStart = dp(8)
+        })
+        root.addView(healthActions)
+
+        addText(root, "Horário do relógio: sincronização ainda não disponível. " +
+            "O protocolo de ajuste do GT3 MAX não foi identificado.", 12f)
 
         statusView = TextView(this).apply {
             text = "Pronto para procurar dispositivos."
@@ -132,6 +206,84 @@ class MainActivity : Activity() {
         ))
 
         setContentView(root)
+    }
+
+    private fun updatePhoneClock() {
+        clockView.text = "Hora do celular: " +
+            SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(Date())
+    }
+
+    private fun connectHealthConnect() {
+        val availability = HealthConnectClient.getSdkStatus(this)
+        if (availability == HealthConnectClient.SDK_UNAVAILABLE) {
+            healthStatusView.text = "Conexão Saúde indisponível. Verifique se está instalada/ativada."
+            appendLog("Health Connect indisponível neste aparelho.")
+            return
+        }
+        if (availability == HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED) {
+            healthStatusView.text = "Atualize a Conexão Saúde na Play Store."
+            appendLog("Health Connect precisa de atualização.")
+            return
+        }
+
+        val client = HealthConnectClient.getOrCreate(this)
+        healthConnectClient = client
+        healthScope.launch {
+            try {
+                val granted = client.permissionController.getGrantedPermissions()
+                if (granted.containsAll(stepReadPermissions)) {
+                    readTodaySteps()
+                } else {
+                    healthPermissionLauncher.launch(stepReadPermissions)
+                }
+            } catch (error: Exception) {
+                healthStatusView.text = "Não foi possível consultar as permissões."
+                appendLog("Erro Health Connect: " + (error.message ?: "desconhecido"))
+            }
+        }
+    }
+
+    private fun readTodaySteps() {
+        val client = healthConnectClient
+        if (client == null) {
+            connectHealthConnect()
+            return
+        }
+        healthScope.launch {
+            try {
+                val granted = client.permissionController.getGrantedPermissions()
+                if (!granted.containsAll(stepReadPermissions)) {
+                    healthPermissionLauncher.launch(stepReadPermissions)
+                    return@launch
+                }
+                val zone = ZoneId.systemDefault()
+                val start = LocalDate.now(zone).atStartOfDay(zone).toInstant()
+                val end = java.time.Instant.now()
+                val response = client.aggregate(
+                    AggregateRequest(
+                        metrics = setOf(StepsRecord.COUNT_TOTAL),
+                        timeRangeFilter = TimeRangeFilter.between(start, end)
+                    )
+                )
+                val count = response[StepsRecord.COUNT_TOTAL] ?: 0L
+                stepsView.text = "Passos hoje: " + String.format(Locale.getDefault(), "%,d", count)
+                healthStatusView.text =
+                    "Dados agregados do Health Connect • atualizado " +
+                    SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+                appendLog("Total de passos de hoje no Health Connect: " + count)
+            } catch (error: SecurityException) {
+                healthStatusView.text = "Acesso aos passos revogado ou não autorizado."
+                appendLog("Permissão READ_STEPS ausente: " + (error.message ?: "sem detalhes"))
+            } catch (error: Exception) {
+                healthStatusView.text = "Falha ao ler passos do Health Connect."
+                appendLog("Erro ao ler passos: " + (error.message ?: "desconhecido"))
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updatePhoneClock()
     }
 
     private fun makeButton(label: String, action: () -> Unit): Button {
@@ -607,6 +759,7 @@ class MainActivity : Activity() {
 
     override fun onDestroy() {
         stopBleScan()
+        healthScope.cancel()
         runCatching { bluetoothGatt?.disconnect() }
         runCatching { bluetoothGatt?.close() }
         bluetoothGatt = null
