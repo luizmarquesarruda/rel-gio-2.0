@@ -8,6 +8,15 @@ A primeira fase de implementação é uma prova de conceito Android nativa (Kotl
 
 O relógio foi observado no nRF Connect como **GT3 MAX**. A conexão BLE e a descoberta GATT funcionaram. Uma notificação bruta de 8 bytes foi recebida pelo Nordic UART TX, mas seu significado permanece **não validado**. As características proprietárias lidas retornaram 0 bytes. Não há protocolo de sensores comprovado.
 
+## Funcionalidades em desenvolvimento nesta fase
+
+- Integração de leitura com Health Connect (Conexão Saúde) para total diário agregado de passos.
+- Exibição da hora e data local do Android.
+- O Google Fit legado não é integrado diretamente; os dados podem chegar pelo Health Connect se o aplicativo de origem os compartilhar.
+- Ajuste do horário do relógio físico e leitura BLE de passos seguem pendentes de identificação do protocolo proprietário do GT3 MAX.
+
+Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALTH-CONNECT-PASSOS-HORARIO.md).
+
 ## O que a primeira versão faz
 
 - Solicita permissões Bluetooth conforme a versão do Android.

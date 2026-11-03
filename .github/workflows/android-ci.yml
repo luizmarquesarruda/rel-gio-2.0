@@ -1,10 +1,12 @@
 name: Android CI
+# Validate BLE and Health Connect integration for each phase PR
 
 on:
   pull_request:
     branches:
       - main
       - feat/ble-readonly-proof-of-concept
+      - 'feat/**'
   workflow_dispatch:
 
 permissions:
