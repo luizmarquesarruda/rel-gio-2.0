@@ -6,14 +6,14 @@ Aplicativo Android para investigar e acompanhar dados de um smartwatch atualment
 
 A primeira fase de implementação é uma prova de conceito Android nativa (Kotlin) para BLE/GATT. Ela existe para validar a comunicação no Samsung Galaxy A06 antes de consolidar a arquitetura de produção.
 
-O relógio foi observado no nRF Connect como **GT3 MAX**. A conexão BLE e a descoberta GATT funcionaram. Uma notificação bruta de 8 bytes foi recebida pelo Nordic UART TX, mas seu significado permanece **não validado**. As características proprietárias lidas retornaram 0 bytes. Não há protocolo de sensores comprovado.
+O relógio foi observado no nRF Connect como **GT3 MAX**. A conexão BLE e a descoberta GATT funcionaram. Uma notificação de 8 bytes foi recebida pelo Nordic UART TX. A comparação com uma referência pública DT78/X8 Ultra encontrou UUIDs e uma fixture AB semelhantes; o app agora registra o perfil NUS/AB como **candidato**, sem confirmar chipset ou interpretar outros sensores. A leitura de bateria do quadro `0x91/0x80` ainda é **não validada**.
 
 ## Funcionalidades em desenvolvimento nesta fase
 
 - Integração de leitura com Health Connect (Conexão Saúde) para total diário agregado de passos.
 - Exibição da hora e data local do Android.
 - O Google Fit legado não é integrado diretamente; os dados podem chegar pelo Health Connect se o aplicativo de origem os compartilhar.
-- Ajuste do horário do relógio físico e leitura BLE de passos seguem pendentes de identificação do protocolo proprietário do GT3 MAX.
+- Ajuste do horário do relógio físico e leitura BLE de passos seguem pendentes; a identificação parcial do quadro de bateria não comprova esses comandos.
 
 Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALTH-CONNECT-PASSOS-HORARIO.md).
 
@@ -32,7 +32,7 @@ Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALT
 - Não escreve dados em características do relógio.
 - Não envia comandos pela Nordic UART RX.
 - Não toca no Secure DFU/OTA, reset, calibração ou configuração.
-- Não interpreta pacotes desconhecidos como frequência cardíaca, passos, sono, SpO2 ou pressão.
+- Interpreta somente um quadro de bateria `0x91/0x80` como candidato; frequência cardíaca, passos, sono, SpO2 e pressão continuam sem parser validado.
 - Não acessa servidores ou dados privados do Wearfit Pro.
 - Não persiste ou transmite dados de saúde.
 
@@ -69,6 +69,7 @@ Consulte o [índice completo da documentação](docs/README.md).
 - [Identificação do relógio](docs/IDENTIFICACAO-DO-RELOGIO.md)
 - [Perfil do GT3 Maxx](docs/PERFIL-GT3-MAXX.md)
 - [Captura BLE de 03/11/2026](docs/CAPTURA-BLE-GT3-MAX-2026-11-03.md)
+- [Perfil BLE candidato NUS/AB](docs/PROTOCOLO-BLE-CANDIDATO.md)
 
 ## Notificações Android
 
@@ -76,7 +77,7 @@ A captura local foi implementada na branch de desenvolvimento 0.3.0-alpha.1: Not
 
 ## Versão do aplicativo
 
-Versão de desenvolvimento registrada: `0.3.0-alpha.1`. Não é release estável e aguarda validação do CI e testes físicos.
+Versão de desenvolvimento registrada: `0.3.0-alpha.3`. Não é release estável e aguarda validação do CI e testes físicos.
 
 ## Segurança e privacidade
 
