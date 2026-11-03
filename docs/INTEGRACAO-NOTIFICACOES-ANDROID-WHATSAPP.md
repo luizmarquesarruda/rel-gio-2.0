@@ -1,5 +1,9 @@
 # Integração Android — WhatsApp e notificações
 
+## Estado da implementação
+
+A captura local foi implementada na branch `feat/android-notification-listener` / PR #4. O código contém `NotificationCaptureService`, `NotificationCenterActivity`, preferências de consentimento/filtro e cache em memória. A compilação e o teste físico desta fase permanecem **não validados** até o CI terminar e a instalação ser testada.
+
 ## Objetivo
 
 Receber no Relógio 2.0 eventos de notificações que o Android efetivamente disponibiliza, incluindo WhatsApp, WhatsApp Business, SMS, chamadas e outros aplicativos selecionados pelo usuário.
@@ -47,14 +51,14 @@ GT3 MAX
 
 A última etapa está bloqueada: o protocolo proprietário de notificação do GT3 MAX não foi identificado. A recepção Android não prova que o relógio aceite os mesmos bytes, formato, codificação ou comandos usados pelo Wearfit Pro.
 
-## Configuração proposta
+## Configuração implementada nesta fase
 
-- Tela de consentimento explicando que o acesso permite ver notificações de vários aplicativos.
-- Lista de aplicativos permitidos; WhatsApp e WhatsApp Business podem ser sugeridos, mas a seleção deve ser do usuário.
+- Tela própria que explica o acesso e abre as configurações especiais do Android; o usuário concede o acesso manualmente.
+- Lista os aplicativos de usuário com atividade lançadora instalada; o usuário seleciona cada pacote a ser capturado. WhatsApp e WhatsApp Business aparecem se estiverem instalados e visíveis ao PackageManager.
 - Opção de prévia do conteúdo separada da opção de exibir somente nome do app e horário.
-- Botão para pausar e botão para apagar o histórico temporário.
-- Por padrão, conteúdo de notificação apenas em memória; sem envio à nuvem e sem inclusão em logs de diagnóstico.
-- Limite inicial sugerido: até 30 eventos em memória, substituindo os mais antigos. Ajustar após teste de consumo de memória.
+- Controles para pausar a captura e limpar as prévias temporárias.
+- O conteúdo fica apenas em memória do processo, sem envio à nuvem, persistência em banco/arquivo ou inclusão nos logs de diagnóstico.
+- Limite implementado: 30 eventos em memória; os mais antigos são removidos ao exceder o limite. Ainda precisa de teste de consumo no aparelho.
 - Remover conteúdo da memória quando a notificação é removida pelo Android, quando possível; expiração adicional definida no produto.
 - Nunca registrar corpo de mensagens em logs do CI, crash reports ou relatórios públicos.
 
@@ -77,7 +81,10 @@ O app próprio pode observar notificações Android, mas enviá-las ao GT3 MAX r
 
 O GT3 MAX foi identificado como relógio genérico associado ao Wearfit Pro, não como dispositivo Wear OS. As APIs oficiais de Notification Bridging e Data Layer do Wear OS não são automaticamente compatíveis com ele. A ponte BLE depende do firmware/protocolo real do fabricante.
 
-## Critérios de aceite
+## Estado e critérios de aceite
+
+Código adicionado não significa integração validada. A próxima validação física deverá confirmar:
+
 
 1. Acesso não é ativado sem ação explícita do usuário.
 2. App consegue detectar se o listener está conectado e orientar a reativação se revogado.
