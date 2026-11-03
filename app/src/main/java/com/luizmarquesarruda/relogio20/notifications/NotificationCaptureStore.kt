@@ -55,6 +55,14 @@ internal object NotificationCaptureStore {
     fun snapshot(): List<NotificationPreview> =
         synchronized(lock) { events.toList() }
 
+    fun remove(key: String) {
+        synchronized(lock) { events.removeAll { it.key == key } }
+    }
+
+    fun removePackage(packageName: String) {
+        synchronized(lock) { events.removeAll { it.packageName == packageName } }
+    }
+
     fun clear() {
         synchronized(lock) { events.clear() }
     }
