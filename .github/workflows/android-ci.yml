@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - feat/ble-readonly-proof-of-concept
+      - 'feat/**'
   workflow_dispatch:
 
 permissions:
