@@ -483,13 +483,25 @@ class MainActivity : ComponentActivity() {
         }
 
         currentScanCallback = callback
-        scanner.startScan(
-            null,
-            ScanSettings.Builder()
-                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-                .build(),
-            callback
-        )
+        try {
+            scanner.startScan(
+                null,
+                ScanSettings.Builder()
+                    .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                    .build(),
+                callback
+            )
+        } catch (error: SecurityException) {
+            currentScanCallback = null
+            updateStatus("Permissão Bluetooth foi revogada. Autorize novamente.")
+            appendLog("Scan BLE cancelado por SecurityException: " + (error.message ?: "sem detalhes"))
+            return
+        } catch (error: IllegalStateException) {
+            currentScanCallback = null
+            updateStatus("Não foi possível iniciar a busca BLE. Verifique o Bluetooth.")
+            appendLog("Scan BLE não iniciado: " + (error.message ?: "estado inválido"))
+            return
+        }
         val timeout = Runnable {
             if (currentScanCallback === callback) {
                 stopBleScan()
@@ -594,6 +606,15 @@ class MainActivity : ComponentActivity() {
                 updateStatus("Conectado. Descobrindo serviços GATT...")
                 val started = runCatching { gatt.discoverServices() }.getOrDefault(false)
                 appendLog("Descoberta de serviços solicitada: " + started)
+            } else if (status != BluetoothGatt.GATT_SUCCESS) {
+                isGattDisconnecting = false
+                gattOperationQueue.reset()
+                pendingNotifications.clear()
+                activeNotifications.clear()
+                if (bluetoothGatt === gatt) bluetoothGatt = null
+                updateStatus("Falha na conexão GATT. Status: " + status)
+                appendLog("Conexão GATT falhou; estado e fila foram limpos.")
+                runCatching { gatt.close() }
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 isGattDisconnecting = false
                 updateStatus("Relógio desconectado.")
@@ -604,15 +625,6 @@ class MainActivity : ComponentActivity() {
                     activeNotifications.clear()
                     bluetoothGatt = null
                 }
-                runCatching { gatt.close() }
-            } else if (status != BluetoothGatt.GATT_SUCCESS) {
-                isGattDisconnecting = false
-                gattOperationQueue.reset()
-                pendingNotifications.clear()
-                activeNotifications.clear()
-                if (bluetoothGatt === gatt) bluetoothGatt = null
-                updateStatus("Falha na conexão GATT. Status: " + status)
-                appendLog("Conexão GATT falhou; estado e fila foram limpos.")
                 runCatching { gatt.close() }
             }
         }
