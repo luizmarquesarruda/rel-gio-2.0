@@ -71,6 +71,7 @@ class MainActivity : ComponentActivity() {
     }
     private var bluetoothAdapter: BluetoothAdapter? = null
     private var bluetoothGatt: BluetoothGatt? = null
+    private var isGattDisconnecting = false
     private var currentScanCallback: ScanCallback? = null
     private var scanStopTask: Runnable? = null
     private val handler = Handler(Looper.getMainLooper())
@@ -556,6 +557,7 @@ class MainActivity : ComponentActivity() {
             requestBlePermissions()
             return
         }
+        isGattDisconnecting = false
         gattOperationQueue.reset()
         pendingNotifications.clear()
         activeNotifications.clear()
@@ -569,7 +571,9 @@ class MainActivity : ComponentActivity() {
             this,
             false,
             gattCallback,
-            BluetoothDevice.TRANSPORT_LE
+            BluetoothDevice.TRANSPORT_LE,
+            BluetoothDevice.PHY_LE_1M_MASK,
+            handler
         )
     }
 
@@ -586,10 +590,12 @@ class MainActivity : ComponentActivity() {
             appendLog("Estado GATT: status=" + status + ", estado=" + newState)
             if (status == BluetoothGatt.GATT_SUCCESS &&
                 newState == BluetoothProfile.STATE_CONNECTED) {
+                isGattDisconnecting = false
                 updateStatus("Conectado. Descobrindo serviços GATT...")
                 val started = runCatching { gatt.discoverServices() }.getOrDefault(false)
                 appendLog("Descoberta de serviços solicitada: " + started)
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                isGattDisconnecting = false
                 updateStatus("Relógio desconectado.")
                 appendLog("Conexão GATT encerrada.")
                 if (bluetoothGatt === gatt) {
@@ -599,11 +605,20 @@ class MainActivity : ComponentActivity() {
                     bluetoothGatt = null
                 }
                 runCatching { gatt.close() }
+            } else if (status != BluetoothGatt.GATT_SUCCESS) {
+                isGattDisconnecting = false
+                gattOperationQueue.reset()
+                pendingNotifications.clear()
+                activeNotifications.clear()
+                if (bluetoothGatt === gatt) bluetoothGatt = null
+                updateStatus("Falha na conexão GATT. Status: " + status)
+                appendLog("Conexão GATT falhou; estado e fila foram limpos.")
+                runCatching { gatt.close() }
             }
         }
 
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
-            if (bluetoothGatt !== gatt) return
+            if (bluetoothGatt !== gatt || isGattDisconnecting) return
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 appendLog("Serviços descobertos: " + gatt.services.size)
                 renderGattServices(gatt)
@@ -766,8 +781,8 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("MissingPermission")
     private fun readCharacteristic(characteristic: BluetoothGattCharacteristic) {
         val gatt = bluetoothGatt
-        if (gatt == null) {
-            appendLog("Leitura cancelada: sem conexão GATT.")
+        if (gatt == null || isGattDisconnecting) {
+            appendLog("Leitura cancelada: sem conexão GATT ativa ou desconexão em andamento.")
             return
         }
         gattOperationQueue.enqueue {
@@ -800,8 +815,8 @@ class MainActivity : ComponentActivity() {
             appendLog("Notificação já ativa ou pendente para " + characteristic.uuid)
             return
         }
-        if (bluetoothGatt !== gatt) {
-            appendLog("Inscrição cancelada: conexão GATT não é mais a atual.")
+        if (bluetoothGatt !== gatt || isGattDisconnecting) {
+            appendLog("Inscrição cancelada: conexão GATT não está ativa para novas operações.")
             return
         }
 
@@ -904,6 +919,7 @@ class MainActivity : ComponentActivity() {
             return
         }
         appendLog("Desconexão solicitada pelo usuário.")
+        isGattDisconnecting = true
         gattOperationQueue.reset()
         pendingNotifications.clear()
         activeNotifications.clear()
@@ -929,6 +945,7 @@ class MainActivity : ComponentActivity() {
         gattOperationQueue.reset()
         pendingNotifications.clear()
         healthScope.cancel()
+        isGattDisconnecting = true
         runCatching { bluetoothGatt?.disconnect() }
         runCatching { bluetoothGatt?.close() }
         bluetoothGatt = null
