@@ -71,6 +71,18 @@ class MainActivity : ComponentActivity() {
     private var bluetoothGatt: BluetoothGatt? = null
     private var currentScanCallback: ScanCallback? = null
     private val handler = Handler(Looper.getMainLooper())
+    private val clockTicker = object : Runnable {
+        override fun run() {
+            updatePhoneClock()
+            handler.postDelayed(this, 1_000L)
+        }
+    }
+    private val stepsTicker = object : Runnable {
+        override fun run() {
+            if (healthConnectClient != null) readTodaySteps()
+            handler.postDelayed(this, 60_000L)
+        }
+    }
     private val scanResults = linkedMapOf<String, ScanResult>()
     private val logLines = mutableListOf<String>()
     private val activeNotifications = mutableSetOf<String>()
@@ -282,7 +294,17 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        updatePhoneClock()
+        handler.removeCallbacks(clockTicker)
+        handler.post(clockTicker)
+        handler.removeCallbacks(stepsTicker)
+        if (healthConnectClient != null) readTodaySteps()
+        handler.postDelayed(stepsTicker, 60_000L)
+    }
+
+    override fun onPause() {
+        handler.removeCallbacks(clockTicker)
+        handler.removeCallbacks(stepsTicker)
+        super.onPause()
     }
 
     private fun makeButton(label: String, action: () -> Unit): Button {
