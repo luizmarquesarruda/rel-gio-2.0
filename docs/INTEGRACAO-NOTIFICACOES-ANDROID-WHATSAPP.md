@@ -59,7 +59,8 @@ A última etapa está bloqueada: o protocolo proprietário de notificação do G
 - Controles para pausar a captura e limpar as prévias temporárias.
 - O conteúdo fica apenas em memória do processo, sem envio à nuvem, persistência em banco/arquivo ou inclusão nos logs de diagnóstico.
 - Limite implementado: 30 eventos em memória; os mais antigos são removidos ao exceder o limite. Ainda precisa de teste de consumo no aparelho.
-- Remover conteúdo da memória quando a notificação é removida pelo Android, quando possível; expiração adicional definida no produto.
+- O callback `onNotificationRemoved` remove a prévia pela chave fornecida pelo Android. Desmarcar um aplicativo também apaga as prévias já armazenadas daquele pacote.
+- Expiração por tempo não está implementada; depende de uma política de retenção definida pelo produto. O limite atual permanece de 30 eventos em memória.
 - Nunca registrar corpo de mensagens em logs do CI, crash reports ou relatórios públicos.
 
 ## Limitações e segurança
@@ -92,7 +93,7 @@ Código adicionado não significa integração validada. A próxima validação 
 4. Notificação sem prévia mostra apenas os campos que o Android disponibilizar.
 5. Conteúdo não aparece em logs persistentes nem é enviado à rede.
 6. Pausar/desativar a captura interrompe a coleta.
-7. Remoção/expiração limpa o cache temporário.
+7. O callback de remoção do Android e a revogação de um pacote limpam as prévias correspondentes; expiração temporal segue pendente.
 8. Nenhum payload é enviado ao relógio antes de validar o protocolo.
 
 ## Fontes oficiais
