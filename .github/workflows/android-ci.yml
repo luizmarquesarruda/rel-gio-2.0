@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - feat/ble-readonly-proof-of-concept
   workflow_dispatch:
 
 permissions:
