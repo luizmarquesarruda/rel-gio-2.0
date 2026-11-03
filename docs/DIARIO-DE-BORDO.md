@@ -2,6 +2,25 @@
 
 Este arquivo é o registro cronológico principal. Atualizar em toda PR que altere arquitetura, funções, dependências, versão, dados ou protocolo.
 
+## 03/11/2026 — Implementação inicial do listener Android (PR #4)
+
+### Implementado nesta branch
+- NotificationListenerService com permissão de vinculação do sistema.
+- Tela para abrir as configurações de acesso às notificações.
+- Controle separado para ativar/pausar a captura.
+- Lista de aplicativos de usuário instalados; captura somente dos pacotes selecionados explicitamente.
+- Prévia de título/texto somente quando disponibilizados pelo Android.
+- Cache volátil das 30 últimas prévias; sem gravação em banco/arquivo, sem telemetria e sem envio à rede.
+- Limpeza manual do cache e atualização da tela enquanto aberta.
+- Teste unitário para normalização, espaços em branco e limite de 500 caracteres.
+- Versão de desenvolvimento elevada para `0.3.0-alpha.1`.
+
+### Limites mantidos
+- O serviço não lê banco, arquivos, chaves ou sessões do WhatsApp.
+- A prévia depende das configurações do WhatsApp e do Android; conteúdo oculto/redigido não é recuperado.
+- Nenhuma notificação é enviada ao GT3 MAX, pois o protocolo BLE de mensagens permanece não identificado.
+- CI, instalação e teste físico desta nova fase: **não validados** até conclusão do workflow e teste no Galaxy A06.
+
 ## 03/11/2026 — Organização, Android e notificações
 
 ### Estado observado
@@ -46,7 +65,7 @@ Este arquivo é o registro cronológico principal. Atualizar em toda PR que alte
 ### Próximas etapas
 1. Confirmar CI verde das PRs #1 e #2 e obter APK debug.
 2. Fazer teste físico no Galaxy A06: permissões de notificação e leitura de eventos sem gravar conteúdo em logs.
-3. Implementar listener Android com filtro por pacote, consentimento, cache efêmero e controles de pausa/limpeza.
+3. Validar no Galaxy A06 o listener Android implementado na PR #4, incluindo WhatsApp, apps selecionados, pausa e limpeza.
 4. Separar `MainActivity.kt` em módulos pequenos sem alterar comportamento BLE.
 5. Investigar se Wearfit Pro compartilha passos com Health Connect.
 6. Validar um método suportado de encaminhamento de notificações ao GT3 MAX; não enviar payload experimental.
