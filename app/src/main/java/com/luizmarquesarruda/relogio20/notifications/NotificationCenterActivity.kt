@@ -3,7 +3,6 @@ package com.luizmarquesarruda.relogio20.notifications
 import android.app.Activity
 import android.content.ComponentName
 import android.content.Intent
-import android.content.pm.ApplicationInfo
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -168,7 +167,6 @@ class NotificationCenterActivity : Activity() {
                 val info = resolve.activityInfo?.applicationInfo ?: return@mapNotNull null
                 val packageName = info.packageName
                 if (packageName == packageNameOfThisApp()) return@mapNotNull null
-                if (info.flags and ApplicationInfo.FLAG_SYSTEM != 0) return@mapNotNull null
                 val label = packageManager.getApplicationLabel(info).toString()
                 packageName to label
             }
