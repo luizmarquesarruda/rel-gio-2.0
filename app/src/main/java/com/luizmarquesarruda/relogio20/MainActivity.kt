@@ -2,6 +2,8 @@ package com.luizmarquesarruda.relogio20
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
+import com.luizmarquesarruda.relogio20.notifications.NotificationCenterActivity
 import androidx.activity.ComponentActivity
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
@@ -162,6 +164,12 @@ class MainActivity : ComponentActivity() {
             marginStart = dp(8)
         })
         root.addView(healthActions)
+
+        root.addView(makeButton("WhatsApp e notificações Android") {
+            startActivity(Intent(this, NotificationCenterActivity::class.java))
+        }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
+        ))
 
         addText(root, "Horário do relógio: sincronização ainda não disponível. " +
             "O protocolo de ajuste do GT3 MAX não foi identificado.", 12f)

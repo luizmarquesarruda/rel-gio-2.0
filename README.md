@@ -72,11 +72,11 @@ Consulte o [índice completo da documentação](docs/README.md).
 
 ## Notificações Android
 
-A integração está especificada, mas ainda não implementada. O desenho usa NotificationListenerService com permissão especial concedida pelo usuário, filtro por aplicativo e retenção local efêmera. O conteúdo capturado não será enviado ao relógio até que o protocolo BLE de notificações do GT3 MAX seja conhecido e validado.
+A captura local foi implementada na branch de desenvolvimento 0.3.0-alpha.1: NotificationListenerService, acesso especial concedido manualmente, filtro por aplicativo, pausa e prévias efêmeras em memória. A implementação aguarda CI e teste físico no Galaxy A06. O conteúdo não é encaminhado ao relógio: o protocolo BLE de notificações do GT3 MAX ainda não foi identificado.
 
 ## Versão do aplicativo
 
-Versão de desenvolvimento registrada: `0.2.0-alpha.1`. Não é release estável e aguarda validação do CI e testes físicos.
+Versão de desenvolvimento registrada: `0.3.0-alpha.1`. Não é release estável e aguarda validação do CI e testes físicos.
 
 ## Segurança e privacidade
 
