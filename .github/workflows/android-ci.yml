@@ -33,7 +33,7 @@ jobs:
           gradle-version: "8.13"
 
       - name: Run unit tests and assemble APK
-        run: gradle --no-daemon testDebugUnitTest assembleDebug
+        run: gradle --no-daemon lintDebug testDebugUnitTest assembleDebug
 
       - name: Publish debug APK artifact
         uses: actions/upload-artifact@v4
