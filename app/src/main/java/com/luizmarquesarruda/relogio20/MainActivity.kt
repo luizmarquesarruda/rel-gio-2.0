@@ -380,6 +380,23 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun canReadDeviceIdentity(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+            checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) ==
+            PackageManager.PERMISSION_GRANTED
+
+    @SuppressLint("MissingPermission")
+    private fun safeDeviceName(device: BluetoothDevice): String? {
+        if (!canReadDeviceIdentity()) return null
+        return runCatching { device.name }.getOrNull()
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun safeDeviceAddress(device: BluetoothDevice): String? {
+        if (!canReadDeviceIdentity()) return null
+        return runCatching { device.address }.getOrNull()
+    }
+
     private fun requestBlePermissions() {
         requestPermissions(requiredBlePermissions(), REQUEST_BLE_PERMISSIONS)
     }
@@ -438,10 +455,15 @@ class MainActivity : ComponentActivity() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
                 runOnUiThread {
                     if (currentScanCallback !== this) return@runOnUiThread
+                    val address = safeDeviceAddress(result.device)
+                    if (address == null) {
+                        appendLog("Resultado BLE ignorado: permissão para identificar dispositivo indisponível.")
+                        return@runOnUiThread
+                    }
                     val name = result.scanRecord?.deviceName
-                        ?: runCatching { result.device.name }.getOrNull()
+                        ?: safeDeviceName(result.device)
                         ?: "Dispositivo sem nome"
-                    scanResults[result.device.address] = result
+                    scanResults[address] = result
                     renderScanResults()
                     updateStatus("Busca em andamento. Dispositivos: " + scanResults.size)
                 }
@@ -502,12 +524,13 @@ class MainActivity : ComponentActivity() {
         scanResults.values
             .sortedByDescending { it.rssi }
             .forEach { result ->
+                val address = safeDeviceAddress(result.device) ?: return@forEach
                 val name = result.scanRecord?.deviceName
-                    ?: runCatching { result.device.name }.getOrNull()
+                    ?: safeDeviceName(result.device)
                     ?: "Dispositivo sem nome"
                 val button = makeButton(
                     name + "  •  " + result.rssi + " dBm  •  " +
-                        maskAddress(result.device.address)
+                        maskAddress(address)
                 ) {
                     stopBleScan()
                     connectToDevice(result.device)
@@ -540,8 +563,8 @@ class MainActivity : ComponentActivity() {
         bluetoothGatt = null
         updateStatus("Conectando ao dispositivo BLE...")
         appendLog("Solicitada conexão BLE com " +
-            (runCatching { device.name }.getOrNull() ?: "dispositivo sem nome") +
-            " (" + maskAddress(device.address) + ").")
+            (safeDeviceName(device) ?: "dispositivo sem nome") +
+            " (" + (safeDeviceAddress(device)?.let(::maskAddress) ?: "endereço oculto") + ").")
         bluetoothGatt = device.connectGatt(
             this,
             false,
