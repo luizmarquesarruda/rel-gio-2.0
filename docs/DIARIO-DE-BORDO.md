@@ -2,6 +2,24 @@
 
 Este arquivo é o registro cronológico principal. Atualizar em toda PR que altere arquitetura, funções, dependências, versão, dados ou protocolo.
 
+## 03/11/2026 — Correções de integridade Android (PR de correção encadeada)
+
+### Correções implementadas na branch `fix/integridade-android-20261103`
+- O timeout da busca BLE é guardado e cancelado quando a busca termina antecipadamente, falha ou o usuário inicia conexão. Resultados e falhas de callbacks antigos são descartados.
+- Leituras de característica e inscrições CCCD passam por uma fila serial. A fila avança após callback de leitura/escrita, e uma inscrição só é marcada ativa após `onDescriptorWrite` com status de sucesso.
+- Callbacks de GATT de conexões anteriores não limpam nem atualizam o estado da conexão atual.
+- Health Connect não converte ausência de agregado em zero; o painel apresenta “sem registros”. O ciclo periódico não abre repetidamente o pedido de permissão negado; a solicitação continua disponível pela ação explícita de conexão.
+- `NotificationListenerService.onNotificationRemoved` elimina a prévia pela chave Android. Desmarcar um pacote também elimina as prévias daquele aplicativo.
+- Testes unitários adicionados para fila GATT, semântica de passos e remoção/limite do cache.
+- Android Lint foi incluído no workflow junto de testes e APK debug.
+- Versão proposta de desenvolvimento: `0.3.0-alpha.2`.
+
+### Riscos/limites ainda conhecidos
+- A fila depende dos callbacks GATT do Android; um callback perdido pode manter operações seguintes aguardando até desconexão/reconexão. Timeout/recuperação de operação é uma etapa posterior, pois expirar uma operação sem correlacionar callbacks atrasados pode concluir incorretamente a operação seguinte.
+- A remoção de prévias depende de o Android entregar `onNotificationRemoved`; política de expiração por tempo ainda não foi definida.
+- CI, lint, testes nesta branch e build APK: **não validados** até execução do workflow.
+- Instalação e teste físico no Galaxy A06/GT3 MAX: **não validados**.
+
 ## 03/11/2026 — Implementação inicial do listener Android (PR #4)
 
 ### Implementado nesta branch
