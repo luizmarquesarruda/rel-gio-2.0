@@ -686,6 +686,22 @@ class MainActivity : ComponentActivity() {
             addText(content, "O app não oferece botões de escrita nas características. " +
                 "A escuta usa somente o descritor padrão CCCD (0x2902).", 12f)
 
+            val nusService = gatt.getService(WearfitProtocolProfile.SERVICE_UUID)
+            val txCharacteristic = nusService?.getCharacteristic(
+                WearfitProtocolProfile.TX_CHARACTERISTIC_UUID
+            )
+            if (txCharacteristic != null) {
+                addText(
+                    content,
+                    "Perfil BLE candidato: NUS + quadros AB (compatibilidade observada em referência DT78). " +
+                        "Identidade/chipset do GT3 Maxx não confirmados; comandos proprietários permanecem bloqueados.",
+                    12f
+                )
+                appendLog("Fingerprint BLE candidato detectado: " + WearfitProtocolProfile.PROFILE_ID)
+            } else {
+                addText(content, "Perfil NUS/AB candidato não detectado nesta conexão.", 12f)
+            }
+
             gatt.services.forEach { service ->
                 addDivider(content)
                 addText(content, "Serviço", 15f, true)
@@ -859,6 +875,24 @@ class MainActivity : ComponentActivity() {
         val description = if (value.isEmpty()) "0 bytes" else
             value.size.toString() + " bytes: " + BleValueFormatter.toHex(value)
         appendLog("NOTIFICAÇÃO " + uuid + " | " + description)
+
+        if (uuid.equals(WearfitProtocolProfile.TX_CHARACTERISTIC_UUID.toString(), ignoreCase = true)) {
+            val frame = WearfitAbFrameParser.parse(value)
+            val battery = frame?.batteryPercent
+            if (battery != null) {
+                appendLog(
+                    "Interpretação candidata do quadro AB/0x91: bateria reportada pelo relógio = " +
+                        battery + "%. Não validada por comparação repetida com Wearfit Pro."
+                )
+            } else if (frame != null) {
+                appendLog(
+                    "Quadro AB reconhecido; comando=0x" +
+                        frame.command.toString(16).uppercase(Locale.US) +
+                        ", resposta=0x" + frame.response.toString(16).uppercase(Locale.US) +
+                        ". Sem interpretação configurada para este comando."
+                )
+            }
+        }
     }
 
     @SuppressLint("MissingPermission")
