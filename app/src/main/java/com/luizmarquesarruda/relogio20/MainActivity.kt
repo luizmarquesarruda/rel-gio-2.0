@@ -3,7 +3,6 @@ package com.luizmarquesarruda.relogio20
 import android.Manifest
 import android.annotation.SuppressLint
 import androidx.activity.ComponentActivity
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.permission.HealthPermission
