@@ -112,7 +112,10 @@ class NotificationCenterActivity : Activity() {
         })
 
         appList = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        root.addView(appList)
+        val appScroll = ScrollView(this).apply { addView(appList) }
+        root.addView(appScroll, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(160)
+        ))
 
         root.addView(TextView(this).apply {
             text = "Pré-visualizações recentes (somente memória)"
