@@ -25,7 +25,6 @@ android {
         unitTests.isReturnDefaultValues = true
     }
 }
-}
 
 kotlin {
     compilerOptions {
