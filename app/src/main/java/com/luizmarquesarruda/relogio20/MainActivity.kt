@@ -3,6 +3,7 @@ package com.luizmarquesarruda.relogio20
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
+import com.luizmarquesarruda.relogio20.notifications.NotificationCenterActivity
 import androidx.activity.ComponentActivity
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
@@ -165,7 +166,7 @@ class MainActivity : ComponentActivity() {
         root.addView(healthActions)
 
         root.addView(makeButton("WhatsApp e notificações Android") {
-            startActivity(Intent(this, notifications.NotificationCenterActivity::class.java))
+            startActivity(Intent(this, NotificationCenterActivity::class.java))
         }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
         ))
