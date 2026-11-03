@@ -556,6 +556,10 @@ class MainActivity : ComponentActivity() {
             status: Int,
             newState: Int
         ) {
+            if (bluetoothGatt !== gatt) {
+                runCatching { gatt.close() }
+                return
+            }
             appendLog("Estado GATT: status=" + status + ", estado=" + newState)
             if (status == BluetoothGatt.GATT_SUCCESS &&
                 newState == BluetoothProfile.STATE_CONNECTED) {
@@ -576,6 +580,7 @@ class MainActivity : ComponentActivity() {
         }
 
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
+            if (bluetoothGatt !== gatt) return
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 appendLog("Serviços descobertos: " + gatt.services.size)
                 renderGattServices(gatt)
@@ -614,6 +619,7 @@ class MainActivity : ComponentActivity() {
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic
         ) {
+            if (bluetoothGatt !== gatt) return
             handleNotification(characteristic.uuid.toString(), characteristic.value ?: byteArrayOf())
         }
 
@@ -622,6 +628,7 @@ class MainActivity : ComponentActivity() {
             characteristic: BluetoothGattCharacteristic,
             value: ByteArray
         ) {
+            if (bluetoothGatt !== gatt) return
             handleNotification(characteristic.uuid.toString(), value)
         }
 
