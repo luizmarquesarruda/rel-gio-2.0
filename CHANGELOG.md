@@ -2,6 +2,25 @@
 
 As alterações relevantes do Relógio 2.0 são registradas aqui. Segue SemVer: MAJOR.MINOR.PATCH; versões alpha/beta indicam desenvolvimento e não equivalem a release estável.
 
+## 0.3.0-alpha.2 — 03/11/2026
+
+### Corrigido
+- Cancelamento do timeout do scan BLE ao parar a busca, conectar ou receber falha; callbacks antigos são ignorados.
+- Fila serial para leituras GATT e escritas do descritor CCCD; inscrições só entram em estado ativo após confirmação do callback.
+- Callbacks GATT de conexões antigas não alteram o estado da conexão atual.
+- Health Connect distingue ausência de registros de um total válido igual a zero e não reabre o pedido de permissão a cada atualização periódica.
+- Cache de notificações é atualizado quando o Android remove uma notificação e quando o usuário desmarca um aplicativo.
+
+### Testes adicionados
+- Ordenação, recusa imediata e reset da fila GATT.
+- Remoção por chave/pacote e limite de 30 notificações.
+- Diferença entre passos sem registros, zero e valores positivos.
+
+### Validação
+- CI, lint e testes desta versão: **não validados** até o workflow concluir.
+- Teste físico no Galaxy A06 e no GT3 MAX: **não validado**.
+- Nenhuma escrita proprietária foi enviada ao relógio; o protocolo BLE permanece somente leitura.
+
 ## 0.3.0-alpha.1 — 03/11/2026
 
 ### Incluído
