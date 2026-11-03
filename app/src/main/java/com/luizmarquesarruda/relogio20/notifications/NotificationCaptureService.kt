@@ -6,6 +6,10 @@ import android.service.notification.StatusBarNotification
 
 class NotificationCaptureService : NotificationListenerService() {
 
+    override fun onNotificationRemoved(sbn: StatusBarNotification) {
+        NotificationCaptureStore.remove(sbn.key)
+    }
+
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         if (!NotificationCaptureSettings.isEnabled(applicationContext)) return
         if (sbn.packageName == packageName) return
