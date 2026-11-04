@@ -1792,7 +1792,7 @@ class MainActivity : ComponentActivity() {
                 "Depois de ativar, o aplicativo vai iniciar automaticamente quando reconhecer o fingerprint GATT completo do GT3 MAX Call. " +
                     "Ele percorrerá os canais compatíveis que anunciam READ e ativará NOTIFY/INDICATE com CCCD padrão. " +
                     "Leituras e notificações recebidas serão salvas localmente, incluindo HEX que pode conter dados de saúde, em sessões de até 10 minutos. " +
-                    "A autorização fica salva neste aparelho até você pausar. A captura usa blocos locais de até 10 minutos, renovados enquanto o modo estiver ativo. Nenhum payload de escrita, comando proprietário, NUS RX, DFU, OTA ou reset será enviado. " +
+                    "A autorização fica salva neste aparelho até você pausar. A captura usa blocos locais de até 10 minutos, renovados enquanto o app permanece em primeiro plano e conectado. Ao sair da tela, a renovação fica suspensa e retoma ao voltar. Nenhum payload de escrita, comando proprietário, NUS RX, DFU, OTA ou reset será enviado. " +
                     "Ativar uma notificação não força o relógio a iniciar uma medição: o app só recebe dados que o firmware disponibilizar."
             )
             .setNegativeButton("Cancelar", null)
