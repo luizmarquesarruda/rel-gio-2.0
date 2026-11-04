@@ -251,3 +251,14 @@ Este arquivo é o registro cronológico principal. Atualizar em toda PR que alte
 ## Registro de versão
 
 A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada nesta branch. Não representa release publicada nem build validado. A numeração só deve ser promovida após CI verde e aprovação dos testes aplicáveis.
+
+
+## 04/11/2026 — Exportação local do diagnóstico BLE em TXT
+
+- Adicionada a ação **Exportar diagnóstico TXT** na tela principal. O Android abre o seletor nativo de destino (`CreateDocument`); o app não grava em diretório público por conta própria nem envia o relatório à rede.
+- O arquivo reúne versão do app/Android, estado da interface, identificação do dispositivo com endereço MAC mascarado, eventos da sessão, inventário GATT e payloads BLE recebidos em hexadecimal quando registrados.
+- O relatório separa observações de hipóteses e informa que conexão GATT não comprova leitura válida de sensores. Interpretações candidatas continuam explicitamente não validadas.
+- Não são exportados textos de notificações do telefone. Payloads BLE hexadecimais podem conter métricas de saúde e devem ser compartilhados somente com autorização.
+- Adicionados testes unitários para mascaramento de MAC, relatório sem eventos e preservação dos bytes observados.
+- Não foram introduzidos comandos proprietários, escrita em características desconhecidas, permissões novas, rede ou upload automático.
+- Build/CI e teste físico após esta alteração: **não validados** até a conclusão da execução correspondente.
