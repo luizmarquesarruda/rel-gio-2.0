@@ -60,13 +60,10 @@ A inscrição em notificações altera somente a assinatura padrão do descritor
 
 O workflow **Android CI** executa testes de política do manifesto, Android Lint, testes unitários e builds `diagnosticDebug` e `companionDebug`. As duas variantes passam por inspeção do manifesto mesclado, verificação da assinatura APK v2 e geração de SHA-256.
 
-Somente o pacote de instalação `relogio-2.0-diagnostic-debug-apk` é publicado. Ele contém:
-- `app-diagnostic-debug.apk` — variante sem Notification Listener e sem permissão de rede;
-- `SHA256SUMS` — hash do APK para conferir a integridade após baixar;
-- `BUILD-INFO.txt` — pacote, versão, variante, commit e limites de uso;
-- `SIGNATURE.txt` — resultado e certificado apresentados pelo `apksigner`.
+A CI publica **dois artefatos separados, com finalidades diferentes**:
 
-O segundo artefato, `android-validation-reports`, reúne Android Lint, manifestos mesclados, permissões, dependências runtime, informações de assinatura e hashes das duas variantes. É um pacote de relatórios técnicos, não outro aplicativo.
+- `relogio-2.0-diagnostic-debug-apk`: contém **somente** o arquivo instalável `app-diagnostic-debug.apk`. Não inclui arquivos TXT, XML, relatórios, certificados ou checksums.
+- `android-validation-reports`: contém relatórios Android Lint, manifestos mesclados, permissões, badging, resultados/certificados de assinatura, hashes SHA-256 e `diagnostic-build-info.txt`. Não contém APK instalável.
 
 A variante `companionDebug` é compilada, testada e auditada, mas **não publicada para sideload**, pois declara Notification Listener. O encaminhamento real de notificações ao GT3 MAX ainda depende da validação do protocolo.
 
