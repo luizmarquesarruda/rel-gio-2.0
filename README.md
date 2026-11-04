@@ -35,12 +35,12 @@ Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALT
 - Solicita permissões Bluetooth conforme a versão do Android.
 - Procura dispositivos BLE próximos.
 - Mostra nome e RSSI, ocultando parte do endereço MAC na interface.
-- Conecta automaticamente somente ao dispositivo cujo endereço Bluetooth foi configurado localmente e enumera serviços, características, propriedades e descritores GATT.
+- Busca dispositivos BLE automaticamente sem exigir MAC; tenta candidatos por nome GT3 MAX, serviço NUS anunciado ou endereço local salvo e só aceita identidade nova após fingerprint GATT completo.
 - Exibe inventário GATT passivo: serviços, características, propriedades e descritores.
 - Após a conexão, lê automaticamente apenas metadados básicos e bateria quando perfis Bluetooth SIG compatíveis anunciam READ.
-- Permite exploração manual aprofundada, após confirmação, de sensores SIG e canais proprietários que anunciam READ ou NOTIFY/INDICATE com CCCD padrão; a operação é limitada e não envia payload de escrita.
+- Permite ativar uma única vez os **testes automáticos GATT**. Depois do consentimento, ao reconhecer o fingerprint completo do GT3 MAX Call, o app percorre sozinho todos os canais compatíveis READ e NOTIFY/INDICATE com CCCD padrão; a exploração manual continua disponível.
 - Inscreve automaticamente somente NUS TX no GT3 MAX Call quando nome e fingerprint GATT completo coincidem; NUS RX continua sem escrita.
-- Registra localmente os bytes recebidos em hexadecimal e fingerprints de tamanho, prefixo e hash; o catálogo persistente conserva metadados, não payload bruto.
+- Registra leituras, status de callbacks, inscrições confirmadas/falhas e valores Bluetooth SIG decodificados. HEX bruto é guardado na biblioteca privada somente durante captura consentida; o catálogo de inventário conserva metadados.
 - Reagrupa quadros AB fragmentados e separa quadros concatenados sem inventar semântica para comandos desconhecidos.
 - Reconhece um quadro de bateria `0x91/0x80` como **candidato**, sem confirmar o valor no GT3 Maxx.
 
@@ -50,9 +50,9 @@ Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALT
 - Não envia comandos pela Nordic UART RX.
 - Nenhuma escrita em característica é executada nesta fase. A única operação de escrita GATT é a configuração do descritor CCCD padrão para ativar uma notificação/indicação permitida; a sincronização CTS está suspensa.
 - Não toca no Secure DFU/OTA, reset, calibração ou configuração.
-- Não interpreta frequência cardíaca, passos, sono, SpO2 ou pressão sem parsers validados.
+- Não atribui semântica a canais proprietários desconhecidos. Há decoders somente para formatos Bluetooth SIG identificados; passos, sono e métricas privadas continuam não interpretados até obter protocolo documentado.
 - Não acessa servidores ou dados privados do Wearfit Pro.
-- Não persiste ou transmite dados de saúde.
+- Não transmite dados de saúde à rede nem os publica no Health Connect. A captura local de leituras/notifications e HEX exige ativação explícita e permanece no armazenamento privado do app.
 
 A inscrição em notificações altera somente a assinatura padrão do descritor CCCD. Não é uma escrita de payload em uma característica proprietária.
 
@@ -80,7 +80,8 @@ CI verde não equivale a aprovação do Play Protect nem a teste físico no Gala
 4. O app tenta validar candidatos com nome GT3 MAX, serviço NUS anunciado ou endereço salvo. Dispositivos sem nome aparecem na lista; ao selecioná-los, o fingerprint GATT é verificado antes da exploração.
 5. A identidade é salva automaticamente somente após correspondência do fingerprint GATT completo. O endereço manual permanece opcional.
 6. Após a descoberta, o inventário GATT é passivo. A inscrição NUS TX ocorre automaticamente apenas quando nome e fingerprint completo do perfil GT3 MAX Call coincidem.
-6. O fluxo automático lê somente dados básicos padronizados; para investigar sensores e canais customizados, mantenha a conexão e use **Explorar canais adicionais do GT3 MAX**. Leia o aviso e confirme. Somente READ e inscrições via CCCD são permitidos; nenhum payload de escrita é enviado.
+7. Na tela principal, toque uma vez em **Ativar testes automáticos ao conectar** e confirme o aviso de coleta local. A autorização fica salva até você pausar. O app inicia a exploração aprofundada automaticamente nesta conexão e nas próximas conexões com fingerprint completo.
+8. Os valores recebidos aparecem na biblioteca local e no relatório TXT. A captura é renovada em blocos de até 10 minutos enquanto o modo estiver ativo; pausar encerra a sessão e desativa inscrições automáticas via CCCD.
 
 ## Documentação
 
