@@ -5,6 +5,7 @@
 - Corrigido o empacotamento do GitHub Actions: o artefato `relogio-2.0-diagnostic-debug-apk` agora recebe diretamente somente `app-diagnostic-debug.apk`.
 - Removidos do pacote instalável `BUILD-INFO.txt`, `SIGNATURE.txt` e `SHA256SUMS`; metadados, hash e certificado continuam disponíveis no artefato separado `android-validation-reports`.
 - Mantidos exatamente dois artefatos, com papéis separados: um APK instalável e um pacote de evidências/relatórios técnicos.
+- Concorrência CI alinhada pelo nome da branch para que eventos de push e atualização da mesma PR compartilhem o mesmo grupo e não mantenham duas compilações redundantes em paralelo.
 - CI da correção: aguardando novo run no HEAD atualizado. APK ainda não validado nesta revisão.
 
 
