@@ -27,6 +27,19 @@ A navegação secundária agrupa recursos em seis áreas:
 
 As áreas existentes de notificações e privacidade encaminham para as telas já presentes. Os demais cartões mostram descrição e estado, sem emitir comandos.
 
+## Painel de conexão — 04/11/2026
+
+A área de conexão foi reorganizada em um cartão de estado com hierarquia visual e ações explícitas:
+
+- Indicador visual e título resumem o estado conhecido: desconectado, busca, conexão, GATT conectado, desconexão ou falha.
+- Texto auxiliar explica o próximo passo sem confundir conexão Bluetooth/GATT com leitura validada de sensores.
+- A ação principal passou a ser **Buscar relógio**; **Desconectar** fica desabilitada quando não há conexão em andamento ou estabelecida.
+- Resultados de busca são apresentados em cartões tocáveis, com nome, intensidade do sinal e endereço parcialmente mascarado.
+- A tela mantém os registros técnicos em área separada; o conteúdo do log continua restrito à sessão atual.
+- A máquina BLE, permissões, tempo de busca, descoberta GATT, parser e comandos não foram alterados nesta melhoria.
+
+**Não validado:** renderização em Galaxy A06, tamanhos de fonte ampliados, TalkBack, estados de rotação e testes físicos de conexão após a mudança visual. A mensagem “Bluetooth conectado” significa somente conexão GATT; não comprova leitura de métricas do GT3 MAX.
+
 ## Semântica dos estados
 
 - **Tela existente**: existe uma tela no app para a função.
