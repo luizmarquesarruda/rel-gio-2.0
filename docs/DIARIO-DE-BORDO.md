@@ -295,3 +295,24 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - MagicPath: análise visual do canvas não realizada nesta execução porque a conta retornou cota de chamadas externas esgotada. A análise de layout foi feita por inspeção do código Android e registrada em docs/NAVEGACAO-E-LAYOUT.md.
 - Renderização, TalkBack, fonte ampliada, rotação e teste físico após a correção no Galaxy A06/GT3 MAX: **não validados**.
 - A descoberta GATT comprova o canal BLE e a enumeração dos serviços, mas o protocolo dos sensores continua **não validado**.
+## 04/11/2026 — Extração do adaptador Health Connect e base para rotas/saúde
+
+### Alterações nesta fase
+- Criado StepsSnapshot no domínio para representar o agregado de passos com intervalo, hora de recebimento e origem explícita HEALTH_CONNECT_AGGREGATE.
+- Criado HealthConnectStepsRepository em data/healthconnect para centralizar disponibilidade do provider, permissão READ_STEPS, consulta agregada diária e tratamento de ausência/revogação/indisponibilidade.
+- MainActivity deixou de montar diretamente AggregateRequest e consultar StepsRecord; passa a consumir resultados tipados do repositório.
+- Adicionados testes unitários para total zero versus ausência, origem, intervalo e rejeição de valores negativos.
+- Documentação classifica as informações de sensor óptico, Bluetooth e marcações RoHS/CE como descrição comercial informada, não como prova de precisão, chipset ou protocolo.
+- Documentada a separação entre registrar caminhadas com GPS do telefone e importar rotas do relógio; ambas exigem autorização e fontes reais.
+
+### Limites preservados
+- Não foram adicionadas permissões de localização, rota, pressão arterial, frequência cardíaca ou SpO₂.
+- Não foram adicionadas permissões WRITE ao Health Connect.
+- Não foram criadas medições sintéticas nem atribuído o agregado Health Connect ao GT3 MAX.
+- Nenhuma escrita BLE, envio para NUS RX, sincronização de horário, OTA, reset ou configuração foi habilitada.
+- Health Connect permanece leitura de passos agregados e não equivale a backup na nuvem da Conta Google.
+
+### Validação
+- Testes unitários do novo snapshot adicionados; resultado do Android CI desta branch: **não validado até o workflow concluir**.
+- Teste no Galaxy A06, inspeção dos registros publicados pelo Wearfit Pro no Health Connect e validação física dos sensores: **não validados**.
+- Rotas no mapa e leitura de sinais vitais: **planejadas, não implementadas**.
