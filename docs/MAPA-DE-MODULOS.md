@@ -59,6 +59,10 @@ Diretórios ainda não criados são estrutura-alvo, não módulos implementados.
 
 A [matriz de compatibilidade](MATRIZ-COMPATIBILIDADE-GT3-MAXX.md) registra 33 entradas do catálogo, módulo responsável, dependências, risco e estado de validação.
 
+## Integração oficial Wearfit Pro — pendente de fornecedor
+
+A declaração de privacidade prevê acesso por aplicativos de terceiros autorizados a determinados dados e funções do wearable. Ela não documenta o SDK, o contrato Android nem a elegibilidade do GT3 MAX Call. O módulo futuro `data/wearfit` deverá ser implementado apenas após receber SDK/API e amostra oficial; o adapter não será simulado. Ver [INTEGRACAO-WEARFIT-PARTNER-SDK.md](INTEGRACAO-WEARFIT-PARTNER-SDK.md).
+
 ## Dívida técnica prioritária
 
 1. Extrair scan/ciclo GATT de MainActivity.kt para device/ble/core, preservando fila e proteção contra callbacks antigos.
