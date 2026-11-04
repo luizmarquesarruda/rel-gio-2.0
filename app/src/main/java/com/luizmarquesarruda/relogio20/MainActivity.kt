@@ -114,7 +114,6 @@ class MainActivity : ComponentActivity() {
     private var isAutoReconnectScan = false
     private var isActivityResumed = false
     private var isGattConnected = false
-    private var reconnectRequestedForResume = false
     private var reconnectRunnable: Runnable? = null
     private var connectionTimeoutTask: Runnable? = null
     private val connectionPrefs by lazy { getSharedPreferences("device_connection", MODE_PRIVATE) }
@@ -473,7 +472,6 @@ class MainActivity : ComponentActivity() {
         if (reconnectRunnable != null) {
             handler.removeCallbacks(reconnectRunnable!!)
             reconnectRunnable = null
-            reconnectRequestedForResume = reconnectPolicy.isEnabled
         }
         if (currentScanCallback != null) stopBleScan()
         handler.removeCallbacks(clockTicker)
