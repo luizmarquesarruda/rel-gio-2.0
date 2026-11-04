@@ -50,6 +50,10 @@ A assinatura GATT (NUS + três serviços privados) pode identificar uma compatib
 | Hora, brilho, botão, bloqueio e controles | Requerem protocolo/ação documentada; não enviar comandos experimentais |
 | DFU / OTA / reset | Não fazem parte deste objetivo e continuam fora do escopo |
 
+## Canal oficial de terceiros Wearfit Pro
+
+A política Weike atualizada em 04/08/2023 declara que aplicativos de terceiros podem obter identificação aleatória por aplicativo, dados de hardware/estado, enviar notificações e, com autorização expressa, acessar sensores, sono, exercícios, estado de uso, logs e localização. Porém, o texto delimita esse canal para vestíveis Weike pareados e não publica SDK/API. Como não está confirmado que o GT3 MAX Call seja elegível ao canal de parceiros, obter confirmação de compatibilidade e o SDK oficial antes de criar o adapter. Ver [INTEGRACAO-WEARFIT-PARTNER-SDK.md](INTEGRACAO-WEARFIT-PARTNER-SDK.md).
+
 ## Próximas implementações orientadas por evidência
 
 - Correlacionar a notificação candidata de bateria com a porcentagem exibida no Wearfit Pro em diferentes níveis de carga.
