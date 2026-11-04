@@ -1,5 +1,15 @@
 # Changelog
 
+## Não lançado — sincronização automática de hora via Bluetooth CTS
+
+- Adicionado encoder do Current Time do Bluetooth SIG (CTS 0x1805 / característica 0x2A2B), com payload de 10 bytes e horário local do Android.
+- Após cada descoberta GATT, a sincronização é tentada automaticamente uma vez por sessão, mas somente quando o serviço padrão existe e a característica anuncia WRITE.
+- A escrita é serializada pela fila GATT existente e seu callback é apresentado na interface sem afirmar que o relógio físico atualizou o RTC/visor.
+- CTS ausente ou sem WRITE resulta em estado pendente; nenhuma escrita proprietária, NUS RX, OTA, DFU ou reset é tentada.
+- Autodescoberta passa a listar o serviço CTS e a capacidade de escrita para ajuste de hora.
+- Testes do encoder e da identificação CTS adicionados. Build/CI e validação física: **não validados**.
+
+
 ## Não lançado — autodescoberta passiva de funcionalidades GT3 MAX
 
 - Criado mecanismo de inventário GATT automático após a descoberta de serviços pelo Android.

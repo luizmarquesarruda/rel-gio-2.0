@@ -477,3 +477,13 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Criada tela `Autodescoberta BLE`, acessível pela tela principal e pelo catálogo de funções.
 - O armazenamento recusa substituir JSON inválido ou schema futuro. Não foi adicionada permissão Android ou dependência externa.
 - Testes unitários do motor de descoberta adicionados; execução local Gradle, CI/build e teste físico Galaxy A06/GT3 MAX: **não validados** nesta alteração.
+
+## 04/11/2026 — Sincronização automática de hora via Bluetooth CTS
+
+- Implementado encoder puro para o formato oficial Current Time (10 octetos), com ano little-endian, data/hora local do Android, dia da semana, Fractions256 e Adjust Reason de atualização por referência externa.
+- A sincronização automática é tentada uma vez após a descoberta GATT da sessão, somente quando o serviço CTS 0x1805, a característica 0x2A2B e a propriedade GATT WRITE estão presentes.
+- A escrita usa a fila GATT serial existente e aguarda o callback onCharacteristicWrite; não são usados comandos do fabricante, NUS RX ou características proprietárias.
+- Quando CTS está ausente (como nas capturas GATT anteriores do GT3 MAX), o app informa que não sincronizou e não tenta um protocolo alternativo.
+- O sucesso do callback GATT é descrito como confirmação da escrita no transporte; não comprova que firmware, RTC ou mostrador atualizaram a hora. A validação física permanece necessária.
+- Adicionados testes unitários para o payload CTS e identificação do perfil no mecanismo de autodescoberta.
+- Build/CI e teste físico Galaxy A06/Android 16 com GT3 MAX: **não validados** nesta fase.
