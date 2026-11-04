@@ -4,7 +4,7 @@ name: Android CI
 on:
   push:
     branches:
-      - 'fix/**'
+      - main
   pull_request:
     branches:
       - main
@@ -51,17 +51,17 @@ jobs:
 
       - name: Run unit tests and assemble both variants
         id: build
-        if: always() && steps.setup_gradle.outcome == 'success' && steps.manifest_policy_tests.outcome == 'success'
+        if: ${{ !cancelled() && steps.setup_gradle.outcome == 'success' && steps.manifest_policy_tests.outcome == 'success' }}
         run: gradle --no-daemon testDiagnosticDebugUnitTest testCompanionDebugUnitTest assembleDiagnosticDebug assembleCompanionDebug
 
       - name: Enforce privacy dependency and permission guardrails
         id: privacy_guardrails
-        if: always() && steps.build.outcome == 'success' && steps.manifest_policy_tests.outcome == 'success'
+        if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.manifest_policy_tests.outcome == 'success' }}
         run: bash scripts/check-privacy-guardrails.sh
 
       - name: Audit merged APK manifests, signatures and hashes
         id: audit_apks
-        if: always() && steps.build.outcome == 'success' && steps.privacy_guardrails.outcome == 'success'
+        if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.privacy_guardrails.outcome == 'success' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -112,7 +112,7 @@ jobs:
 
       - name: Prepare diagnostic APK metadata in the reports artifact
         id: prepare_diagnostic_package
-        if: always() && steps.build.outcome == 'success' && steps.lint.outcome == 'success' && steps.privacy_guardrails.outcome == 'success' && steps.audit_apks.outcome == 'success'
+        if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.lint.outcome == 'success' && steps.privacy_guardrails.outcome == 'success' && steps.audit_apks.outcome == 'success' }}
         env:
           SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
         shell: bash
@@ -147,7 +147,7 @@ jobs:
           EOF
 
       - name: Publish diagnostic APK only
-        if: success() && steps.prepare_diagnostic_package.outcome == 'success'
+        if: ${{ !cancelled() && success() && steps.prepare_diagnostic_package.outcome == 'success' }}
         uses: actions/upload-artifact@v7
         with:
           name: relogio-2.0-diagnostic-debug-apk
@@ -157,7 +157,7 @@ jobs:
           retention-days: 30
 
       - name: Publish Android validation reports
-        if: always() && steps.setup_gradle.outcome == 'success'
+        if: ${{ !cancelled() && steps.setup_gradle.outcome == 'success' }}
         uses: actions/upload-artifact@v7
         with:
           name: android-validation-reports
