@@ -37,14 +37,18 @@ Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALT
 - Mostra nome e RSSI, ocultando parte do endereço MAC na interface.
 - Conecta automaticamente somente ao dispositivo cujo endereço Bluetooth foi configurado localmente e enumera serviços, características, propriedades e descritores GATT.
 - Exibe inventário GATT passivo: serviços, características, propriedades e descritores.
-- Inscreve automaticamente somente NUS TX no GT3 MAX Call quando o nome e o fingerprint GATT completo coincidem; usa o CCCD padrão e não escreve payload na NUS RX.
-- Registra localmente na tela os bytes recebidos em hexadecimal.
+- Após a conexão, lê automaticamente apenas metadados básicos e bateria quando perfis Bluetooth SIG compatíveis anunciam READ.
+- Permite exploração manual aprofundada, após confirmação, de sensores SIG e canais proprietários que anunciam READ ou NOTIFY/INDICATE com CCCD padrão; a operação é limitada e não envia payload de escrita.
+- Inscreve automaticamente somente NUS TX no GT3 MAX Call quando nome e fingerprint GATT completo coincidem; NUS RX continua sem escrita.
+- Registra localmente os bytes recebidos em hexadecimal e fingerprints de tamanho, prefixo e hash; o catálogo persistente conserva metadados, não payload bruto.
+- Reagrupa quadros AB fragmentados e separa quadros concatenados sem inventar semântica para comandos desconhecidos.
 - Reconhece um quadro de bateria `0x91/0x80` como **candidato**, sem confirmar o valor no GT3 Maxx.
 
 ## O que ela não faz
 
-- Não escreve dados em características do relógio.
+- Não envia payloads a características proprietárias do relógio.
 - Não envia comandos pela Nordic UART RX.
+- A única escrita usada fora de payloads do fabricante é a configuração do descritor CCCD para habilitar uma inscrição solicitada; a sincronização de hora usa CTS padrão apenas se o relógio anunciar 0x1805/0x2A2B com WRITE.
 - Não toca no Secure DFU/OTA, reset, calibração ou configuração.
 - Não interpreta frequência cardíaca, passos, sono, SpO2 ou pressão sem parsers validados.
 - Não acessa servidores ou dados privados do Wearfit Pro.
@@ -77,7 +81,7 @@ CI verde não equivale a aprovação do Play Protect nem a teste físico no Gala
 3. Toque em **Buscar e conectar automaticamente** e conceda a permissão de dispositivos próximos.
 4. O app procura por até 15 segundos e tenta conectar somente quando encontra o endereço configurado, com RSSI acima do limite operacional. A seleção de outro dispositivo é bloqueada.
 5. Após a descoberta, o inventário GATT é passivo. A inscrição NUS TX ocorre automaticamente apenas quando nome e fingerprint completo do perfil GT3 MAX Call coincidem.
-6. Não existem ações manuais de leitura/inscrição para características desconhecidas; NUS RX e características proprietárias não recebem payloads.
+6. O fluxo automático lê somente dados básicos padronizados; para investigar sensores e canais customizados, mantenha a conexão e use **Explorar canais adicionais do GT3 MAX**. Leia o aviso e confirme. Somente READ e inscrições via CCCD são permitidos; nenhum payload de escrita é enviado.
 
 ## Documentação
 
