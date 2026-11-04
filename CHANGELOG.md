@@ -1,5 +1,14 @@
 # Changelog
 
+## Não lançado — watchdog e rastreabilidade da descoberta GATT — 04/11/2026
+
+- Persistido o estado de solicitação, callback concluído, falha ou timeout da descoberta de serviços GATT, evitando confundir inventário antigo com a conexão atual.
+- Adicionado watchdog de 12 segundos. Recusa da API, erro de callback ou ausência de callback encerram a conexão GATT de forma controlada e liberam a política de reconexão automática.
+- Filas e inscrições pendentes são limpas; operações não executadas permanecem distintas de falhas de sensores.
+- Teste unitário cobre a decisão de recuperação do watchdog.
+- CI e teste físico no Galaxy A06 / GT3 MAX: **não validados nesta revisão**.
+
+
 ## Não lançado — ocultação do prefixo HEX fora de captura — 04/11/2026
 
 - O log do fingerprint BLE não exibe mais os quatro primeiros bytes do payload fora de uma sessão consentida.

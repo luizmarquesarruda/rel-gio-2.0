@@ -28,6 +28,7 @@ import com.luizmarquesarruda.relogio20.device.discovery.GattExplorationProgressT
 import com.luizmarquesarruda.relogio20.device.discovery.GattProgressOperation
 import com.luizmarquesarruda.relogio20.device.discovery.BlePacketFingerprintAnalyzer
 import com.luizmarquesarruda.relogio20.device.discovery.PassiveBleObservationTracker
+import com.luizmarquesarruda.relogio20.device.discovery.GattDiscoveryRecoveryPolicy
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbStreamDecoder
 import com.luizmarquesarruda.relogio20.HealthPrivacyActivity
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectAvailability
@@ -182,6 +183,7 @@ class MainActivity : ComponentActivity() {
     private var isGattConnected = false
     private var reconnectRunnable: Runnable? = null
     private var connectionTimeoutTask: Runnable? = null
+    private var serviceDiscoveryTimeoutTask: Runnable? = null
     private val connectionPrefs by lazy { getSharedPreferences("device_connection", MODE_PRIVATE) }
     private val reconnectPolicy by lazy {
         BleReconnectPolicy(connectionPrefs.getBoolean("auto_reconnect_enabled", false))
@@ -229,6 +231,7 @@ class MainActivity : ComponentActivity() {
         private const val SCAN_DURATION_MS = 15_000L
         private const val AUTO_RECONNECT_SCAN_DURATION_MS = 8_000L
         private const val GATT_CONNECT_TIMEOUT_MS = 15_000L
+        private const val GATT_SERVICE_DISCOVERY_TIMEOUT_MS = 12_000L
         private const val GATT_OPERATION_TIMEOUT_MS = 8_000L
         private const val AUTO_CONNECT_MIN_RSSI = -90
         private const val MAX_LOG_LINES = 250
@@ -1349,6 +1352,7 @@ class MainActivity : ComponentActivity() {
             deviceTimeSyncView.text = "Hora do relógio: aguardando descoberta dos serviços GATT"
         }
         cancelConnectionTimeout()
+        cancelGattServiceDiscoveryTimeout()
         lastConnectedDeviceName = safeDeviceName(device) ?: "Dispositivo sem nome"
         lastConnectedDeviceAddress = safeDeviceAddress(device)
         resetGattOperationQueue()
@@ -1451,9 +1455,17 @@ class MainActivity : ComponentActivity() {
                 updateStatus("Conectado. Descobrindo serviços GATT...")
                 val started = runCatching { gatt.discoverServices() }.getOrDefault(false)
                 appendLog("Descoberta de serviços solicitada: " + started)
-                if (!started) {
-                    updateStatus("Falha ao iniciar descoberta dos serviços GATT.")
-                    appendLog("O Android recusou o início da descoberta GATT.")
+                if (started) {
+                    discoveryLibraryStore.recordDiscovery(
+                        title = "Descoberta GATT solicitada",
+                        detail = "A API Android aceitou discoverServices(); aguardando callback onServicesDiscovered. Inventário anterior não representa esta conexão.",
+                        nowMillis = System.currentTimeMillis(),
+                        source = "GATT_LIFECYCLE",
+                        confidence = "AGUARDANDO_CALLBACK"
+                    )
+                    scheduleGattServiceDiscoveryTimeout(gatt)
+                } else {
+                    failGattServiceDiscovery(gatt, "Android recusou iniciar discoverServices().")
                 }
             } else if (status != BluetoothGatt.GATT_SUCCESS) {
                 isGattDisconnecting = false
@@ -1510,8 +1522,16 @@ class MainActivity : ComponentActivity() {
         @SuppressLint("MissingPermission")
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             if (bluetoothGatt !== gatt || isGattDisconnecting) return
+            cancelGattServiceDiscoveryTimeout()
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 appendLog("Serviços descobertos: " + gatt.services.size)
+                discoveryLibraryStore.recordDiscovery(
+                    title = "Callback de descoberta GATT recebido",
+                    detail = "onServicesDiscovered concluído com sucesso • " + gatt.services.size + " serviços nesta conexão.",
+                    nowMillis = System.currentTimeMillis(),
+                    source = "GATT_LIFECYCLE",
+                    confidence = "CALLBACK_OK"
+                )
                 if (!verifyDiscoveryCandidateBeforeExploration(gatt)) return
                 captureFeatureDiscovery(gatt)
                 renderGattServices(gatt)
@@ -1528,12 +1548,7 @@ class MainActivity : ComponentActivity() {
                     runOnUiThread { requestDeepGattExploration() }
                 }
             } else {
-                updateStatus("Falha ao descobrir serviços GATT.")
-                appendLog("Falha na descoberta GATT. Status: " + status)
-                if (reconnectPolicy.isEnabled) {
-                    runCatching { gatt.disconnect() }
-                    scheduleAutoReconnect("Falha na descoberta dos serviços GATT")
-                }
+                failGattServiceDiscovery(gatt, "Callback onServicesDiscovered retornou status " + status + ".")
             }
         }
 
@@ -3072,6 +3087,64 @@ class MainActivity : ComponentActivity() {
         connectionTimeoutTask = null
     }
 
+    private fun scheduleGattServiceDiscoveryTimeout(gatt: BluetoothGatt) {
+        cancelGattServiceDiscoveryTimeout()
+        val timeout = Runnable {
+            val shouldRecover = GattDiscoveryRecoveryPolicy.shouldRecover(
+                connectionIsCurrent = bluetoothGatt === gatt,
+                connected = isGattConnected,
+                disconnecting = isGattDisconnecting,
+                callbackReceived = false
+            )
+            if (shouldRecover) {
+                failGattServiceDiscovery(
+                    gatt,
+                    "Tempo limite de ${GATT_SERVICE_DISCOVERY_TIMEOUT_MS} ms aguardando onServicesDiscovered()."
+                )
+            }
+        }
+        serviceDiscoveryTimeoutTask = timeout
+        handler.postDelayed(timeout, GATT_SERVICE_DISCOVERY_TIMEOUT_MS)
+    }
+
+    private fun cancelGattServiceDiscoveryTimeout() {
+        serviceDiscoveryTimeoutTask?.let(handler::removeCallbacks)
+        serviceDiscoveryTimeoutTask = null
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun failGattServiceDiscovery(gatt: BluetoothGatt, reason: String) {
+        if (bluetoothGatt !== gatt) return
+        cancelGattServiceDiscoveryTimeout()
+        isGattConnected = false
+        gattExplorationProgress.markRemainingSkipped()
+        updateGattProgressUi()
+        resetGattOperationQueue()
+        pendingNotifications.clear()
+        activeNotifications.clear()
+        pendingAutomaticNotifications.clear()
+        automaticNotificationKeys.clear()
+        pendingAutomaticUnsubscribeKeys.clear()
+        queuedAutomaticUnsubscribeKeys.clear()
+        automaticGattProbeStartedForConnection = false
+        finishAutomaticCaptureSession("Descoberta GATT não concluída")
+        discoveryLibraryStore.recordDiscovery(
+            title = "Descoberta GATT não concluída",
+            detail = reason + " A sessão anterior não será apresentada como inventário desta conexão; reconexão será tentada conforme a política local.",
+            nowMillis = System.currentTimeMillis(),
+            source = "GATT_LIFECYCLE",
+            confidence = if (reason.contains("Tempo limite")) "TIMEOUT" else "FALHA"
+        )
+        appendLog("Descoberta GATT não concluída: " + reason)
+        bluetoothGatt = null
+        isGattDisconnecting = true
+        updateStatus("Falha ao descobrir serviços GATT. " + reason)
+        runCatching { gatt.disconnect() }
+        runCatching { gatt.close() }
+        isGattDisconnecting = false
+        if (reconnectPolicy.isEnabled) scheduleAutoReconnect("Falha na descoberta dos serviços GATT")
+    }
+
     private fun scheduleAutoReconnect(reason: String, immediate: Boolean = false) {
         if (!reconnectPolicy.isEnabled) return
         if (expectedWatchAddress == null) {
@@ -3108,6 +3181,7 @@ class MainActivity : ComponentActivity() {
         isActivityResumed = false
         cancelReconnectTask()
         cancelConnectionTimeout()
+        cancelGattServiceDiscoveryTimeout()
         stopBleScan()
         finishAutomaticCaptureSession("Aplicativo encerrado")
         resetGattOperationQueue()

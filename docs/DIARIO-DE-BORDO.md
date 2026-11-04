@@ -1,3 +1,13 @@
+## 04/11/2026 — Watchdog e rastreabilidade do ciclo de descoberta GATT
+
+- A conexão GATT agora registra persistentemente quando `discoverServices()` foi aceito, quando `onServicesDiscovered` respondeu e quando a descoberta falhou.
+- Adicionado watchdog de 12 segundos para a ausência do callback. Se a API recusar o início, retornar erro ou não responder dentro do prazo, a sessão GATT é encerrada de forma controlada e a política de reconexão pode tentar novamente.
+- O inventário anterior permanece preservado, mas o TXT passa a registrar explicitamente que ele não representa a conexão atual enquanto o callback estiver pendente ou tiver falhado.
+- Operações pendentes são classificadas como não executadas; filas, inscrições pendentes e timeouts são limpos antes da reconexão.
+- Teste unitário cobre a decisão de recuperação e impede que callback já recebido ou conexão obsoleta disparem recuperação.
+- Fases de exploração serializada, decodificação Bluetooth SIG, persistência atômica e painel de progresso permanecem integradas; nenhuma semântica proprietária foi presumida.
+- CI após esta alteração e validação física no Samsung Galaxy A06 / Android 16 com GT3 MAX: **não validados**.
+
 ## 04/11/2026 — Ocultação do prefixo HEX fora da captura consentida
 
 - Auditoria de privacidade identificou que o log do fingerprint BLE exibia os quatro primeiros bytes do payload mesmo sem sessão de captura ativa.
