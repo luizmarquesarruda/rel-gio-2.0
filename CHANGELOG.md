@@ -1,5 +1,16 @@
 # Changelog
 
+## Não lançado — perfil de acesso GT3 MAX Call
+
+- Adicionado perfil de dispositivo com metadados informados pelo proprietário: GT3 MAX Call, firmware V1.07 e build SH0050-1_1.1.3_1.23_1.18_1.1. Esses campos não são apresentados como leitura autenticada do GATT.
+- Compara o nome anunciado e o fingerprint completo dos serviços/características já capturados para identificar compatibilidade com a unidade.
+- Após fingerprint completo, inscreve automaticamente somente a característica NUS TX em notificações, usando CCCD padrão; não envia payload à característica NUS RX.
+- Exibe a interpretação AB 0x91/0x80 como bateria candidata, sem apresentar o valor como validado até correlação com Wearfit Pro em diferentes níveis de carga.
+- Adicionada referência de bateria candidata no catálogo de funções.
+- Serial, código de pareamento e MAC não foram incluídos no código/documentação pública; a identidade Bluetooth continua configurada localmente no aplicativo.
+- Nenhum sensor de saúde, comando proprietário, perfil Bluetooth Classic, OTA/DFU ou reset foi habilitado.
+- CI e teste físico no Galaxy A06/GT3 MAX Call: **não validados**.
+
 ## Não lançado — fase de extração Health Connect e contrato para rotas
 
 - Extraído o adaptador de leitura agregada de passos para data/healthconnect, retirando do MainActivity a dependência direta de HealthConnectClient/StepsRecord/AggregateRequest.
