@@ -97,3 +97,9 @@ A próxima extração de código deve retirar scan/GATT de MainActivity antes de
 - Frequência cardíaca, SpO₂, pressão, sono e rotas do GT3 MAX: não validados.
 - GPS de caminhadas, mapa, histórico de rotas e gravação no Health Connect: não implementados.
 - Nenhuma permissão adicional de localização/rotas/sinais vitais foi solicitada nesta fase.
+
+## Referências oficiais de implementação
+
+- Conexão Saúde — rotas de exercícios e permissões READ_EXERCISE_ROUTES / WRITE_EXERCISE_ROUTE: https://developer.android.com/health-and-fitness/health-connect/features/exercise-routes?hl=pt-br
+- Conexão Saúde — sinais vitais e permissões por tipo: https://developer.android.com/health-and-fitness/health-connect/experiences/vitals?hl=pt-br
+- Migração Google Fit: suporte às APIs Fit até o fim de 2026; Health Connect para apps móveis e Google Health API para integrações cloud/account-centric: https://developer.android.com/health-and-fitness/health-connect/migration/fit?hl=pt-br
