@@ -4,7 +4,7 @@ Aplicativo Android de Saúde e Fitness que se conecta diretamente ao GT3 MAX por
 
 ## Reconexão automática BLE
 
-Depois da primeira conexão GATT bem-sucedida com o GT3 MAX configurado localmente, o app habilita a reconexão automática. Em perda inesperada, procura somente o endereço Bluetooth salvo, com varreduras de baixa potência e intervalos de 1, 2, 5, 10, 20 e até 30 segundos. A ação **Parar reconexão** cancela as tentativas e desativa a preferência local.
+Ao abrir o aplicativo, uma busca BLE geral começa automaticamente; não é necessário digitar o endereço do relógio. O endereço salvo é uma pista, não um filtro exclusivo. O app também reconhece nomes GT3 MAX e anúncios NUS; quando nome/endereço não estão disponíveis, lista dispositivos próximos para validação GATT. Uma nova identidade só é salva automaticamente após o fingerprint GATT completo do GT3 MAX Call. Depois da primeira conexão validada, a reconexão automática usa varreduras de baixa potência e intervalos de 1, 2, 5, 10, 20 e até 30 segundos. A ação **Parar reconexão** cancela as tentativas e desativa a preferência local.
 
 A recuperação nesta fase ocorre enquanto o app está em primeiro plano ou quando ele é reaberto/retomado. O Android pode suspender o processo em segundo plano ou após encerramento forçado; recuperação contínua em segundo plano ainda não está implementada. A reconexão restaura o transporte GATT e reinscreve apenas a notificação NUS TX já permitida; não valida sensores e não envia payload ao relógio.
 
@@ -77,10 +77,11 @@ CI verde não equivale a aprovação do Play Protect nem a teste físico no Gala
 ## Como usar a prova de conceito
 
 1. Instale o APK diagnostic debug no Android e ative o Bluetooth.
-2. Toque em **Configurar identificação do GT3 MAX** e informe o endereço Bluetooth da unidade. O endereço é salvo somente nas preferências privadas deste aparelho.
-3. Toque em **Buscar e conectar automaticamente** e conceda a permissão de dispositivos próximos.
-4. O app procura por até 15 segundos e tenta conectar somente quando encontra o endereço configurado, com RSSI acima do limite operacional. A seleção de outro dispositivo é bloqueada.
-5. Após a descoberta, o inventário GATT é passivo. A inscrição NUS TX ocorre automaticamente apenas quando nome e fingerprint completo do perfil GT3 MAX Call coincidem.
+2. Conceda a permissão de dispositivos próximos quando o Android solicitar.
+3. Ao abrir o aplicativo, a busca BLE geral começa automaticamente; não é necessário digitar o endereço MAC.
+4. O app tenta validar candidatos com nome GT3 MAX, serviço NUS anunciado ou endereço salvo. Dispositivos sem nome aparecem na lista; ao selecioná-los, o fingerprint GATT é verificado antes da exploração.
+5. A identidade é salva automaticamente somente após correspondência do fingerprint GATT completo. O endereço manual permanece opcional.
+6. Após a descoberta, o inventário GATT é passivo. A inscrição NUS TX ocorre automaticamente apenas quando nome e fingerprint completo do perfil GT3 MAX Call coincidem.
 6. O fluxo automático lê somente dados básicos padronizados; para investigar sensores e canais customizados, mantenha a conexão e use **Explorar canais adicionais do GT3 MAX**. Leia o aviso e confirme. Somente READ e inscrições via CCCD são permitidos; nenhum payload de escrita é enviado.
 
 ## Documentação
