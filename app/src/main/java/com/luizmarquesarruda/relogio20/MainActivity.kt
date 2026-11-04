@@ -201,6 +201,7 @@ class MainActivity : ComponentActivity() {
     private val passiveBleObservationTracker = PassiveBleObservationTracker()
     private var clockSyncAttemptedForSession = false
     private var pendingCurrentTimeWriteKey: String? = null
+    private var pendingDeepExplorationRequest = false
 
     private val cccdUuid: UUID =
         UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
@@ -747,11 +748,21 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         isActivityResumed = true
+        val explorationRequests = getSharedPreferences("ble_exploration_requests", MODE_PRIVATE)
+        pendingDeepExplorationRequest = explorationRequests.getBoolean("pending_deep_exploration", false)
+        if (pendingDeepExplorationRequest) {
+            explorationRequests.edit { remove("pending_deep_exploration") }
+        }
         handler.removeCallbacks(clockTicker)
         handler.post(clockTicker)
         handler.removeCallbacks(stepsTicker)
         if (healthConnectInitialized) readTodaySteps() else refreshHealthConnectPermissionState()
         handler.postDelayed(stepsTicker, 60_000L)
+        if (pendingDeepExplorationRequest && isGattConnected) {
+            pendingDeepExplorationRequest = false
+            appendLog("Solicitação de exploração recebida; abrindo confirmação de segurança.")
+            handler.post { requestDeepGattExploration() }
+        }
         if (reconnectPolicy.isEnabled && bluetoothGatt == null && currentScanCallback == null) {
             initialDiscoveryPending = false
             scheduleAutoReconnect("Aplicativo retomado", immediate = true)
@@ -1349,6 +1360,11 @@ class MainActivity : ComponentActivity() {
                     "Hora do relógio: sincronização suspensa pela política somente leitura/notificações."
                 appendLog("CTS 0x1805: sincronização suspensa pela política atual; nenhuma escrita de característica será enviada.")
                 updateStatus("Conectado. Serviços encontrados: " + gatt.services.size)
+                if (pendingDeepExplorationRequest) {
+                    pendingDeepExplorationRequest = false
+                    appendLog("Solicitação de exploração recebida pela tela Testes e descobertas.")
+                    runOnUiThread { requestDeepGattExploration() }
+                }
             } else {
                 updateStatus("Falha ao descobrir serviços GATT.")
                 appendLog("Falha na descoberta GATT. Status: " + status)
