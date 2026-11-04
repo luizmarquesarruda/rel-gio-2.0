@@ -1943,11 +1943,19 @@ class MainActivity : ComponentActivity() {
                 return@forEach
             }
             when (operation.kind) {
+                SafeGattExplorationPlan.Kind.READ_STANDARD_VALUE,
                 SafeGattExplorationPlan.Kind.READ_PROPRIETARY_VALUE -> {
                     enqueueGattOperation(
                         gattOperationKey(operation.serviceUuid, operation.characteristicUuid, "READ"),
                         onTimeout = {
-                            appendLog("Leitura proprietária somente READ expirou: " + operation.characteristicUuid)
+                            appendLog("Leitura GATT somente READ expirou: " + operation.characteristicUuid)
+                            discoveryLibraryStore.recordDiscovery(
+                                title = "Leitura GATT expirou • " + operation.characteristicUuid,
+                                detail = "Nenhum callback de leitura foi recebido no prazo da fila GATT.",
+                                nowMillis = System.currentTimeMillis(),
+                                source = probeSource,
+                                confidence = "READ_TIMEOUT"
+                            )
                         }
                     ) {
                         if (bluetoothGatt !== gatt || isGattDisconnecting) false
@@ -1973,10 +1981,10 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+                SafeGattExplorationPlan.Kind.SUBSCRIBE_STANDARD_MEASUREMENT,
                 SafeGattExplorationPlan.Kind.SUBSCRIBE_PROPRIETARY_CHANNEL -> {
                     enableNotifications(gatt, characteristic, automaticDiscovery = automatic)
                 }
-                else -> Unit
             }
         }
     }
