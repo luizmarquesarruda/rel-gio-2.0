@@ -31,6 +31,7 @@ class GattExplorationProgressTrackerTest {
         val snapshot = tracker.snapshot()
         assertEquals(2, snapshot.total)
         assertEquals(2, snapshot.completed)
+        assertEquals(0, snapshot.skipped)
         assertEquals(1, snapshot.readsResponded)
         assertEquals(1, snapshot.subscriptionsConfirmed)
         assertEquals(1, snapshot.notifications)
@@ -75,6 +76,9 @@ class GattExplorationProgressTrackerTest {
 
         val channel = tracker.snapshot().channels.single()
         assertEquals(GattProgressState.SKIPPED, channel.state)
+        assertEquals(0, tracker.snapshot().completed)
+        assertEquals(1, tracker.snapshot().skipped)
+        assertEquals(100, tracker.snapshot().completionPercent)
         assertEquals("NÃO EXECUTADO", channel.classification)
     }
 }

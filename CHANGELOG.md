@@ -1,5 +1,11 @@
 # Changelog
 
+## Não lançado — precisão dos contadores do progresso GATT — 04/11/2026
+
+- Itens interrompidos/deixados na fila agora são contados como não executados, separados das operações finalizadas com resposta, confirmação, falha ou timeout.
+- Percentual indica operações tratadas e não taxa de sucesso do sensor.
+- Testes de regressão adicionados para interrupção por desconexão.
+
 ## Não lançado — prevenção de leitura GATT redundante — 04/11/2026
 
 - Removida a repetição de READ da bateria 0x2A19: a leitura continua no plano básico e o aprofundamento mantém somente a inscrição CCCD opcional.

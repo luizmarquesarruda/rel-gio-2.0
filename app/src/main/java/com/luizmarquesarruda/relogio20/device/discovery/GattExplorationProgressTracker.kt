@@ -22,6 +22,7 @@ internal data class GattChannelProgress(
 internal data class GattExplorationProgressSnapshot(
     val total: Int,
     val completed: Int,
+    val skipped: Int,
     val readsResponded: Int,
     val subscriptionsConfirmed: Int,
     val notifications: Int,
@@ -33,13 +34,14 @@ internal data class GattExplorationProgressSnapshot(
     val channels: List<GattChannelProgress>
 ) {
     val completionPercent: Int
-        get() = if (total == 0) 0 else (completed * 100 / total).coerceIn(0, 100)
+        get() = if (total == 0) 0 else ((completed + skipped) * 100 / total).coerceIn(0, 100)
 
     fun summary(): String =
         if (total == 0) {
             "Exploração GATT: aguardando início."
         } else {
-            "Exploração GATT: $completionPercent% • $completed/$total operações concluídas\n" +
+            "Exploração GATT: $completionPercent% • ${completed + skipped}/$total operações finalizadas\n" +
+                "Concluídas: $completed • não executadas: $skipped\n" +
                 "READ respondidos: $readsResponded • CCCD confirmados: $subscriptionsConfirmed\n" +
                 "Notificações: $notifications • valores decodificados: $decodedValues\n" +
                 "Falhas: $failures • timeouts: $timeouts • na fila: $queued • em execução: $running"
@@ -180,7 +182,8 @@ internal class GattExplorationProgressTracker {
         }
         return GattExplorationProgressSnapshot(
             total = values.size,
-            completed = values.count { it.state in terminal },
+            completed = values.count { it.state in terminal && it.state != GattProgressState.SKIPPED },
+            skipped = values.count { it.state == GattProgressState.SKIPPED },
             readsResponded = values.count {
                 it.operation == GattProgressOperation.READ && it.state == GattProgressState.RESPONDED
             },

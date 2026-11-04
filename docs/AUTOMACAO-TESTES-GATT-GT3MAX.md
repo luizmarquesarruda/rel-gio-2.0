@@ -152,3 +152,6 @@ A leitura de bateria 0x2A19 do plano básico não é repetida na exploração ap
 A ausência de notificação após CCCD confirmado é apresentada como **inscrito, aguardando dados**, não como sensor inexistente ou defeituoso. Uma leitura sem bytes é distinta de timeout. Desconectar durante a exploração marca operações ainda não executadas, sem apresentá-las como falha do relógio.
 
 O botão **Registrar ação realizada no relógio** cria um marcador temporal local (por exemplo, início de medição de SpO₂ ou pressão). O marcador é exportado no TXT com timestamp e fonte USER_WEARABLE_ACTION; ele não representa leitura nem valor de sensor. A comparação temporal com READ/NOTIFY pode indicar correlação, mas não prova causalidade nem revela automaticamente o comando proprietário.
+
+
+A métrica de progresso separa operações finalizadas (READ respondido, CCCD confirmado, falha ou timeout) das operações não executadas. O percentual indica operações tratadas, mas o contador de resultados não incorpora itens pulados após desconexão ou pausa.

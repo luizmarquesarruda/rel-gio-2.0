@@ -1,3 +1,9 @@
+## 04/11/2026 — Métricas do painel sem confundir operações puladas
+
+- Ajustado o resumo GATT: itens não executados após desconexão/pausa deixam de ser somados às operações concluídas.
+- O percentual indica operações tratadas, enquanto os contadores separam finalizadas e não executadas. Falhas/timeouts continuam visíveis como resultados, não como sucesso.
+- Testes garantem que desconectar com uma operação na fila gera 0 concluídas, 1 não executada e progresso de tratamento de 100%, sem alegar sucesso do sensor.
+
 ## 04/11/2026 — Eliminação de leitura GATT redundante
 
 - Auditoria identificou que a bateria 0x2A19 já era lida pelo plano básico de conexão e podia entrar novamente como READ no plano aprofundado.
