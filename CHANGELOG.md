@@ -134,3 +134,5 @@ As alterações relevantes do Relógio 2.0 são registradas aqui. Segue SemVer: 
 - Inventário de serviços, características e notificações GATT.
 - Integração inicial de leitura agregada de passos por Health Connect na PR #2.
 - Exibição da hora local do telefone; sem ajuste do relógio físico.
+
+- A atualização periódica do Health Connect é suspensa quando READ_STEPS não foi concedida ou foi revogada.
