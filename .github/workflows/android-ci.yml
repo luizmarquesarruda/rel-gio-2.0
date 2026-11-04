@@ -116,6 +116,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          APP_VERSION="$(tr -d '\r\n' < VERSION)"
+          GRADLE_VERSION="$(sed -nE 's/^[[:space:]]*versionName[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' app/build.gradle.kts | head -n 1)"
+          if [[ -z "$APP_VERSION" || "$GRADLE_VERSION" != "$APP_VERSION" ]]; then
+            echo "VERSION ($APP_VERSION) diverges from app/build.gradle.kts ($GRADLE_VERSION)." >&2
+            exit 1
+          fi
+
           SOURCE_APK="app/build/outputs/apk/diagnostic/debug/app-diagnostic-debug.apk"
           PACKAGE_DIR="app/build/distributions/relogio-2.0-diagnostic-debug"
           mkdir -p "$PACKAGE_DIR"
@@ -126,7 +133,7 @@ jobs:
           app=Relógio 2.0
           variant=diagnosticDebug
           package=com.luizmarquesarruda.relogio20.diagnostic
-          version=0.4.0-alpha.2-diagnostic
+          version=${APP_VERSION}-diagnostic
           build_type=debug
           commit=$GITHUB_SHA
           workflow_run=$GITHUB_RUN_ID
