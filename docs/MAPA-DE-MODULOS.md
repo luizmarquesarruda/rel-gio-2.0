@@ -19,8 +19,11 @@ A base é um aplicativo Android nativo Kotlin. O adaptador de consulta agregada 
 | device/gt3max/protocol/Gt3MaxCallDeviceProfile.kt | Perfil do dispositivo | Identificadores GT3 MAX Call informados e fingerprint GATT da captura; sem autenticação de hardware/firmware. |
 | device/gt3max/protocol/WearfitAbFrameParser.kt | Protocolo do dispositivo | Perfil NUS/AB candidato e parser restrito. Não controla conexão. |
 | device/discovery/FeatureDiscoveryEngine.kt | Descoberta de funcionalidades | Classifica inventário GATT e metadados de notificações sem inferir semântica de payload desconhecido. |
-| data/discovery/FeatureDiscoveryStore.kt | Persistência local de descoberta | Persiste inventário e contagens com schema versionado; não grava payload HEX bruto e preserva conteúdo inválido/futuro. |
-| FeatureDiscoveryActivity.kt | UI / Descoberta | Apresenta perfis encontrados, canais, evidências, hipóteses e limitações de validação. |
+| data/discovery/FeatureDiscoveryStore.kt | Persistência do inventário GATT | Persiste inventário, descobertas e contagens com schema versionado; não grava payload HEX bruto e preserva conteúdo inválido/futuro. |
+| data/discovery/DiscoveryLibraryStore.kt | Biblioteca interna de diagnóstico | Guarda descobertas e leituras capturadas durante teste cronometrado em arquivo privado com escrita atômica, limite de registros e recusa de schema corrompido/futuro. HEX é salvo somente durante sessão explicitamente iniciada. |
+| data/discovery/DiscoveryLibraryCodec.kt | Formato da biblioteca | Codec binário versionado e testável sem Android; valida magic, schema, tamanho e contagem de registros. |
+| FeatureDiscoveryActivity.kt | UI / Laboratório BLE | Agrupa descobertas GATT, roteiro de testes, contador regressivo de captura e atalho à biblioteca. |
+| DiscoveryLibraryActivity.kt | UI / Biblioteca | Pesquisa e filtra descobertas, sessões, notificações e leituras locais. |
 | notifications/NotificationCaptureService.kt | Platform / Notifications | Captura consentida na variante companion. |
 | notifications/NotificationCaptureStore.kt | Data / Notifications | Cache volátil, filtros e preferências. |
 | notifications/NotificationCenterActivity.kt | UI / Notifications | Consentimento, seleção e prévias. |
@@ -82,3 +85,12 @@ A declaração de privacidade prevê acesso por aplicativos de terceiros autoriz
 ## Limite da entrega atual
 
 A fila GATT, o parser candidato e o adaptador Health Connect de passos foram isolados com testes. O modelo Domain inicial e o snapshot de passos agregados têm testes unitários. MainActivity.kt ainda coordena o transporte BLE e a política de reconexão; a extração do ciclo de vida BLE permanece pendente. Health Connect segue somente leitura de passos agregados; nenhum sensor do GT3 MAX foi validado fisicamente.
+
+## Biblioteca local e laboratório de captura — 04/11/2026
+
+- O painel inicial separa conexão, laboratório, biblioteca e demais recursos; o registro técnico fica recolhido por padrão.
+- O laboratório oferece sessões de 1, 2, 5 ou 10 minutos, com deadline persistido, contador regressivo, barra de progresso e quantidade de leituras/notificações recebidas.
+- A biblioteca usa arquivo privado do app (discovery-library-v1.bin) e AtomicFile; o codec tem schema 1, limite de 1.000 registros e proteção contra sobrescrita de conteúdo corrompido ou schema futuro.
+- Inventários GATT são salvos como descobertas. Notificações e leituras com HEX são guardadas somente enquanto uma sessão cronometrada, iniciada com confirmação, estiver ativa.
+- A biblioteca permite pesquisa e filtros por descobertas, leituras e testes. Nenhum dado é enviado à rede e nenhuma permissão adicional foi criada.
+- O arquivo é local ao aplicativo; a implementação não declara criptografia própria. Payloads HEX ainda podem conter dados sensíveis e são mantidos no sandbox privado do Android.

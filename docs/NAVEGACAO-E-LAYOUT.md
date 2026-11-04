@@ -97,3 +97,23 @@ Correções aplicadas:
 - O callback de conexão registra o estado intermediário CONNECTING e a falha ao iniciar discoverServices() é exibida explicitamente.
 
 **Não validado:** inspeção visual em MagicPath, screenshots, renderização real no Galaxy A06, TalkBack, escala de fonte ampliada e rotação. A análise de código não substitui esses ensaios. A revisão visual no MagicPath não pôde ser aberta nesta execução porque a cota de chamadas externas da conta estava esgotada.
+## Laboratório e biblioteca interna — 04/11/2026
+
+A revisão de navegação identificou que a página inicial misturava conexão, passos, ações de saúde, notificações, descoberta BLE, exploração manual, catálogo de funções, privacidade e log técnico em uma única coluna. A tela de autodescoberta também misturava inventário com o roteiro de sensores, sem hierarquia clara.
+
+### Organização aplicada no código
+
+- **Painel principal:** conexão GT3 MAX e estado BLE continuam no topo; atalhos são agrupados em “Laboratório e registros” e “Mais recursos”.
+- **Testes e descobertas:** reúne o catálogo GATT, o roteiro de experimentos recolhível e a sessão temporizada de observação.
+- **Biblioteca interna:** tela própria com pesquisa e filtros para descobertas, leituras/notificações e sessões.
+- **Diagnóstico avançado:** exportação TXT e últimos eventos ficam recolhidos por padrão, sem remover o buffer diagnóstico.
+
+### Sessão cronometrada
+
+O usuário escolhe 1, 2, 5 ou 10 minutos e confirma explicitamente a captura local. A tela mostra tempo restante, progresso e quantidade de registros. O prazo da sessão é persistido; voltar à tela principal não reinicia o contador. O cronômetro não executa operações BLE por conta própria.
+
+### Biblioteca e privacidade
+
+A biblioteca persiste inventários GATT como descobertas. Leituras GATT e notificações com HEX são retidas somente durante uma sessão de teste ativa. O armazenamento usa arquivo privado e escrita atômica, schema versionado e limites de tamanho/quantidade. Conteúdo corrompido ou schema futuro não é sobrescrito automaticamente. A exportação continua sendo ação separada e manual.
+
+**Limites:** inspeção do código confirma estrutura e comportamento planejado, mas não substitui screenshots e teste visual no Galaxy A06. O MagicPath não pôde ser acessado nesta rodada por cota externa esgotada; emulador/ADB não está disponível neste ambiente. TalkBack, escala de fonte ampliada, rotação e instalação física permanecem **não validados**.

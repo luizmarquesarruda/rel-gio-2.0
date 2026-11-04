@@ -15,6 +15,8 @@ import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbFramePars
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitProtocolProfile
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.Gt3MaxCallDeviceProfile
 import com.luizmarquesarruda.relogio20.data.discovery.FeatureDiscoveryStore
+import com.luizmarquesarruda.relogio20.data.discovery.DiscoveryLibraryKind
+import com.luizmarquesarruda.relogio20.data.discovery.DiscoveryLibraryStore
 import com.luizmarquesarruda.relogio20.device.discovery.GattCharacteristicRecord
 import com.luizmarquesarruda.relogio20.device.discovery.GattServiceRecord
 import com.luizmarquesarruda.relogio20.device.discovery.SafeGattExplorationPlan
@@ -90,6 +92,9 @@ class MainActivity : ComponentActivity() {
     }
     private val featureDiscoveryStore by lazy(LazyThreadSafetyMode.NONE) {
         FeatureDiscoveryStore(this)
+    }
+    private val discoveryLibraryStore by lazy(LazyThreadSafetyMode.NONE) {
+        DiscoveryLibraryStore(this)
     }
     private var healthConnectInitialized = false
     private val healthPermissionPrefs by lazy {
@@ -334,12 +339,6 @@ class MainActivity : ComponentActivity() {
 
         root.addView(makeButton("Configurar identificação do GT3 MAX") { configureExpectedWatchAddress() }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(44)).apply { bottomMargin = dp(6) })
 
-        root.addView(makeButton("Exportar diagnóstico TXT") {
-            exportDiagnosticReport()
-        }, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(46)
-        ).apply { bottomMargin = dp(6) })
-
         stepsView = TextView(this).apply {
             text = "Passos hoje: aguardando dados da Conexão Saúde"
             textSize = 24f
@@ -379,31 +378,38 @@ class MainActivity : ComponentActivity() {
             LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
         ).apply { topMargin = dp(4) })
 
-        root.addView(makeButton("Notificações no relógio • leitura") {
-            startActivity(Intent(this, NotificationCenterActivity::class.java))
-        }, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(56)
-        ))
-
-        root.addView(makeButton("Autodescobrir funcionalidades BLE") {
+        addText(root, "Laboratório e registros", 17f, true)
+        root.addView(makeButton("Testes e descobertas BLE") {
             startActivity(Intent(this, FeatureDiscoveryActivity::class.java))
         }, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(56)
-        ))
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(52)
+        ).apply { bottomMargin = dp(5) })
 
-        deepScanButton = makeButton("Explorar canais adicionais do GT3 MAX") {
+        root.addView(makeButton("Biblioteca interna de descobertas") {
+            startActivity(Intent(this, DiscoveryLibraryActivity::class.java))
+        }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(52)
+        ).apply { bottomMargin = dp(5) })
+
+        deepScanButton = makeButton("Executar exploração manual • até 24 canais") {
             requestDeepGattExploration()
         }.apply {
             isEnabled = false
         }
         root.addView(deepScanButton, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(56)
-        ))
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(52)
+        ).apply { bottomMargin = dp(8) })
 
-        root.addView(makeButton("Explorar funções do relógio") {
+        addText(root, "Mais recursos", 17f, true)
+        root.addView(makeButton("Notificações do telefone") {
+            startActivity(Intent(this, NotificationCenterActivity::class.java))
+        }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
+        ))
+        root.addView(makeButton("Catálogo de funções do relógio") {
             startActivity(Intent(this, FeatureHubActivity::class.java))
         }, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(56)
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
         ))
 
         addText(root, "Fluxo de saúde: sensores do relógio → aplicativo → Conexão Saúde. " +
@@ -426,14 +432,22 @@ class MainActivity : ComponentActivity() {
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
         ))
 
-        val logTitle = TextView(this).apply {
-            text = "Registro da sessão (últimos 250 eventos; exportação manual disponível)"
+        val diagnosticPanel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            visibility = View.GONE
+            setPadding(0, dp(6), 0, dp(6))
+        }
+        diagnosticPanel.addView(makeButton("Exportar diagnóstico TXT") {
+            exportDiagnosticReport()
+        }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
+        ))
+        diagnosticPanel.addView(TextView(this).apply {
+            text = "Registro técnico • últimos 250 eventos"
             textSize = 12f
             setTextColor(0xFF526170.toInt())
             setPadding(0, dp(8), 0, dp(4))
-        }
-        root.addView(logTitle)
-
+        })
         logView = TextView(this).apply {
             textSize = 11f
             maxLines = 8
@@ -441,9 +455,13 @@ class MainActivity : ComponentActivity() {
             setPadding(dp(8), dp(8), dp(8), dp(8))
             background = roundedSurface(0xFFFFFFFF.toInt(), 0xFFE1E7EF.toInt())
         }
-        root.addView(logView, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        diagnosticPanel.addView(logView)
+        root.addView(makeButton("Diagnóstico avançado • mostrar/ocultar") {
+            diagnosticPanel.visibility = if (diagnosticPanel.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+        }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
         ))
+        root.addView(diagnosticPanel)
 
         val pageScroll = ScrollView(this).apply {
             isFillViewport = true
@@ -1428,6 +1446,16 @@ class MainActivity : ComponentActivity() {
         )
         if (saved) {
             val characteristicCount = observedServices.sumOf { it.characteristics.size }
+            val inventoryDetail = observedServices.joinToString("\n") { service ->
+                service.uuid + "\n" + service.characteristics.joinToString("\n") { characteristic ->
+                    characteristic.uuid + " • " + characteristic.properties.joinToString(",")
+                }
+            }
+            discoveryLibraryStore.recordDiscovery(
+                title = "Inventário GATT • " + observedServices.size + " serviços",
+                detail = characteristicCount.toString() + " características catalogadas\n" + inventoryDetail,
+                nowMillis = System.currentTimeMillis()
+            )
             appendLog(
                 "Autodescoberta BLE atualizada: " + observedServices.size +
                     " serviços e " + characteristicCount + " características catalogados; " +
@@ -1599,8 +1627,21 @@ class MainActivity : ComponentActivity() {
         status: Int
     ) {
         if (status == BluetoothGatt.GATT_SUCCESS) {
+            val nowMillis = System.currentTimeMillis()
+            val payloadHex = BleValueFormatter.toHex(value)
             appendLog("Leitura GATT padronizada concluída: " + characteristic.uuid +
-                " | " + value.size + " bytes | HEX=" + BleValueFormatter.toHex(value))
+                " | " + value.size + " bytes | HEX=" + payloadHex)
+            discoveryLibraryStore.recordPayload(
+                kind = DiscoveryLibraryKind.GATT_READ,
+                title = "Leitura GATT • " + characteristic.uuid,
+                detail = "Leitura concluída • " + value.size + " bytes",
+                source = "GATT_READ",
+                confidence = "OBSERVADO",
+                serviceUuid = characteristic.service.uuid.toString(),
+                characteristicUuid = characteristic.uuid.toString(),
+                payloadHex = payloadHex,
+                nowMillis = nowMillis
+            )
         } else {
             appendLog("Leitura GATT padronizada falhou: " + characteristic.uuid + " | status=" + status)
         }
@@ -1944,7 +1985,24 @@ class MainActivity : ComponentActivity() {
         }
 
         val lastFrame = frames.lastOrNull()
-        val battery = lastFrame?.batteryPercent
+        val battery = frames.mapNotNull { it.batteryPercent }.firstOrNull()
+        val frameSummary = frames.joinToString("; ") { frame ->
+            "AB cmd=0x" + frame.command.toString(16).uppercase(Locale.US) +
+                "/resp=0x" + frame.response.toString(16).uppercase(Locale.US)
+        }
+        discoveryLibraryStore.recordPayload(
+            kind = DiscoveryLibraryKind.NOTIFICATION,
+            title = "Notificação BLE • " + uuid,
+            detail = value.size.toString() + " bytes recebidos" +
+                if (battery != null) " • bateria candidata " + battery + "%" else
+                    if (frameSummary.isNotBlank()) " • " + frameSummary else " • sem interpretação",
+            source = "BLE_NOTIFY",
+            confidence = if (battery != null) "CANDIDATO" else "OBSERVADO",
+            serviceUuid = serviceUuid,
+            characteristicUuid = uuid,
+            payloadHex = BleValueFormatter.toHex(value),
+            nowMillis = observedAtMillis
+        )
         featureDiscoveryStore.recordNotification(
             serviceUuid = serviceUuid,
             characteristicUuid = uuid,
@@ -1957,6 +2015,20 @@ class MainActivity : ComponentActivity() {
 
         frames.forEach { frame ->
             val candidateBattery = frame.batteryPercent
+            val commandHex = frame.command.toString(16).uppercase(Locale.US).padStart(2, '0')
+            val responseHex = frame.response.toString(16).uppercase(Locale.US).padStart(2, '0')
+            discoveryLibraryStore.recordDiscovery(
+                title = "Quadro AB " + commandHex + "/" + responseHex,
+                detail = if (candidateBattery != null) {
+                    "Interpretação candidata de bateria: " + candidateBattery +
+                        "%. Comparação independente com Wearfit Pro ainda necessária."
+                } else {
+                    "Quadro de estrutura AB observado; sem semântica validada para este comando."
+                },
+                nowMillis = observedAtMillis,
+                source = "PARSER_AB",
+                confidence = if (candidateBattery != null) "CANDIDATO" else "FORMATO_OBSERVADO"
+            )
             if (candidateBattery != null) {
                 runOnUiThread {
                     val receivedAt = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())

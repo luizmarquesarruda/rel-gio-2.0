@@ -1,26 +1,53 @@
 package com.luizmarquesarruda.relogio20
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.Gravity
+import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
+import android.content.Intent
+import com.luizmarquesarruda.relogio20.data.discovery.DiscoveryLibraryKind
+import com.luizmarquesarruda.relogio20.data.discovery.DiscoveryLibraryReadResult
 import com.luizmarquesarruda.relogio20.data.discovery.FeatureDiscoveryReadResult
 import com.luizmarquesarruda.relogio20.data.discovery.FeatureDiscoveryStore
+import com.luizmarquesarruda.relogio20.data.discovery.DiscoveryLibraryStore
+import com.luizmarquesarruda.relogio20.data.discovery.DiscoveryTestDuration
 import com.luizmarquesarruda.relogio20.device.discovery.DiscoverySnapshot
 import com.luizmarquesarruda.relogio20.device.discovery.WatchExperimentCatalog
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** Read-only view of the locally collected GATT discovery catalog. */
+/** Test workspace: timed passive capture, findings and the local library. */
 class FeatureDiscoveryActivity : Activity() {
     private lateinit var body: LinearLayout
-    private val store by lazy { FeatureDiscoveryStore(this) }
+    private lateinit var timerValue: TextView
+    private lateinit var timerStatus: TextView
+    private lateinit var timerCount: TextView
+    private lateinit var timerProgress: ProgressBar
+    private lateinit var startButton: Button
+    private lateinit var stopButton: Button
+    private val store by lazy { DiscoveryLibraryStore(this) }
+    private val handler = Handler(Looper.getMainLooper())
+    private var selectedDurationSeconds = 120
+    private var showExperiments = false
+
+    private val countdownTick = object : Runnable {
+        override fun run() {
+            val session = store.activeSession(System.currentTimeMillis())
+            updateTimerUi(session)
+            if (session != null) handler.postDelayed(this, 1_000L)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,13 +57,26 @@ class FeatureDiscoveryActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        if (::body.isInitialized) render()
+        if (::body.isInitialized) {
+            updateTimerUi(store.activeSession(System.currentTimeMillis()))
+            scheduleCountdown()
+        }
+    }
+
+    override fun onPause() {
+        handler.removeCallbacks(countdownTick)
+        super.onPause()
+    }
+
+    override fun onDestroy() {
+        handler.removeCallbacks(countdownTick)
+        super.onDestroy()
     }
 
     private fun buildScreen() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(12), dp(16), dp(16))
+            setPadding(dp(16), dp(12), dp(16), dp(12))
             setBackgroundColor(0xFFF4F6F8.toInt())
         }
         val header = LinearLayout(this).apply {
@@ -50,21 +90,19 @@ class FeatureDiscoveryActivity : Activity() {
             setOnClickListener { finish() }
         }, LinearLayout.LayoutParams(dp(52), dp(48)))
         header.addView(TextView(this).apply {
-            text = "Autodescoberta BLE"
+            text = "Testes e descobertas"
             textSize = 21f
             setTextColor(0xFF14212B.toInt())
             setTypeface(typeface, Typeface.BOLD)
             setPadding(dp(8), 0, 0, 0)
         })
         root.addView(header)
-
-        val intro = TextView(this).apply {
-            text = "O catálogo é atualizado automaticamente quando o Android conclui a descoberta GATT do relógio."
-            textSize = 13f
+        root.addView(TextView(this).apply {
+            text = "Acompanhe a captura BLE, registre o que o relógio transmite e consulte o histórico local."
+            textSize = 12f
             setTextColor(0xFF526574.toInt())
-            setPadding(0, dp(10), 0, dp(8))
-        }
-        root.addView(intro)
+            setPadding(0, dp(6), 0, dp(8))
+        })
 
         val scroll = ScrollView(this).apply { isFillViewport = true }
         body = LinearLayout(this).apply {
@@ -80,44 +118,239 @@ class FeatureDiscoveryActivity : Activity() {
 
     private fun render() {
         body.removeAllViews()
-        when (val result = store.read()) {
-            FeatureDiscoveryReadResult.Empty -> {
-                addText(body, "Nenhuma descoberta registrada.", 20f, 0xFF14212B.toInt(), true)
-                addText(
-                    body,
-                    "Conecte o GT3 MAX pela tela principal. Quando a conexão GATT for concluída, " +
-                        "o aplicativo inventariará automaticamente os serviços e as características.",
-                    14f,
-                    0xFF526574.toInt()
-                )
+        renderTimerPanel()
+        renderLibraryShortcut()
+        when (val library = store.read()) {
+            DiscoveryLibraryReadResult.Empty -> {
+                addSectionTitle("Biblioteca interna")
+                addMessage("Nenhum registro foi salvo ainda. Descobertas e leituras capturadas aparecerão aqui.")
             }
-            is FeatureDiscoveryReadResult.Available -> renderSnapshot(result.snapshot)
+            is DiscoveryLibraryReadResult.Available -> {
+                addSectionTitle("Biblioteca interna")
+                addMessage(library.snapshot.records.size.toString() + " registros armazenados localmente.")
+            }
+            DiscoveryLibraryReadResult.Corrupt -> {
+                addSectionTitle("Biblioteca interna")
+                addMessage("O arquivo da biblioteca está inválido. Os dados existentes foram preservados e não serão sobrescritos.")
+            }
+            is DiscoveryLibraryReadResult.UnsupportedSchema -> {
+                addSectionTitle("Biblioteca interna")
+                addMessage("A biblioteca usa um schema mais novo (" + library.version + "). Os dados foram preservados sem sobrescrita.")
+            }
+        }
+        when (val discovery = FeatureDiscoveryStore(this).read()) {
+            FeatureDiscoveryReadResult.Empty -> {
+                addSectionTitle("Descobertas GATT")
+                addMessage("Conecte o GT3 MAX no painel principal para registrar serviços e características.")
+            }
+            is FeatureDiscoveryReadResult.Available -> renderSnapshot(discovery.snapshot)
             FeatureDiscoveryReadResult.Corrupt -> {
-                addText(body, "Catálogo local inválido.", 18f, 0xFF9B2C2C.toInt(), true)
-                addText(
-                    body,
-                    "O conteúdo existente foi preservado e não será sobrescrito automaticamente. " +
-                        "Exporte o diagnóstico e investigue a integridade local antes de reiniciar a descoberta.",
-                    13f,
-                    0xFF526574.toInt()
-                )
+                addSectionTitle("Descobertas GATT")
+                addMessage("O catálogo GATT existente está inválido e foi preservado.")
             }
             is FeatureDiscoveryReadResult.UnsupportedSchema -> {
-                addText(body, "Catálogo de versão mais nova.", 18f, 0xFF9B2C2C.toInt(), true)
-                addText(
-                    body,
-                    "O schema " + result.version + " é mais novo que o suportado nesta versão. " +
-                        "Os dados foram preservados sem sobrescrita.",
-                    13f,
-                    0xFF526574.toInt()
+                addSectionTitle("Descobertas GATT")
+                addMessage("O catálogo GATT usa um schema mais novo (" + discovery.version + ") e não será sobrescrito.")
+            }
+        }
+        renderExperimentGuide()
+        addSectionTitle("Segurança da exploração")
+        addMessage(
+            "A captura cronometrada registra somente notificações e leituras recebidas durante a sessão. O HEX fica no armazenamento privado deste aplicativo. Nenhum comando proprietário, escrita NUS RX, DFU, OTA ou reset é enviado."
+        )
+    }
+
+    private fun renderTimerPanel() {
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(15), dp(13), dp(15), dp(13))
+            background = roundedSurface()
+        }
+        addText(card, "TESTE CRONOMETRADO", 10f, 0xFF687786.toInt(), true)
+        timerValue = TextView(this).apply {
+            text = "02:00"
+            textSize = 38f
+            setTextColor(0xFF14212B.toInt())
+            setTypeface(typeface, Typeface.BOLD)
+            setPadding(0, dp(4), 0, 0)
+            contentDescription = "Tempo restante da sessão de captura"
+        }
+        card.addView(timerValue)
+        timerProgress = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+            max = 100
+            progress = 0
+        }
+        card.addView(timerProgress, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(8)
+        ).apply { topMargin = dp(5); bottomMargin = dp(7) })
+        timerStatus = TextView(this).apply {
+            text = "Escolha a duração e inicie a captura local."
+            textSize = 12f
+            setTextColor(0xFF526574.toInt())
+        }
+        card.addView(timerStatus)
+        timerCount = TextView(this).apply {
+            text = "0 leituras/notificações capturadas"
+            textSize = 12f
+            setTextColor(0xFF526574.toInt())
+            setPadding(0, dp(4), 0, dp(8))
+        }
+        card.addView(timerCount)
+
+        val durations = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        DiscoveryTestDuration.allowedSeconds.forEach { seconds ->
+            val label = when (seconds) {
+                60 -> "1 min"
+                120 -> "2 min"
+                300 -> "5 min"
+                else -> "10 min"
+            }
+            val button = Button(this).apply {
+                text = label
+                textSize = 11f
+                isAllCaps = false
+                isSelected = seconds == selectedDurationSeconds
+                setOnClickListener {
+                    selectedDurationSeconds = seconds
+                    updateDurationButtons(durations)
+                    updateTimerUi(store.activeSession(System.currentTimeMillis()))
+                }
+                backgroundTintList = android.content.res.ColorStateList.valueOf(
+                    if (isSelected) 0xFFD7E9E3.toInt() else 0xFFE8EDF1.toInt()
                 )
             }
+            durations.addView(button, LinearLayout.LayoutParams(0, dp(43), 1f).apply {
+                marginEnd = dp(4)
+            })
+        }
+        card.addView(durations)
+
+        val actions = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+        }
+        startButton = Button(this).apply {
+            text = "Iniciar teste"
+            isAllCaps = false
+            setOnClickListener { confirmStartSession() }
+        }
+        stopButton = Button(this).apply {
+            text = "Finalizar"
+            isAllCaps = false
+            visibility = View.GONE
+            setOnClickListener {
+                store.finishTestSession(System.currentTimeMillis(), "Finalizado pelo usuário")
+                handler.removeCallbacks(countdownTick)
+                updateTimerUi(null)
+            }
+        }
+        actions.addView(startButton, LinearLayout.LayoutParams(0, dp(48), 1f))
+        actions.addView(stopButton, LinearLayout.LayoutParams(0, dp(48), 1f).apply {
+            marginStart = dp(8)
+        })
+        card.addView(actions)
+        body.addView(card, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply { bottomMargin = dp(10) })
+        updateTimerUi(store.activeSession(System.currentTimeMillis()))
+    }
+
+    private fun updateDurationButtons(container: LinearLayout) {
+        for (index in 0 until container.childCount) {
+            val button = container.getChildAt(index) as? Button ?: continue
+            val seconds = when (button.text.toString()) {
+                "1 min" -> 60
+                "2 min" -> 120
+                "5 min" -> 300
+                else -> 600
+            }
+            button.isSelected = seconds == selectedDurationSeconds
+            button.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                if (button.isSelected) 0xFFD7E9E3.toInt() else 0xFFE8EDF1.toInt()
+            )
         }
     }
 
+    private fun confirmStartSession() {
+        AlertDialog.Builder(this)
+            .setTitle("Iniciar captura cronometrada")
+            .setMessage(
+                "Durante o tempo escolhido, o aplicativo salvará localmente as notificações e leituras BLE recebidas, incluindo HEX que pode conter informações de saúde. Os dados não serão enviados à rede. Inicie a sessão somente quando estiver pronto para observar o GT3 MAX."
+            )
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Iniciar e salvar") { _, _ ->
+                val started = store.startTestSession(selectedDurationSeconds, System.currentTimeMillis())
+                if (started) {
+                    scheduleCountdown()
+                    updateTimerUi(store.activeSession(System.currentTimeMillis()))
+                } else {
+                    AlertDialog.Builder(this)
+                        .setMessage("Não foi possível iniciar. Verifique se já existe um teste ativo ou se a biblioteca está inválida/incompatível.")
+                        .setPositiveButton("OK", null)
+                        .show()
+                }
+            }
+            .show()
+    }
+
+    private fun scheduleCountdown() {
+        handler.removeCallbacks(countdownTick)
+        if (store.activeSession(System.currentTimeMillis()) != null) {
+            handler.post(countdownTick)
+        }
+    }
+
+    private fun updateTimerUi(session: com.luizmarquesarruda.relogio20.data.discovery.DiscoveryTestSession?) {
+        if (!::timerValue.isInitialized) return
+        if (session == null) {
+            val finished = (store.read() as? DiscoveryLibraryReadResult.Available)
+                ?.snapshot?.records?.lastOrNull {
+                    it.kind == DiscoveryLibraryKind.SESSION_FINISHED
+                }
+            if (finished != null) {
+                timerValue.text = "00:00"
+                timerStatus.text = finished.detail
+                timerCount.text = "Última sessão concluída. Abra a biblioteca para consultar as capturas."
+            } else {
+                timerValue.text = formatRemaining(selectedDurationSeconds)
+                timerStatus.text = "Pronto • aguardando início do teste."
+                timerCount.text = "A captura está parada. Nenhum dado novo será salvo."
+            }
+            timerProgress.progress = if (finished != null) 100 else 0
+            startButton.isEnabled = true
+            stopButton.visibility = View.GONE
+            return
+        }
+        val now = System.currentTimeMillis()
+        val remaining = session.remainingSeconds(now)
+        val elapsed = (now - session.startedAtMillis).coerceAtLeast(0L)
+        val progress = ((elapsed * 100L) / (session.durationSeconds * 1_000L)).toInt().coerceIn(0, 100)
+        val captured = store.recordsForSession(session.id)
+        timerValue.text = formatRemaining(remaining)
+        timerStatus.text = if (captured == 0) {
+            "Teste ativo • aguardando notificações ou leituras do relógio."
+        } else {
+            "Teste ativo • os dados recebidos estão sendo salvos."
+        }
+        timerProgress.progress = progress
+        timerCount.text = captured.toString() + " leituras/notificações capturadas nesta sessão"
+        startButton.isEnabled = false
+        stopButton.visibility = View.VISIBLE
+    }
+
+    private fun renderLibraryShortcut() {
+        val button = Button(this).apply {
+            text = "Abrir biblioteca interna"
+            isAllCaps = false
+            setOnClickListener { startActivity(Intent(this@FeatureDiscoveryActivity, DiscoveryLibraryActivity::class.java)) }
+        }
+        body.addView(button, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
+        ).apply { bottomMargin = dp(10) })
+    }
+
     private fun renderSnapshot(snapshot: DiscoverySnapshot) {
-        addText(body, "Último inventário", 12f, 0xFF526574.toInt(), true)
-        addText(body, formatDate(snapshot.updatedAtMillis), 17f, 0xFF14212B.toInt(), true)
+        addSectionTitle("Descobertas GATT")
+        addText(body, "Última atualização: " + formatDate(snapshot.updatedAtMillis), 12f, 0xFF526574.toInt())
         addText(
             body,
             snapshot.serviceCount.toString() + " serviços • " +
@@ -126,105 +359,96 @@ class FeatureDiscoveryActivity : Activity() {
             13f,
             0xFF526574.toInt()
         )
-        addText(body, "Descobertas", 18f, 0xFF14212B.toInt(), true)
-
         if (snapshot.findings.isEmpty()) {
-            addText(body, "Nenhuma funcionalidade candidata foi identificada neste inventário.", 13f, 0xFF526574.toInt())
+            addMessage("Nenhuma funcionalidade candidata foi identificada neste inventário.")
         } else {
             snapshot.findings.forEach { finding ->
                 val card = LinearLayout(this).apply {
                     orientation = LinearLayout.VERTICAL
-                    setPadding(dp(14), dp(12), dp(14), dp(12))
+                    setPadding(dp(13), dp(10), dp(13), dp(10))
                     background = roundedSurface()
                 }
                 addText(card, finding.category.uppercase(Locale.ROOT), 10f, 0xFF687786.toInt(), true)
-                addText(card, finding.title, 16f, 0xFF14212B.toInt(), true)
-                addText(card, finding.status, 11f, statusColor(finding.status), true)
-                addText(card, finding.detail, 13f, 0xFF526574.toInt())
-                addText(card, "Evidência: " + finding.evidence, 11f, 0xFF687786.toInt())
+                addText(card, finding.title, 15f, 0xFF14212B.toInt(), true)
+                addText(card, finding.status, 10f, statusColor(finding.status), true)
+                addText(card, finding.detail, 12f, 0xFF526574.toInt())
+                addText(card, "Evidência: " + finding.evidence, 10f, 0xFF687786.toInt())
                 if (finding.observationCount > 0) {
-                    addText(card, "Observações: " + finding.observationCount, 11f, 0xFF687786.toInt())
+                    addText(card, "Observações: " + finding.observationCount, 10f, 0xFF687786.toInt())
                 }
                 body.addView(card, LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply { bottomMargin = dp(9) })
+                ).apply { bottomMargin = dp(8) })
             }
         }
 
-        addText(body, "Tráfego observado", 17f, 0xFF14212B.toInt(), true)
+        addSectionTitle("Canais com tráfego")
         if (snapshot.traffic.isEmpty()) {
-            addText(
-                body,
-                "Nenhuma notificação foi recebida desde a captura do inventário. Isso não significa que o relógio não tenha outras funções.",
-                13f,
-                0xFF526574.toInt()
-            )
+            addMessage("Nenhuma notificação foi recebida. Isso não prova ausência de sensores.")
         } else {
             snapshot.traffic.forEach { item ->
                 addText(
                     body,
                     item.characteristicUuid + " • " + item.notificationCount +
                         " notificações • último pacote " + item.lastPayloadBytes + " bytes",
-                    12f,
+                    11f,
                     0xFF526574.toInt()
                 )
             }
         }
-
-        renderExperimentGuide()
-
-        addText(body, "Limites e segurança", 17f, 0xFF14212B.toInt(), true)
-        addText(
-            body,
-            "A exploração automática limita-se a leituras básicas de dispositivo/bateria. " +
-                "A exploração de sensores Bluetooth SIG e canais proprietários exige confirmação manual " +
-                "na tela principal; usa somente READ e inscrições NOTIFY/INDICATE via CCCD. " +
-                "Nenhum payload de escrita é enviado. NUS RX, DFU, OTA e reset permanecem bloqueados. " +
-                "O catálogo guarda metadados e contagens; o log de diagnóstico pode conter HEX e só é " +
-                "incluído no TXT por exportação manual.",
-            12f,
-            0xFF526574.toInt()
-        )
     }
 
-
     private fun renderExperimentGuide() {
-        addText(body, "Laboratório de experimentos", 17f, 0xFF14212B.toInt(), true)
-        addText(
-            body,
-            "Use este roteiro para correlacionar uma ação manual no relógio com o tráfego BLE observado. " +
-                "O aplicativo não inicia medições nem envia comandos proprietários.",
-            12f,
-            0xFF526574.toInt()
-        )
-        WatchExperimentCatalog.all.forEachIndexed { index, experiment ->
-            val card = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(dp(12), dp(9), dp(12), dp(9))
-                background = roundedSurface()
+        addSectionTitle("Roteiro de experimentos")
+        val toggle = Button(this).apply {
+            text = if (showExperiments) "Ocultar roteiro" else "Mostrar roteiro de sensores e funções"
+            isAllCaps = false
+            setOnClickListener {
+                showExperiments = !showExperiments
+                render()
             }
-            addText(card, (index + 1).toString() + ". " + experiment.title, 14f, 0xFF14212B.toInt(), true)
-            addText(card, experiment.instruction, 12f, 0xFF526574.toInt())
-            addText(card, "Evidência necessária: " + experiment.expectedEvidence, 11f, 0xFF687786.toInt())
-            body.addView(card, LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { bottomMargin = dp(7) })
+        }
+        body.addView(toggle, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
+        ))
+        if (showExperiments) {
+            WatchExperimentCatalog.all.forEachIndexed { index, experiment ->
+                val card = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(dp(12), dp(9), dp(12), dp(9))
+                    background = roundedSurface()
+                }
+                addText(card, (index + 1).toString() + ". " + experiment.title, 13f, 0xFF14212B.toInt(), true)
+                addText(card, experiment.instruction, 11f, 0xFF526574.toInt())
+                addText(card, "Evidência: " + experiment.expectedEvidence, 10f, 0xFF687786.toInt())
+                body.addView(card, LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { bottomMargin = dp(7) })
+            }
         }
     }
 
-    private fun addText(
-        parent: LinearLayout,
-        value: String,
-        size: Float,
-        color: Int,
-        bold: Boolean = false
-    ) {
+    private fun addSectionTitle(value: String) {
+        body.addView(TextView(this).apply {
+            text = value
+            textSize = 16f
+            setTextColor(0xFF14212B.toInt())
+            setTypeface(typeface, Typeface.BOLD)
+            setPadding(0, dp(8), 0, dp(5))
+        })
+    }
+
+    private fun addMessage(value: String) {
+        addText(body, value, 12f, 0xFF526574.toInt())
+    }
+
+    private fun addText(parent: LinearLayout, value: String, size: Float, color: Int, bold: Boolean = false) {
         parent.addView(TextView(this).apply {
             text = value
             textSize = size
             setTextColor(color)
             if (bold) setTypeface(typeface, Typeface.BOLD)
-            setPadding(0, dp(4), 0, dp(5))
+            setPadding(0, dp(3), 0, dp(4))
         })
     }
 
@@ -245,6 +469,10 @@ class FeatureDiscoveryActivity : Activity() {
         if (timestamp <= 0L) "Horário não disponível"
         else SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(Date(timestamp))
 
+    private fun formatRemaining(seconds: Int): String =
+        String.format(Locale.ROOT, "%02d:%02d", seconds / 60, seconds % 60)
+
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).toInt()
+
 }

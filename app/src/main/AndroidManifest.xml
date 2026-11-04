@@ -67,6 +67,9 @@
             android:name=".FeatureDiscoveryActivity"
             android:exported="false" />
         <activity
+            android:name=".DiscoveryLibraryActivity"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>

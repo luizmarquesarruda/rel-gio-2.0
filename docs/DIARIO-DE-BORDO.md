@@ -559,3 +559,14 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - A captura HEX já existente continua restrita ao relatório diagnóstico local/exportação manual; não foi adicionada transmissão de dados ou coleta em rede.
 - O próximo passo é comparar uma sessão sem Wearfit Pro com uma sessão iniciada pelo Wearfit Pro, mantendo a observação passiva e correlacionando horários. Nenhum protocolo proprietário, semântica de sensor ou bateria foi promovido a validado.
 - A CI dos novos commits deste observador ainda precisa executar. Teste físico no Galaxy A06/Android 16 com GT3 MAX: **não validado nesta alteração**.
+## 04/11/2026 — Simplificação do layout, contador de teste e biblioteca local
+
+- Revisão de código encontrou excesso de ações no mesmo fluxo vertical: conexão, passos, notificações, autodescoberta, exploração manual, catálogo de funções, privacidade e exportação/log. O roteiro de experimentos também era exibido junto ao inventário, sem hierarquia clara.
+- Navegação reorganizada em “Laboratório e registros” e “Mais recursos”; atalho para biblioteca local adicionado. Diagnóstico técnico e exportação TXT foram agrupados e recolhidos por padrão.
+- Laboratório ganhou contador regressivo com opções de 1, 2, 5 e 10 minutos, progresso, quantidade de leituras/notificações e encerramento manual/automático. O prazo da sessão é persistido; voltar ao painel não reinicia o contador.
+- Criada biblioteca interna em arquivo privado do app, codec binário schema 1 e gravação com AtomicFile. O limite é 1.000 registros e 16 MiB; payload HEX por registro fica limitado a 1.024 bytes.
+- Inventários GATT são salvos como descobertas. Leituras e notificações com HEX só são armazenadas enquanto uma sessão de captura, iniciada após confirmação, estiver ativa. Os dados não saem do dispositivo e não são escritos no Health Connect.
+- Adicionadas telas de pesquisa/filtros e testes unitários do codec, do schema futuro/corrompido e do cálculo do contador.
+- Não foi adicionada permissão, dependência externa, serviço Charming remoto ou chamada de rede. A implementação não adiciona criptografia própria ao arquivo local.
+- CI #248 foi enfileirada antes desta implementação e não valida os commits novos. Compilação, lint, testes, auditoria dos APKs, screenshot em emulador/aparelho e validação física: **aguardando CI/testes**.
+- MagicPath indisponível por cota de chamadas externas esgotada; ADB/emulador não disponível no ambiente de execução. A revisão do layout foi estrutural, pelo código, e não uma auditoria visual baseada em screenshots.
