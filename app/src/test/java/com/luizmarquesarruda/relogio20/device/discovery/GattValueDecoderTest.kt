@@ -76,4 +76,26 @@ class GattValueDecoderTest {
         assertTrue(GattValueDecoder.decode("12345678-1234-5678-1234-56789abcdef0", "abcd", byteArrayOf(1, 2)).isEmpty())
         assertTrue(GattValueDecoder.decode("180d", "2a37", byteArrayOf()).isEmpty())
     }
+    @Test
+    fun decodesHeartRateSensorContactFlagsCorrectly() {
+        val notDetected = GattValueDecoder.decode(
+            "180d", "2a37", byteArrayOf(0x02, 72)
+        )
+        assertEquals("Sem contato detectado", notDetected.last().value)
+
+        val detected = GattValueDecoder.decode(
+            "180d", "2a37", byteArrayOf(0x06, 72)
+        )
+        assertEquals("Contato detectado", detected.last().value)
+    }
+
+    @Test
+    fun decodesDeviceInformationFirmwareString() {
+        val decoded = GattValueDecoder.decode(
+            "180a", "2a26", "V1.07".toByteArray(Charsets.UTF_8)
+        )
+        assertEquals("Versão de firmware anunciada", decoded.single().metric)
+        assertEquals("V1.07", decoded.single().value)
+    }
+
 }
