@@ -22,6 +22,7 @@ import com.luizmarquesarruda.relogio20.device.discovery.GattCharacteristicRecord
 import com.luizmarquesarruda.relogio20.device.discovery.GattServiceRecord
 import com.luizmarquesarruda.relogio20.device.discovery.SafeGattExplorationPlan
 import com.luizmarquesarruda.relogio20.device.discovery.AutomaticGattDiscoveryPolicy
+import com.luizmarquesarruda.relogio20.device.discovery.AutomaticCaptureSessionPolicy
 import com.luizmarquesarruda.relogio20.device.discovery.GattValueDecoder
 import com.luizmarquesarruda.relogio20.device.discovery.BlePacketFingerprintAnalyzer
 import com.luizmarquesarruda.relogio20.device.discovery.PassiveBleObservationTracker
@@ -1863,7 +1864,11 @@ class MainActivity : ComponentActivity() {
             KEY_AUTOMATIC_SESSION_OWNED,
             false
         )
-        if (active?.id == ownedSessionId && sessionWasCreatedAutomatically) {
+        if (AutomaticCaptureSessionPolicy.shouldFinish(
+                sessionMatches = active?.id == ownedSessionId,
+                createdByAutomaticMode = sessionWasCreatedAutomatically
+            )
+        ) {
             discoveryLibraryStore.finishTestSession(System.currentTimeMillis(), reason)
             appendLog("Sessão automática de captura finalizada: " + reason)
         } else if (active?.id == ownedSessionId) {
