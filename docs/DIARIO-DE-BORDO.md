@@ -1,3 +1,16 @@
+## 04/11/2026 — Auditoria binária do Play Protect e endurecimento do CI
+
+- Baixado e inspecionado o artefato `relogio-2.0-diagnostic-debug-apk` do run 41761934088, commit `e5e4b85ac1ad969956635a860a4b655b4466b768`.
+- O teste do ZIP passou e o SHA-256 calculado correspondeu ao digest do artefato informado pelo GitHub Actions: `1e09ebbff67960e9bd6f30e0b7a7639b85fdc21e2475b4e91fc083dd349386cd`.
+- SHA-256 do APK extraído: `21fcdb2f63abd21cdd8a6a5ce8229a1f833a27337ecbe4f3da6ffd944ac0eed1`.
+- Manifesto binário diagnostic: pacote `com.luizmarquesarruda.relogio20.diagnostic`, versionCode 7, versão `0.4.0-alpha.1-diagnostic`, debug=true, allowBackup=false. Não há INTERNET, SMS, Accessibility, Notification Listener nem NotificationCaptureService.
+- O certificado encontrado é o Android Debug padrão; não é identidade de release. A análise local ainda não realizou verificação criptográfica pelo apksigner.
+- Conclusão: regra de bloqueio automático de sideload baseada em Notification Listener/SMS/Accessibility não explica esse binário diagnostic específico. A causa do aviso permanece **não determinada**; não foi possível confirmar o texto literal nem qual APK foi instalado.
+- Implementado em novo commit da branch: `usesCleartextTraffic=false`; auditor Python do manifesto APK final com testes para pacote/variante, INTERNET, permissões sensíveis, serviço de acessibilidade e Notification Listener; expansão do guardrail de dependências; artefato com checksum, build-info e certificado; relatórios técnicos combinados em segundo artefato.
+- CI novo deverá auditar ambos os manifestos via apkanalyzer, verificar assinatura v2 com apksigner e gerar SHA-256. Até o novo run concluir, estes portões estão **aguardando CI**.
+- Nenhum comportamento BLE, parser, escrita no relógio, Health Connect ou captura companion foi alterado. PR #5 continua draft, aberta e sem merge.
+- Play Protect no Galaxy A06 e instalação física: **não validados**.
+
 ## 04/11/2026 — Auditoria estrutural e navegação do catálogo GT3 MAX
 
 - A tela inicial foi mantida como painel de conexão/diagnóstico e recebeu entrada para o catálogo de funções.

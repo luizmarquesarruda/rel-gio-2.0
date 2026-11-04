@@ -46,13 +46,23 @@ Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALT
 
 A inscrição em notificações altera somente a assinatura padrão do descritor CCCD. Não é uma escrita de payload em uma característica proprietária.
 
-## Construção e artefato
+## Construção e artefatos
 
-O workflow **Android CI** executa Lint, testes e builds `diagnosticDebug` e `companionDebug`. Somente o APK `diagnosticDebug`, sem Notification Listener no manifesto, é publicado como artefato de instalação local. A variante `companionDebug` é compilada e testada, mas não publicada como APK de sideload.
+O workflow **Android CI** executa testes de política do manifesto, Android Lint, testes unitários e builds `diagnosticDebug` e `companionDebug`. As duas variantes passam por inspeção do manifesto mesclado, verificação da assinatura APK v2 e geração de SHA-256.
 
-**Atenção ao Play Protect:** o Google documenta que apps instalados por sideload da internet com capacidade de acesso a notificações podem sofrer bloqueios em mercados selecionados. A variante `companion` mantém essa capacidade; a variante `diagnostic` a exclui. CI verde não equivale a aprovação do Play Protect nem a teste físico. Não desative a proteção do aparelho. Consulte [Play Protect e distribuição segura](docs/ALINHAMENTO-PLAY-PROTECT-DISTRIBUICAO.md).
+Somente o pacote de instalação `relogio-2.0-diagnostic-debug-apk` é publicado. Ele contém:
+- `app-diagnostic-debug.apk` — variante sem Notification Listener e sem permissão de rede;
+- `SHA256SUMS` — hash do APK para conferir a integridade após baixar;
+- `BUILD-INFO.txt` — pacote, versão, variante, commit e limites de uso;
+- `SIGNATURE.txt` — resultado e certificado apresentados pelo `apksigner`.
 
-Arquivo do artefato diagnostic: `app/build/outputs/apk/diagnostic/debug/app-diagnostic-debug.apk`.
+O segundo artefato, `android-validation-reports`, reúne Android Lint, manifestos mesclados, permissões, dependências runtime, informações de assinatura e hashes das duas variantes. É um pacote de relatórios técnicos, não outro aplicativo.
+
+A variante `companionDebug` é compilada, testada e auditada, mas **não publicada para sideload**, pois declara Notification Listener. O encaminhamento real de notificações ao GT3 MAX ainda depende da validação do protocolo.
+
+**Atenção ao Play Protect:** a inspeção binária do artefato diagnostic anterior não encontrou INTERNET, SMS, Accessibility ou Notification Listener. Isso afasta a regra específica de bloqueio de sideload por essas capacidades para aquele APK, mas não comprova ausência de malware nem explica o aviso. O APK é debug, não release. Não desative o Play Protect. Consulte [Play Protect e distribuição segura](docs/ALINHAMENTO-PLAY-PROTECT-DISTRIBUICAO.md).
+
+CI verde não equivale a aprovação do Play Protect nem a teste físico no Galaxy A06. A variante de release e a assinatura própria ainda não foram criadas.
 
 ## Como usar a prova de conceito
 

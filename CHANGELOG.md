@@ -1,5 +1,13 @@
 # Changelog
 
+## Não lançado — auditoria Play Protect e integridade dos APKs
+
+- Inspecionado o APK diagnostic publicado no GitHub Actions: o ZIP corresponde ao SHA-256 do digest do GitHub e o manifesto binário não contém INTERNET, SMS, Accessibility ou Notification Listener.
+- Reforçada a política local-first com `usesCleartextTraffic=false` e um auditor independente do manifesto mesclado, cobrindo pacote por variante, permissões sensíveis, localização legada, backup e isolamento do Notification Listener.
+- CI passa a executar testes Python de política, auditoria de ambos os APKs via `apkanalyzer`, verificação criptográfica com `apksigner`, dependências runtime e SHA-256.
+- Artefato diagnostic passa a incluir APK, checksum, metadados do build e certificado; relatórios Android são separados.
+- A causa do bloqueio Play Protect no Galaxy A06, assinatura de release e instalação física continuam **não validadas**.
+
 ## Não lançado — matriz GT3 MAX e alinhamento de módulos
 
 - Catálogo de 33 funções fornecidas do Wearfit Pro organizado em matriz de compatibilidade, sem presumir suporte do GT3 MAX.

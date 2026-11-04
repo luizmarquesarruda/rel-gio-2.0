@@ -1,8 +1,8 @@
 # Google Play Protect e distribuição segura — Relógio 2.0
 
-**Revisão:** 03/11/2026  
+**Revisão:** 04/11/2026  
 **Escopo:** instalação do APK no Android, acesso a notificações e distribuição de builds de teste.  
-**Estado:** diagnóstico documental concluído; causa exata do bloqueio e validação no Galaxy A06 permanecem **não validadas**.
+**Estado:** APK diagnostic do run 41761934088 inspecionado; causa exata do bloqueio e validação no Galaxy A06 permanecem **não validadas**.
 
 ## 1. Achado principal na documentação oficial
 
@@ -38,6 +38,25 @@ A declaração protegida do serviço é uma boa prática de segurança Android, 
 
 Referência Android:
 - https://developer.android.com/reference/android/service/notification/NotificationListenerService
+
+## 2.1 Inspeção binária do artefato efetivamente publicado
+
+Em 04/11/2026 foi baixado o artefato GitHub Actions `relogio-2.0-diagnostic-debug-apk` do run **41761934088**, commit `e5e4b85ac1ad969956635a860a4b655b4466b768`.
+
+Evidências da inspeção local:
+
+- O ZIP passou no teste de integridade (`unzip -t`) e seu SHA-256 calculado correspondeu exatamente ao digest `sha256:1e09ebbff67960e9bd6f30e0b7a7639b85fdc21e2475b4e91fc083dd349386cd` publicado pela API do GitHub Actions.
+- SHA-256 do APK extraído: `21fcdb2f63abd21cdd8a6a5ce8229a1f833a27337ecbe4f3da6ffd944ac0eed1`.
+- Identidade do pacote: `com.luizmarquesarruda.relogio20.diagnostic`; versão `0.4.0-alpha.1-diagnostic`; versionCode 7.
+- O manifesto binário do APK contém `android:debuggable=true` e `android:allowBackup=false`.
+- Não contém `android.permission.INTERNET`, SMS, Accessibility, `BIND_NOTIFICATION_LISTENER_SERVICE` nem `NotificationCaptureService`.
+- As permissões funcionais identificadas foram READ_STEPS do Health Connect e Bluetooth/scan/connect, além de uma permissão interna de receiver não exportado gerada pelo AndroidX.
+- O certificado extraído do bloco de assinatura informa `CN=Android Debug, O=Android, C=US`, com fingerprint SHA-256 `30:6A:4C:20:C5:AB:29:01:DA:5B:7F:B4:A7:0B:A0:ED:E8:4E:4D:6C:F2:A6:7D:EB:7B:72:31:39:D8:64:2B:8F`. É a identidade debug, não um certificado de release.
+- A presença do bloco de assinatura APK v2 foi observada, mas a verificação criptográfica com `apksigner` ainda não havia sido executada no ambiente local. O novo CI passa a executar `apksigner verify --verbose --print-certs` e reprova a publicação se a verificação v2 falhar.
+
+**Conclusão limitada:** este APK diagnostic específico não contém as capacidades sensíveis listadas pelo Google para o bloqueio automático de sideload baseado em SMS, Notification Listener ou Accessibility. Portanto, essa regra específica não explica o bloqueio caso tenha sido exatamente este arquivo. Isso **não prova ausência de malware** e não identifica outras heurísticas do Play Protect. A causa permanece desconhecida sem o texto literal da tela, o APK realmente instalado e a avaliação do Google.
+
+A variante `companion` continua contendo Notification Listener e não deve ser instalada por sideload da internet. O serviço permanece porque faz parte da finalidade futura de ponte com o wearable; o encaminhamento físico ao GT3 Maxx ainda não foi validado.
 
 ## 3. Política de distribuição adotada
 
@@ -128,19 +147,19 @@ Se, após auditoria e correções, a classificação continuar incorreta, seguir
 
 | Item | Estado |
 |---|---|
-| Manifesto sem permissões SMS | Verificado na branch revisada |
-| Manifesto sem Accessibility Service | Verificado na branch revisada |
+| Manifesto sem permissões SMS | Verificado no APK binário do run 41761934088 |
+| Manifesto sem Accessibility Service | Verificado no APK binário do run 41761934088 |
 | Notification Listener protegido e não exportado | Verificado na branch revisada |
 | Consentimento e filtro por pacote | Código presente |
 | Cache de prévias em memória com limite/expiração | Código presente |
-| Variante diagnostic sem Notification Listener | **Implementada na branch; CI e instalação física pendentes** |
+| Variante diagnostic sem Notification Listener | **Confirmada no APK binário do run 41761934088; CI reforçado em novo commit; instalação física pendente** |
 | Finalidade Health & Fitness e documentação | **Registrada; falta Play Console** |
 | Variante companion com Notification Listener | **Preservada; CI/validação física pendentes** |
 | Encaminhamento real ao GT3 Maxx | **Pendente / protocolo não validado** |
-| Release assinada e AAB | **Pendente** |
+| Release assinada e AAB | **Pendente; APK atual usa certificado Android Debug** |
 | Instalação via Play Console | **Pendente** |
 | Veredito Play Protect no Galaxy A06 | **Não validado** |
-| Mensagem exata do bloqueio anterior | **Não disponível** |
+| Mensagem exata do bloqueio anterior | **Resumo fornecido pelo Gemini; texto literal ainda não disponível** |
 
 ## Decisão final
 
