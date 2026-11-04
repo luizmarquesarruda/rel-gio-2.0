@@ -81,7 +81,7 @@ CI verde não equivale a aprovação do Play Protect nem a teste físico no Gala
 6. A identidade é salva automaticamente somente após correspondência do fingerprint GATT completo. O endereço manual permanece opcional.
 7. Após a descoberta, o NUS TX é inscrito somente quando o fingerprint completo do perfil GT3 MAX Call coincide.
 8. Na tela principal, toque uma vez em **Ativar testes automáticos ao conectar** e confirme a coleta local. A autorização fica salva até você pausar. A exploração aprofundada inicia nesta conexão e nas próximas conexões com fingerprint completo.
-9. Os valores recebidos aparecem na biblioteca local e no relatório TXT. As janelas de captura são renovadas em blocos de até 10 minutos enquanto o modo estiver ativo e conectado; pausar encerra a captura e agenda a desinscrição dos canais automáticos via CCCD padrão.
+9. Os valores recebidos aparecem na biblioteca local e no relatório TXT. As janelas de captura são renovadas em blocos de até 10 minutos enquanto o app está em primeiro plano, conectado e com o modo ativo. Ao sair da tela, a renovação fica suspensa e retoma ao voltar; pausar encerra a captura e agenda a desinscrição dos canais automáticos via CCCD padrão.
 
 ## Documentação
 
