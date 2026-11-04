@@ -2233,7 +2233,7 @@ class MainActivity : ComponentActivity() {
             decoded.forEach { item ->
                 appendLog("Valor GATT decodificado: " + item.metric + " = " + item.value)
                 if (activeSession) {
-                    discoveryLibraryStore.recordDiscovery(
+                    discoveryLibraryStore.recordSessionDiscovery(
                         title = "Dado GATT observado • " + item.metric,
                         detail = item.value + " • origem=" + item.source +
                             " • formato Bluetooth SIG decodificado; precisão do sensor não validada.",
@@ -2628,7 +2628,7 @@ class MainActivity : ComponentActivity() {
 
         if (discoveryLibraryStore.activeSession(observedAtMillis) != null) {
             GattValueDecoder.decode(serviceUuid, uuid, value).forEach { item ->
-                discoveryLibraryStore.recordDiscovery(
+                discoveryLibraryStore.recordSessionDiscovery(
                     title = "Dado BLE observado • " + item.metric,
                     detail = item.value + " • origem=" + item.source +
                         " • formato Bluetooth SIG decodificado; precisão do sensor não validada.",
