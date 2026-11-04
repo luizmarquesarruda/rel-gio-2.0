@@ -47,7 +47,7 @@ internal object Gt3MaxCallDeviceProfile {
     fun isKnownDeviceName(name: String?): Boolean {
         val normalized = name
             ?.uppercase(Locale.ROOT)
-            ?.filter(Char::isLetterOrDigit)
+            ?.filter { it.isLetterOrDigit() }
             ?: return false
         return normalized == "GT3MAX" || normalized == "GT3MAXCALL"
     }
@@ -80,10 +80,12 @@ internal object Gt3MaxCallDeviceProfile {
 
     /**
      * NUS TX notifications use the standard CCCD. The NUS RX write channel remains unused.
-     * Name + NUS service is required before auto-subscribing, to avoid listening to unrelated devices.
+     * Full captured custom-service fingerprint + name + NUS are required before auto-subscribing.
+     * This is a compatibility check, not cryptographic device authentication.
      */
     fun shouldAutoSubscribeBattery(
         advertisedName: String?,
         services: Map<UUID, Set<UUID>>
-    ): Boolean = isKnownDeviceName(advertisedName) && hasNusTransport(services)
+    ): Boolean =
+        evaluate(advertisedName, services) == Match.CAPTURED_GATT_FINGERPRINT
 }
