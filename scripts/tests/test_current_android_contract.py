@@ -126,10 +126,10 @@ class CurrentAndroidContractTests(unittest.TestCase):
         self.assertIn('cat > "$REPORT_DIR/diagnostic-build-info.txt"', workflow)
         self.assertNotIn('cat > "$PACKAGE_DIR/BUILD-INFO.txt"', workflow)
         self.assertIn(
-            "group: android-ci-${{ github.event.pull_request.head.ref || github.ref_name }}",
+            "group: android-ci-${{ github.event.pull_request.number || github.ref_name }}",
             workflow,
         )
-        self.assertNotIn("github.event.pull_request.number || github.ref", workflow)
+        self.assertNotIn("group: android-ci-${{ github.event.pull_request.number || github.ref }}", workflow)
 
     def test_ci_runs_once_for_feature_prs_and_stops_after_cancellation(self):
         workflow = (ROOT / ".github/workflows/android-ci.yml").read_text(encoding="utf-8")
