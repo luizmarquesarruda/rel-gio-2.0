@@ -7,7 +7,8 @@
 - Após fingerprint GATT completo, o endereço atual é salvo automaticamente. O fingerprint é compatibilidade observada, não autenticação criptográfica.
 - O TXT passou a incluir até 1.000 registros persistidos da biblioteca (inventários GATT, quadros AB e capturas consentidas), além dos 250 eventos mais recentes da sessão. MAC permanece mascarado.
 - Testes adicionados para política de candidatos BLE, fingerprint com nome ausente e inclusão/mascaramento das descobertas no TXT.
-- Nenhum comando proprietário, escrita em característica desconhecida, OTA/DFU, reset ou nova permissão foi adicionado.
+- A sincronização CTS por escrita de característica foi suspensa nesta fase para preservar a política somente leitura/notificações. Apenas configuração do descritor CCCD padrão permanece necessária para inscrições.
+- Nenhum comando proprietário, OTA/DFU, reset ou nova permissão foi adicionado.
 - CI, instalação e teste físico no Galaxy A06/Android 16 com GT3 MAX: **não validados**.
 
 ## 04/11/2026 — Contrato de justificativa de privacidade do Health Connect
