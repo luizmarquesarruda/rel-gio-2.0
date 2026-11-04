@@ -21,6 +21,29 @@ Fontes:
 
 **Limite:** esses identificadores pertencem à amostra ensaiada em 2022. Ainda não foi confirmado que a unidade do usuário apresenta o mesmo código de software e revisão de placa. O manual listado no cadastro FCC redireciona para um documento cujo conteúdo descreve GT4/MActivePro; por esse conflito, ele não foi usado como especificação do GT3 MAX conectado ao Wearfit Pro.
 
+## 1A. Identificação fornecida da unidade física — 04/11/2026
+
+O usuário informou os seguintes dados na tela/sistema do próprio relógio:
+- Nome/modelo comercial: `GT3 MAX Call` / `GT3 MAX`
+- Versão de firmware exibida: `V1.07`
+- Campo Kernel / Versão de Software: `SH0050-1_1.1.3_1.23_1.18_1.1`
+
+O número de série, endereço Bluetooth e código de pareamento foram recebidos para correlação, mas foram deliberadamente omitidos deste documento e não devem ser publicados em issues, logs ou artefatos.
+
+### Interpretação
+
+- `V1.07` é a versão de firmware informada pelo usuário e deve ser tratada como versão instalada até nova leitura pelo Wearfit Pro.
+- `SH0050-1_1.1.3_1.23_1.18_1.1` parece ser um identificador composto de plataforma/build ou componentes de software. Não foi encontrada correspondência pública indexada para a string exata nem documentação confiável que decodifique os segmentos.
+- Não é correto inferir que `SH0050` seja um SoC, fabricante de chipset ou nome de placa sem evidência adicional.
+- A unidade informada não pode ser considerada idêntica à amostra FCC de 2022 (`NJY-N03-1.0.4` / `M01_MB_V1.1`). Há uma diferença clara entre as identificações de software, e a revisão de hardware da unidade atual ainda é desconhecida.
+- O sufixo comercial `Call` pode indicar uma variante com chamadas Bluetooth, mas não comprova uma placa ou pacote OTA compatível com a variante GT3 MAX simples.
+
+### Resultado da busca pública usando os identificadores novos
+
+Foram pesquisadas as strings exatas `SH0050-1_1.1.3_1.23_1.18_1.1`, `SH0050`, `GT3 MAX Call V1.07` e combinações com Wearfit Pro. Não foi encontrado um pacote oficial de firmware, manifesto, changelog ou repositório público atribuível a essa versão.
+
+A busca continua inconclusiva; ausência de resultados indexados não prova que o firmware não exista no servidor OTA do fabricante.
+
 ## 2. Mecanismo DFU observado na captura do GT3 MAX
 
 A captura GATT do usuário já havia registrado o serviço Secure DFU `0xFE59`, com características DFU Control Point e DFU Packet.
@@ -73,7 +96,7 @@ Foram localizados:
 - A documentação Wearfit Pro sobre atualização OTA.
 - Um log comunitário que revela o endpoint/fluxo genérico de atualização e o diretório de cache OTA.
 
-**Não foi localizado um arquivo oficial `.zip`, `.bin` ou imagem assinada publicamente que possa ser atribuído com segurança a `GT3 MAX / NJY-N03 / M01_MB_V1.1`.** Não baixar nem usar firmware de X8, GT4, DT78, FitPro ou outro modelo por semelhança de nome/UUID.
+**Não foi localizado um arquivo oficial `.zip`, `.bin` ou imagem assinada publicamente que possa ser atribuído com segurança à unidade informada (`GT3 MAX Call`, firmware `V1.07`, build `SH0050-1_1.1.3_1.23_1.18_1.1`) nem à amostra regulatória `GT3 MAX / NJY-N03 / M01_MB_V1.1`.** Não baixar nem usar firmware de X8, GT4, DT78, FitPro ou outro modelo por semelhança de nome/UUID.
 
 ## 6. Como obter o pacote do relógio do usuário sem iniciar o flash
 
@@ -123,4 +146,6 @@ Mesmo que a estrutura seja válida, isso não autoriza o flash. O procedimento d
 - Não foi executada atualização do GT3 MAX.
 - Nenhum comando foi enviado ao serviço DFU.
 - Nenhum firmware de outro modelo foi reaproveitado.
+- A unidade atual foi identificada pelo usuário como GT3 MAX Call, V1.07, build SH0050-1_1.1.3_1.23_1.18_1.1.
 - O transporte Secure DFU está identificado; o pacote binário específico permanece **não obtido / não validado**.
+- A relação entre a unidade atual e a amostra FCC NJY-N03/M01_MB_V1.1 permanece **não confirmada**.
