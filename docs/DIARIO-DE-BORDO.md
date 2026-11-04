@@ -2,6 +2,17 @@
 
 Este arquivo é o registro cronológico principal. Atualizar em toda PR que altere arquitetura, funções, dependências, versão, dados ou protocolo.
 
+## 03/11/2026 — Endurecimento de privacidade das notificações (PR #5)
+
+- Adicionada expiração de prévias após 15 minutos usando tempo monotônico, evitando depender de alterações do relógio civil do aparelho.
+- Cache de notificações é limpo em `onListenerDisconnected()` e `onDestroy()`.
+- A tela apresenta aviso de privacidade antes do atalho para a tela especial do Android, explica o uso do acesso, o filtro por aplicativo e a retenção.
+- Ativação da captura bloqueia-se sem acesso concedido ou sem ao menos um pacote selecionado.
+- Novo teste unitário verifica o limite de expiração; os testes de remoção e limite de 30 itens foram adaptados para relógio monotônico controlado.
+- Versão atualizada para `0.3.0-alpha.4` / versionCode 6.
+- CI desta revisão: aguardando execução. Play Protect e teste físico no Galaxy A06/GT3 Maxx: **não validados**.
+- O manifesto continua sem permissões SMS e serviço de acessibilidade; a presença de NotificationListenerService, por si só, não identifica a causa do aviso “Prejudicial”.
+
 ## 03/11/2026 — Auditoria adicional e perfil BLE candidato (PR #5)
 
 ### Causa do Lint e correções
