@@ -150,7 +150,28 @@ class SafeGattExplorationPlanTest {
                 )
             )
         )
-        assertEquals(2, plan.size)
+        // Temperature advertises READ and NOTIFY, so both are planned.
+        // Blood pressure advertises INDICATE, so it adds one subscription.
+        assertEquals(3, plan.size)
+
+        val temperatureOperations = plan.filter {
+            it.characteristicUuid.endsWith("2a6e-0000-1000-8000-00805f9b34fb")
+        }
+        assertEquals(2, temperatureOperations.size)
+        assertTrue(temperatureOperations.any {
+            it.kind == SafeGattExplorationPlan.Kind.READ_STANDARD_VALUE
+        })
+        assertTrue(temperatureOperations.any {
+            it.kind == SafeGattExplorationPlan.Kind.SUBSCRIBE_STANDARD_MEASUREMENT
+        })
+
+        val bloodPressureOperation = plan.single {
+            it.characteristicUuid.endsWith("2a35-0000-1000-8000-00805f9b34fb")
+        }
+        assertEquals(
+            SafeGattExplorationPlan.Kind.SUBSCRIBE_STANDARD_MEASUREMENT,
+            bloodPressureOperation.kind
+        )
         assertTrue(plan.any { it.reason.contains("temperatura ambiente") })
         assertTrue(plan.any { it.reason.contains("pressão arterial") })
     }
