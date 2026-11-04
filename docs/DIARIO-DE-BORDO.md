@@ -1,3 +1,15 @@
+## 04/11/2026 — Auditoria estrutural e navegação do catálogo GT3 MAX
+
+- A tela inicial foi mantida como painel de conexão/diagnóstico e recebeu entrada para o catálogo de funções.
+- Criada tela secundária de catálogo com áreas Saúde, Atividades, Dispositivo, Conectividade, Ferramentas e Privacidade.
+- Os recursos do catálogo foram classificados por estado: existente no app, dependente de integração direta ainda não validada, ou bloqueado por segurança.
+- Recursos de risco (OTA, reset de fábrica, controle de bloqueio, cartões de acesso e pagamentos) não recebem comandos nem ações executáveis.
+- Saúde deixa explícito que sincronização Wearfit não comprova parser BLE próprio nem validação clínica. METT não é convertido automaticamente em calorias.
+- Notificações e privacidade encaminham às telas já existentes; os demais itens são informativos até existir integração testada.
+- Auditoria foi feita sobre o código e estrutura Android. Captura visual em aparelho/emulador não foi possível nesta sessão; contraste, TalkBack, tamanhos dinâmicos e comportamento físico permanecem **não validados**.
+- MagicPath recusou chamadas por quota externa esgotada; nenhuma alteração foi feita no workspace MagicPath.
+- CI/build após esta alteração: aguardando execução.
+ 
 ## 04/11/2026 — Contrato de domínio para métricas do GT3 MAX
 
 - Criado modelo Kotlin puro em domain/health para tipo, unidade, origem, timestamps e estado de validação; sem dependência de Android, BLE ou Wearfit Pro.

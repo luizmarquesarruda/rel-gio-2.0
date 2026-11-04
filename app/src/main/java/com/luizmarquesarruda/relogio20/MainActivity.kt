@@ -179,6 +179,12 @@ class MainActivity : ComponentActivity() {
             LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
         ))
 
+        root.addView(makeButton("Explorar funções do relógio") {
+            startActivity(Intent(this, FeatureHubActivity::class.java))
+        }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
+        ))
+
         addText(root, "Fluxo de saúde: sensores do relógio → aplicativo → Conexão Saúde. " +
             "A gravação de amostras do GT3 Maxx será ativada somente após validar os dados e sua origem.", 12f)
 
