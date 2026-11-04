@@ -2,6 +2,26 @@
 
 As alterações relevantes do Relógio 2.0 são registradas aqui. Segue SemVer: MAJOR.MINOR.PATCH; versões alpha/beta indicam desenvolvimento e não equivalem a release estável.
 
+## 0.3.0-alpha.3 — 03/11/2026
+
+### Corrigido e aprimorado
+- Verificação explícita da permissão BLUETOOTH_CONNECT antes de consultar nome/endereço BLE; callbacks de scan tratam revogação de permissão e falha de estado do scanner.
+- Callbacks GATT são entregues pelo Handler principal, evitando concorrência com a fila de operações.
+- Novas operações BLE são bloqueadas durante a desconexão; falhas de conexão limpam estado e fila.
+- Lista de aplicativos de notificações ganhou área rolável própria.
+
+### Protocolo BLE — análise de evidência
+- UUIDs NUS dcca9e e quadro recebido AB 00 05 FF 91 80 00 0C comparados com fixture pública do projeto fbiego/dt78.
+- Perfil NUS_AB_FRAME_COMPATIBLE_CANDIDATE e parser offline implementados.
+- Quadro 0x91/0x80 pode indicar bateria; 0x0C sugere 12%, ainda **não validado** por comparação simultânea com Wearfit Pro.
+- Nenhum payload foi escrito no relógio; RX, Secure DFU/OTA, reset e comandos de configuração continuam bloqueados.
+
+### Testes adicionados
+- Parser AB: captura local, fixture pública 80%, cabeçalho/tamanho inválidos, comando desconhecido e quadro incompleto.
+
+### Validação
+- Lint, testes e APK desta versão: aguardando CI.
+- Teste físico Galaxy A06/GT3 Maxx: **não validado**.
 ## 0.3.0-alpha.2 — 03/11/2026
 
 ### Corrigido
