@@ -29,7 +29,6 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
     <application
-        android:appCategory="fitness"
         android:allowBackup="false"
         android:label="Relógio 2.0 — Saúde & Fitness"
         android:supportsRtl="true"

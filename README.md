@@ -6,7 +6,7 @@ Aplicativo Android de Saúde e Fitness que acompanha dados de um smartwatch pare
 
 O Relógio 2.0 é um companheiro de Saúde e Fitness. O fluxo de destino é: sensores do relógio → conexão com o app → dados validados no Conexão Saúde (Health Connect). No sentido inverso, o Android entrega notificações selecionadas ao app para a ponte com o relógio; o app lê os alertas e não responde nem modifica o aplicativo de origem.
 
-A categoria da ficha no Google Play deve ser **Saúde e fitness**, com o recurso declarado como **Atividade e fitness**. O atributo Android `appCategory=fitness` é apenas metadado da aplicação e não substitui a escolha da categoria, o formulário de apps de saúde, a seção Segurança dos dados ou a política de privacidade no Play Console.
+A categoria da ficha no Google Play deve ser **Saúde e fitness**, com o recurso declarado como **Atividade e fitness**. Essa classificação é feita no Play Console; o atributo Android `appCategory` não possui um valor `fitness` válido e não deve ser incluído no manifesto. A categoria também não substitui o formulário de apps de saúde, a seção Segurança dos dados ou a política de privacidade.
 
 ## Estado atual
 

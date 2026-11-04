@@ -5,6 +5,7 @@
 ### Direção Saúde & Fitness
 - Produto reposicionado como companheiro de Saúde e Fitness, com o relógio como fonte principal das medições e Conexão Saúde como camada Android de compartilhamento.
 - Interface principal orientada a atividade diária, smartwatch e Conexão Saúde.
+- Categoria da ficha Play Store preparada como Saúde e fitness; o manifesto não define `appCategory=fitness`, pois esse valor não existe entre as categorias Android válidas.
 - Mantida a ponte de notificações como função de companion: leitura consentida de notificações selecionadas, sem responder ou alterar o app de origem.
 - O Google lista a retransmissão de notificações para dispositivos vestíveis próprios como caso permitido para apps de Saúde e Fitness; a retransmissão física ao GT3 Maxx segue pendente de protocolo validado.
 - Não foi adicionada permissão WRITE_STEPS: o driver atual ainda não fornece amostras de passos do GT3 Maxx comprovadas. Não publicar dados simulados nem dados agregados do telefone como se viessem do relógio.
