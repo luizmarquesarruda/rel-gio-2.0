@@ -14,6 +14,7 @@ Este índice separa decisões de arquitetura, integrações, evidências do disp
 ## Integrações Android
 - [Alinhamento Google Android/Wear OS](ALINHAMENTO-GOOGLE-ANDROID-WEAROS.md)
 - [Play Protect e distribuição segura](ALINHAMENTO-PLAY-PROTECT-DISTRIBUICAO.md)
+- [Investigação do bloqueio B do Play Protect](INVESTIGACAO-BLOQUEIO-PLAY-PROTECT-2026-11-04.md) — classificação recebida, evidências por variante e próximos passos.
 - [Arquitetura Saúde & Fitness](SAUDE-FITNESS-ARQUITETURA.md)
 - [Passos e referência de horário](INTEGRACAO-HEALTH-CONNECT-PASSOS-HORARIO.md)
 - [Notificações, WhatsApp e Android](INTEGRACAO-NOTIFICACOES-ANDROID-WHATSAPP.md)
