@@ -101,6 +101,7 @@ internal object GattValueDecoder {
     private fun decodeHeartRate(value: ByteArray): List<DecodedGattValue> {
         if (value.size < 2) return emptyList()
         val flags = value[0].toInt() and 0xff
+        if (flags and 0xe0 != 0) return emptyList()
         var offset = 1
         val isUInt16 = flags and 0x01 != 0
         val heartRate = if (isUInt16) {
@@ -128,8 +129,9 @@ internal object GattValueDecoder {
             offset += 2
         }
         if (flags and 0x10 != 0) {
-            val rrCount = (value.size - offset) / 2
-            if (rrCount == 0 || (value.size - offset) % 2 != 0) return emptyList()
+            val remaining = value.size - offset
+            val rrCount = remaining / 2
+            if (rrCount == 0 || remaining % 2 != 0) return emptyList()
             val rrIntervals = (0 until rrCount).map { index ->
                 readUInt16(value, offset + index * 2) / 1024.0
             }
@@ -137,13 +139,16 @@ internal object GattValueDecoder {
                 "Intervalos RR",
                 rrIntervals.joinToString(", ") { String.format(Locale.US, "%.3f s", it) }
             )
+            offset = value.size
         }
+        if (offset != value.size) return emptyList()
         return results
     }
 
     private fun decodeBloodPressure(value: ByteArray): List<DecodedGattValue> {
         if (value.size < 7) return emptyList()
         val flags = value[0].toInt() and 0xff
+        if (flags and 0xe0 != 0) return emptyList()
         var offset = 1
         val systolic = readSFloat(value, offset) ?: return emptyList()
         offset += 2
@@ -184,7 +189,9 @@ internal object GattValueDecoder {
         if (flags and 0x10 != 0) {
             if (value.size < offset + 2) return emptyList()
             results += DecodedGattValue("Status da medição de pressão", "0x" + readUInt16(value, offset).toString(16).uppercase(Locale.US))
+            offset += 2
         }
+        if (offset != value.size) return emptyList()
         return results
     }
 
@@ -206,6 +213,7 @@ internal object GattValueDecoder {
     private fun decodeBloodPressureFeature(value: ByteArray): List<DecodedGattValue> {
         if (value.size != 2) return emptyList()
         val flags = readUInt16(value, 0)
+        if (flags and 0xfe00 != 0) return emptyList()
         val labels = listOf(
             "Detecção de movimento corporal",
             "Detecção de ajuste da braçadeira",
@@ -226,6 +234,7 @@ internal object GattValueDecoder {
         // 2A36 contains current cuff pressure plus two mandatory NaN placeholders.
         if (value.size < 7) return emptyList()
         val flags = value[0].toInt() and 0xff
+        if (flags and 0xe0 != 0) return emptyList()
         var offset = 1
         val pressure = readSFloat(value, offset) ?: return emptyList()
         offset += 2
@@ -264,13 +273,16 @@ internal object GattValueDecoder {
                 "Status da pressão intermediária",
                 "0x" + readUInt16(value, offset).toString(16).uppercase(Locale.US)
             )
+            offset += 2
         }
+        if (offset != value.size) return emptyList()
         return results
     }
 
     private fun decodeRunningSpeedAndCadence(value: ByteArray): List<DecodedGattValue> {
         if (value.size < 4) return emptyList()
         val flags = value[0].toInt() and 0xff
+        if (flags and 0xf8 != 0) return emptyList()
         val speed = readUInt16(value, 1) / 256.0
         val cadence = value[3].toInt() and 0xff
         val results = mutableListOf(
@@ -294,12 +306,14 @@ internal object GattValueDecoder {
             "Estado de deslocamento RSC",
             if (flags and 0x04 != 0) "corrida" else "caminhada"
         )
+        if (offset != value.size) return emptyList()
         return results
     }
 
     private fun decodeCyclingSpeedAndCadence(value: ByteArray): List<DecodedGattValue> {
         if (value.isEmpty()) return emptyList()
         val flags = value[0].toInt() and 0xff
+        if (flags and 0xfc != 0) return emptyList()
         var offset = 1
         val results = mutableListOf<DecodedGattValue>()
         if (flags and 0x01 != 0) {
@@ -325,6 +339,7 @@ internal object GattValueDecoder {
     private fun decodeRunningSpeedAndCadenceFeature(value: ByteArray): List<DecodedGattValue> {
         if (value.size != 2) return emptyList()
         val flags = readUInt16(value, 0)
+        if (flags and 0xffe0 != 0) return emptyList()
         val labels = listOf(
             "Medição de passada instantânea",
             "Medição de distância total",
@@ -340,6 +355,7 @@ internal object GattValueDecoder {
     private fun decodeCyclingSpeedAndCadenceFeature(value: ByteArray): List<DecodedGattValue> {
         if (value.size != 2) return emptyList()
         val flags = readUInt16(value, 0)
+        if (flags and 0xfff8 != 0) return emptyList()
         return listOf(
             DecodedGattValue("Recurso CSC • Dados de revolução da roda", if (flags and 0x01 != 0) "suportado" else "não sinalizado"),
             DecodedGattValue("Recurso CSC • Dados de revolução do pedivela", if (flags and 0x02 != 0) "suportado" else "não sinalizado"),
@@ -359,6 +375,7 @@ internal object GattValueDecoder {
     ): List<DecodedGattValue> {
         if (value.size < 5) return emptyList()
         val flags = value[0].toInt() and 0xff
+        if (flags and 0xf8 != 0) return emptyList()
         val raw = readUInt32(value, 1)
         val temperature = readFloat11073(raw) ?: return emptyList()
         val fahrenheit = flags and 0x01 != 0
@@ -376,7 +393,9 @@ internal object GattValueDecoder {
         if (flags and 0x04 != 0) {
             if (value.size < offset + 1) return emptyList()
             results += DecodedGattValue("Tipo de temperatura GATT", (value[offset].toInt() and 0xff).toString())
+            offset += 1
         }
+        if (offset != value.size) return emptyList()
         return results
     }
 
@@ -418,6 +437,7 @@ internal object GattValueDecoder {
     private fun decodePulseOximeterSpotCheck(value: ByteArray): List<DecodedGattValue> {
         if (value.size < 5) return emptyList()
         val flags = value[0].toInt() and 0xff
+        if (flags and 0xf0 != 0) return emptyList()
         var offset = 1
         val spo2 = readSFloat(value, offset) ?: return emptyList()
         offset += 2
@@ -445,13 +465,16 @@ internal object GattValueDecoder {
         if (flags and 0x08 != 0) {
             val index = readSFloat(value, offset) ?: return emptyList()
             results += DecodedGattValue("Índice de amplitude de pulso", formatSFloat(index, "%"))
+            offset += 2
         }
+        if (offset != value.size) return emptyList()
         return results
     }
 
     private fun decodePulseOximeterContinuous(value: ByteArray): List<DecodedGattValue> {
         if (value.size < 5) return emptyList()
         val flags = value[0].toInt() and 0xff
+        if (flags and 0xe0 != 0) return emptyList()
         var offset = 1
         val results = mutableListOf<DecodedGattValue>()
         fun readPair(label: String): Boolean {
@@ -479,7 +502,9 @@ internal object GattValueDecoder {
         if (flags and 0x10 != 0) {
             val index = readSFloat(value, offset) ?: return emptyList()
             results += DecodedGattValue("Índice de amplitude de pulso", formatSFloat(index, "%"))
+            offset += 2
         }
+        if (offset != value.size) return emptyList()
         return results
     }
 
