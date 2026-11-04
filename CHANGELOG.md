@@ -2,6 +2,21 @@
 
 As alterações relevantes do Relógio 2.0 são registradas aqui. Segue SemVer: MAJOR.MINOR.PATCH; versões alpha/beta indicam desenvolvimento e não equivalem a release estável.
 
+## 0.3.0-alpha.4 — 03/11/2026
+
+### Segurança e privacidade de notificações
+- Pré-visualizações permanecem somente em memória, com limite de 30 itens e expiração automática após 15 minutos baseada em relógio monotônico.
+- Cache é limpo quando o NotificationListenerService desconecta ou é destruído.
+- A tela informa, antes de conceder o acesso, quais dados podem ser lidos, como são filtrados e por quanto tempo permanecem na memória.
+- A captura exige acesso especial autorizado pelo Android, ativação explícita e ao menos um aplicativo selecionado.
+- Nenhuma permissão SMS/acessibilidade, transmissão de conteúdo ou escrita BLE foi adicionada.
+
+### Testes e validação
+- Teste unitário cobre expiração das prévias no limite de 15 minutos.
+- Lint, testes e APK desta versão: aguardando CI após o commit.
+- Play Protect no Galaxy A06: **não validado**; esta alteração reduz retenção e melhora transparência, mas não comprova a causa nem garante remoção do alerta.
+- Teste físico com GT3 Maxx: **não validado**.
+
 ## 0.3.0-alpha.3 — 03/11/2026
 
 ### Corrigido e aprimorado
