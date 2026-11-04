@@ -152,7 +152,7 @@ class GattValueDecoderTest {
         val base = GattValueDecoder.decode("1822", "2a60", byteArrayOf(0xfc.toByte(), 0))
         assertEquals(8, base.size)
         assertTrue(base.any {
-            it.metric == "Recurso de oximetria • Suporte a status da medição" &&
+            it.metric == "Recurso de oximetria • Armazenamento de medições spot-check" &&
                 it.value == "suportado"
         })
 
