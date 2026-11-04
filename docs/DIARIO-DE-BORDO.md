@@ -1,3 +1,14 @@
+## 04/11/2026 — Classificação B do bloqueio Play Protect
+
+- O usuário identificou o aviso como “O app foi bloqueado para proteger seu dispositivo”, com base em síntese do Gemini; a transcrição literal e a captura de tela não estão disponíveis.
+- A orientação oficial do Google associa esse bloqueio de sideload a capacidades sensíveis como READ_SMS, RECEIVE_SMS, NOTIFICATION_LISTENER e ACCESSIBILITY; Health & Fitness que retransmitem notificações ao próprio wearable são um caso de uso permitido, sujeito à finalidade e consentimento.
+- Revisão dos manifestos: diagnostic não declara Notification Listener; companion declara NotificationCaptureService protegido por BIND_NOTIFICATION_LISTENER_SERVICE e exported=false.
+- Portanto, a hipótese principal é instalação da variante companion ou de um APK anterior com Notification Listener. Se foi exatamente o APK diagnostic do run 41761934088, a regra de sideload por essas capacidades não explica o bloqueio. Causa final não determinada.
+- Criado docs/INVESTIGACAO-BLOQUEIO-PLAY-PROTECT-2026-11-04.md e indexado em docs/README.md.
+- Run 41764184171: testes de política, Lint, testes unitários/build e guardrails passaram; auditoria final de manifestos/assinaturas ainda estava em andamento na última consulta. Nenhum artefato novo confirmado.
+- Não desativar Play Protect, não distribuir companion por sideload e não afirmar aprovação Google com base em CI.
+- Instalação física no Galaxy A06, classificação final do Play Protect e identidade do APK que o usuário tentou instalar: **não validadas**.
+
 ## 04/11/2026 — Auditoria binária do Play Protect e endurecimento do CI
 
 - Baixado e inspecionado o artefato `relogio-2.0-diagnostic-debug-apk` do run 41761934088, commit `e5e4b85ac1ad969956635a860a4b655b4466b768`.
