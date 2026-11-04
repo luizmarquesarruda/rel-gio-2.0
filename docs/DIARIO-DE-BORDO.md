@@ -317,3 +317,5 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Teste no Galaxy A06, inspeção dos registros publicados pelo Wearfit Pro no Health Connect e validação física dos sensores: **não validados**.
 - Rotas no mapa e leitura de sinais vitais: **planejadas, não implementadas**.
 - A atualização periódica do Health Connect só é ativada após READ_STEPS concedida e é interrompida quando o acesso é negado ou revogado.
+
+- A janela diária de passos é calculada a partir do mesmo instante de consulta no fuso local; cancelamento de coroutine é propagado e a consulta periódica para quando o provider fica indisponível/precisa de atualização.
