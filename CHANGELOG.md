@@ -5,6 +5,7 @@
 - Busca BLE geral iniciada automaticamente ao abrir o aplicativo; não exige digitar o endereço MAC.
 - Endereço salvo deixou de ser filtro exclusivo: nome GT3 MAX e serviço NUS anunciado também são pistas; dispositivos sem nome são listados para validação manual.
 - Nova identidade só é salva após fingerprint GATT completo; candidatos incompatíveis são desconectados antes de leituras ou inscrições.
+- Sincronização CTS por escrita de característica suspensa; permanece somente leitura GATT e configuração padrão de CCCD para notificações/indicações.
 - TXT inclui descobertas persistidas da biblioteca local, além dos 250 eventos mais recentes; endereços MAC continuam mascarados.
 - Testes adicionados para classificação BLE, fingerprint sem nome e exportação das descobertas.
 - CI e teste físico Galaxy A06/Android 16: **não validados**.
