@@ -110,7 +110,7 @@ class GattValueDecoderTest {
     @Test
     fun decodesEnvironmentalPressureAndBodySensorLocation() {
         val pressure = GattValueDecoder.decode(
-            "181a", "2a6d", byteArrayOf(0x10, 0x27)
+            "181a", "2a6d", byteArrayOf(0xe8.toByte(), 0x13)
         )
         assertEquals("Pressão atmosférica", pressure.single().metric)
         assertEquals("10000.00 Pa", pressure.single().value)
@@ -149,7 +149,7 @@ class GattValueDecoderTest {
 
     @Test
     fun decodesPulseOximeterFeaturesAndOptionalSupportBitfields() {
-        val base = GattValueDecoder.decode("1822", "2a60", byteArrayOf(0x1f, 0))
+        val base = GattValueDecoder.decode("1822", "2a60", byteArrayOf(0xfc.toByte(), 0))
         assertEquals(8, base.size)
         assertTrue(base.any {
             it.metric == "Recurso de oximetria • Suporte a status da medição" &&
@@ -158,7 +158,7 @@ class GattValueDecoderTest {
 
         val extended = GattValueDecoder.decode(
             "1822", "2a60",
-            byteArrayOf(0x03, 0, 0x20, 0, 0x02, 0, 0)
+            byteArrayOf(0x03, 0, 0x20, 0, 0x00, 0x02, 0)
         )
         assertTrue(extended.any {
             it.metric == "Recurso de oximetria • Status da medição bit 5" &&
