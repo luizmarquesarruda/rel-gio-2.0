@@ -26,13 +26,14 @@ Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALT
 - Permite leitura explícita de características que declaram a propriedade Read.
 - Permite inscrição explícita em notificações por meio do descritor padrão CCCD (0x2902).
 - Registra localmente na tela os bytes recebidos em hexadecimal.
+- Reconhece um quadro de bateria `0x91/0x80` como **candidato**, sem confirmar o valor no GT3 Maxx.
 
 ## O que ela não faz
 
 - Não escreve dados em características do relógio.
 - Não envia comandos pela Nordic UART RX.
 - Não toca no Secure DFU/OTA, reset, calibração ou configuração.
-- Interpreta somente um quadro de bateria `0x91/0x80` como candidato; frequência cardíaca, passos, sono, SpO2 e pressão continuam sem parser validado.
+- Não interpreta frequência cardíaca, passos, sono, SpO2 ou pressão sem parsers validados.
 - Não acessa servidores ou dados privados do Wearfit Pro.
 - Não persiste ou transmite dados de saúde.
 
