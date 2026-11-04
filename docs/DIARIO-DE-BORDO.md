@@ -5,6 +5,7 @@
 - Mantidos dois artefatos distintos: **APK instalável** e **relatórios de validação**. A variante companion continua compilada/testada/auditada, mas não publicada como instalação.
 - README e changelog alinhados com a separação; instrução antiga de procurar BUILD-INFO.txt dentro do APK foi corrigida.
 - Adicionado teste Python de contrato para impedir regressão: o artefato instalável deve apontar para um único `.apk`, enquanto o relatório técnico permanece em artefato separado.
+- Ajustada a chave de concorrência do workflow para usar a branch da PR (ou `github.ref_name` em push/manual); eventos `push` e `pull_request` da mesma branch agora compartilham o grupo de cancelamento e não mantêm dois builds idênticos em paralelo.
 - A execução #297, anterior à correção do empacotamento, concluiu com sucesso em Lint, testes, builds, guardrails, auditoria e publicação dos dois artefatos; confirmou-se que o pacote do APK incluía arquivos auxiliares junto do instalador.
 - A nova execução #303 foi disparada para o HEAD com o workflow corrigido; seu resultado ainda precisa ser conferido. A estrutura do novo artefato não será considerada validada até inspecionar a execução que usa este workflow.
 - Teste físico no Galaxy A06/Android 16: **não validado**.
