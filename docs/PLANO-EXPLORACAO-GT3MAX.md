@@ -6,27 +6,28 @@ A captura local de 04/11/2026 observou seis serviços GATT e onze característic
 
 O firmware V1.07 e build SH0050-1_1.1.3_1.23_1.18_1.1 são metadados apresentados pelo app/tela, não foram lidos diretamente do GATT. Sem o arquivo de firmware (.bin/.fw/.zip) ou pacote original do Wearfit Pro, não é possível fazer análise estática real de firmware, extrair tabela de comandos ou afirmar que existe correção de RTC/temperatura implementável.
 
-## Implementação na branch feat/gt3max-safe-exploration-20261104
+## Implementação no branch feat/gt3max-safe-exploration-20261104
 
 ### Fase 1 — Exploração GATT segura
-- Inventário automático dos serviços, características, propriedades e descritores após a descoberta GATT.
-- Plano determinístico de operações permitido por lista de UUIDs Bluetooth SIG conhecidos.
-- Leituras padronizadas são executadas em fila serial, aguardando callbacks GATT; valores são registrados no diagnóstico local.
-- Notificações/indicações padronizadas só são ativadas quando a característica tem propriedade compatível e CCCD 0x2902.
-- Número de série (2A25) foi excluído de leituras automáticas por minimização de dados.
-- Serviços FE59/DFU, NUS RX e UUIDs proprietários são excluídos do plano.
+- Inventário automático de serviços, características, propriedades e descritores após a descoberta GATT.
+- Plano automático para perfis Bluetooth SIG conhecidos: leituras READ e inscrições NOTIFY/INDICATE com CCCD padrão.
+- Plano manual aprofundado para canais customizados: somente características que anunciam READ e NOTIFY/INDICATE com CCCD 0x2902.
+- O plano manual é limitado a 24 operações por sessão e exige confirmação explícita, pois os payloads podem conter dados privados de saúde.
+- FE59/DFU, NUS RX, identificadores de dispositivo (serial/system ID) e serviços SIG já tratados pelo plano padrão são excluídos.
+- Nenhuma escrita de payload em característica proprietária é criada. A única escrita de descritor é a configuração padrão CCCD para ativar notificações/indicações.
 
 ### Fase 2 — Análise de pacotes
-- O motor registra serviço/característica de origem, contagem, tamanho, horário e fingerprint de quadros AB conhecidos.
-- O parser atual aceita somente um quadro AB completo; fragmentação e concatenação ainda não são inferidas.
-- O catálogo persistente guarda metadados e contagens, não payload bruto.
-- O log HEX de diagnóstico continua em memória e só é exportado manualmente pelo usuário.
-- Semântica não reconhecida permanece desconhecida; bateria AB/0x91/0x80 permanece candidata.
+- Fingerprint é calculado sobre cada notificação recebida: tamanho, prefixo, SHA-256 truncado e contagem de repetição.
+- O decodificador de fluxo reagrupa quadros AB fragmentados e separa quadros concatenados, com limite de buffer e ressincronização após bytes inválidos.
+- A semântica dos comandos permanece independente do framing; comando desconhecido continua desconhecido.
+- O catálogo persistente guarda inventário, UUIDs, propriedades, contagens, tamanho e horário da última notificação; payload bruto não é persistido.
+- O HEX permanece apenas no log de diagnóstico em memória e na exportação manual TXT.
+- Bateria AB/0x91/0x80 continua candidata, não validada.
 
 ### Fase 3 — Experimentos guiados
-- A tela Autodescoberta BLE agora exibe o catálogo de experimentos: bateria, hora/data, temperatura, frequência cardíaca, SpO2, passos, sono e atividade.
-- O roteiro exige ação manual e correlação temporal com o tráfego observado; não dispara medições nem comandos proprietários.
-- A tela descreve evidência necessária e impede que o usuário confunda canal GATT com sensor validado.
+- A tela Autodescoberta BLE apresenta roteiro para bateria, hora/data, temperatura, frequência cardíaca, SpO2, passos, sono e atividade.
+- O roteiro exige ação manual e correlação temporal com tráfego observado; não dispara medições nem comandos.
+- Dados de passos Health Connect permanecem identificados como agregado externo, sem atribuição automática ao relógio.
 
 ## Hora e data
 
@@ -36,20 +37,21 @@ O atalho de menor risco requer capturar a comunicação normal do Wearfit Pro du
 
 ## Temperatura
 
-O serviço padrão 0x1809 não foi observado. A tela de temperatura pode ser clima recebido do telefone, temperatura da pele/corporal ou telemetria interna. Não tratar como temperatura corporal sem identificar sensor, unidade, faixa, timestamp e referência independente. Não publicar estimativas no Health Connect.
+O serviço padrão 0x1809 não foi observado. A exploração também reconhece o serviço Bluetooth SIG Environmental Sensing 0x181A e seus campos padronizados de temperatura, pressão e umidade quando presentes. Esses serviços não apareceram na captura atual. A tela de temperatura pode ser clima recebido do telefone, temperatura da pele/corporal ou telemetria interna. Não tratar como temperatura corporal sem identificar sensor, unidade, faixa, timestamp e referência independente. Não publicar estimativas no Health Connect.
 
 ## Firmware e atalhos
 
 Para análise estática real, fornecer firmware extraído do relógio ou pacote de atualização do Wearfit Pro, com origem e hash. O serviço FE59 é associado a DFU e permanece bloqueado. Não executar atualização, downgrade, reset ou escrita em característica proprietária.
 
-O estudo detalhado está em docs/ATALHO-FIRMWARE-HORA-DATA-TEMPERATURA.md.
+O estudo detalhado está em docs/ATALHO-FIRMWARE-HORA-DATA-TEMPERATURA.md e docs/ANALISE-FIRMWARE-OTA-WEARFIT-PRO.md.
 
 ## Testes físicos pendentes
 
 - Confirmar leituras padrão no GT3 MAX real e comparar com a tela do relógio.
+- Executar exploração manual e exportar TXT com UUIDs, resultados READ, fingerprints e notificações por canal.
 - Comparar hora/data após sincronização no Wearfit Pro e após reconectar o Relógio 2.0.
 - Comparar bateria em pelo menos três níveis.
-- Testar temperatura com identificação explícita de “clima” versus “corporal”.
+- Testar temperatura com identificação explícita de clima versus corporal.
 - Repetir cada correlação em pelo menos três sessões.
 - Registrar separadamente valor do relógio, valor BLE, Health Connect e referência externa.
 

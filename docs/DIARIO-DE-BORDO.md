@@ -519,3 +519,15 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Criado teste unitário do allowlist para leitura/notificação padrão, exclusão de DFU/proprietários/NUS RX e exigência de CCCD. Resultado de CI ainda **não validado**.
 - Análise do firmware documentada: V1.07 e build SH0050... são metadados informados; binário específico não foi obtido. CTS 0x1805/2A2B e termômetro 0x1809/2A1C ausentes. Hora proprietária e temperatura seguem sem implementação até captura comparativa Wearfit Pro ou firmware correto.
 - Teste físico no Galaxy A06/Android 16 com GT3 MAX Call, leitura real de sensores, correção de hora/data e identificação de temperatura: **não validados**.
+
+
+## 04/11/2026 — Auditoria de continuidade e fechamento das lacunas da exploração GT3 MAX
+
+- Revisão das alterações anteriores identificou que BlePacketFingerprintAnalyzer estava criado, mas sem chamada no fluxo de notificação. Ligado ao callback real; cada pacote agora registra tamanho, prefixo, SHA-256 truncado e repetição no log diagnóstico.
+- O parser anterior aceitava exatamente um quadro AB completo por notificação. Criado WearfitAbStreamDecoder com reagrupamento de fragmentos, separação de quadros concatenados, ressincronização e buffer limitado. A interpretação semântica permanece somente para comandos documentados/candidatos.
+- O plano GATT automático foi ampliado para mais perfis SIG: bateria, hora, frequência cardíaca, pressão, temperatura/pressão/umidade ambientais, oximetria, composição corporal e cadência. Nenhuma propriedade WRITE é usada pelo plano.
+- Criado plano manual aprofundado para características proprietárias que anunciam READ e canais NOTIFY/INDICATE com CCCD. Exige confirmação explícita, limita a 24 operações por sessão e exclui FE59/DFU, NUS RX/TX, serial e identificadores de sistema; nenhuma escrita de payload proprietária é criada.
+- Fila GATT recebeu watchdog de 8 segundos e correspondência de callback por serviço/característica/tipo, para que uma resposta atrasada não conclua outra operação.
+- Interface ganhou ação explícita para exploração manual e melhor quebra/altura de botões. Health Connect mantém a atualização visual, mas o log não repete o mesmo total de passos a cada consulta.
+- A análise continua sem firmware binário específico. Hora/data e temperatura não foram corrigidas por ausência de CTS e de serviço padrão de termômetro na captura; o caminho proprietário segue bloqueado até captura comparativa/artefato original.
+- CI do HEAD desta auditoria e testes físicos no Galaxy A06/Android 16 com GT3 MAX Call: **não validados** até nova execução.

@@ -1,5 +1,18 @@
 # Changelog
 
+## Em desenvolvimento — 04/11/2026
+
+- Exploração GATT automática de perfis Bluetooth SIG padronizados, sem executar escritas de payload.
+- Exploração manual aprofundada de canais customizados somente READ e NOTIFY/INDICATE via CCCD, com confirmação, limite de operações e bloqueio de DFU/NUS RX.
+- Fingerprints sobre notificações BLE e decodificador de quadros AB fragmentados/concatenados com buffer limitado.
+- Watchdog e correlação de callbacks para operações GATT.
+- Roteiro de experimentos para bateria, hora/data, temperatura, frequência cardíaca, SpO2, passos, sono e atividade.
+- Deduplicação de linhas repetidas do Health Connect e ajuste de altura/quebra de texto dos botões.
+- Hora/data proprietárias e temperatura do GT3 MAX continuam não validadas; firmware binário V1.07 específico ainda não foi obtido.
+- CI e validação física desta rodada: **não validados**.
+
+# Changelog
+
 ## Não lançado — recuperação explícita da permissão Health Connect
 
 - Registrados os intents de justificativa de privacidade exigidos pela Conexão Saúde no Android 13 e anteriores e no Android 14+; o alias moderno é protegido por START_VIEW_PERMISSION_USAGE.
