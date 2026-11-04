@@ -428,9 +428,20 @@ class MainActivity : ComponentActivity() {
             orientation = LinearLayout.VERTICAL
             setPadding(0, dp(8), 0, dp(8))
         }
-        root.addView(content, LinearLayout.LayoutParams(
+        val inventoryPanel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            visibility = View.GONE
+            setPadding(0, dp(6), 0, dp(6))
+        }
+        inventoryPanel.addView(content, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
         ))
+        root.addView(makeButton("Inventário GATT • mostrar/ocultar") {
+            inventoryPanel.visibility = if (inventoryPanel.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+        }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
+        ))
+        root.addView(inventoryPanel)
 
         val diagnosticPanel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL

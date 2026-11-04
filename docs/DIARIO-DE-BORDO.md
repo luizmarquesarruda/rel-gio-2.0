@@ -579,3 +579,5 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - O inventário GATT e os quadros AB reconhecidos geram registros de descoberta. HEX de notificações e leituras GATT só é guardado durante sessão de captura confirmada.
 - A interface da biblioteca tem busca e filtros; os registros ficam privados no aparelho e não são sincronizados externamente.
 - A CI precisa validar o HEAD com esta entrega; o run #248 foi criado antes da implementação e não deve ser usado como prova de validação desta fase.
+
+- O inventário GATT extenso foi colocado em painel recolhido por padrão, evitando que UUIDs e propriedades técnicas dominem a tela principal.

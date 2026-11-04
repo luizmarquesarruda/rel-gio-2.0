@@ -117,3 +117,5 @@ O usuário escolhe 1, 2, 5 ou 10 minutos e confirma explicitamente a captura loc
 A biblioteca persiste inventários GATT como descobertas. Leituras GATT e notificações com HEX são retidas somente durante uma sessão de teste ativa. O armazenamento usa arquivo privado e escrita atômica, schema versionado e limites de tamanho/quantidade. Conteúdo corrompido ou schema futuro não é sobrescrito automaticamente. A exportação continua sendo ação separada e manual.
 
 **Limites:** inspeção do código confirma estrutura e comportamento planejado, mas não substitui screenshots e teste visual no Galaxy A06. O MagicPath não pôde ser acessado nesta rodada por cota externa esgotada; emulador/ADB não está disponível neste ambiente. TalkBack, escala de fonte ampliada, rotação e instalação física permanecem **não validados**.
+
+- O inventário GATT completo também fica recolhido por padrão; UUIDs e propriedades aparecem somente quando o usuário abre “Inventário GATT”.
