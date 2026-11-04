@@ -6,6 +6,7 @@ Este índice separa decisões de arquitetura, integrações, evidências do disp
 - [Arquitetura](ARQUITETURA.md) — camadas, contrato de dados e regras de integração.
 - [Mapa de módulos](MAPA-DE-MODULOS.md) — responsabilidades atuais e estrutura-alvo do código.
 - [Inventário de funções do Wearfit Pro](INVENTARIO-FUNCOES-WEARFIT-PRO.md) — funcionalidades de referência e prioridade.
+- [Plano de substituição progressiva do Wearfit Pro](PLANO-SUBSTITUICAO-WEARFIT.md) — fases, arquitetura-alvo, evidências e critérios de aceitação.
 
 ## Integrações Android
 - [Alinhamento com Google Android/Wear OS](ALINHAMENTO-GOOGLE-ANDROID-WEAROS.md) — decisões de compatibilidade, BLE, notificações, Health Connect e limites do GT3 Maxx.
