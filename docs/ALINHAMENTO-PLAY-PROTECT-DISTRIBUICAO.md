@@ -164,3 +164,13 @@ Se, após auditoria e correções, a classificação continuar incorreta, seguir
 ## Decisão final
 
 Não desativar proteções do Android nem tentar mascarar permissões. Manter a variante diagnostic sem acesso a notificações para testes BLE/Health Connect locais. Manter a variante companion com Notification Listener porque o produto é um app Health & Fitness cuja finalidade é retransmitir notificações para o wearable. Antes de alegar que o uso está integralmente alinhado à exceção do Google, implementar e validar a retransmissão ao GT3 Maxx. Distribuir companion pelo Google Play, com declarações de Saúde e fitness/Atividade e fitness, Segurança dos dados e política de privacidade. A categoria não garante remoção de avisos do Play Protect.
+
+
+## 8. Auditoria de obsolescência — execução #193 (04/11/2026)
+
+O relatório acima descreve o artefato histórico run 41761934088/versão alpha.1 e não deve ser confundido com o pacote atual.
+
+- A execução #193 da PR #9 gerou o pacote relogio-2.0-diagnostic-debug-apk, versão 0.4.0-alpha.3-diagnostic.
+- O pacote passou Lint, testes, builds dos dois sabores, guardrails, auditoria de manifestos e verificação de assinatura APK v2.
+- O BUILD-INFO foi ajustado para registrar dois identificadores: SHA fonte da branch/head da PR e SHA de merge/teste usado pelo evento pull_request.
+- O APK permanece debug; a verificação de CI não confirma instalação física, aceitação pelo Play Protect nem funcionamento no Galaxy A06.

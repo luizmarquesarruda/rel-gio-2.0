@@ -97,6 +97,11 @@ def audit_manifest(manifest_xml: str, variant: str) -> list[AuditIssue]:
         return [AuditIssue("manifest_root_invalid", "APK manifest root element is not <manifest>.")]
 
     issues: list[AuditIssue] = []
+    if root.find("uses-permission-sdk-31") is not None:
+        issues.append(AuditIssue(
+            "unsupported_permission_element",
+            "Android manifests do not support uses-permission-sdk-31; use uses-permission.",
+        ))
     expected_package = (
         "com.luizmarquesarruda.relogio20.diagnostic"
         if variant == "diagnostic"
@@ -147,6 +152,24 @@ def audit_manifest(manifest_xml: str, variant: str) -> list[AuditIssue]:
         issues.append(AuditIssue(
             "backup_must_be_disabled",
             "android:allowBackup must be explicitly false for this app.",
+        ))
+
+    if not _attr(application, "icon"):
+        issues.append(AuditIssue(
+            "application_icon_missing",
+            "Application must declare an explicit launcher icon.",
+        ))
+
+    if not _attr(application, "dataExtractionRules"):
+        issues.append(AuditIssue(
+            "data_extraction_rules_missing",
+            "Application must declare the explicit Android 12+ data extraction policy.",
+        ))
+
+    if not _attr(application, "fullBackupContent"):
+        issues.append(AuditIssue(
+            "legacy_backup_rules_missing",
+            "Application must declare the explicit legacy backup exclusion policy.",
         ))
 
     if _bool_attr(application, "usesCleartextTraffic") is True:

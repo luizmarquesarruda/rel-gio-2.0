@@ -360,3 +360,95 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Nenhuma API privada foi presumida ou simulada. Nada foi lido do armazenamento interno do Wearfit Pro; nenhuma credencial foi reutilizada; nenhuma escrita proprietária/OTA/reset foi executada.
 - Perfil BLE já adicionado continua como caminho local de compatibilidade/diagnóstico; bateria é candidata e semântica de sensores/controles continua não validada.
 - A implementação do SDK de parceiros não foi feita por ausência de SDK/contrato técnico verificável. CI e teste físico permanecem **não validados**.
+
+
+## 04/11/2026 — Auditoria modular e correções de compatibilidade/segurança
+
+### Evidências identificadas
+- O Android Lint do run 180 apontou um erro `NewApi`: `LocalDate.ofInstant` exige API 34, mas o aplicativo declara `minSdk 26`. O mesmo run concluiu testes, builds, guardrails de privacidade e auditoria dos manifestos/assinaturas; a etapa de Lint falhou e impediu a publicação do APK.
+- O workflow preenchia `BUILD-INFO.txt` com a versão antiga `0.4.0-alpha.2-diagnostic`, embora `VERSION` e `app/build.gradle.kts` estivessem em `0.4.0-alpha.3`.
+- A tela de inventário GATT disponibilizava botões genéricos de leitura e inscrição em qualquer característica que anunciasse READ/NOTIFY/INDICATE. Isso ampliava a superfície de interação além do perfil de compatibilidade permitido.
+- `MainActivity.kt` segue concentrando UI e ciclo BLE; a extração do transporte permanece dívida arquitetural e não foi simulada como concluída.
+
+### Correções aplicadas na branch `fix/security-quality-gates-20261104`
+- Criado `HealthConnectDayWindow`, calculando a data local com `Instant.atZone(zoneId).toLocalDate().atStartOfDay(zoneId)`, compatível com `minSdk 26`; o repositório Health Connect passou a usar o helper.
+- Adicionados testes da virada de data em `America/Sao_Paulo` e `Pacific/Auckland`.
+- Removidos os controles manuais genéricos “Ler” e “Ouvir” das características descobertas. O inventário continua exibindo UUIDs, propriedades e descritores. A inscrição automática limita-se à NUS TX, exige nome conhecido + fingerprint GATT completo e usa apenas o CCCD padrão; NUS RX não recebe dados.
+- O workflow agora lê a versão canônica de `VERSION`, compara com `versionName` do Gradle e gera o `BUILD-INFO.txt` dinamicamente com sufixo `-diagnostic`.
+- Adicionado teste Python para manter `VERSION`, Gradle e metadados do artefato alinhados.
+- Mapa de módulos e changelog atualizados.
+
+### Situação de validação
+- O CI executado no HEAD anterior à correção reportou um erro Lint `NewApi` e 61 avisos; os testes unitários, builds das variantes, guardrails e auditorias de APK concluíram com sucesso, mas a execução global falhou no Lint.
+- Após a correção, o novo CI ainda precisa concluir no HEAD final desta branch. Nenhum status verde é declarado nesta etapa.
+- Testes físicos de BLE e interface no Galaxy A06/GT3 MAX Call, TalkBack, escala de fonte e comparação da bateria com Wearfit Pro: **não validados**.
+- Integração Wearfit Partner SDK, sensores, rotas e encaminhamento BLE de notificações permanecem pendentes de contrato/protocolo validado.
+- OTA/DFU, reset, comandos proprietários e gravação de dados de saúde continuam bloqueados.
+
+
+## 04/11/2026 — Segunda rodada de auditoria: obsolescência, manifesto e proveniência do APK
+
+### Evidências da nova rodada
+- A execução #193 da PR #9 passou em Lint, testes, builds diagnostic/companion, guardrails, auditoria dos manifestos/assinaturas e publicação do APK. O relatório Lint ainda mostrava Activity KTX 1.10.1 e coroutines Android 1.10.2, ausência de ícone e regras explícitas de extração, além de referências Bluetooth API 31 no caminho legado.
+- O manifesto declarava BLUETOOTH_SCAN/CONNECT como permissões comuns, embora sejam permissões do Android 12/API31+. O atributo neverForLocation também aparecia no nó comum.
+- Após a retirada dos botões de leitura GATT, dois callbacks onCharacteristicRead e handleRead permaneceram sem chamadores.
+- README.md ainda instruía usar os botões Ler/Ouvir, informava a versão 0.4.0-alpha.2 e descrevia seleção manual, divergindo do fluxo atual de identificação por endereço local e conexão automática.
+- BUILD-INFO.txt registrava o SHA de merge/teste usado pelo evento pull_request, sem distinguir o SHA fonte da branch/PR.
+
+### Correções aplicadas nesta rodada
+- Atualizadas AndroidX Activity KTX para 1.13.0 e kotlinx-coroutines-android para 1.11.0, versões estáveis publicadas pelos respectivos projetos. Health Connect 1.1.0 foi mantido.
+- BLUETOOTH_SCAN e BLUETOOTH_CONNECT permanecem no elemento padrão uses-permission; o atributo neverForLocation recebe tools:targetApi=s para delimitar o aviso de Lint à API 31+. A permissão de localização para versões legadas continua limitada a maxSdkVersion=30.
+- Adicionado ícone vetorial local e regras de exclusão para backup legado, backup em nuvem e transferência entre dispositivos. allowBackup permanece false.
+- Auditor de manifestos ampliado para verificar permissões padrão, rejeitar o elemento não suportado uses-permission-sdk-31, além de verificar ícone, dataExtractionRules e fullBackupContent.
+- Removidos callbacks GATT de leitura e função handleRead que ficaram sem chamadores. O fluxo CCCD mantém o retorno Boolean legado e isola a chamada moderna em helper anotado para API 33+.
+- Workflow passa a registrar source_commit (HEAD da PR) e tested_commit (SHA efetivamente testado pelo GitHub Actions).
+- README atualizado para refletir identificação local, conexão automática, inventário GATT passivo e versão canônica.
+- targetSdk 36 mantido: desde 31/08/2026, o Google Play exige API 36 ou superior para novas apps/atualizações. A elevação a API 37 não é necessária para cumprir o requisito atual e fica pendente de testes Android 17.
+- Avisos menores de internacionalização/setTextI18n e recomendações UseKtx podem permanecer, mesmo com compilação e testes aprovados.
+
+### Validação
+- Os testes de contrato foram executados primeiro e falharam em 7 condições nos runs #194/#195, identificando as inconsistências antes da correção.
+- O CI deverá validar novamente os contratos, os dois sabores, permissões/serviços mesclados, assinatura e artefatos no HEAD final.
+- Galaxy A06/Android 16, instalação, TalkBack, transferências do Android e comunicação física GT3 MAX: **não validados nesta rodada**.
+- Nenhum sensor, protocolo proprietário, notificação enviada ao relógio, OTA/DFU ou reset foi habilitado.
+
+## 04/11/2026 — Ajuste final do auditor de APK compilado
+
+- Run #207 comprovou que AAPT/apkanalyzer serializa referências de recursos do manifesto como `@ref/0x...`, embora a fonte declare `@xml/data_extraction_rules` e `@xml/backup_rules`.
+- O auditor foi ajustado para exigir que ambos os atributos existam e não estejam vazios no APK final, sem exigir que o nome simbólico sobreviva à compilação.
+- Os testes de fonte continuam exigindo os identificadores de recursos exatos e confirmam que backup em nuvem, transferência e backup legado excluem os dados do aplicativo.
+- Adicionado teste que reproduz o manifesto compilado com referências `@ref` e testes de regressão para ausência de cada atributo.
+- Corrigida última frase obsoleta no README: a seleção manual de um dispositivo genérico foi removida; a conexão usa somente o endereço GT3 MAX configurado localmente.
+- Run #207 passou Lint, testes Kotlin, build das duas variantes e guardrails de dependências/permissões. Falhou somente na comparação textual dos atributos de backup no auditor. O CI seguinte deve revalidar o novo comportamento, auditoria das assinaturas e publicação.
+- Não houve instalação física ou teste de conexão no Galaxy A06 nesta rodada.
+
+
+## 04/11/2026 — Modernização compatível do toolchain e limpeza de Lint
+
+- O relatório Lint do APK da execução #207 mostrou 54 avisos: 50 SetTextI18n, 2 UseKtx, 1 UseRequiresApi e 1 OldTargetApi. Lint passou, mas os três avisos estruturais foram corrigidos; avisos SetTextI18n permanecem como dívida de internacionalização.
+- O Gradle 8.13 produziu aviso explícito de versão desatualizada. A matriz Kotlin declara KGP 2.4.21 compatível com Gradle até 9.7.0 e AGP entre 8.5.2 e 9.3.1. O projeto mantém AGP 8.13.2 (dentro da faixa), atualiza KGP para 2.4.21 e Gradle para 9.5.0.
+- Atualizada a anotação de helper API33+ de TargetApi para RequiresApi, propagando a exigência ao chamador.
+- Substituídas duas operações manuais SharedPreferences.edit().apply() pela extensão androidx.core.content.edit, já presente na árvore runtime.
+- Corrigida a última descrição do README que dizia que o usuário escolhia um dispositivo genérico; agora registra conexão somente ao endereço local configurado.
+- Testes Python adicionados para fixar as versões compatíveis do toolchain, exigir RequiresApi/KTX e manter o README coerente.
+- CI nesta combinação deve validar Lint, testes, montagem dos APKs, manifestos e assinatura antes de declarar a atualização aprovada.
+- A atualização do AGP para 9.x foi deixada fora deste conjunto: AGP9 muda o modelo de integração Kotlin e requer migração específica do projeto. AGP8.13.2 permanece dentro da faixa compatível do KGP 2.4.21.
+
+
+### Ajuste de compatibilidade do Gradle — 04/11/2026
+- O run #210/#211 falhou ao aplicar AGP 8.13.2 com Gradle 9.7.0: o log confirmou que AGP8.x usa InternalProblems, API interna removida no Gradle9.6.
+- Gradle ajustado para 9.5.0, versão anterior à remoção e dentro da faixa plenamente suportada pelo KGP 2.4.21. AGP8.13.2 permanece sem alteração.
+- A migração para AGP9.x permanece separada, pois exige adotar o modelo built-in Kotlin/Android Gradle Plugin 9 e rever a aplicação do plugin Kotlin.
+- CI da combinação Gradle9.5.0 + KGP2.4.21 + AGP8.13.2 ainda precisa concluir.
+
+
+## 04/11/2026 — Validação final da segunda rodada (run #213)
+
+- Pull Request CI #213: **concluído com sucesso** no HEAD `246bc75fb3a23c69b25813fdd0291e51432a587f`.
+- Gradle 9.5.0 + Kotlin Gradle Plugin 2.4.21 + Android Gradle Plugin 8.13.2 aprovados em Lint, testes Kotlin, build diagnostic/companion, guardrails de dependência/permissão, auditoria dos manifestos mesclados, verificação APK Signature Scheme v2 e publicação.
+- Artefato publicado: `relogio-2.0-diagnostic-debug-apk`, versão `0.4.0-alpha.3-diagnostic`; BUILD-INFO registra source_commit `246bc75fb3a23d6327a2c74acd69915263bdff16` e tested_commit `7b201544f5423ebd2f6133009584db4e88b7cf42`.
+- SHA-256 do APK diagnostic: `27e4bcc623be0e76c29ccf7f16dbf33ff7be0e5ade22e2fdc200adee9813f24b`; conferido contra SHA256SUMS. Assinatura v2 verificada.
+- Lint final: 31 avisos na variante diagnostic e 38 na companion; nenhum erro. Permanecem avisos SetTextI18n (strings diretas sem recursos de localização) e OldTargetApi (targetSdk 36). UseKtx e UseRequiresApi foram removidos.
+- targetSdk 36 mantido por requisito Play; API37 não foi ativada sem testes Android 17.
+- Artefato é build debug, com certificado Android Debug e `release_ready=false`; não é release de produção.
+- PR #9 continua aberta, draft e sem merge. Galaxy A06/Android16, instalação, TalkBack e comunicação física GT3 MAX: **não validados**.

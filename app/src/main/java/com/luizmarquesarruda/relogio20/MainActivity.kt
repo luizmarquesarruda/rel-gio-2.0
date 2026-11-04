@@ -14,6 +14,8 @@ import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectAvailabil
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsRepository
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsResult
 import androidx.activity.ComponentActivity
+import androidx.annotation.RequiresApi
+import androidx.core.content.edit
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.health.connect.client.PermissionController
 import kotlinx.coroutines.CoroutineScope
@@ -571,12 +573,14 @@ class MainActivity : ComponentActivity() {
             .setMessage("Informe o endereço Bluetooth exibido no relógio. Será salvo somente neste aparelho, sem inclusão no código público ou no relatório TXT.")
             .setView(input)
             .setNegativeButton("Cancelar", null)
-            .setNeutralButton("Remover") { _, _ -> identityPrefs.edit().remove("gt3_max_address").apply() }
+            .setNeutralButton("Remover") { _, _ ->
+                identityPrefs.edit { remove("gt3_max_address") }
+            }
             .setPositiveButton("Salvar") { _, _ ->
                 val address = BleDeviceIdentity.normalize(input.text.toString())
                 if (address == null) updateStatus("Endereço inválido. Use AA:BB:CC:DD:EE:FF.")
                 else {
-                    identityPrefs.edit().putString("gt3_max_address", address).apply()
+                    identityPrefs.edit { putString("gt3_max_address", address) }
                     appendLog("Identidade GT3 MAX salva localmente: " + maskAddress(address))
                     afterSave?.invoke()
                 }
@@ -895,29 +899,6 @@ class MainActivity : ComponentActivity() {
         }
 
         @Deprecated("Deprecated by Android API 33")
-        override fun onCharacteristicRead(
-            gatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic,
-            status: Int
-        ) {
-            if (bluetoothGatt !== gatt) return
-            val value = characteristic.value ?: byteArrayOf()
-            handleRead(characteristic.uuid.toString(), status, value)
-            completeGattOperation(gatt)
-        }
-
-        override fun onCharacteristicRead(
-            gatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic,
-            value: ByteArray,
-            status: Int
-        ) {
-            if (bluetoothGatt !== gatt) return
-            handleRead(characteristic.uuid.toString(), status, value)
-            completeGattOperation(gatt)
-        }
-
-        @Deprecated("Deprecated by Android API 33")
         override fun onCharacteristicChanged(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic
@@ -1012,8 +993,8 @@ class MainActivity : ComponentActivity() {
         runOnUiThread {
             content.removeAllViews()
             addText(content, "Inventário GATT", 19f, true)
-            addText(content, "O app não oferece botões de escrita nas características. " +
-                "A escuta usa somente o descritor padrão CCCD (0x2902).", 12f)
+            addText(content, "Inventário passivo: características desconhecidas não são lidas nem inscritas. " +
+                "Somente NUS TX pode receber inscrição automática via CCCD padrão, após o fingerprint completo do GT3 MAX Call.", 12f)
 
             val nusService = gatt.getService(WearfitProtocolProfile.SERVICE_UUID)
             val rxCharacteristic = nusService?.getCharacteristic(
@@ -1070,56 +1051,7 @@ class MainActivity : ComponentActivity() {
                         addText(content, "Descritor: " + descriptor.uuid, 10f)
                     }
 
-                    val row = LinearLayout(this).apply {
-                        orientation = LinearLayout.HORIZONTAL
-                        gravity = Gravity.CENTER_VERTICAL
-                    }
-
-                    if (properties and BluetoothGattCharacteristic.PROPERTY_READ != 0) {
-                        row.addView(makeButton("Ler") {
-                            readCharacteristic(characteristic)
-                        }, LinearLayout.LayoutParams(0, dp(44), 1f))
-                    }
-
-                    if (properties and (BluetoothGattCharacteristic.PROPERTY_NOTIFY or
-                            BluetoothGattCharacteristic.PROPERTY_INDICATE) != 0) {
-                        row.addView(makeButton("Ouvir") {
-                            enableNotifications(gatt, characteristic)
-                        }, LinearLayout.LayoutParams(0, dp(44), 1f).apply {
-                            marginStart = dp(6)
-                        })
-                    }
-
-                    if (row.childCount > 0) {
-                        content.addView(row)
-                    }
                 }
-            }
-        }
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun readCharacteristic(characteristic: BluetoothGattCharacteristic) {
-        val gatt = bluetoothGatt
-        if (gatt == null || isGattDisconnecting) {
-            appendLog("Leitura cancelada: sem conexão GATT ativa ou desconexão em andamento.")
-            return
-        }
-        gattOperationQueue.enqueue {
-            if (bluetoothGatt !== gatt) {
-                appendLog("Leitura descartada: conexão GATT mudou antes da execução.")
-                false
-            } else {
-                val started = if (Build.VERSION.SDK_INT >= 33) {
-                    gatt.readCharacteristic(characteristic)
-                } else {
-                    @Suppress("DEPRECATION")
-                    gatt.readCharacteristic(characteristic)
-                }
-                appendLog("Leitura solicitada para " + characteristic.uuid +
-                    ". Iniciada: " + started)
-                if (!started) appendLog("O Android não iniciou a leitura.")
-                started
             }
         }
     }
@@ -1167,27 +1099,23 @@ class MainActivity : ComponentActivity() {
                     appendLog("Android recusou a inscrição local em " + characteristic.uuid)
                     false
                 } else {
-                    val writeStatus = if (Build.VERSION.SDK_INT >= 33) {
-                        gatt.writeDescriptor(descriptor, descriptorValue)
+                    val writeStarted = if (Build.VERSION.SDK_INT >= 33) {
+                        writeDescriptorApi33(gatt, descriptor, descriptorValue)
                     } else {
                         @Suppress("DEPRECATION")
                         run {
                             descriptor.value = descriptorValue
-                            if (gatt.writeDescriptor(descriptor)) {
-                                BluetoothStatusCodes.SUCCESS
-                            } else {
-                                BluetoothStatusCodes.ERROR_UNKNOWN
-                            }
+                            gatt.writeDescriptor(descriptor)
                         }
                     }
-                    if (writeStatus == BluetoothStatusCodes.SUCCESS) {
+                    if (writeStarted) {
                         appendLog("CCCD solicitado para " + characteristic.uuid +
                             "; aguardando confirmação do callback GATT.")
                         true
                     } else {
                         pendingNotifications.remove(key)
                         gatt.setCharacteristicNotification(characteristic, false)
-                        appendLog("Falha ao solicitar CCCD. Código: " + writeStatus)
+                        appendLog("O Android recusou iniciar a inscrição CCCD para " + characteristic.uuid)
                         false
                     }
                 }
@@ -1195,15 +1123,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    @SuppressLint("MissingPermission")
+    private fun writeDescriptorApi33(
+        gatt: BluetoothGatt,
+        descriptor: BluetoothGattDescriptor,
+        value: ByteArray
+    ): Boolean =
+        gatt.writeDescriptor(descriptor, value) == BluetoothStatusCodes.SUCCESS
     private fun completeGattOperation(gatt: BluetoothGatt) {
         if (bluetoothGatt !== gatt) return
         gattOperationQueue.onOperationCompleted()
-    }
-
-    private fun handleRead(uuid: String, status: Int, value: ByteArray) {
-        val description = if (value.isEmpty()) "0 bytes" else
-            value.size.toString() + " bytes: " + BleValueFormatter.toHex(value)
-        appendLog("Leitura " + uuid + " | status=" + status + " | " + description)
     }
 
     private fun handleNotification(serviceUuid: String, uuid: String, value: ByteArray) {

@@ -1,5 +1,42 @@
 # Changelog
 
+## Não lançado — atualização compatível do toolchain e limpeza Lint
+
+- Atualizados Kotlin Gradle Plugin para 2.4.21 e Gradle para 9.5.0, mantendo Android Gradle Plugin 8.13.2 dentro da matriz oficial de compatibilidade.
+- Substituído TargetApi por RequiresApi no helper de API33+ e aplicado SharedPreferences KTX para remover avisos locais.
+- README passa a descrever somente a conexão ao endereço GT3 MAX configurado localmente.
+- AGP9 não foi incluído por exigir migração separada da integração Kotlin. Gradle 9.7 foi rejeitado pela API interna removida no Gradle 9.6; ajustado para Gradle 9.5 com AGP8.13.2.
+- CI da nova combinação ainda precisa concluir.
+
+
+## Não lançado — auditoria do manifesto compilado
+
+- Auditor de APK atualizado para aceitar referências de recursos compiladas (@ref) em dataExtractionRules/fullBackupContent, mantendo a exigência de ambos os atributos.
+- Testes adicionados para a forma compilada e para ausência de cada política; testes de código-fonte preservam nomes e exclusões exatos.
+- README corrigido para refletir conexão automática restrita ao endereço local configurado, sem seleção genérica manual.
+- Run #207: Lint, testes, build e guardrails passaram; auditoria de APK falhou apenas no formato textual das referências de recursos. A nova execução deverá confirmar a correção e a publicação.
+
+
+## Não lançado — segunda rodada de auditoria e correção de obsolescência
+
+- Atualizadas AndroidX Activity KTX para 1.13.0 e coroutines Android para 1.11.0 após alertas de versão; Health Connect 1.1.0 foi mantido.
+- Mantidas as permissões Bluetooth no elemento padrão uses-permission, com tools:targetApi=s no atributo neverForLocation; o auditor rejeita o elemento não suportado uses-permission-sdk-31.
+- Adicionado ícone vetorial próprio e regras explícitas de exclusão para backup/extração em nuvem, transferência entre dispositivos e backup legado; allowBackup continua false.
+- Removidos callbacks GATT de leitura e função handleRead que ficaram sem chamadores. O fluxo CCCD separa a chamada moderna API33+ do caminho Boolean legado.
+- O artefato passa a identificar separadamente o SHA fonte da PR e o SHA efetivamente testado pelo GitHub Actions.
+- README alinhado com identificação local do relógio, conexão automática, inventário GATT passivo e versão canônica VERSION.
+- targetSdk 36 mantido por atender ao requisito atual do Google Play; API37 fica pendente de validação específica no Android 17.
+- Testes de regressão dos contratos atuais adicionados; CI no novo HEAD ainda precisa concluir.
+
+
+## Não lançado — auditoria modular e hardening
+
+- Corrigida compatibilidade da janela de passos diários do Health Connect com Android API 26; adicionados testes para fusos horários com datas locais distintas.
+- Removida da tela GATT a leitura e inscrição manual de características arbitrárias. A única inscrição automática disponível continua condicionada ao fingerprint completo do GT3 MAX Call e limitada à NUS TX via CCCD padrão.
+- Metadados do APK diagnostic passam a ser derivados de `VERSION`, com verificação contra `versionName` do Gradle; removida a versão antiga fixa do `BUILD-INFO.txt`.
+- Adicionados testes Python de consistência dos metadados do build e atualização do mapa de módulos/diário.
+- Lint, CI no HEAD final e teste físico: **aguardando validação**.
+
 ## Não lançado — investigação do canal de parceiros Wearfit Pro
 
 - Analisada a declaração Weike atualizada em 04/08/2023: ela prevê acesso por aplicativos terceiros autorizados a identificador aleatório do dispositivo, estado, notificações e, mediante autorização expressa, dados de sensores, sono, exercício, uso, logs e localização.
@@ -157,3 +194,11 @@ As alterações relevantes do Relógio 2.0 são registradas aqui. Segue SemVer: 
 - A atualização periódica do Health Connect é suspensa quando READ_STEPS não foi concedida ou foi revogada.
 
 - Janela diária calculada a partir do instante da consulta; cancelamento é propagado e polling é suspenso ao perder o provider.
+
+
+## Validação — segunda auditoria (run #213)
+
+- CI verde no SHA `246bc75fb3a23d6327a2c74acd69915263bdff16` com Gradle 9.5.0, KGP 2.4.21 e AGP 8.13.2.
+- Lint, testes Kotlin, builds de ambas as variantes, guardrails, auditoria de manifestos, assinatura APK v2 e publicação concluíram com sucesso.
+- Artefato diagnostic `0.4.0-alpha.3-diagnostic` publicado; SHA-256 `27e4bcc623be0e76c29ccf7f16dbf33ff7be0e5ade22e2fdc200adee9813f24b`.
+- Permanecem 31/38 avisos Lint nas variantes diagnostic/companion (principalmente SetTextI18n e OldTargetApi). Testes físicos não realizados.

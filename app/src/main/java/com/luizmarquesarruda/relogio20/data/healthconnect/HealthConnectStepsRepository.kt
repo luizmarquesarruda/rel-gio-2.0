@@ -8,7 +8,6 @@ import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import com.luizmarquesarruda.relogio20.domain.health.StepsSnapshot
 import java.time.Instant
-import java.time.LocalDate
 import java.time.ZoneId
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -72,7 +71,7 @@ internal class HealthConnectStepsRepository(context: Context) {
                 return HealthConnectStepsResult.PermissionRequired
             }
 
-            val start = LocalDate.ofInstant(now, zoneId).atStartOfDay(zoneId).toInstant()
+            val start = HealthConnectDayWindow.startOfDay(now, zoneId)
             val response = client.aggregate(
                 AggregateRequest(
                     metrics = setOf(StepsRecord.COUNT_TOTAL),
