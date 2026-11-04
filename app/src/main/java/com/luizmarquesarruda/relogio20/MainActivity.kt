@@ -2262,8 +2262,14 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     ) {
-                        if (bluetoothGatt !== gatt || isGattDisconnecting) false
-                        else if (automatic && !automaticGattDiscoveryEnabled) {
+                        if (bluetoothGatt !== gatt || isGattDisconnecting) {
+                            gattExplorationProgress.markSkipped(
+                                operation.serviceUuid, operation.characteristicUuid,
+                                GattProgressOperation.READ
+                            )
+                            updateGattProgressUi()
+                            false
+                        } else if (automatic && !automaticGattDiscoveryEnabled) {
                             gattExplorationProgress.markSkipped(
                                 operation.serviceUuid, operation.characteristicUuid,
                                 GattProgressOperation.READ

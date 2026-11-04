@@ -1,3 +1,12 @@
+## 04/11/2026 — Eliminação de leitura GATT redundante
+
+- Auditoria identificou que a bateria 0x2A19 já era lida pelo plano básico de conexão e podia entrar novamente como READ no plano aprofundado.
+- O plano aprofundado agora evita repetir esse READ e mantém apenas a inscrição opcional NOTIFY/INDICATE quando a propriedade e o CCCD são anunciados.
+- Removida duplicação na tabela interna de características Body Composition Feature 0x2A9B.
+- Operações READ que forem interrompidas antes do início são marcadas como não executadas no painel, sem serem contadas como falha do sensor.
+- Teste unitário garante que a exploração aprofunda a bateria sem duplicar a leitura básica.
+- CI e teste físico no GT3 MAX/Galaxy A06: **não validados nesta alteração**.
+
 ## 04/11/2026 — Progresso GATT e marcadores temporais
 
 - Adicionado rastreador em memória por operação READ/CCCD para apresentar total planejado, concluído, respondido, inscrito, notificações observadas, valores decodificados, falhas, timeouts e itens na fila.

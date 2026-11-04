@@ -42,6 +42,7 @@ Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALT
 - Inscreve automaticamente somente NUS TX no GT3 MAX Call quando nome e fingerprint GATT completo coincidem; NUS RX continua sem escrita.
 - Registra leituras, status de callbacks, inscrições confirmadas/falhas e valores Bluetooth SIG decodificados (frequência cardíaca, pressão, oximetria, termômetro, ambiente, corrida/cadência, ciclismo e capacidades de composição corporal quando anunciados). HEX bruto é guardado na biblioteca privada somente durante captura consentida; o catálogo de inventário conserva metadados.
 - A tela Testes e descobertas mostra se os testes automáticos estão ativos; a biblioteca detalha UUID de serviço/característica e os resultados preservados.
+- O painel principal acompanha o progresso READ/CCCD por canal, distinguindo respostas, inscrições aguardando dados, notificações, decodificações, falhas e timeouts. Um marcador temporal permite registrar ações feitas fisicamente no relógio e compará-las com os eventos BLE no TXT.
 - Reagrupa quadros AB fragmentados e separa quadros concatenados sem inventar semântica para comandos desconhecidos.
 - Reconhece um quadro de bateria `0x91/0x80` como **candidato**, sem confirmar o valor no GT3 Maxx.
 

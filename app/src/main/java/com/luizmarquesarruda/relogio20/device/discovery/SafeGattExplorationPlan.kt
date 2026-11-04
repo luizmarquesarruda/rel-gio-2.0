@@ -50,7 +50,6 @@ internal object SafeGattExplorationPlan {
         KnownCharacteristic("1822", "2a5f", false, true, "oximetria contínua"),
         KnownCharacteristic("1822", "2a60", true, false, "recursos de oximetria"),
         KnownCharacteristic("181b", "2a9b", true, false, "recursos de composição corporal"),
-        KnownCharacteristic("181b", "2a9b", true, false, "recursos de composição corporal"),
         KnownCharacteristic("181b", "2a9c", false, true, "composição corporal"),
         KnownCharacteristic("1814", "2a53", false, true, "velocidade/cadência de corrida"),
         KnownCharacteristic("1814", "2a54", true, false, "recursos de corrida"),
@@ -114,7 +113,10 @@ internal object SafeGattExplorationPlan {
                         it.service == serviceShort && it.characteristic == shortCharacteristic
                     } ?: return@characteristicLoop
                     val properties = characteristic.properties
-                    if (profile.read && "READ" in properties) {
+                    // Battery 0x2A19 is already read by the automatic baseline plan.
+                    // Deep exploration keeps only its optional CCCD subscription.
+                    val alreadyReadByBaseline = serviceShort == "180f" && shortCharacteristic == "2a19"
+                    if (profile.read && "READ" in properties && !alreadyReadByBaseline) {
                         plan += Operation(
                             service.uuid, characteristic.uuid, Kind.READ_STANDARD_VALUE,
                             "Leitura manual de perfil de sensor Bluetooth SIG: ${profile.description}."

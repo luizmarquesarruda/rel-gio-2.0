@@ -147,6 +147,7 @@ Até obter SDK oficial, protocolo documentado ou captura comparativa reproduzív
 ## Progresso e correlação temporal
 
 A tela principal apresenta o progresso da exploração aprofundada por operação GATT: total planejado, operações concluídas, READ respondidos, CCCD confirmados, notificações observadas, valores Bluetooth SIG decodificados, falhas e timeouts. A lista resumida classifica cada característica como na fila, em execução, READ respondido, inscrito aguardando dados, bytes observados sem semântica confirmada, dado decodificado, falha ou timeout.
+A leitura de bateria 0x2A19 do plano básico não é repetida na exploração aprofundada; essa etapa pode apenas solicitar a inscrição CCCD opcional, se anunciada.
 
 A ausência de notificação após CCCD confirmado é apresentada como **inscrito, aguardando dados**, não como sensor inexistente ou defeituoso. Uma leitura sem bytes é distinta de timeout. Desconectar durante a exploração marca operações ainda não executadas, sem apresentá-las como falha do relógio.
 

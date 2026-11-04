@@ -243,6 +243,30 @@ class SafeGattExplorationPlanTest {
 
 
     @Test
+    fun deepPlanDoesNotRepeatBaselineBatteryReadButCanSubscribe() {
+        val plan = SafeGattExplorationPlan.buildDeep(
+            listOf(
+                GattServiceRecord(
+                    "0000180f-0000-1000-8000-00805f9b34fb",
+                    listOf(
+                        GattCharacteristicRecord(
+                            "00002a19-0000-1000-8000-00805f9b34fb",
+                            setOf("READ", "NOTIFY"),
+                            setOf("00002902-0000-1000-8000-00805f9b34fb")
+                        )
+                    )
+                )
+            )
+        )
+
+        assertEquals(1, plan.size)
+        assertEquals(
+            SafeGattExplorationPlan.Kind.SUBSCRIBE_STANDARD_MEASUREMENT,
+            plan.single().kind
+        )
+    }
+
+    @Test
     fun deepPlanDoesNotSilentlyTruncateCompatibleChannelsAbovePreviousLimit() {
         val services = (0 until 30).map { index ->
             val serviceSuffix = index.toString(16).padStart(4, '0')

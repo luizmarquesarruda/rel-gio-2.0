@@ -1,5 +1,13 @@
 # Changelog
 
+## Não lançado — prevenção de leitura GATT redundante — 04/11/2026
+
+- Removida a repetição de READ da bateria 0x2A19: a leitura continua no plano básico e o aprofundamento mantém somente a inscrição CCCD opcional.
+- Removida duplicação da entrada Body Composition Feature 0x2A9B no catálogo interno.
+- Operações READ canceladas antes do início e características que desapareçam do inventário são classificadas como não executadas no progresso, não como falha do sensor.
+- README, documento técnico, diário e teste de regressão atualizados.
+- CI e validação física no GT3 MAX/Galaxy A06: **não validadas nesta revisão**.
+
 ## Não lançado — painel de progresso e correlação temporal BLE — 04/11/2026
 
 - Adicionado painel na tela principal com progresso da exploração por operação READ/CCCD, incluindo concluídas, respondidas, inscrições confirmadas, notificações, decodificações, falhas e timeouts.
