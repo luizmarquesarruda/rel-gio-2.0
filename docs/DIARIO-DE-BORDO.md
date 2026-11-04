@@ -1,3 +1,12 @@
+## 04/11/2026 — Melhoria da tela de conexão GT3 MAX
+
+- Reorganizado o painel Bluetooth em cartão de estado, com indicador visual, título contextual e instrução objetiva conforme o estado informado pelo ciclo BLE.
+- A ação principal foi renomeada para **Buscar relógio**; a ação de desconexão é habilitada apenas durante conexão, conexão estabelecida ou encerramento.
+- Dispositivos encontrados passaram a ser exibidos em cartões com nome, RSSI e endereço parcialmente mascarado, mantendo a seleção por toque.
+- Mantidos os limites semânticos: conexão GATT não significa protocolo identificado nem sensores validados. O texto da interface explicita essa distinção.
+- Alteração restrita à apresentação de MainActivity.kt; não foram alterados scan, permissões, callbacks, fila GATT, descoberta, leitura, parser, armazenamento, Health Connect ou comandos ao relógio.
+- CI da nova branch fix/ui-conexao-gt3-20261104: aguardando execução após os commits da interface. Validação visual e teste físico no Galaxy A06/GT3 MAX: **não validados**.
+
 ## 04/11/2026 — Correção do auditor de manifesto APK
 
 - Run 41764184171 falhou somente na etapa de auditoria do manifesto final: `apkanalyzer manifest print` emitiu `Saúde & Fitness` com ampersand não escapado, e o XML deixou de ser bem-formado para o parser Python.
