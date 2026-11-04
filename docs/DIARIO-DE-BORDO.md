@@ -440,3 +440,15 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Gradle ajustado para 9.5.0, versão anterior à remoção e dentro da faixa plenamente suportada pelo KGP 2.4.21. AGP8.13.2 permanece sem alteração.
 - A migração para AGP9.x permanece separada, pois exige adotar o modelo built-in Kotlin/Android Gradle Plugin 9 e rever a aplicação do plugin Kotlin.
 - CI da combinação Gradle9.5.0 + KGP2.4.21 + AGP8.13.2 ainda precisa concluir.
+
+
+## 04/11/2026 — Validação final da segunda rodada (run #213)
+
+- Pull Request CI #213: **concluído com sucesso** no HEAD `246bc75fb3a23c69b25813fdd0291e51432a587f`.
+- Gradle 9.5.0 + Kotlin Gradle Plugin 2.4.21 + Android Gradle Plugin 8.13.2 aprovados em Lint, testes Kotlin, build diagnostic/companion, guardrails de dependência/permissão, auditoria dos manifestos mesclados, verificação APK Signature Scheme v2 e publicação.
+- Artefato publicado: `relogio-2.0-diagnostic-debug-apk`, versão `0.4.0-alpha.3-diagnostic`; BUILD-INFO registra source_commit `246bc75fb3a23d6327a2c74acd69915263bdff16` e tested_commit `7b201544f5423ebd2f6133009584db4e88b7cf42`.
+- SHA-256 do APK diagnostic: `27e4bcc623be0e76c29ccf7f16dbf33ff7be0e5ade22e2fdc200adee9813f24b`; conferido contra SHA256SUMS. Assinatura v2 verificada.
+- Lint final: 31 avisos na variante diagnostic e 38 na companion; nenhum erro. Permanecem avisos SetTextI18n (strings diretas sem recursos de localização) e OldTargetApi (targetSdk 36). UseKtx e UseRequiresApi foram removidos.
+- targetSdk 36 mantido por requisito Play; API37 não foi ativada sem testes Android 17.
+- Artefato é build debug, com certificado Android Debug e `release_ready=false`; não é release de produção.
+- PR #9 continua aberta, draft e sem merge. Galaxy A06/Android16, instalação, TalkBack e comunicação física GT3 MAX: **não validados**.

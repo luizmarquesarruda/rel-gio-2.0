@@ -194,3 +194,11 @@ As alterações relevantes do Relógio 2.0 são registradas aqui. Segue SemVer: 
 - A atualização periódica do Health Connect é suspensa quando READ_STEPS não foi concedida ou foi revogada.
 
 - Janela diária calculada a partir do instante da consulta; cancelamento é propagado e polling é suspenso ao perder o provider.
+
+
+## Validação — segunda auditoria (run #213)
+
+- CI verde no SHA `246bc75fb3a23d6327a2c74acd69915263bdff16` com Gradle 9.5.0, KGP 2.4.21 e AGP 8.13.2.
+- Lint, testes Kotlin, builds de ambas as variantes, guardrails, auditoria de manifestos, assinatura APK v2 e publicação concluíram com sucesso.
+- Artefato diagnostic `0.4.0-alpha.3-diagnostic` publicado; SHA-256 `27e4bcc623be0e76c29ccf7f16dbf33ff7be0e5ade22e2fdc200adee9813f24b`.
+- Permanecem 31/38 avisos Lint nas variantes diagnostic/companion (principalmente SetTextI18n e OldTargetApi). Testes físicos não realizados.
