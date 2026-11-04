@@ -99,6 +99,38 @@ class FeatureDiscoveryEngineTest {
     }
 
     @Test
+    fun observedNusTxTrafficUpdatesTheNusFeatureState() {
+        val inventory = FeatureDiscoveryEngine.captureInventory(
+            listOf(
+                GattServiceRecord(
+                    uuid = "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
+                    characteristics = listOf(
+                        GattCharacteristicRecord(
+                            uuid = "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+                            properties = setOf("WRITE_NO_RESPONSE")
+                        ),
+                        GattCharacteristicRecord(
+                            uuid = "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
+                            properties = setOf("NOTIFY")
+                        )
+                    )
+                )
+            ),
+            capturedAtMillis = 100L
+        )
+        val updated = FeatureDiscoveryEngine.observeNotification(
+            previous = inventory,
+            serviceUuid = "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
+            characteristicUuid = "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
+            payloadBytes = 8,
+            observedAtMillis = 200L
+        )
+        val nus = updated.findings.firstOrNull { it.id == "transport:nus-tx" }
+        assertEquals("TRÁFEGO RECEBIDO • SEM SEMÂNTICA TOTALMENTE VALIDADA", nus?.status)
+        assertEquals(1, nus?.observationCount)
+    }
+
+    @Test
     fun unknownFrameIsRecordedWithoutGuessingItsFunction() {
         val updated = FeatureDiscoveryEngine.observeNotification(
             previous = FeatureDiscoveryEngine.emptySnapshot(100L),

@@ -288,6 +288,56 @@ internal object FeatureDiscoveryEngine {
             )
         )
 
+        val previousChannelFinding = findings.firstOrNull { it.id == "channel:" + key }
+        if (previousChannelFinding != null) {
+            upsert(
+                findings,
+                previousChannelFinding.copy(
+                    status = "TRÁFEGO OBSERVADO • CONTEÚDO NÃO DECODIFICADO",
+                    detail = "Serviço " + serviceUuid + ", característica " + characteristicUuid +
+                        ". Foram observadas " + current.notificationCount +
+                        " notificações; o canal continua sem semântica confirmada.",
+                    observationCount = current.notificationCount
+                )
+            )
+        }
+        if (normalizeUuid(serviceUuid) == NUS_SERVICE && normalizeUuid(characteristicUuid) == NUS_TX) {
+            upsert(
+                findings,
+                FeatureFinding(
+                    id = "transport:nus-tx",
+                    category = "Conectividade",
+                    title = "Canal de notificações NUS TX",
+                    status = "TRÁFEGO RECEBIDO • SEM SEMÂNTICA TOTALMENTE VALIDADA",
+                    detail = "Foram recebidas " + current.notificationCount +
+                        " notificações pelo canal NUS TX. O conteúdo é classificado somente quando " +
+                        "corresponde a um formato conhecido e ainda sujeito a validação.",
+                    evidence = "UUID NUS TX e callback de notificação GATT.",
+                    observationCount = current.notificationCount
+                )
+            )
+        }
+        val standardService = shortUuid(serviceUuid)
+        val standardCharacteristic = shortUuid(characteristicUuid)
+        val standardProfile = standardProfiles.firstOrNull {
+            it.serviceUuid == standardService &&
+                (it.characteristicUuid == null || it.characteristicUuid == standardCharacteristic)
+        }
+        if (standardProfile != null) {
+            val existing = findings.firstOrNull { it.id == "standard:" + standardProfile.serviceUuid }
+            if (existing != null) {
+                upsert(
+                    findings,
+                    existing.copy(
+                        status = "TRÁFEGO OBSERVADO • VALOR NÃO VALIDADO",
+                        detail = "Notificação recebida no perfil GATT padrão " +
+                            standardProfile.serviceUuid.uppercase() +
+                            ". O valor não foi decodificado nem validado como medição."
+                    )
+                )
+            }
+        }
+
         if (frameCommand != null && frameResponse != null) {
             val commandHex = frameCommand.toString(16).padStart(2, '0').uppercase()
             val responseHex = frameResponse.toString(16).padStart(2, '0').uppercase()

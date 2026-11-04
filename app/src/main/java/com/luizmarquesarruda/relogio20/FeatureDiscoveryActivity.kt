@@ -176,7 +176,8 @@ class FeatureDiscoveryActivity : Activity() {
             "A descoberta não lê características arbitrárias, não ativa novos canais de notificação e " +
                 "não envia comandos. A inscrição NUS TX existente continua condicionada ao fingerprint " +
                 "atual do GT3 MAX Call. Características proprietárias de escrita, NUS RX, DFU, OTA e reset " +
-                "permanecem bloqueadas. O histórico guarda metadados e contagens, não payload HEX bruto.",
+                "permanecem bloqueadas. O catálogo guarda metadados e contagens, não payload HEX bruto. " +
+                "O log de diagnóstico da sessão existente pode conter HEX e só é incluído no TXT por exportação manual.",
             12f,
             0xFF526574.toInt()
         )
