@@ -21,6 +21,19 @@ O usuário compartilhou a seguinte descrição geral do produto/anúncio:
 
 O inventário observado inclui Nordic UART com UUIDs terminados em dcca9e e a notificação AB 00 05 FF 91 80 00 0C. Existe uma referência pública DT78/X8 Ultra com os mesmos UUIDs e uma fixture AB de bateria. Isso sustenta um perfil **NUS/AB candidato**, mas não identifica chipset ou modelo. A hipótese de bateria 12% não foi validada com o Wearfit Pro. Detalhes: PROTOCOLO-BLE-CANDIDATO.md.
 
+## Pista de identificação regulatória — ainda não vinculada à unidade física
+
+Existe um cadastro público de FCC ID `2A56X-GT3MAX`, modelo `GT3MAX`, atribuído à NJY Technology Co., Limited, com registro de 2022. Isso é apenas uma pista: o usuário ainda não confirmou que o rótulo/firmware da unidade em mãos contém esse FCC ID.
+
+Um dos PDFs listados nesse cadastro (documento 6135696) redireciona para uma cópia rotulada GT4 e descreve conexão pelo MActivePro, não pelo Wearfit Pro. Por esse conflito, esse manual não foi usado como especificação do relógio atual. A captura de tela do PDF espelhado retornou 403; o texto indexado foi tratado apenas como alerta de inconsistência.
+
+Referências:
+- Cadastro FCC ID 2A56X-GT3MAX: https://fccid.io/2A56X-GT3MAX
+- Página de metadados do manual: https://fccid.io/2A56X-GT3MAX/User-Manual/User-Manual-6135682
+- Resultado espelhado com redirecionamento: https://fcc.report/FCC-ID/2A56X-GT3MAX/6135696.pdf
+
+Próxima confirmação física: verificar em Configurações → Sobre (ou etiqueta/caixa) modelo exato, versão de firmware/hardware e FCC ID, se houver. Não publicar serial nem MAC.
+
 ## Hipóteses que NÃO devem ser tratadas como fatos
 
 O nome GT3 Maxx não identifica de forma inequívoca fabricante, SoC, firmware ou protocolo BLE. Não assumir compatibilidade com FitPro, DaFit, GloryFit ou qualquer protocolo publicado apenas por semelhança visual/comercial.
