@@ -12,7 +12,7 @@ class HealthConnectDayWindowTest {
         val saoPaulo = ZoneId.of("America/Sao_Paulo")
 
         assertEquals(
-            Instant.parse("2026-11-04T03:00:00Z"),
+            Instant.parse("2026-11-03T03:00:00Z"),
             HealthConnectDayWindow.startOfDay(now, saoPaulo)
         )
     }
