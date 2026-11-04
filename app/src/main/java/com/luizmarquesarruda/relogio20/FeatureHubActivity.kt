@@ -182,6 +182,7 @@ class FeatureHubActivity : Activity() {
             Feature("Histórico", "Não há histórico consolidado de sessões do GT3 MAX nesta versão.", "NÃO IMPLEMENTADO")
         )
         "device" -> listOf(
+            Feature("Bateria do relógio", "Notificação NUS TX do GT3 MAX Call com interpretação AB 0x91/0x80. O valor só será confirmado após comparação com Wearfit Pro em diferentes níveis de carga.", "LEITURA CANDIDATA • NÃO VALIDADA"),
             Feature("Brilho da tela", "Ajuste remoto depende de comando proprietário identificado e validado.", "BLOQUEADO ATÉ VALIDAR"),
             Feature("Personalizar botão inferior", "Disponibilidade varia por modelo; mapeamento e comando não confirmados.", "SUPORTE INCERTO"),
             Feature("Bloqueio / desbloqueio", "Controle remoto de bloqueio não está habilitado.", "BLOQUEADO POR SEGURANÇA", blocked = true),

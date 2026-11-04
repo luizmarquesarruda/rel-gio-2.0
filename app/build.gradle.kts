@@ -11,8 +11,8 @@ android {
         applicationId = "com.luizmarquesarruda.relogio20"
         minSdk = 26
         targetSdk = 36
-        versionCode = 8
-        versionName = "0.4.0-alpha.2"
+        versionCode = 9
+        versionName = "0.4.0-alpha.3"
         testInstrumentationRunner = "android.test.runner.AndroidJUnitRunner"
     }
 
