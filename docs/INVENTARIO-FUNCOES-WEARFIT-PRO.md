@@ -2,24 +2,24 @@
 
 ## Objetivo
 
-Usar o Wearfit Pro como referência funcional para o Relógio 2.0, sem copiar pressupostos de implementação nem assumir que existe SDK público. A documentação de privacidade do fornecedor descreve categorias de dados e permissões; não é uma especificação de integração.
+Usar o Wearfit Pro como referência funcional para o Relógio 2.0, sem copiar pressupostos de implementação nem assumir que existe SDK público. A documentação de privacidade do fornecedor descreve categorias de dados e permissões; não é uma especificação de integração. O catálogo de 33 entradas fornecidas pelo usuário está detalhado na [Matriz de compatibilidade GT3 MAX](MATRIZ-COMPATIBILIDADE-GT3-MAXX.md); a matriz é a referência de prioridade, módulo, risco e validação.
 
 ## Catálogo funcional
 
 | Área | Função de referência | Fonte/canal possível | Prioridade | Situação no Relógio 2.0 |
 |---|---|---|---|---|
 | Dispositivo | Pareamento, estado conectado e bateria/carga | Wearfit Pro ou BLE validado | P0 | BLE GATT provado; bateria ainda não identificada |
-| Atividade | Passos diários | Health Connect ou driver BLE | P0 | Health Connect em PR #2; origem GT3 não confirmada |
+| Atividade | Passos diários | Health Connect ou driver BLE | P0 | Health Connect agregado lido na PR #5; origem GT3 não confirmada |
 | Atividade | Histórico de passos e tendências | Health Connect/local | P1 | Planejado |
 | Saúde | Frequência cardíaca | Wearfit Pro/Health Connect/BLE | P1 | Sem parser GT3 validado |
 | Saúde | Sono e fases | Wearfit Pro/Health Connect/BLE | P1 | Não implementado |
 | Saúde | Exercícios e duração | Wearfit Pro/Health Connect/BLE | P1 | Não implementado |
 | Saúde | SpO2 e pressão estimada | Wearfit Pro/BLE | P2 | Não implementado; não apresentar como diagnóstico |
-| Relógio | Hora/data e sincronização | Android + comando proprietário | P0 | Hora do telefone em PR #2; ajuste do relógio pendente |
+| Relógio | Hora/data e sincronização | Android + comando proprietário | P0 | Hora do telefone exibida; ajuste do relógio físico não validado |
 | Alertas | Chamadas e chamadas perdidas | Notificação Android / integração do fabricante | P0 | Pesquisa; encaminhamento ao relógio não validado |
 | Alertas | SMS | Notificação Android / integração do fabricante | P1 | Pesquisa; não pedir READ_SMS nesta abordagem |
-| Alertas | WhatsApp e WhatsApp Business | NotificationListenerService | P0 | Planejado nesta documentação; não implementado |
-| Alertas | Outros apps | NotificationListenerService + filtros | P1 | Planejado |
+| Alertas | WhatsApp e WhatsApp Business | NotificationListenerService | P0 | Captura local consentida na companion implementada; retransmissão física não validada |
+| Alertas | Outros apps | NotificationListenerService + filtros | P1 | Captura local por pacote na companion implementada; retransmissão física não validada |
 | Recursos | Lembrete sedentário, alarme, encontrar telefone/relógio | BLE/firmware específico | P2 | Sem protocolo comprovado |
 | Saúde | Respiração, stress/fadiga e temperatura | Wearfit Pro/BLE | P2 | Não implementado; estimativas exigem validação |
 | Saúde | Glicose, MET e ciclo menstrual | Wearfit Pro/app | P3 | Não priorizar; disponibilidade/dispositivo e significado precisam ser comprovados |

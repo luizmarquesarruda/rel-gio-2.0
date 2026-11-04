@@ -4,6 +4,10 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import com.luizmarquesarruda.relogio20.notifications.NotificationCenterActivity
+import com.luizmarquesarruda.relogio20.device.ble.gatt.SerialGattOperationQueue
+import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbFrameParser
+import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitProtocolProfile
+import com.luizmarquesarruda.relogio20.HealthPrivacyActivity
 import androidx.activity.ComponentActivity
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
@@ -71,7 +75,9 @@ class MainActivity : ComponentActivity() {
     }
     private var bluetoothAdapter: BluetoothAdapter? = null
     private var bluetoothGatt: BluetoothGatt? = null
+    private var isGattDisconnecting = false
     private var currentScanCallback: ScanCallback? = null
+    private var scanStopTask: Runnable? = null
     private val handler = Handler(Looper.getMainLooper())
     private val clockTicker = object : Runnable {
         override fun run() {
@@ -88,6 +94,8 @@ class MainActivity : ComponentActivity() {
     private val scanResults = linkedMapOf<String, ScanResult>()
     private val logLines = mutableListOf<String>()
     private val activeNotifications = mutableSetOf<String>()
+    private val pendingNotifications = mutableSetOf<String>()
+    private val gattOperationQueue = SerialGattOperationQueue()
 
     private val cccdUuid: UUID =
         UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
@@ -121,7 +129,7 @@ class MainActivity : ComponentActivity() {
         root.addView(title)
 
         val subtitle = TextView(this).apply {
-            text = "Diagnóstico Bluetooth LE • fase 1"
+            text = "SAÚDE & FITNESS • smartwatch + Conexão Saúde"
             textSize = 14f
             setTextColor(0xFF526170.toInt())
         }
@@ -136,7 +144,7 @@ class MainActivity : ComponentActivity() {
         updatePhoneClock()
 
         stepsView = TextView(this).apply {
-            text = "Passos hoje: aguardando conexão"
+            text = "Passos hoje: aguardando dados da Conexão Saúde"
             textSize = 24f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             setTextColor(0xFF17212B.toInt())
@@ -145,7 +153,7 @@ class MainActivity : ComponentActivity() {
         root.addView(stepsView)
 
         healthStatusView = TextView(this).apply {
-            text = "Fonte: Conexão Saúde (Health Connect)"
+            text = "Fonte: Conexão Saúde • total agregado de fontes autorizadas"
             textSize = 12f
             setTextColor(0xFF526170.toInt())
             setPadding(0, 0, 0, dp(8))
@@ -155,27 +163,45 @@ class MainActivity : ComponentActivity() {
         val healthActions = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
         }
-        healthActions.addView(makeButton("Conectar Google Fit / Saúde") {
+        healthActions.addView(makeButton("Conectar Conexão Saúde") {
             connectHealthConnect()
         }, LinearLayout.LayoutParams(0, dp(48), 1f))
-        healthActions.addView(makeButton("Atualizar passos") {
+        healthActions.addView(makeButton("Atualizar atividade") {
             readTodaySteps()
         }, LinearLayout.LayoutParams(0, dp(48), 1f).apply {
             marginStart = dp(8)
         })
         root.addView(healthActions)
 
-        root.addView(makeButton("WhatsApp e notificações Android") {
+        root.addView(makeButton("Notificações no relógio • leitura") {
             startActivity(Intent(this, NotificationCenterActivity::class.java))
         }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
+        ))
+
+        root.addView(makeButton("Explorar funções do relógio") {
+            startActivity(Intent(this, FeatureHubActivity::class.java))
+        }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
+        ))
+
+        addText(root, "Fluxo de saúde: sensores do relógio → aplicativo → Conexão Saúde. " +
+            "A gravação de amostras do GT3 Maxx será ativada somente após validar os dados e sua origem.", 12f)
+
+        addText(root, "Frequência cardíaca, sono e SpO₂: aguardando integração e validação dos sensores. " +
+            "Não exibir estimativas como medições confirmadas.", 12f)
+
+        root.addView(makeButton("Dados de saúde e privacidade") {
+            startActivity(Intent(this, HealthPrivacyActivity::class.java))
+        }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
         ))
 
         addText(root, "Horário do relógio: sincronização ainda não disponível. " +
             "O protocolo de ajuste do GT3 MAX não foi identificado.", 12f)
 
         statusView = TextView(this).apply {
-            text = "Pronto para procurar dispositivos."
+            text = "Relógio desconectado. Procure o dispositivo para iniciar a leitura BLE."
             textSize = 14f
             setTextColor(0xFF263746.toInt())
             setPadding(0, dp(12), 0, dp(12))
@@ -185,7 +211,7 @@ class MainActivity : ComponentActivity() {
         val actions = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
         }
-        actions.addView(makeButton("Procurar relógio") { startBleScan() },
+        actions.addView(makeButton("Conectar smartwatch") { startBleScan() },
             LinearLayout.LayoutParams(0, dp(48), 1f))
         actions.addView(makeButton("Desconectar") { disconnectGatt() },
             LinearLayout.LayoutParams(0, dp(48), 1f).apply {
@@ -272,7 +298,8 @@ class MainActivity : ComponentActivity() {
             try {
                 val granted = client.permissionController.getGrantedPermissions()
                 if (!granted.containsAll(stepReadPermissions)) {
-                    healthPermissionLauncher.launch(stepReadPermissions)
+                    stepsView.text = "Passos hoje: sem acesso"
+                    healthStatusView.text = "Permissão READ_STEPS ausente. Use Conectar Health Connect para autorizar."
                     return@launch
                 }
                 val zone = ZoneId.systemDefault()
@@ -284,12 +311,17 @@ class MainActivity : ComponentActivity() {
                         timeRangeFilter = TimeRangeFilter.between(start, end)
                     )
                 )
-                val count = response[StepsRecord.COUNT_TOTAL] ?: 0L
-                stepsView.text = "Passos hoje: " + String.format(Locale.getDefault(), "%,d", count)
-                healthStatusView.text =
-                    "Dados agregados do Health Connect • atualizado " +
-                    SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
-                appendLog("Total de passos de hoje no Health Connect: " + count)
+                val count = response[StepsRecord.COUNT_TOTAL]
+                stepsView.text = StepsCountFormatter.label(count)
+                if (count == null) {
+                    healthStatusView.text = "Health Connect não retornou registros de passos para hoje."
+                    appendLog("Health Connect sem registros de passos hoje; valor mantido como indisponível, não como zero.")
+                } else {
+                    healthStatusView.text =
+                        "Dados agregados do Health Connect • atualizado " +
+                        SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+                    appendLog("Total agregado de passos de hoje no Health Connect: " + count)
+                }
             } catch (error: SecurityException) {
                 healthStatusView.text = "Acesso aos passos revogado ou não autorizado."
                 appendLog("Permissão READ_STEPS ausente: " + (error.message ?: "sem detalhes"))
@@ -371,6 +403,23 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun canReadDeviceIdentity(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+            checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) ==
+            PackageManager.PERMISSION_GRANTED
+
+    @SuppressLint("MissingPermission")
+    private fun safeDeviceName(device: BluetoothDevice): String? {
+        if (!canReadDeviceIdentity()) return null
+        return runCatching { device.name }.getOrNull()
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun safeDeviceAddress(device: BluetoothDevice): String? {
+        if (!canReadDeviceIdentity()) return null
+        return runCatching { device.address }.getOrNull()
+    }
+
     private fun requestBlePermissions() {
         requestPermissions(requiredBlePermissions(), REQUEST_BLE_PERMISSIONS)
     }
@@ -428,10 +477,16 @@ class MainActivity : ComponentActivity() {
         val callback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
                 runOnUiThread {
+                    if (currentScanCallback !== this) return@runOnUiThread
+                    val address = safeDeviceAddress(result.device)
+                    if (address == null) {
+                        appendLog("Resultado BLE ignorado: permissão para identificar dispositivo indisponível.")
+                        return@runOnUiThread
+                    }
                     val name = result.scanRecord?.deviceName
-                        ?: runCatching { result.device.name }.getOrNull()
+                        ?: safeDeviceName(result.device)
                         ?: "Dispositivo sem nome"
-                    scanResults[result.device.address] = result
+                    scanResults[address] = result
                     renderScanResults()
                     updateStatus("Busca em andamento. Dispositivos: " + scanResults.size)
                 }
@@ -439,6 +494,9 @@ class MainActivity : ComponentActivity() {
 
             override fun onScanFailed(errorCode: Int) {
                 runOnUiThread {
+                    if (currentScanCallback !== this) return@runOnUiThread
+                    scanStopTask?.let(handler::removeCallbacks)
+                    scanStopTask = null
                     updateStatus("Falha na busca BLE (código " + errorCode + ").")
                     appendLog("Falha no scan BLE: " + errorCode)
                     currentScanCallback = null
@@ -447,28 +505,46 @@ class MainActivity : ComponentActivity() {
         }
 
         currentScanCallback = callback
-        scanner.startScan(
-            null,
-            ScanSettings.Builder()
-                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-                .build(),
-            callback
-        )
-        handler.postDelayed({
-            stopBleScan()
-            updateStatus("Busca concluída. Dispositivos encontrados: " + scanResults.size)
-            appendLog("Busca BLE concluída. Total: " + scanResults.size)
-            renderScanResults()
-        }, SCAN_DURATION_MS)
+        try {
+            scanner.startScan(
+                null,
+                ScanSettings.Builder()
+                    .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                    .build(),
+                callback
+            )
+        } catch (error: SecurityException) {
+            currentScanCallback = null
+            updateStatus("Permissão Bluetooth foi revogada. Autorize novamente.")
+            appendLog("Scan BLE cancelado por SecurityException: " + (error.message ?: "sem detalhes"))
+            return
+        } catch (error: IllegalStateException) {
+            currentScanCallback = null
+            updateStatus("Não foi possível iniciar a busca BLE. Verifique o Bluetooth.")
+            appendLog("Scan BLE não iniciado: " + (error.message ?: "estado inválido"))
+            return
+        }
+        val timeout = Runnable {
+            if (currentScanCallback === callback) {
+                stopBleScan()
+                updateStatus("Busca concluída. Dispositivos encontrados: " + scanResults.size)
+                appendLog("Busca BLE concluída. Total: " + scanResults.size)
+                renderScanResults()
+            }
+        }
+        scanStopTask = timeout
+        handler.postDelayed(timeout, SCAN_DURATION_MS)
     }
 
     @SuppressLint("MissingPermission")
     private fun stopBleScan() {
+        scanStopTask?.let(handler::removeCallbacks)
+        scanStopTask = null
         val callback = currentScanCallback ?: return
+        currentScanCallback = null
         runCatching {
             bluetoothAdapter?.bluetoothLeScanner?.stopScan(callback)
         }
-        currentScanCallback = null
     }
 
     private fun renderScanResults() {
@@ -483,12 +559,13 @@ class MainActivity : ComponentActivity() {
         scanResults.values
             .sortedByDescending { it.rssi }
             .forEach { result ->
+                val address = safeDeviceAddress(result.device) ?: return@forEach
                 val name = result.scanRecord?.deviceName
-                    ?: runCatching { result.device.name }.getOrNull()
+                    ?: safeDeviceName(result.device)
                     ?: "Dispositivo sem nome"
                 val button = makeButton(
                     name + "  •  " + result.rssi + " dBm  •  " +
-                        maskAddress(result.device.address)
+                        maskAddress(address)
                 ) {
                     stopBleScan()
                     connectToDevice(result.device)
@@ -514,43 +591,86 @@ class MainActivity : ComponentActivity() {
             requestBlePermissions()
             return
         }
+        isGattDisconnecting = false
+        gattOperationQueue.reset()
+        pendingNotifications.clear()
+        activeNotifications.clear()
         runCatching { bluetoothGatt?.close() }
         bluetoothGatt = null
-        activeNotifications.clear()
         updateStatus("Conectando ao dispositivo BLE...")
         appendLog("Solicitada conexão BLE com " +
-            (runCatching { device.name }.getOrNull() ?: "dispositivo sem nome") +
-            " (" + maskAddress(device.address) + ").")
-        bluetoothGatt = device.connectGatt(
-            this,
-            false,
-            gattCallback,
-            BluetoothDevice.TRANSPORT_LE
-        )
+            (safeDeviceName(device) ?: "dispositivo sem nome") +
+            " (" + (safeDeviceAddress(device)?.let(::maskAddress) ?: "endereço oculto") + ").")
+        val newGatt = try {
+            device.connectGatt(
+                this,
+                false,
+                gattCallback,
+                BluetoothDevice.TRANSPORT_LE,
+                BluetoothDevice.PHY_LE_1M_MASK,
+                handler
+            )
+        } catch (error: SecurityException) {
+            updateStatus("Permissão Bluetooth foi revogada. Autorize novamente.")
+            appendLog("Conexão GATT bloqueada por permissão: " + (error.message ?: "sem detalhes"))
+            return
+        } catch (error: IllegalArgumentException) {
+            updateStatus("Dispositivo BLE inválido ou indisponível.")
+            appendLog("Não foi possível iniciar GATT: " + (error.message ?: "argumento inválido"))
+            return
+        }
+        if (newGatt == null) {
+            updateStatus("O Android não iniciou a conexão GATT.")
+            appendLog("connectGatt retornou null.")
+            return
+        }
+        bluetoothGatt = newGatt
     }
 
     private val gattCallback = object : BluetoothGattCallback() {
+        @SuppressLint("MissingPermission")
         override fun onConnectionStateChange(
             gatt: BluetoothGatt,
             status: Int,
             newState: Int
         ) {
+            if (bluetoothGatt !== gatt) {
+                runCatching { gatt.close() }
+                return
+            }
             appendLog("Estado GATT: status=" + status + ", estado=" + newState)
             if (status == BluetoothGatt.GATT_SUCCESS &&
                 newState == BluetoothProfile.STATE_CONNECTED) {
+                isGattDisconnecting = false
                 updateStatus("Conectado. Descobrindo serviços GATT...")
                 val started = runCatching { gatt.discoverServices() }.getOrDefault(false)
                 appendLog("Descoberta de serviços solicitada: " + started)
-            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                updateStatus("Relógio desconectado.")
-                appendLog("Conexão GATT encerrada.")
+            } else if (status != BluetoothGatt.GATT_SUCCESS) {
+                isGattDisconnecting = false
+                gattOperationQueue.reset()
+                pendingNotifications.clear()
                 activeNotifications.clear()
                 if (bluetoothGatt === gatt) bluetoothGatt = null
+                updateStatus("Falha na conexão GATT. Status: " + status)
+                appendLog("Conexão GATT falhou; estado e fila foram limpos.")
+                runCatching { gatt.close() }
+            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                isGattDisconnecting = false
+                updateStatus("Relógio desconectado.")
+                appendLog("Conexão GATT encerrada.")
+                if (bluetoothGatt === gatt) {
+                    gattOperationQueue.reset()
+                    pendingNotifications.clear()
+                    activeNotifications.clear()
+                    bluetoothGatt = null
+                }
                 runCatching { gatt.close() }
             }
         }
 
+        @SuppressLint("MissingPermission")
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
+            if (bluetoothGatt !== gatt || isGattDisconnecting) return
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 appendLog("Serviços descobertos: " + gatt.services.size)
                 renderGattServices(gatt)
@@ -567,8 +687,10 @@ class MainActivity : ComponentActivity() {
             characteristic: BluetoothGattCharacteristic,
             status: Int
         ) {
+            if (bluetoothGatt !== gatt) return
             val value = characteristic.value ?: byteArrayOf()
             handleRead(characteristic.uuid.toString(), status, value)
+            completeGattOperation(gatt)
         }
 
         override fun onCharacteristicRead(
@@ -577,7 +699,9 @@ class MainActivity : ComponentActivity() {
             value: ByteArray,
             status: Int
         ) {
+            if (bluetoothGatt !== gatt) return
             handleRead(characteristic.uuid.toString(), status, value)
+            completeGattOperation(gatt)
         }
 
         @Deprecated("Deprecated by Android API 33")
@@ -585,7 +709,8 @@ class MainActivity : ComponentActivity() {
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic
         ) {
-            handleNotification(characteristic.uuid.toString(), characteristic.value ?: byteArrayOf())
+            if (bluetoothGatt !== gatt) return
+            handleNotification(characteristic.service.uuid.toString(), characteristic.uuid.toString(), characteristic.value ?: byteArrayOf())
         }
 
         override fun onCharacteristicChanged(
@@ -593,25 +718,65 @@ class MainActivity : ComponentActivity() {
             characteristic: BluetoothGattCharacteristic,
             value: ByteArray
         ) {
-            handleNotification(characteristic.uuid.toString(), value)
+            if (bluetoothGatt !== gatt) return
+            handleNotification(characteristic.service.uuid.toString(), characteristic.uuid.toString(), value)
         }
 
+        @SuppressLint("MissingPermission")
         override fun onDescriptorWrite(
             gatt: BluetoothGatt,
             descriptor: BluetoothGattDescriptor,
             status: Int
         ) {
-            appendLog("Inscrição de notificação: descritor " +
-                descriptor.uuid.toString() + ", status=" + status)
+            if (bluetoothGatt !== gatt) return
+            val characteristic = descriptor.characteristic
+            val key = characteristic.service.uuid.toString() + "/" +
+                characteristic.uuid.toString()
+            val wasPending = pendingNotifications.remove(key)
+            if (wasPending && status == BluetoothGatt.GATT_SUCCESS) {
+                activeNotifications.add(key)
+                appendLog("Notificação confirmada pelo callback GATT para " + characteristic.uuid)
+            } else if (wasPending) {
+                activeNotifications.remove(key)
+                if (hasBlePermissions()) {
+                    runCatching { gatt.setCharacteristicNotification(characteristic, false) }
+                } else {
+                    appendLog("Permissão Bluetooth revogada; não foi possível desativar a inscrição local.")
+                }
+                appendLog("Falha na confirmação do CCCD para " + characteristic.uuid + ". Status: " + status)
+            } else {
+                appendLog("Callback de descritor sem inscrição pendente: " + descriptor.uuid)
+            }
+            completeGattOperation(gatt)
         }
     }
 
+    @SuppressLint("MissingPermission")
     private fun renderGattServices(gatt: BluetoothGatt) {
         runOnUiThread {
             content.removeAllViews()
             addText(content, "Inventário GATT", 19f, true)
             addText(content, "O app não oferece botões de escrita nas características. " +
                 "A escuta usa somente o descritor padrão CCCD (0x2902).", 12f)
+
+            val nusService = gatt.getService(WearfitProtocolProfile.SERVICE_UUID)
+            val rxCharacteristic = nusService?.getCharacteristic(
+                WearfitProtocolProfile.RX_CHARACTERISTIC_UUID
+            )
+            val txCharacteristic = nusService?.getCharacteristic(
+                WearfitProtocolProfile.TX_CHARACTERISTIC_UUID
+            )
+            if (rxCharacteristic != null && txCharacteristic != null) {
+                addText(
+                    content,
+                    "Perfil BLE candidato: NUS + quadros AB (compatibilidade observada em referência DT78). " +
+                        "Identidade/chipset do GT3 Maxx não confirmados; comandos proprietários permanecem bloqueados.",
+                    12f
+                )
+                appendLog("Fingerprint BLE candidato detectado: " + WearfitProtocolProfile.PROFILE_ID)
+            } else {
+                addText(content, "Perfil NUS/AB candidato não detectado nesta conexão.", 12f)
+            }
 
             gatt.services.forEach { service ->
                 addDivider(content)
@@ -677,19 +842,27 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("MissingPermission")
     private fun readCharacteristic(characteristic: BluetoothGattCharacteristic) {
         val gatt = bluetoothGatt
-        if (gatt == null) {
-            appendLog("Leitura cancelada: sem conexão GATT.")
+        if (gatt == null || isGattDisconnecting) {
+            appendLog("Leitura cancelada: sem conexão GATT ativa ou desconexão em andamento.")
             return
         }
-        val started = if (Build.VERSION.SDK_INT >= 33) {
-            gatt.readCharacteristic(characteristic)
-        } else {
-            @Suppress("DEPRECATION")
-            gatt.readCharacteristic(characteristic)
+        gattOperationQueue.enqueue {
+            if (bluetoothGatt !== gatt) {
+                appendLog("Leitura descartada: conexão GATT mudou antes da execução.")
+                false
+            } else {
+                val started = if (Build.VERSION.SDK_INT >= 33) {
+                    gatt.readCharacteristic(characteristic)
+                } else {
+                    @Suppress("DEPRECATION")
+                    gatt.readCharacteristic(characteristic)
+                }
+                appendLog("Leitura solicitada para " + characteristic.uuid +
+                    ". Iniciada: " + started)
+                if (!started) appendLog("O Android não iniciou a leitura.")
+                started
+            }
         }
-        appendLog("Leitura solicitada para " + characteristic.uuid +
-            ". Iniciada: " + started)
-        if (!started) appendLog("O Android não iniciou a leitura.")
     }
 
     @SuppressLint("MissingPermission")
@@ -699,8 +872,12 @@ class MainActivity : ComponentActivity() {
     ) {
         val key = characteristic.service.uuid.toString() + "/" +
             characteristic.uuid.toString()
-        if (activeNotifications.contains(key)) {
-            appendLog("Notificação já solicitada para " + characteristic.uuid)
+        if (activeNotifications.contains(key) || pendingNotifications.contains(key)) {
+            appendLog("Notificação já ativa ou pendente para " + characteristic.uuid)
+            return
+        }
+        if (bluetoothGatt !== gatt || isGattDisconnecting) {
+            appendLog("Inscrição cancelada: conexão GATT não está ativa para novas operações.")
             return
         }
 
@@ -711,12 +888,6 @@ class MainActivity : ComponentActivity() {
             return
         }
 
-        val localEnabled = gatt.setCharacteristicNotification(characteristic, true)
-        if (!localEnabled) {
-            appendLog("Android recusou a inscrição local em " + characteristic.uuid)
-            return
-        }
-
         val descriptorValue =
             if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0) {
                 BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
@@ -724,28 +895,50 @@ class MainActivity : ComponentActivity() {
                 BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
             }
 
-        val writeStatus = if (Build.VERSION.SDK_INT >= 33) {
-            gatt.writeDescriptor(descriptor, descriptorValue)
-        } else {
-            @Suppress("DEPRECATION")
-            run {
-                descriptor.value = descriptorValue
-                if (gatt.writeDescriptor(descriptor)) {
-                    BluetoothStatusCodes.SUCCESS
+        pendingNotifications.add(key)
+        gattOperationQueue.enqueue {
+            if (bluetoothGatt !== gatt) {
+                pendingNotifications.remove(key)
+                appendLog("Inscrição descartada: conexão GATT mudou antes da execução.")
+                false
+            } else {
+                val localEnabled = gatt.setCharacteristicNotification(characteristic, true)
+                if (!localEnabled) {
+                    pendingNotifications.remove(key)
+                    appendLog("Android recusou a inscrição local em " + characteristic.uuid)
+                    false
                 } else {
-                    BluetoothStatusCodes.ERROR_UNKNOWN
+                    val writeStatus = if (Build.VERSION.SDK_INT >= 33) {
+                        gatt.writeDescriptor(descriptor, descriptorValue)
+                    } else {
+                        @Suppress("DEPRECATION")
+                        run {
+                            descriptor.value = descriptorValue
+                            if (gatt.writeDescriptor(descriptor)) {
+                                BluetoothStatusCodes.SUCCESS
+                            } else {
+                                BluetoothStatusCodes.ERROR_UNKNOWN
+                            }
+                        }
+                    }
+                    if (writeStatus == BluetoothStatusCodes.SUCCESS) {
+                        appendLog("CCCD solicitado para " + characteristic.uuid +
+                            "; aguardando confirmação do callback GATT.")
+                        true
+                    } else {
+                        pendingNotifications.remove(key)
+                        gatt.setCharacteristicNotification(characteristic, false)
+                        appendLog("Falha ao solicitar CCCD. Código: " + writeStatus)
+                        false
+                    }
                 }
             }
         }
+    }
 
-        if (writeStatus == BluetoothStatusCodes.SUCCESS) {
-            activeNotifications.add(key)
-            appendLog("Inscrição solicitada em " + characteristic.uuid +
-                " pelo CCCD padrão. Nenhum byte foi escrito na característica.")
-        } else {
-            gatt.setCharacteristicNotification(characteristic, false)
-            appendLog("Falha ao solicitar notificação. Código: " + writeStatus)
-        }
+    private fun completeGattOperation(gatt: BluetoothGatt) {
+        if (bluetoothGatt !== gatt) return
+        gattOperationQueue.onOperationCompleted()
     }
 
     private fun handleRead(uuid: String, status: Int, value: ByteArray) {
@@ -754,10 +947,29 @@ class MainActivity : ComponentActivity() {
         appendLog("Leitura " + uuid + " | status=" + status + " | " + description)
     }
 
-    private fun handleNotification(uuid: String, value: ByteArray) {
+    private fun handleNotification(serviceUuid: String, uuid: String, value: ByteArray) {
         val description = if (value.isEmpty()) "0 bytes" else
             value.size.toString() + " bytes: " + BleValueFormatter.toHex(value)
         appendLog("NOTIFICAÇÃO " + uuid + " | " + description)
+
+        if (serviceUuid.equals(WearfitProtocolProfile.SERVICE_UUID.toString(), ignoreCase = true) &&
+            uuid.equals(WearfitProtocolProfile.TX_CHARACTERISTIC_UUID.toString(), ignoreCase = true)) {
+            val frame = WearfitAbFrameParser.parse(value)
+            val battery = frame?.batteryPercent
+            if (battery != null) {
+                appendLog(
+                    "Interpretação candidata do quadro AB/0x91: bateria reportada pelo relógio = " +
+                        battery + "%. Não validada por comparação repetida com Wearfit Pro."
+                )
+            } else if (frame != null) {
+                appendLog(
+                    "Quadro AB reconhecido; comando=0x" +
+                        frame.command.toString(16).uppercase(Locale.US) +
+                        ", resposta=0x" + frame.response.toString(16).uppercase(Locale.US) +
+                        ". Sem interpretação configurada para este comando."
+                )
+            }
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -769,6 +981,10 @@ class MainActivity : ComponentActivity() {
             return
         }
         appendLog("Desconexão solicitada pelo usuário.")
+        isGattDisconnecting = true
+        gattOperationQueue.reset()
+        pendingNotifications.clear()
+        activeNotifications.clear()
         gatt.disconnect()
         updateStatus("Desconectando...")
     }
@@ -786,9 +1002,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @SuppressLint("MissingPermission")
     override fun onDestroy() {
         stopBleScan()
+        gattOperationQueue.reset()
+        pendingNotifications.clear()
         healthScope.cancel()
+        isGattDisconnecting = true
         runCatching { bluetoothGatt?.disconnect() }
         runCatching { bluetoothGatt?.close() }
         bluetoothGatt = null

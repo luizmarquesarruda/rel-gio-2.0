@@ -2,7 +2,7 @@
 
 ## Estado da implementação
 
-A captura local foi implementada na branch `feat/android-notification-listener` / PR #4. O código contém `NotificationCaptureService`, `NotificationCenterActivity`, preferências de consentimento/filtro e cache em memória. A compilação e o teste físico desta fase permanecem **não validados** até o CI terminar e a instalação ser testada.
+A captura local foi implementada na branch `feat/android-notification-listener` / PR #4 e recebeu endurecimento de privacidade na PR #5. O código contém `NotificationCaptureService`, `NotificationCenterActivity`, preferências de consentimento/filtro e cache em memória. A compilação e o teste físico desta fase permanecem **não validados** até o CI terminar e a instalação ser testada.
 
 ## Objetivo
 
@@ -58,8 +58,9 @@ A última etapa está bloqueada: o protocolo proprietário de notificação do G
 - Opção de prévia do conteúdo separada da opção de exibir somente nome do app e horário.
 - Controles para pausar a captura e limpar as prévias temporárias.
 - O conteúdo fica apenas em memória do processo, sem envio à nuvem, persistência em banco/arquivo ou inclusão nos logs de diagnóstico.
-- Limite implementado: 30 eventos em memória; os mais antigos são removidos ao exceder o limite. Ainda precisa de teste de consumo no aparelho.
-- Remover conteúdo da memória quando a notificação é removida pelo Android, quando possível; expiração adicional definida no produto.
+- Limite implementado: 30 eventos em memória e retenção máxima de 15 minutos, medida por relógio monotônico. A limpeza por tempo acontece ao inserir ou consultar o cache.
+- O callback `onNotificationRemoved` remove a prévia pela chave fornecida pelo Android. Desmarcar um aplicativo também apaga as prévias já armazenadas daquele pacote. A desconexão ou destruição do listener limpa todo o cache.
+- A expiração temporal de 15 minutos já está implementada; entradas expiradas são removidas na próxima inserção ou leitura do cache.
 - Nunca registrar corpo de mensagens em logs do CI, crash reports ou relatórios públicos.
 
 ## Limitações e segurança
@@ -92,7 +93,7 @@ Código adicionado não significa integração validada. A próxima validação 
 4. Notificação sem prévia mostra apenas os campos que o Android disponibilizar.
 5. Conteúdo não aparece em logs persistentes nem é enviado à rede.
 6. Pausar/desativar a captura interrompe a coleta.
-7. Remoção/expiração limpa o cache temporário.
+7. O callback de remoção, a revogação de um pacote e a desconexão/destruição do listener limpam as prévias correspondentes; o restante expira em até 15 minutos.
 8. Nenhum payload é enviado ao relógio antes de validar o protocolo.
 
 ## Fontes oficiais

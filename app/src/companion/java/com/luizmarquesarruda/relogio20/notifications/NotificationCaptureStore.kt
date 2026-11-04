@@ -1,6 +1,7 @@
 package com.luizmarquesarruda.relogio20.notifications
 
 import android.content.Context
+import android.os.SystemClock
 import java.util.ArrayDeque
 
 internal data class NotificationPreview(
@@ -9,7 +10,8 @@ internal data class NotificationPreview(
     val appLabel: String,
     val title: String,
     val body: String,
-    val receivedAtMillis: Long
+    val receivedAtMillis: Long,
+    val capturedAtElapsedRealtimeMillis: Long
 )
 
 internal object NotificationCaptureSettings {
@@ -41,22 +43,55 @@ internal object NotificationCaptureSettings {
 
 internal object NotificationCaptureStore {
     private const val MAX_EVENTS = 30
+    internal const val RETENTION_MILLIS = 15 * 60 * 1000L
     private val lock = Any()
     private val events = ArrayDeque<NotificationPreview>(MAX_EVENTS)
 
-    fun add(event: NotificationPreview) {
+    fun add(
+        event: NotificationPreview,
+        nowElapsedRealtimeMillis: Long = SystemClock.elapsedRealtime()
+    ) {
         synchronized(lock) {
+            removeExpired(nowElapsedRealtimeMillis)
             events.removeAll { it.key == event.key }
             events.addFirst(event)
             while (events.size > MAX_EVENTS) events.removeLast()
         }
     }
 
-    fun snapshot(): List<NotificationPreview> =
-        synchronized(lock) { events.toList() }
+    fun snapshot(
+        nowElapsedRealtimeMillis: Long = SystemClock.elapsedRealtime()
+    ): List<NotificationPreview> =
+        synchronized(lock) {
+            removeExpired(nowElapsedRealtimeMillis)
+            events.toList()
+        }
+
+    fun remove(key: String) {
+        synchronized(lock) { events.removeAll { it.key == key } }
+    }
+
+    fun removePackage(packageName: String) {
+        synchronized(lock) { events.removeAll { it.packageName == packageName } }
+    }
+
+    fun millisUntilNextExpiry(
+        nowElapsedRealtimeMillis: Long = SystemClock.elapsedRealtime()
+    ): Long? = synchronized(lock) {
+        removeExpired(nowElapsedRealtimeMillis)
+        events.minOfOrNull {
+            it.capturedAtElapsedRealtimeMillis + RETENTION_MILLIS
+        }?.minus(nowElapsedRealtimeMillis)?.coerceAtLeast(0L)
+    }
 
     fun clear() {
         synchronized(lock) { events.clear() }
+    }
+
+    private fun removeExpired(nowElapsedRealtimeMillis: Long) {
+        events.removeAll {
+            nowElapsedRealtimeMillis - it.capturedAtElapsedRealtimeMillis >= RETENTION_MILLIS
+        }
     }
 }
 

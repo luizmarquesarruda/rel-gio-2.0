@@ -70,3 +70,11 @@ Esses serviços foram criados pelo telefone. Não são evidência de que o GT3 M
 - Protocolo proprietário: não identificado.
 - Chipset/fabricante: não identificados.
 - Métricas de saúde: não validadas.
+
+## Análise retrospectiva da captura (03/11/2026)
+
+A notificação AB 00 05 FF 91 80 00 0C foi comparada ao projeto público https://github.com/fbiego/dt78/blob/master/dt78_ble_server/dt78_ble_server.ino, que declara os mesmos UUIDs NUS terminados em dcca9e e uma fixture AB 00 05 FF 91 80 00 50 comentada como bateria 80%.
+
+A estrutura é compatível com um quadro de bateria da referência. O último byte 0C sugeriria 12% se o mesmo formato for usado pelo GT3 MAX. **Esse valor permanece candidato/não validado**, pois ainda não houve comparação simultânea com a indicação de bateria do Wearfit Pro nem captura em diferentes níveis de carga.
+
+O parser Kotlin adicionado reconhece apenas quadros completos desse formato e mantém a saída como interpretação candidata. Não envia comandos e não decodifica outros sensores.

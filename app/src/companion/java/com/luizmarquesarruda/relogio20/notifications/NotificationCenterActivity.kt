@@ -58,7 +58,7 @@ class NotificationCenterActivity : Activity() {
         }
 
         root.addView(TextView(this).apply {
-            text = "Notificações do Android"
+            text = "Ponte de notificações para o relógio"
             textSize = 23f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(0xFF17212B.toInt())
@@ -71,6 +71,13 @@ class NotificationCenterActivity : Activity() {
         }
         root.addView(statusView)
 
+        root.addView(TextView(this).apply {
+            text = "Finalidade: ler notificações Android dos aplicativos escolhidos para fazer a ponte com o smartwatch. A leitura não responde, apaga, arquiva nem altera a notificação no aplicativo de origem. O acesso exige autorização especial do Android, seleção explícita dos aplicativos e ativação manual. Nesta versão, a captura/visualização local está implementada; o encaminhamento ao GT3 Maxx permanece desativado até validar o protocolo de envio. As prévias ficam só na memória, limitadas a 30 itens por até 15 minutos, sem gravação em arquivos ou envio à rede."
+            textSize = 12f
+            setTextColor(0xFF526170.toInt())
+            setPadding(0, dp(4), 0, dp(10))
+        })
+
         root.addView(makeButton("Conceder / revisar acesso a notificações") {
             runCatching {
                 startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
@@ -78,14 +85,19 @@ class NotificationCenterActivity : Activity() {
         })
 
         captureSwitch = Switch(this).apply {
-            text = "Capturar notificações dos aplicativos selecionados"
+            text = "Ler notificações dos aplicativos selecionados (somente leitura)"
             textSize = 14f
             setTextColor(0xFF17212B.toInt())
             isChecked = NotificationCaptureSettings.isEnabled(this@NotificationCenterActivity)
             setOnCheckedChangeListener { _, enabled ->
                 if (enabled && !hasNotificationAccess()) {
                     isChecked = false
+                    NotificationCaptureSettings.setEnabled(this@NotificationCenterActivity, false)
                     statusView.text = "Conceda primeiro o acesso especial nas configurações do Android."
+                } else if (enabled && NotificationCaptureSettings.allowedPackages(this@NotificationCenterActivity).isEmpty()) {
+                    isChecked = false
+                    NotificationCaptureSettings.setEnabled(this@NotificationCenterActivity, false)
+                    statusView.text = "Selecione ao menos um aplicativo antes de ativar a captura."
                 } else {
                     NotificationCaptureSettings.setEnabled(this@NotificationCenterActivity, enabled)
                     statusView.text = if (enabled) {
@@ -106,13 +118,16 @@ class NotificationCenterActivity : Activity() {
             setPadding(0, dp(14), 0, dp(4))
         })
         root.addView(TextView(this).apply {
-            text = "Marque apenas os aplicativos cujas notificações deseja visualizar. WhatsApp e WhatsApp Business aparecem se estiverem instalados."
+            text = "Escolha os aplicativos cujos alertas poderão ser lidos para a ponte com o relógio. WhatsApp e WhatsApp Business aparecem quando instalados."
             textSize = 12f
             setTextColor(0xFF526170.toInt())
         })
 
         appList = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        root.addView(appList)
+        val appScroll = ScrollView(this).apply { addView(appList) }
+        root.addView(appScroll, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(160)
+        ))
 
         root.addView(TextView(this).apply {
             text = "Pré-visualizações recentes (somente memória)"
@@ -146,7 +161,7 @@ class NotificationCenterActivity : Activity() {
         ))
 
         val note = TextView(this).apply {
-            text = "O conteúdo fica apenas na memória do processo e é limitado às 30 notificações mais recentes. Nenhum texto é gravado no log ou enviado à rede. O encaminhamento ao GT3 MAX ainda não está disponível."
+            text = "A leitura é somente de notificações publicadas pelo Android. O app não responde nem altera a origem. As prévias ficam apenas na memória (máximo de 30 por até 15 minutos). O envio ao GT3 Maxx ainda aguarda protocolo validado; nenhum payload desconhecido é transmitido."
             textSize = 11f
             setTextColor(0xFF526170.toInt())
             setPadding(0, dp(8), 0, 0)
@@ -190,8 +205,19 @@ class NotificationCenterActivity : Activity() {
                 isChecked = packageName in allowed
                 setOnCheckedChangeListener { _, checked ->
                     val next = NotificationCaptureSettings.allowedPackages(this@NotificationCenterActivity).toMutableSet()
-                    if (checked) next.add(packageName) else next.remove(packageName)
+                    if (checked) {
+                        next.add(packageName)
+                    } else {
+                        next.remove(packageName)
+                        NotificationCaptureStore.removePackage(packageName)
+                    }
                     NotificationCaptureSettings.setAllowedPackages(this@NotificationCenterActivity, next)
+                    if (next.isEmpty()) {
+                        NotificationCaptureSettings.setEnabled(this@NotificationCenterActivity, false)
+                        captureSwitch.isChecked = false
+                        statusView.text = "Nenhum aplicativo selecionado. Captura pausada."
+                    }
+                    renderEvents()
                 }
             }
             appList.addView(checkBox)
@@ -247,11 +273,15 @@ class NotificationCenterActivity : Activity() {
 
     private fun refreshStatus() {
         val access = hasNotificationAccess()
-        statusView.text = if (access) {
-            "Acesso Android autorizado. A captura só funciona quando ativada e com aplicativos selecionados."
-        } else {
-            "Acesso Android ainda não concedido. A captura permanece inativa."
+        if (!access) {
+            NotificationCaptureSettings.setEnabled(this, false)
+            NotificationCaptureStore.clear()
+            if (::captureSwitch.isInitialized) captureSwitch.isChecked = false
+            statusView.text = "Acesso Android ainda não concedido. A captura permanece desativada."
+            return
         }
+        statusView.text =
+            "Acesso Android autorizado. A captura só funciona após ativação explícita e seleção de aplicativos."
     }
 
     private fun hasNotificationAccess(): Boolean {

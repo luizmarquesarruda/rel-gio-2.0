@@ -8,6 +8,10 @@
 - Telefone de desenvolvimento: Samsung Galaxy A06, Android 16
 - Estado: pareamento pelo Wearfit Pro informado pelo usuário; protocolo e chipset ainda não identificados.
 
+## Evidência BLE adicional (03/11/2026)
+
+O inventário observado inclui Nordic UART com UUIDs terminados em dcca9e e a notificação AB 00 05 FF 91 80 00 0C. Existe uma referência pública DT78/X8 Ultra com os mesmos UUIDs e uma fixture AB de bateria. Isso sustenta um perfil **NUS/AB candidato**, mas não identifica chipset ou modelo. A hipótese de bateria 12% não foi validada com o Wearfit Pro. Detalhes: PROTOCOLO-BLE-CANDIDATO.md.
+
 ## Hipóteses que NÃO devem ser tratadas como fatos
 
 O nome GT3 Maxx não identifica de forma inequívoca fabricante, SoC, firmware ou protocolo BLE. Não assumir compatibilidade com FitPro, DaFit, GloryFit ou qualquer protocolo publicado apenas por semelhança visual/comercial.

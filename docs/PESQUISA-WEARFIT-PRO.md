@@ -56,3 +56,13 @@ A declaração de privacidade informa que certas categorias de dados podem ser s
 ## Referência OpenWearOTA
 
 O projeto OpenWearOTA descreve protocolos de produtos FitPro e é material de engenharia reversa independente. Não deve ser tratado como protocolo Wearfit Pro nem aplicado sem identificar chipset e validar capturas. Qualquer operação OTA/firmware está fora do escopo.
+
+## Evidência BLE específica do GT3 MAX (03/11/2026)
+
+Foi comparado o inventário local com https://github.com/fbiego/dt78/blob/master/dt78_ble_server/dt78_ble_server.ino, um emulador BLE DT78/X8 Ultra para WearFit 2.0. O código usa os UUIDs NUS terminados em dcca9e e contém a fixture AB 00 05 FF 91 80 00 50, comentada como bateria 80%. O GT3 MAX expôs os mesmos UUIDs e enviou AB 00 05 FF 91 80 00 0C.
+
+A coincidência é forte o bastante para registrar um **perfil candidato NUS/AB**, mas não prova chipset, modelo, fabricante ou compatibilidade total com Wearfit Pro. A interpretação de 12% é uma hipótese de bateria ainda não validada por comparação simultânea com o Wearfit Pro. Ver PROTOCOLO-BLE-CANDIDATO.md.
+
+Não confundir com https://github.com/victorbillyph/chinese-smartwatch-homeassistant, que documenta Bluetrum AB5610 com UUID NUS terminado em dcca9f e quadros DF/FD. O GT3 MAX capturado usa dcca9e e quadro AB; copiar o parser DF/FD seria incorreto.
+
+Nenhum comando de consulta, configuração, sync de hora, reset ou OTA foi enviado. A referência de protocolo é utilizada somente para parsing offline e comparação de notificações já recebidas.

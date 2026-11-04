@@ -2,6 +2,9 @@ name: Android CI
 # Validate BLE and Health Connect integration for each phase PR
 
 on:
+  push:
+    branches:
+      - 'fix/**'
   pull_request:
     branches:
       - main
@@ -21,6 +24,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Run APK manifest policy unit tests
+        id: manifest_policy_tests
+        run: python3 -m unittest discover -s scripts/tests -v
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
@@ -28,17 +35,118 @@ jobs:
           java-version: "17"
 
       - name: Set up Gradle
+        id: setup_gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.13"
 
-      - name: Run unit tests and assemble APK
-        run: gradle --no-daemon testDebugUnitTest assembleDebug
+      - name: Run Android Lint for both variants
+        id: lint
+        run: gradle --no-daemon lintDiagnosticDebug lintCompanionDebug
 
-      - name: Publish debug APK artifact
+      - name: Run unit tests and assemble both variants
+        id: build
+        if: always() && steps.setup_gradle.outcome == 'success' && steps.manifest_policy_tests.outcome == 'success'
+        run: gradle --no-daemon testDiagnosticDebugUnitTest testCompanionDebugUnitTest assembleDiagnosticDebug assembleCompanionDebug
+
+      - name: Enforce privacy dependency and permission guardrails
+        id: privacy_guardrails
+        if: always() && steps.build.outcome == 'success' && steps.manifest_policy_tests.outcome == 'success'
+        run: bash scripts/check-privacy-guardrails.sh
+
+      - name: Audit merged APK manifests, signatures and hashes
+        id: audit_apks
+        if: always() && steps.build.outcome == 'success' && steps.privacy_guardrails.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          if [[ -z "$SDK_ROOT" ]]; then
+            echo "Android SDK path unavailable" >&2
+            exit 1
+          fi
+
+          AAPT="$(find "$SDK_ROOT/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          APK_ANALYZER="$(find "$SDK_ROOT" -type f -name apkanalyzer | sort -V | tail -n 1)"
+          APKSIGNER="$(find "$SDK_ROOT/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          for tool in AAPT APK_ANALYZER APKSIGNER; do
+            if [[ -z "${!tool}" ]]; then
+              echo "Required Android SDK tool not found: $tool" >&2
+              exit 1
+            fi
+          done
+
+          REPORT_DIR="app/build/reports/security"
+          mkdir -p "$REPORT_DIR"
+          for variant in diagnostic companion; do
+            apk="app/build/outputs/apk/$variant/debug/app-$variant-debug.apk"
+            if [[ ! -f "$apk" ]]; then
+              echo "Expected APK not found: $apk" >&2
+              exit 1
+            fi
+
+            manifest="$REPORT_DIR/$variant-manifest.xml"
+            "$APK_ANALYZER" manifest print "$apk" > "$manifest"
+            python3 scripts/audit_apk_manifest.py --variant "$variant" --manifest "$manifest"
+
+            "$AAPT" dump permissions "$apk" > "$REPORT_DIR/$variant-permissions.txt"
+            "$AAPT" dump badging "$apk" > "$REPORT_DIR/$variant-badging.txt"
+
+            signature="$REPORT_DIR/$variant-signature.txt"
+            "$APKSIGNER" verify --verbose --print-certs "$apk" > "$signature" 2>&1
+            if ! grep -Eq 'Verified using v2 scheme.*: true' "$signature"; then
+              echo "APK v2 signature verification did not succeed for $variant." >&2
+              cat "$signature" >&2
+              exit 1
+            fi
+
+            sha256sum "$apk" > "$REPORT_DIR/$variant-sha256.txt"
+          done
+
+          echo "Both APK variants passed manifest policy and APK signature verification."
+
+      - name: Prepare diagnostic installation package
+        id: prepare_diagnostic_package
+        if: always() && steps.build.outcome == 'success' && steps.lint.outcome == 'success' && steps.privacy_guardrails.outcome == 'success' && steps.audit_apks.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_APK="app/build/outputs/apk/diagnostic/debug/app-diagnostic-debug.apk"
+          PACKAGE_DIR="app/build/distributions/relogio-2.0-diagnostic-debug"
+          mkdir -p "$PACKAGE_DIR"
+          cp "$SOURCE_APK" "$PACKAGE_DIR/app-diagnostic-debug.apk"
+          (cd "$PACKAGE_DIR" && sha256sum app-diagnostic-debug.apk > SHA256SUMS)
+          cp app/build/reports/security/diagnostic-signature.txt "$PACKAGE_DIR/SIGNATURE.txt"
+          cat > "$PACKAGE_DIR/BUILD-INFO.txt" <<EOF
+          app=Relógio 2.0
+          variant=diagnosticDebug
+          package=com.luizmarquesarruda.relogio20.diagnostic
+          version=0.4.0-alpha.1-diagnostic
+          build_type=debug
+          commit=$GITHUB_SHA
+          workflow_run=$GITHUB_RUN_ID
+          notification_listener=absent
+          internet_permission=absent
+          release_ready=false
+          EOF
+
+      - name: Publish diagnostic APK installation package
+        if: success() && steps.prepare_diagnostic_package.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: relogio-2.0-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: relogio-2.0-diagnostic-debug-apk
+          path: app/build/distributions/relogio-2.0-diagnostic-debug/
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
+
+      - name: Publish Android validation reports
+        if: always() && steps.setup_gradle.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-validation-reports
+          path: |
+            app/build/reports/lint-results-diagnosticDebug.html
+            app/build/reports/lint-results-companionDebug.html
+            app/build/reports/security/**
+          if-no-files-found: warn
+          retention-days: 30

@@ -11,9 +11,22 @@ android {
         applicationId = "com.luizmarquesarruda.relogio20"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.3.0-alpha.1"
+        versionCode = 7
+        versionName = "0.4.0-alpha.1"
         testInstrumentationRunner = "android.test.runner.AndroidJUnitRunner"
+    }
+
+
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("diagnostic") {
+            dimension = "distribution"
+            applicationIdSuffix = ".diagnostic"
+            versionNameSuffix = "-diagnostic"
+        }
+        create("companion") {
+            dimension = "distribution"
+        }
     }
 
     compileOptions {

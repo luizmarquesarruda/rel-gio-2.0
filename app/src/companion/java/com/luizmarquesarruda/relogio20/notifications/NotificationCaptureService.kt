@@ -1,10 +1,37 @@
 package com.luizmarquesarruda.relogio20.notifications
 
 import android.app.Notification
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 
 class NotificationCaptureService : NotificationListenerService() {
+    private val expiryHandler = Handler(Looper.getMainLooper())
+    private val expiryCleanup = object : Runnable {
+        override fun run() {
+            NotificationCaptureStore.snapshot()
+            scheduleExpiryCleanup()
+        }
+    }
+
+    override fun onNotificationRemoved(sbn: StatusBarNotification) {
+        NotificationCaptureStore.remove(sbn.key)
+        scheduleExpiryCleanup()
+    }
+
+    override fun onListenerDisconnected() {
+        expiryHandler.removeCallbacks(expiryCleanup)
+        NotificationCaptureStore.clear()
+        super.onListenerDisconnected()
+    }
+
+    override fun onDestroy() {
+        expiryHandler.removeCallbacks(expiryCleanup)
+        NotificationCaptureStore.clear()
+        super.onDestroy()
+    }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         if (!NotificationCaptureSettings.isEnabled(applicationContext)) return
@@ -47,8 +74,18 @@ class NotificationCaptureService : NotificationListenerService() {
                 appLabel = appLabel,
                 title = title,
                 body = body,
-                receivedAtMillis = System.currentTimeMillis()
+                receivedAtMillis = System.currentTimeMillis(),
+                capturedAtElapsedRealtimeMillis = SystemClock.elapsedRealtime()
             )
         )
+        scheduleExpiryCleanup()
+    }
+
+    private fun scheduleExpiryCleanup() {
+        expiryHandler.removeCallbacks(expiryCleanup)
+        val delayMillis = NotificationCaptureStore.millisUntilNextExpiry()
+        if (delayMillis != null) {
+            expiryHandler.postDelayed(expiryCleanup, delayMillis)
+        }
     }
 }
