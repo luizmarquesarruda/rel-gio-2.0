@@ -45,7 +45,7 @@ internal object BleDiagnosticReport {
             appendLine("- O relatório não inclui conteúdo textual de notificações do telefone.")
             appendLine("- Payloads BLE em hexadecimal podem conter dados de saúde; compartilhe o arquivo somente com quem você autorizou.")
             appendLine()
-            appendLine("[REGISTRO DA SESSÃO]")
+            appendLine("[REGISTRO DA SESSÃO — ATÉ 250 EVENTOS MAIS RECENTES]")
             if (sanitizedLogs.isEmpty()) {
                 appendLine("Nenhum evento registrado nesta sessão.")
             } else {
