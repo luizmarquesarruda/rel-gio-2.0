@@ -2,6 +2,9 @@
 
 ## Não lançado — recuperação explícita da permissão Health Connect
 
+- Registrados os intents de justificativa de privacidade exigidos pela Conexão Saúde no Android 13 e anteriores e no Android 14+; o alias moderno é protegido por START_VIEW_PERMISSION_USAGE.
+- Auditoria do manifesto APK e testes de política passam a verificar ambos os pontos de entrada.
+
 - Atualizar atividade não solicita nem reabre permissões; sem acesso, exibe estado claro e mantém a leitura suspensa.
 - Estado local diferencia primeira solicitação, recusa, concessão e revogação; a autorização efetiva sempre é reconferida no Health Connect.
 - Após recusa ou revogação, a interface oferece acesso direto às configurações do sistema e nova solicitação somente mediante ação explícita.

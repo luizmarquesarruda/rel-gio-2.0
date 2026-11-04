@@ -1,3 +1,12 @@
+## 04/11/2026 — Contrato de justificativa de privacidade do Health Connect
+
+- Ligada a tela existente HealthPrivacyActivity ao intent ACTION_SHOW_PERMISSIONS_RATIONALE para versões até Android 13.
+- Adicionado activity-alias VIEW_PERMISSION_USAGE protegido por START_VIEW_PERMISSION_USAGE para Android 14+.
+- A tela expõe somente a política informativa existente; nenhuma operação de saúde, permissão ou Bluetooth é executada ao ser aberta externamente.
+- O auditor do manifesto compilado agora exige os dois pontos de entrada e verifica a proteção do alias; testes de política adicionados para ambas as variantes.
+- A referência oficial do Android atualizada em 22/10/2026 documenta esses pontos de entrada e exige que a atividade apresente a mesma política publicada no Play Console.
+- CI e validação no dispositivo: **não validados**.
+
 ## 04/11/2026 — Recuperação explícita da permissão Health Connect
 
 - Corrigido o fluxo que fazia Atualizar atividade chamar connectHealthConnect() quando READ_STEPS não estava inicializada; atualizar agora apenas apresenta o estado sem acesso e nunca inicia uma solicitação de permissão.
