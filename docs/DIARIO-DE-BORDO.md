@@ -465,3 +465,15 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Nenhuma permissão, dependência, escrita proprietária, comando NUS RX, OTA/DFU, reset ou consulta de sensor foi adicionada.
 - Limite explícito: não há garantia de reconexão contínua após force-stop ou enquanto o processo permanece suspenso em segundo plano; CompanionDeviceManager/serviço conectado exige uma fase separada.
 - Teste físico no Galaxy A06/Android 16 com GT3 MAX Call: **não validado**. CI do HEAD final ainda precisa ser executado e inspecionado.
+
+## 04/11/2026 — Autodescoberta passiva de funcionalidades
+
+- Criado `FeatureDiscoveryEngine` separado do ciclo de vida BLE. Ele recebe somente o inventário GATT já retornado pelo Android e os eventos de notificação entregues ao callback existente.
+- Perfis Bluetooth SIG são apresentados como encontrados, nunca como medições funcionais ou sensores validados apenas pela presença de UUID.
+- Características proprietárias são classificadas pela propriedade observada: notificação encontrada, leitura não executada e escrita bloqueada. A descoberta não inscreve novos canais.
+- NUS TX continua sendo o único canal de notificação ativo automaticamente, sujeito ao fingerprint GT3 MAX Call já existente. NUS RX e características proprietárias de escrita permanecem bloqueadas.
+- O histórico local guarda inventário, UUIDs, propriedades, contagens, tamanho e horário da última notificação e identificadores do quadro AB. Não persiste payload HEX bruto no catálogo.
+- O padrão AB 0x91/0x80 gera somente a hipótese de bateria; valores não são enviados ao Health Connect e dependem de comparação com Wearfit Pro.
+- Criada tela `Autodescoberta BLE`, acessível pela tela principal e pelo catálogo de funções.
+- O armazenamento recusa substituir JSON inválido ou schema futuro. Não foi adicionada permissão Android ou dependência externa.
+- Testes unitários do motor de descoberta adicionados; execução local Gradle, CI/build e teste físico Galaxy A06/GT3 MAX: **não validados** nesta alteração.

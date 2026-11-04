@@ -1,5 +1,17 @@
 # Changelog
 
+## Não lançado — autodescoberta passiva de funcionalidades GT3 MAX
+
+- Criado mecanismo de inventário GATT automático após a descoberta de serviços pelo Android.
+- Catálogo identifica perfis Bluetooth SIG conhecidos (quando serviço e característica correspondem), canais proprietários, propriedades READ/NOTIFY/INDICATE/WRITE e tráfego efetivamente recebido.
+- O catálogo diferencia perfil encontrado, tráfego observado, hipótese de protocolo e dado ainda não validado; UUID ou propriedade GATT não são tratados como prova de função de usuário.
+- Notificações recebidas atualizam contadores e metadados. O conteúdo bruto HEX não é copiado para o histórico da autodescoberta.
+- A interpretação AB 0x91/0x80 permanece como candidata de bateria até correlação com Wearfit Pro; quadros desconhecidos não recebem semântica inventada.
+- Nenhuma leitura arbitrária, nova inscrição de notificação, escrita proprietária, NUS RX, OTA/DFU ou reset foi habilitado.
+- O catálogo local usa schema versionado e recusa sobrescrever conteúdo inválido ou de versão mais nova.
+- Testes unitários do motor de descoberta adicionados. Build/CI e teste físico desta fase: **não validados**.
+
+
 ## Não lançado — reconexão automática BLE
 
 - Após uma conexão GATT bem-sucedida, o app persiste localmente a opção de reconexão para a identidade GT3 MAX já configurada.

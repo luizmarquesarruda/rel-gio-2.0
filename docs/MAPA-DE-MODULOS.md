@@ -16,13 +16,16 @@ A base é um aplicativo Android nativo Kotlin. O adaptador de consulta agregada 
 | device/ble/core/BleReconnectPolicy.kt | BLE lifecycle | Política pura de backoff para retentativas; não executa scan nem conexão. |
 | device/gt3max/protocol/Gt3MaxCallDeviceProfile.kt | Perfil do dispositivo | Identificadores GT3 MAX Call informados e fingerprint GATT da captura; sem autenticação de hardware/firmware. |
 | device/gt3max/protocol/WearfitAbFrameParser.kt | Protocolo do dispositivo | Perfil NUS/AB candidato e parser restrito. Não controla conexão. |
+| device/discovery/FeatureDiscoveryEngine.kt | Descoberta de funcionalidades | Classifica inventário GATT e metadados de notificações sem inferir semântica de payload desconhecido. |
+| data/discovery/FeatureDiscoveryStore.kt | Persistência local de descoberta | Persiste inventário e contagens com schema versionado; não grava payload HEX bruto e preserva conteúdo inválido/futuro. |
+| FeatureDiscoveryActivity.kt | UI / Descoberta | Apresenta perfis encontrados, canais, evidências, hipóteses e limitações de validação. |
 | notifications/NotificationCaptureService.kt | Platform / Notifications | Captura consentida na variante companion. |
 | notifications/NotificationCaptureStore.kt | Data / Notifications | Cache volátil, filtros e preferências. |
 | notifications/NotificationCenterActivity.kt | UI / Notifications | Consentimento, seleção e prévias. |
 | HealthPrivacyActivity.kt | UI / Privacy | Transparência e controles de dados de saúde. |
 | MainActivity.kt | App / composição provisória | Mantém UI, permissões e ciclo de vida GATT; inventário GATT é passivo e operações são limitadas à inscrição NUS TX após fingerprint completo; delega a consulta de passos ao repositório Health Connect. |
 
-Os testes unitários acompanham fila GATT, parser candidato, perfil GATT GT3 MAX Call, janela diária Health Connect, metadados do APK, formatadores e contratos Domain. A inscrição automática NUS TX exige nome reconhecido e fingerprint GATT completo da captura. A tela não disponibiliza leitura nem inscrição manual de características arbitrárias; NUS RX permanece sem escrita.
+Os testes unitários acompanham fila GATT, parser candidato, motor de autodescoberta, perfil GATT GT3 MAX Call, janela diária Health Connect, metadados do APK, formatadores e contratos Domain. A inscrição automática NUS TX exige nome reconhecido e fingerprint GATT completo da captura. A tela não disponibiliza leitura nem inscrição manual de características arbitrárias; NUS RX permanece sem escrita.
 
 ## Estrutura-alvo
 
