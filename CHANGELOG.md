@@ -1,5 +1,7 @@
 # Changelog
 
+- UI BLE: a tela Testes e descobertas ganhou atalho para solicitar exploração GATT aprofundada pelo painel principal, mantendo confirmação explícita.
+
 - BLE: exploração aprofundada agora percorre todos os canais GATT elegíveis, sem o truncamento fixo anterior de 24 operações; somente READ e CCCD padrão após confirmação explícita.
 
 ## Não lançado — descoberta BLE geral e TXT completo — 04/11/2026
