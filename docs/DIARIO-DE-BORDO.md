@@ -1,3 +1,12 @@
+## 04/11/2026 — Exploração aprofundada sem truncamento de canais GATT
+
+- Removido o limite fixo de 24 operações que podia deixar características elegíveis fora da exploração manual sem indicação explícita.
+- A exploração aprofundada agora percorre todas as características encontradas que anunciem READ ou NOTIFY/INDICATE com CCCD padrão; NUS, DFU, identificadores e serviços excluídos continuam fora do plano.
+- A interface deixa de prometer "até 24 canais" e informa que a varredura pode levar vários minutos. A captura HEX continua condicionada à sessão cronometrada consentida.
+- Adicionado teste de regressão com 30 canais proprietários elegíveis para garantir que o plano não trunque a lista.
+- A característica observada 0x3802/0x4A02 só será inscrita se o inventário real confirmar NOTIFY/INDICATE e CCCD 0x2902; o UUID sozinho não comprova semântica. Nenhum payload de escrita será enviado.
+- CI após estas alterações: aguardando. Teste físico no Galaxy A06/Android 16 com GT3 MAX: **não validado**.
+
 ## 04/11/2026 — Busca BLE geral e exportação de descobertas no TXT
 
 - Corrigido o fluxo que exigia configurar manualmente o endereço Bluetooth antes de iniciar uma busca. Ao abrir o app, uma varredura BLE geral começa automaticamente; o campo de endereço passou a ser opcional.
