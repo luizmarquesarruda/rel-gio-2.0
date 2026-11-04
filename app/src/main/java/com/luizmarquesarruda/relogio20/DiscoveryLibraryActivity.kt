@@ -65,7 +65,7 @@ class DiscoveryLibraryActivity : Activity() {
         })
         root.addView(header)
         root.addView(TextView(this).apply {
-            text = "Descobertas e leituras salvas somente neste aparelho. HEX é armazenado apenas durante uma sessão de teste iniciada por você."
+            text = "Descobertas e leituras salvas somente neste aparelho. HEX é armazenado apenas durante uma sessão local autorizada, manual ou automática."
             textSize = 12f
             setTextColor(0xFF526574.toInt())
             setPadding(0, dp(8), 0, dp(8))
@@ -204,8 +204,11 @@ class DiscoveryLibraryActivity : Activity() {
         addText(card, record.title, 15f, 0xFF14212B.toInt(), true)
         addText(card, record.detail, 12f, 0xFF526574.toInt())
         addText(card, "Origem: " + record.source + " • Estado: " + record.confidence, 10f, 0xFF687786.toInt())
+        if (record.serviceUuid != null) {
+            addText(card, "Serviço: " + record.serviceUuid, 10f, 0xFF687786.toInt())
+        }
         if (record.characteristicUuid != null) {
-            addText(card, record.characteristicUuid, 10f, 0xFF687786.toInt())
+            addText(card, "Característica: " + record.characteristicUuid, 10f, 0xFF687786.toInt())
         }
         if (record.payloadHex != null) {
             addText(card, "HEX: " + record.payloadHex, 10f, 0xFF34495E.toInt())
