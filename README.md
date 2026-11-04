@@ -40,7 +40,7 @@ Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALT
 - Após a conexão, lê automaticamente apenas metadados básicos e bateria quando perfis Bluetooth SIG compatíveis anunciam READ.
 - Permite ativar uma única vez os **testes automáticos GATT**. Depois do consentimento, ao reconhecer o fingerprint completo do GT3 MAX Call, o app percorre sozinho todos os canais compatíveis READ e NOTIFY/INDICATE com CCCD padrão; a exploração manual continua disponível.
 - Inscreve automaticamente somente NUS TX no GT3 MAX Call quando nome e fingerprint GATT completo coincidem; NUS RX continua sem escrita.
-- Registra leituras, status de callbacks, inscrições confirmadas/falhas e valores Bluetooth SIG decodificados. HEX bruto é guardado na biblioteca privada somente durante captura consentida; o catálogo de inventário conserva metadados.
+- Registra leituras, status de callbacks, inscrições confirmadas/falhas e valores Bluetooth SIG decodificados (frequência cardíaca, pressão, oximetria, termômetro, ambiente, corrida/cadência, ciclismo e capacidades de composição corporal quando anunciados). HEX bruto é guardado na biblioteca privada somente durante captura consentida; o catálogo de inventário conserva metadados.
 - Reagrupa quadros AB fragmentados e separa quadros concatenados sem inventar semântica para comandos desconhecidos.
 - Reconhece um quadro de bateria `0x91/0x80` como **candidato**, sem confirmar o valor no GT3 Maxx.
 
@@ -50,7 +50,7 @@ Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALT
 - Não envia comandos pela Nordic UART RX.
 - Nenhuma escrita em característica é executada nesta fase. A única operação de escrita GATT é a configuração do descritor CCCD padrão para ativar uma notificação/indicação permitida; a sincronização CTS está suspensa.
 - Não toca no Secure DFU/OTA, reset, calibração ou configuração.
-- Não atribui semântica a canais proprietários desconhecidos. Há decoders somente para formatos Bluetooth SIG identificados; passos, sono e métricas privadas continuam não interpretados até obter protocolo documentado.
+- Não atribui semântica a canais proprietários desconhecidos. Há decoders somente para formatos Bluetooth SIG identificados; passos e sono proprietários continuam não interpretados. Body Composition Measurement 0x2A9C também permanece bruto até completar a leitura contextual de flags, unidades, resoluções e pacotes múltiplos.
 - Não acessa servidores ou dados privados do Wearfit Pro.
 - Não transmite dados de saúde à rede nem os publica no Health Connect. A captura local de leituras/notifications e HEX exige ativação explícita e permanece no armazenamento privado do app.
 
