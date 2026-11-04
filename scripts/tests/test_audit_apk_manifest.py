@@ -75,6 +75,14 @@ class CompanionVariantTests(unittest.TestCase):
 
 
 class SharedSecurityPolicyTests(unittest.TestCase):
+    def test_apkanalyzer_raw_ampersand_in_label_is_normalized(self):
+        xml = manifest(app_attrs='android:allowBackup="false" android:usesCleartextTraffic="false" android:label="Saúde & Fitness"')
+        self.assertEqual([], audit_manifest(xml, "diagnostic"))
+
+    def test_valid_xml_ampersand_entity_is_preserved(self):
+        xml = manifest(app_attrs='android:allowBackup="false" android:usesCleartextTraffic="false" android:label="Saúde &amp; Fitness"')
+        self.assertEqual([], audit_manifest(xml, "diagnostic"))
+
     def test_both_variants_reject_internet_permission(self):
         xml = manifest(permissions='<uses-permission android:name="android.permission.INTERNET" />')
         for variant in ("diagnostic", "companion"):
