@@ -360,3 +360,27 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Nenhuma API privada foi presumida ou simulada. Nada foi lido do armazenamento interno do Wearfit Pro; nenhuma credencial foi reutilizada; nenhuma escrita proprietária/OTA/reset foi executada.
 - Perfil BLE já adicionado continua como caminho local de compatibilidade/diagnóstico; bateria é candidata e semântica de sensores/controles continua não validada.
 - A implementação do SDK de parceiros não foi feita por ausência de SDK/contrato técnico verificável. CI e teste físico permanecem **não validados**.
+
+
+## 04/11/2026 — Auditoria modular e correções de compatibilidade/segurança
+
+### Evidências identificadas
+- O Android Lint do run 180 apontou um erro `NewApi`: `LocalDate.ofInstant` exige API 34, mas o aplicativo declara `minSdk 26`. O mesmo run concluiu testes, builds, guardrails de privacidade e auditoria dos manifestos/assinaturas; a etapa de Lint falhou e impediu a publicação do APK.
+- O workflow preenchia `BUILD-INFO.txt` com a versão antiga `0.4.0-alpha.2-diagnostic`, embora `VERSION` e `app/build.gradle.kts` estivessem em `0.4.0-alpha.3`.
+- A tela de inventário GATT disponibilizava botões genéricos de leitura e inscrição em qualquer característica que anunciasse READ/NOTIFY/INDICATE. Isso ampliava a superfície de interação além do perfil de compatibilidade permitido.
+- `MainActivity.kt` segue concentrando UI e ciclo BLE; a extração do transporte permanece dívida arquitetural e não foi simulada como concluída.
+
+### Correções aplicadas na branch `fix/security-quality-gates-20261104`
+- Criado `HealthConnectDayWindow`, calculando a data local com `Instant.atZone(zoneId).toLocalDate().atStartOfDay(zoneId)`, compatível com `minSdk 26`; o repositório Health Connect passou a usar o helper.
+- Adicionados testes da virada de data em `America/Sao_Paulo` e `Pacific/Auckland`.
+- Removidos os controles manuais genéricos “Ler” e “Ouvir” das características descobertas. O inventário continua exibindo UUIDs, propriedades e descritores. A inscrição automática limita-se à NUS TX, exige nome conhecido + fingerprint GATT completo e usa apenas o CCCD padrão; NUS RX não recebe dados.
+- O workflow agora lê a versão canônica de `VERSION`, compara com `versionName` do Gradle e gera o `BUILD-INFO.txt` dinamicamente com sufixo `-diagnostic`.
+- Adicionado teste Python para manter `VERSION`, Gradle e metadados do artefato alinhados.
+- Mapa de módulos e changelog atualizados.
+
+### Situação de validação
+- O CI executado no HEAD anterior à correção reportou um erro Lint `NewApi` e 61 avisos; os testes unitários, builds das variantes, guardrails e auditorias de APK concluíram com sucesso, mas a execução global falhou no Lint.
+- Após a correção, o novo CI ainda precisa concluir no HEAD final desta branch. Nenhum status verde é declarado nesta etapa.
+- Testes físicos de BLE e interface no Galaxy A06/GT3 MAX Call, TalkBack, escala de fonte e comparação da bateria com Wearfit Pro: **não validados**.
+- Integração Wearfit Partner SDK, sensores, rotas e encaminhamento BLE de notificações permanecem pendentes de contrato/protocolo validado.
+- OTA/DFU, reset, comandos proprietários e gravação de dados de saúde continuam bloqueados.
