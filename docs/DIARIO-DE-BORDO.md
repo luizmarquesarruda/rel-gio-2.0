@@ -1,3 +1,12 @@
+## 04/11/2026 — Contrato de domínio para métricas do GT3 MAX
+
+- Criado modelo Kotlin puro em domain/health para tipo, unidade, origem, timestamps e estado de validação; sem dependência de Android, BLE ou Wearfit Pro.
+- Criados testes para compatibilidade de unidades, limites básicos de SpO₂, contagem inteira de passos e preservação da origem de agregados Health Connect.
+- METT permanece em unidade MET, sem conversão automática para calorias. Pressão arterial e SpO₂ permanecem não diagnósticos; a validação física do relógio não equivale à validação clínica.
+- Criado docs/CONTRATO-METRICAS-SAUDE.md e indexado em docs/README.md.
+- Nenhum parser de saúde BLE, permissão adicional, escrita Health Connect ou comando proprietário foi adicionado.
+- Testes desta alteração e CI: aguardando execução. Testes físicos no Galaxy A06/GT3 MAX: **não validados**.
+
 ## 04/11/2026 — Alinhamento de módulos e catálogo GT3 MAX
 
 - Revisadas as funções fornecidas do Wearfit Pro e registradas em matriz com 33 entradas, separando funções Android locais, dependências BLE/protocolo, Bluetooth Classic, integrações externas e ações bloqueadas. A presença no catálogo não comprova suporte no GT3 MAX específico.
