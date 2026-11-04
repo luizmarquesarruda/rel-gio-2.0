@@ -971,7 +971,7 @@ class MainActivity : ComponentActivity() {
         scanResults.clear()
         content.removeAllViews()
         addText(content, "Dispositivos encontrados", 18f, true)
-        updateStatus(if (automatic) "Procurando GT3 MAX e candidatos BLE próximos..." else "Busca geral de dispositivos BLE por 15 segundos...")
+        updateStatus(if (automatic) "Procurando GT3 MAX e candidatos BLE próximos..." else "Procurando dispositivos BLE próximos por 15 segundos...")
         appendLog(if (automatic) "Início da busca BLE geral para localizar o GT3 MAX; endereço salvo será usado como pista, não como único filtro." else "Início da busca BLE geral por 15 segundos; dispositivos sem nome também serão listados.")
 
         val callback = object : ScanCallback() {
