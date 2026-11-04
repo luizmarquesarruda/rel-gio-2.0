@@ -191,4 +191,27 @@ class SafeGattExplorationPlanTest {
         )
         assertFalse(plan.any { it.characteristicUuid.endsWith("2a25-0000-1000-8000-00805f9b34fb") })
     }
+    @Test
+    fun deepPlanDoesNotSilentlyTruncateCompatibleChannelsAbovePreviousLimit() {
+        val services = (0 until 30).map { index ->
+            val serviceSuffix = index.toString(16).padStart(4, '0')
+            val characteristicSuffix = (0x4a00 + index).toString(16).padStart(4, '0')
+            GattServiceRecord(
+                "0000" + serviceSuffix + "-0000-1000-8000-00805f9b34fb",
+                listOf(GattCharacteristicRecord(
+                    "0000" + characteristicSuffix + "-0000-1000-8000-00805f9b34fb",
+                    setOf("NOTIFY"),
+                    setOf("00002902-0000-1000-8000-00805f9b34fb")
+                ))
+            )
+        }
+
+        val plan = SafeGattExplorationPlan.buildDeep(services)
+
+        assertEquals(30, plan.size)
+        assertTrue(plan.all {
+            it.kind == SafeGattExplorationPlan.Kind.SUBSCRIBE_PROPRIETARY_CHANNEL
+        })
+    }
+
 }
