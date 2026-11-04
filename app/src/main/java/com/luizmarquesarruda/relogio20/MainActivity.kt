@@ -1012,8 +1012,8 @@ class MainActivity : ComponentActivity() {
         runOnUiThread {
             content.removeAllViews()
             addText(content, "Inventário GATT", 19f, true)
-            addText(content, "O app não oferece botões de escrita nas características. " +
-                "A escuta usa somente o descritor padrão CCCD (0x2902).", 12f)
+            addText(content, "Inventário passivo: características desconhecidas não são lidas nem inscritas. " +
+                "Somente NUS TX pode receber inscrição automática via CCCD padrão, após o fingerprint completo do GT3 MAX Call.", 12f)
 
             val nusService = gatt.getService(WearfitProtocolProfile.SERVICE_UUID)
             val rxCharacteristic = nusService?.getCharacteristic(
@@ -1070,56 +1070,7 @@ class MainActivity : ComponentActivity() {
                         addText(content, "Descritor: " + descriptor.uuid, 10f)
                     }
 
-                    val row = LinearLayout(this).apply {
-                        orientation = LinearLayout.HORIZONTAL
-                        gravity = Gravity.CENTER_VERTICAL
-                    }
-
-                    if (properties and BluetoothGattCharacteristic.PROPERTY_READ != 0) {
-                        row.addView(makeButton("Ler") {
-                            readCharacteristic(characteristic)
-                        }, LinearLayout.LayoutParams(0, dp(44), 1f))
-                    }
-
-                    if (properties and (BluetoothGattCharacteristic.PROPERTY_NOTIFY or
-                            BluetoothGattCharacteristic.PROPERTY_INDICATE) != 0) {
-                        row.addView(makeButton("Ouvir") {
-                            enableNotifications(gatt, characteristic)
-                        }, LinearLayout.LayoutParams(0, dp(44), 1f).apply {
-                            marginStart = dp(6)
-                        })
-                    }
-
-                    if (row.childCount > 0) {
-                        content.addView(row)
-                    }
                 }
-            }
-        }
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun readCharacteristic(characteristic: BluetoothGattCharacteristic) {
-        val gatt = bluetoothGatt
-        if (gatt == null || isGattDisconnecting) {
-            appendLog("Leitura cancelada: sem conexão GATT ativa ou desconexão em andamento.")
-            return
-        }
-        gattOperationQueue.enqueue {
-            if (bluetoothGatt !== gatt) {
-                appendLog("Leitura descartada: conexão GATT mudou antes da execução.")
-                false
-            } else {
-                val started = if (Build.VERSION.SDK_INT >= 33) {
-                    gatt.readCharacteristic(characteristic)
-                } else {
-                    @Suppress("DEPRECATION")
-                    gatt.readCharacteristic(characteristic)
-                }
-                appendLog("Leitura solicitada para " + characteristic.uuid +
-                    ". Iniciada: " + started)
-                if (!started) appendLog("O Android não iniciou a leitura.")
-                started
             }
         }
     }
