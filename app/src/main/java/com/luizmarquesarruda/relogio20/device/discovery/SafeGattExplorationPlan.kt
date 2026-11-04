@@ -49,6 +49,7 @@ internal object SafeGattExplorationPlan {
         KnownCharacteristic("1822", "2a5e", true, false, "oximetria spot-check"),
         KnownCharacteristic("1822", "2a5f", false, true, "oximetria contínua"),
         KnownCharacteristic("1822", "2a60", true, false, "recursos de oximetria"),
+        KnownCharacteristic("181b", "2a9b", true, false, "recursos de composição corporal"),
         KnownCharacteristic("181b", "2a9c", false, true, "composição corporal"),
         KnownCharacteristic("1814", "2a53", false, true, "velocidade/cadência de corrida"),
         KnownCharacteristic("1814", "2a54", true, false, "recursos de corrida"),
