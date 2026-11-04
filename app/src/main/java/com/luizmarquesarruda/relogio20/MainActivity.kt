@@ -4,6 +4,9 @@ import android.Manifest
 import android.app.AlertDialog
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.ActivityNotFoundException
+import android.net.Uri
+import android.provider.Settings
 import com.luizmarquesarruda.relogio20.notifications.NotificationCenterActivity
 import com.luizmarquesarruda.relogio20.device.ble.gatt.SerialGattOperationQueue
 import com.luizmarquesarruda.relogio20.device.ble.gatt.BluetoothCurrentTimePayload
@@ -18,10 +21,13 @@ import com.luizmarquesarruda.relogio20.HealthPrivacyActivity
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectAvailability
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsRepository
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsResult
+import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectPermissionState
+import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectPermissionStatePolicy
 import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import androidx.core.content.edit
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -73,6 +79,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var clockView: TextView
     private lateinit var stepsView: TextView
     private lateinit var healthStatusView: TextView
+    private lateinit var healthSettingsButton: Button
     private val healthConnectRepository by lazy(LazyThreadSafetyMode.NONE) {
         HealthConnectStepsRepository(this)
     }
@@ -80,18 +87,37 @@ class MainActivity : ComponentActivity() {
         FeatureDiscoveryStore(this)
     }
     private var healthConnectInitialized = false
+    private val healthPermissionPrefs by lazy {
+        getSharedPreferences("health_connect_permission_state", MODE_PRIVATE)
+    }
+    private var healthPermissionState: HealthConnectPermissionState
+        get() = runCatching {
+            HealthConnectPermissionState.valueOf(
+                healthPermissionPrefs.getString("read_steps_state", HealthConnectPermissionState.NOT_REQUESTED.name)
+                    ?: HealthConnectPermissionState.NOT_REQUESTED.name
+            )
+        }.getOrDefault(HealthConnectPermissionState.NOT_REQUESTED)
+        set(value) {
+            healthPermissionPrefs.edit { putString("read_steps_state", value.name) }
+        }
+    private var healthPermissionRequestPending = false
     private val healthScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val healthPermissionLauncher = registerForActivityResult(
         PermissionController.createRequestPermissionResultContract()
     ) { granted ->
-        if (granted.containsAll(healthConnectRepository.readPermissions)) {
-            healthConnectInitialized = true
+        healthPermissionRequestPending = false
+        val permissionGranted = granted.containsAll(healthConnectRepository.readPermissions)
+        healthPermissionState = HealthConnectPermissionStatePolicy.afterPermissionResult(permissionGranted)
+        healthConnectInitialized = permissionGranted
+        updateHealthConnectPermissionUi()
+        if (permissionGranted) {
+            healthStatusView.text = "Acesso aos passos autorizado no Health Connect."
             appendLog("Permissão READ_STEPS concedida no Health Connect.")
             readTodaySteps()
         } else {
-            healthConnectInitialized = false
-            healthStatusView.text = "Permissão de passos não concedida."
-            appendLog("Acesso aos passos negado pelo usuário.")
+            stepsView.text = "Passos hoje: sem acesso"
+            healthStatusView.text = "Acesso aos passos não concedido. A atualização não repetirá o pedido; use as configurações de acesso."
+            appendLog("Acesso aos passos negado; estado persistido para recuperação pelas configurações.")
         }
     }
     private var bluetoothAdapter: BluetoothAdapter? = null
@@ -331,6 +357,15 @@ class MainActivity : ComponentActivity() {
         })
         root.addView(healthActions)
 
+        healthSettingsButton = makeButton("Abrir configurações de acesso") {
+            openHealthConnectSettings()
+        }.apply {
+            visibility = View.GONE
+        }
+        root.addView(healthSettingsButton, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
+        ).apply { topMargin = dp(4) })
+
         root.addView(makeButton("Notificações no relógio • leitura") {
             startActivity(Intent(this, NotificationCenterActivity::class.java))
         }, LinearLayout.LayoutParams(
@@ -393,6 +428,7 @@ class MainActivity : ComponentActivity() {
             addView(root)
         }
         setContentView(pageScroll)
+        updateHealthConnectPermissionUi()
     }
 
     private fun updatePhoneClock() {
@@ -401,6 +437,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun connectHealthConnect() {
+        if (healthPermissionRequestPending) return
+
         when (healthConnectRepository.availability()) {
             HealthConnectAvailability.PROVIDER_UNAVAILABLE -> {
                 healthConnectInitialized = false
@@ -419,12 +457,24 @@ class MainActivity : ComponentActivity() {
 
         healthScope.launch {
             try {
-                if (healthConnectRepository.hasReadPermission()) {
+                val permissionGranted = healthConnectRepository.hasReadPermission()
+                healthPermissionState = HealthConnectPermissionStatePolicy.afterPermissionRefresh(
+                    permissionGranted,
+                    healthPermissionState
+                )
+                if (permissionGranted) {
                     healthConnectInitialized = true
+                    updateHealthConnectPermissionUi()
                     readTodaySteps()
                 } else {
                     healthConnectInitialized = false
-                    healthPermissionLauncher.launch(healthConnectRepository.readPermissions)
+                    stepsView.text = "Passos hoje: sem acesso"
+                    updateHealthConnectPermissionUi()
+                    if (HealthConnectPermissionStatePolicy.shouldRequestPermission(healthPermissionState)) {
+                        launchHealthConnectPermissionRequest()
+                    } else {
+                        showHealthConnectPermissionRecoveryDialog()
+                    }
                 }
             } catch (error: CancellationException) {
                 throw error
@@ -436,9 +486,127 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun launchHealthConnectPermissionRequest() {
+        if (healthPermissionRequestPending) return
+        if (healthConnectRepository.availability() != HealthConnectAvailability.AVAILABLE) {
+            healthStatusView.text = "Conexão Saúde indisponível ou precisa de atualização."
+            appendLog("Pedido de permissão não iniciado: provider indisponível.")
+            return
+        }
+        healthPermissionRequestPending = true
+        try {
+            healthPermissionLauncher.launch(healthConnectRepository.readPermissions)
+        } catch (error: Exception) {
+            healthPermissionRequestPending = false
+            healthStatusView.text = "Não foi possível abrir as permissões da Conexão Saúde."
+            appendLog("Falha ao abrir pedido READ_STEPS: " + (error.message ?: "desconhecido"))
+        }
+    }
+
+    private fun showHealthConnectPermissionRecoveryDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Acesso aos passos não concedido")
+            .setMessage(
+                "A permissão READ_STEPS foi recusada ou removida anteriormente. " +
+                    "Para evitar pedidos repetidos, o botão Atualizar atividade não solicitará acesso. " +
+                    "Abra as configurações da Conexão Saúde para alterar a autorização."
+            )
+            .setPositiveButton("Abrir configurações") { _, _ -> openHealthConnectSettings() }
+            .setNeutralButton("Tentar novamente") { _, _ -> launchHealthConnectPermissionRequest() }
+            .setNegativeButton("Agora não", null)
+            .show()
+    }
+
+    private fun openHealthConnectSettings() {
+        val settingsIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            Intent("android.health.connect.action.MANAGE_HEALTH_PERMISSIONS")
+                .putExtra(Intent.EXTRA_PACKAGE_NAME, packageName)
+        } else {
+            Intent(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS)
+        }
+
+        try {
+            startActivity(settingsIntent)
+        } catch (error: ActivityNotFoundException) {
+            val providerSettingsIntent = Intent(
+                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.parse("package:com.google.android.apps.healthdata")
+            )
+            try {
+                startActivity(providerSettingsIntent)
+            } catch (fallbackError: ActivityNotFoundException) {
+                healthStatusView.text = "Não foi possível abrir as configurações da Conexão Saúde neste aparelho."
+                appendLog(
+                    "Falha ao abrir configurações do Health Connect: " +
+                        (fallbackError.message ?: error.message ?: "atividade indisponível")
+                )
+            }
+        }
+    }
+
+    private fun updateHealthConnectPermissionUi() {
+        val state = healthPermissionState
+        healthSettingsButton.visibility = if (
+            HealthConnectPermissionStatePolicy.shouldOfferSettings(state)
+        ) View.VISIBLE else View.GONE
+
+        when (state) {
+            HealthConnectPermissionState.DENIED ->
+                healthStatusView.text = "Acesso aos passos não concedido. Abra as configurações para autorizar."
+            HealthConnectPermissionState.REVOKED ->
+                healthStatusView.text = "Acesso aos passos removido. Abra as configurações para restaurar."
+            HealthConnectPermissionState.NOT_REQUESTED,
+            HealthConnectPermissionState.GRANTED -> Unit
+        }
+    }
+
+    private fun refreshHealthConnectPermissionState() {
+        if (healthPermissionRequestPending) return
+
+        when (healthConnectRepository.availability()) {
+            HealthConnectAvailability.PROVIDER_UNAVAILABLE -> {
+                healthConnectInitialized = false
+                healthStatusView.text = "Conexão Saúde indisponível. Verifique se está instalada/ativada."
+                return
+            }
+            HealthConnectAvailability.PROVIDER_UPDATE_REQUIRED -> {
+                healthConnectInitialized = false
+                healthStatusView.text = "Atualize a Conexão Saúde na Play Store."
+                return
+            }
+            HealthConnectAvailability.AVAILABLE -> Unit
+        }
+
+        healthScope.launch {
+            try {
+                val permissionGranted = healthConnectRepository.hasReadPermission()
+                healthPermissionState = HealthConnectPermissionStatePolicy.afterPermissionRefresh(
+                    permissionGranted,
+                    healthPermissionState
+                )
+                healthConnectInitialized = permissionGranted
+                updateHealthConnectPermissionUi()
+                if (permissionGranted) {
+                    readTodaySteps()
+                } else {
+                    stepsView.text = "Passos hoje: sem acesso"
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                healthConnectInitialized = false
+                healthStatusView.text = "Não foi possível verificar o acesso à Conexão Saúde."
+                appendLog("Falha ao atualizar estado READ_STEPS: " + (error.message ?: "desconhecido"))
+            }
+        }
+    }
+
     private fun readTodaySteps() {
         if (!healthConnectInitialized) {
-            connectHealthConnect()
+            stepsView.text = if (
+                HealthConnectPermissionStatePolicy.shouldOfferSettings(healthPermissionState)
+            ) "Passos hoje: sem acesso" else "Passos hoje: aguardando conexão"
+            updateHealthConnectPermissionUi()
             return
         }
         healthScope.launch {
@@ -458,9 +626,13 @@ class MainActivity : ComponentActivity() {
                 }
                 HealthConnectStepsResult.PermissionRequired -> {
                     healthConnectInitialized = false
+                    healthPermissionState = HealthConnectPermissionStatePolicy.afterPermissionRefresh(
+                        false,
+                        healthPermissionState
+                    )
                     stepsView.text = "Passos hoje: sem acesso"
-                    healthStatusView.text = "Permissão READ_STEPS ausente ou revogada."
-                    appendLog("Permissão READ_STEPS ausente ou revogada durante a leitura.")
+                    updateHealthConnectPermissionUi()
+                    appendLog("Permissão READ_STEPS ausente ou revogada durante a leitura; recuperação manual disponível.")
                 }
                 HealthConnectStepsResult.ProviderUnavailable -> {
                     healthConnectInitialized = false
@@ -486,7 +658,7 @@ class MainActivity : ComponentActivity() {
         handler.removeCallbacks(clockTicker)
         handler.post(clockTicker)
         handler.removeCallbacks(stepsTicker)
-        if (healthConnectInitialized) readTodaySteps()
+        if (healthConnectInitialized) readTodaySteps() else refreshHealthConnectPermissionState()
         handler.postDelayed(stepsTicker, 60_000L)
         if (reconnectPolicy.isEnabled && bluetoothGatt == null && currentScanCallback == null) {
             scheduleAutoReconnect("Aplicativo retomado", immediate = true)

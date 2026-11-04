@@ -1,5 +1,18 @@
 # Changelog
 
+## Não lançado — recuperação explícita da permissão Health Connect
+
+- Registrados os intents de justificativa de privacidade exigidos pela Conexão Saúde no Android 13 e anteriores e no Android 14+; o alias moderno é protegido por START_VIEW_PERMISSION_USAGE.
+- Auditoria do manifesto APK e testes de política passam a verificar ambos os pontos de entrada.
+
+- Atualizar atividade não solicita nem reabre permissões; sem acesso, exibe estado claro e mantém a leitura suspensa.
+- Estado local diferencia primeira solicitação, recusa, concessão e revogação; a autorização efetiva sempre é reconferida no Health Connect.
+- Após recusa ou revogação, a interface oferece acesso direto às configurações do sistema e nova solicitação somente mediante ação explícita.
+- O retorno ao app revalida READ_STEPS e retoma a leitura agregada sem apresentar um novo diálogo.
+- Adicionados testes unitários da política de transição dos estados de permissão.
+- CI e teste físico Galaxy A06/Android 16: **não validados**.
+
+
 ## Não lançado — sincronização automática de hora via Bluetooth CTS
 
 - Adicionado encoder do Current Time do Bluetooth SIG (CTS 0x1805 / característica 0x2A2B), com payload de 10 bytes e horário local do Android.

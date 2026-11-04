@@ -15,11 +15,28 @@ audit_manifest = audit_module.audit_manifest
 ANDROID = "http://schemas.android.com/apk/res/android"
 
 
-def manifest(permissions="", services="", app_attrs='android:allowBackup="false" android:usesCleartextTraffic="false" android:icon="@drawable/ic_launcher" android:dataExtractionRules="@xml/data_extraction_rules" android:fullBackupContent="@xml/backup_rules"', package_name="com.luizmarquesarruda.relogio20.diagnostic"):
+def manifest(permissions="", services="", app_attrs='android:allowBackup="false" android:usesCleartextTraffic="false" android:icon="@drawable/ic_launcher" android:dataExtractionRules="@xml/data_extraction_rules" android:fullBackupContent="@xml/backup_rules"', package_name="com.luizmarquesarruda.relogio20.diagnostic", include_health_rationale=True):
+    rationale = ""
+    if include_health_rationale:
+        rationale = """
+        <activity android:name=".HealthPrivacyActivity" android:exported="true">
+          <intent-filter>
+            <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+          </intent-filter>
+        </activity>
+        <activity-alias android:name=".HealthPrivacyPermissionUsageActivity"
+          android:exported="true" android:targetActivity=".HealthPrivacyActivity"
+          android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+          <intent-filter>
+            <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+            <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+          </intent-filter>
+        </activity-alias>
+        """
     return f'''<?xml version="1.0" encoding="utf-8"?>
     <manifest xmlns:android="{ANDROID}" package="{package_name}">
       {permissions}
-      <application {app_attrs}>{services}</application>
+      <application {app_attrs}>{rationale}{services}</application>
     </manifest>'''
 
 
@@ -75,6 +92,31 @@ class CompanionVariantTests(unittest.TestCase):
 
 
 class SharedSecurityPolicyTests(unittest.TestCase):
+    def test_health_connect_privacy_rationale_entry_points_are_accepted(self):
+        diagnostic_xml = manifest()
+        companion_xml = manifest(
+            package_name="com.luizmarquesarruda.relogio20",
+            services='''<service android:name=".notifications.NotificationCaptureService"
+              android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+              android:exported="false"><intent-filter><action
+              android:name="android.service.notification.NotificationListenerService" />
+              </intent-filter></service>'''
+        )
+        for variant, xml in (
+            ("diagnostic", diagnostic_xml),
+            ("companion", companion_xml),
+        ):
+            with self.subTest(variant=variant):
+                self.assertEqual([], audit_manifest(xml, variant))
+
+    def test_both_variants_reject_missing_health_connect_privacy_rationale(self):
+        xml = manifest(include_health_rationale=False)
+        for variant in ("diagnostic", "companion"):
+            with self.subTest(variant=variant):
+                codes = {issue.code for issue in audit_manifest(xml, variant)}
+                self.assertIn("health_permission_rationale_activity_missing", codes)
+                self.assertIn("health_permission_usage_alias_missing", codes)
+
     def test_apkanalyzer_raw_ampersand_in_label_is_normalized(self):
         xml = manifest(app_attrs='android:allowBackup="false" android:usesCleartextTraffic="false" android:icon="@drawable/ic_launcher" android:dataExtractionRules="@xml/data_extraction_rules" android:fullBackupContent="@xml/backup_rules" android:label="Saúde & Fitness"')
         self.assertEqual([], audit_manifest(xml, "diagnostic"))

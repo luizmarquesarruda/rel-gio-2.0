@@ -16,6 +16,10 @@ NOTIFICATION_LISTENER_ACTION = "android.service.notification.NotificationListene
 NOTIFICATION_LISTENER_PERMISSION = "android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
 ACCESSIBILITY_ACTION = "android.accessibilityservice.AccessibilityService"
 ACCESSIBILITY_PERMISSION = "android.permission.BIND_ACCESSIBILITY_SERVICE"
+HEALTH_RATIONALE_ACTION = "androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"
+HEALTH_PERMISSION_USAGE_ACTION = "android.intent.action.VIEW_PERMISSION_USAGE"
+HEALTH_PERMISSION_USAGE_CATEGORY = "android.intent.category.HEALTH_PERMISSIONS"
+HEALTH_PERMISSION_USAGE_PERMISSION = "android.permission.START_VIEW_PERMISSION_USAGE"
 
 # These capabilities are outside the approved, local-first scope of this app.
 # Any future exception must be reviewed and documented before changing this set.
@@ -176,6 +180,47 @@ def audit_manifest(manifest_xml: str, variant: str) -> list[AuditIssue]:
         issues.append(AuditIssue(
             "cleartext_traffic_enabled",
             "Cleartext network traffic must not be enabled.",
+        ))
+
+    health_privacy_activity = next(
+        (
+            activity for activity in application.findall("activity")
+            if (_attr(activity, "name") or "").endswith(".HealthPrivacyActivity")
+        ),
+        None,
+    )
+    if (
+        health_privacy_activity is None
+        or _attr(health_privacy_activity, "exported") != "true"
+        or HEALTH_RATIONALE_ACTION not in _service_actions(health_privacy_activity)
+    ):
+        issues.append(AuditIssue(
+            "health_permission_rationale_activity_missing",
+            "Health Connect must be able to open the app's privacy rationale activity on Android 13 and lower.",
+        ))
+
+    health_privacy_alias = next(
+        (
+            alias for alias in application.findall("activity-alias")
+            if (_attr(alias, "name") or "").endswith(".HealthPrivacyPermissionUsageActivity")
+        ),
+        None,
+    )
+    if (
+        health_privacy_alias is None
+        or _attr(health_privacy_alias, "exported") != "true"
+        or not (_attr(health_privacy_alias, "targetActivity") or "").endswith(".HealthPrivacyActivity")
+        or _attr(health_privacy_alias, "permission") != HEALTH_PERMISSION_USAGE_PERMISSION
+        or HEALTH_PERMISSION_USAGE_ACTION not in _service_actions(health_privacy_alias)
+        or HEALTH_PERMISSION_USAGE_CATEGORY not in {
+            category_name
+            for category in health_privacy_alias.findall(".//category")
+            if (category_name := _attr(category, "name"))
+        }
+    ):
+        issues.append(AuditIssue(
+            "health_permission_usage_alias_missing",
+            "Android 14+ must route Health Connect privacy rationale through the protected VIEW_PERMISSION_USAGE alias.",
         ))
 
     notification_services: list[ET.Element] = []
