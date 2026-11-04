@@ -171,6 +171,32 @@ class GattValueDecoderTest {
         assertTrue(GattValueDecoder.decode("1822", "2a60", byteArrayOf(0x01, 0)).isEmpty())
     }
 
+
+    @Test
+    fun decodesBodyCompositionFeatureFlagsAndResolution() {
+        val flags = (1L shl 0) or (1L shl 9) or (7L shl 11) or (3L shl 15)
+        val data = byteArrayOf(
+            flags.toByte(),
+            (flags ushr 8).toByte(),
+            (flags ushr 16).toByte(),
+            (flags ushr 24).toByte()
+        )
+        val decoded = GattValueDecoder.decode("181b", "2a9b", data)
+        assertTrue(decoded.any {
+            it.metric == "Recurso de composição corporal • Timestamp" &&
+                it.value == "suportado"
+        })
+        assertTrue(decoded.any {
+            it.metric == "Resolução declarada de peso" &&
+                it.value == "0,005 kg / 0,01 lb"
+        })
+        assertTrue(decoded.any {
+            it.metric == "Resolução declarada de altura" &&
+                it.value == "0,001 m / 0,1 in"
+        })
+        assertTrue(GattValueDecoder.decode("181b", "2a9b", byteArrayOf(1, 0, 0)).isEmpty())
+    }
+
     @Test
     fun decodesDeviceInformationFirmwareString() {
         val decoded = GattValueDecoder.decode(
