@@ -44,6 +44,12 @@ Foram pesquisadas as strings exatas `SH0050-1_1.1.3_1.23_1.18_1.1`, `SH0050`, `G
 
 A busca continua inconclusiva; ausência de resultados indexados não prova que o firmware não exista no servidor OTA do fabricante.
 
+## 1B. Limite da tela de informações confirmado pelo usuário — 04/11/2026
+
+O usuário confirmou que a tela disponível mostra somente os identificadores já registrados acima: GT3 MAX Call/GT3 MAX, firmware V1.07 e build SH0050-1_1.1.3_1.23_1.18_1.1. Não há, nessa tela, descrição de atualização, versão-alvo, changelog, URL ou botão/detalhes adicionais para extrair.
+
+Isso não prova que o servidor OTA não tenha pacote para o relógio; apenas significa que a interface consultada não expõe esses dados. Não solicitar novamente a mesma captura. A próxima fonte técnica é verificar se o Wearfit Pro deixou logs ou pacote OTA no armazenamento específico do aplicativo.
+
 ## 2. Mecanismo DFU observado na captura do GT3 MAX
 
 A captura GATT do usuário já havia registrado o serviço Secure DFU `0xFE59`, com características DFU Control Point e DFU Packet.
