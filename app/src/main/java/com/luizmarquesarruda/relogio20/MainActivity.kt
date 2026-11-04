@@ -1345,7 +1345,9 @@ class MainActivity : ComponentActivity() {
                 renderGattServices(gatt)
                 runSafeGattExploration(gatt)
                 inspectGt3MaxProfileAndSubscribe(gatt)
-                syncClockUsingCurrentTimeService(gatt)
+                deviceTimeSyncView.text =
+                    "Hora do relógio: sincronização suspensa pela política somente leitura/notificações."
+                appendLog("CTS 0x1805: sincronização suspensa pela política atual; nenhuma escrita de característica será enviada.")
                 updateStatus("Conectado. Serviços encontrados: " + gatt.services.size)
             } else {
                 updateStatus("Falha ao descobrir serviços GATT.")
