@@ -66,6 +66,8 @@ internal object GattValueDecoder {
                 decodePulseOximeterContinuous(payload)
             service == "1822" && characteristic == "2a60" ->
                 decodePulseOximeterFeatures(payload)
+            service == "181b" && characteristic == "2a9b" ->
+                decodeBodyCompositionFeature(payload)
             else -> emptyList()
         }
     }
@@ -527,6 +529,57 @@ internal object GattValueDecoder {
             offset += 3
         }
         if (offset != value.size) return emptyList()
+        return results
+    }
+
+    private fun decodeBodyCompositionFeature(value: ByteArray): List<DecodedGattValue> {
+        if (value.size != 4) return emptyList()
+        val flags = readUInt32(value, 0)
+        if (flags ushr 18 != 0L) return emptyList()
+
+        val results = mutableListOf<DecodedGattValue>()
+        val labels = listOf(
+            "Timestamp",
+            "Múltiplos usuários",
+            "Metabolismo basal",
+            "Percentual muscular",
+            "Massa muscular",
+            "Massa livre de gordura",
+            "Massa magra",
+            "Massa de água corporal",
+            "Impedância",
+            "Peso",
+            "Altura"
+        )
+        labels.forEachIndexed { bit, label ->
+            results += DecodedGattValue(
+                "Recurso de composição corporal • $label",
+                if (flags and (1L shl bit) != 0L) "suportado" else "não sinalizado"
+            )
+        }
+
+        val weightResolution = ((flags ushr 11) and 0x0f).toInt()
+        val weightText = when (weightResolution) {
+            0 -> "não especificada"
+            1 -> "0,5 kg / 1 lb"
+            2 -> "0,2 kg / 0,5 lb"
+            3 -> "0,1 kg / 0,2 lb"
+            4 -> "0,05 kg / 0,1 lb"
+            5 -> "0,02 kg / 0,05 lb"
+            6 -> "0,01 kg / 0,02 lb"
+            7 -> "0,005 kg / 0,01 lb"
+            else -> "reservada"
+        }
+        val heightResolution = ((flags ushr 15) and 0x07).toInt()
+        val heightText = when (heightResolution) {
+            0 -> "não especificada"
+            1 -> "0,01 m / 1 in"
+            2 -> "0,005 m / 0,5 in"
+            3 -> "0,001 m / 0,1 in"
+            else -> "reservada"
+        }
+        results += DecodedGattValue("Resolução declarada de peso", weightText)
+        results += DecodedGattValue("Resolução declarada de altura", heightText)
         return results
     }
 
