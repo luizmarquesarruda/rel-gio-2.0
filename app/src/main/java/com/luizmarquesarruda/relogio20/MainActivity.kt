@@ -2431,6 +2431,7 @@ class MainActivity : ComponentActivity() {
         ) {
             if (bluetoothGatt !== gatt) {
                 pendingNotifications.remove(key)
+                pendingAutomaticNotifications.remove(key)
                 appendLog("Inscrição descartada: conexão GATT mudou antes da execução.")
                 false
             } else if (automaticDiscovery && !automaticGattDiscoveryEnabled) {
@@ -2877,6 +2878,7 @@ class MainActivity : ComponentActivity() {
         cancelReconnectTask()
         cancelConnectionTimeout()
         stopBleScan()
+        finishAutomaticCaptureSession("Aplicativo encerrado")
         resetGattOperationQueue()
         pendingNotifications.clear()
         activeNotifications.clear()
