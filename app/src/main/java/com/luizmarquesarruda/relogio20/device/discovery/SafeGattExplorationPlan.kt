@@ -1,9 +1,9 @@
 package com.luizmarquesarruda.relogio20.device.discovery
 
 /**
- * Deterministic GATT plans. The automatic plan is restricted to known Bluetooth SIG
- * characteristics. The deeper plan is manual and may READ or subscribe to custom
- * channels, but it never writes characteristic payloads or touches DFU/NUS RX.
+ * Automatic operations are limited to non-health device metadata. Sensor reads and
+ * subscriptions require a deliberate user-confirmed deep scan. No characteristic
+ * payload write is ever planned; FE59/DFU and NUS are excluded from the deep plan.
  */
 internal object SafeGattExplorationPlan {
     data class Operation(
@@ -56,38 +56,29 @@ internal object SafeGattExplorationPlan {
     )
 
     private val standardServiceIds = known.map { it.service }.toSet() + setOf("1800", "1801")
+    private val automaticServiceIds = setOf("180a", "180f", "1805")
     private const val NUS_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
     private const val NUS_RX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
     private const val NUS_TX = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
     private const val MAX_DEEP_OPERATIONS = 24
 
-    /** Safe automatic plan: known SIG payloads only. */
+    /** Automatic plan: basic device metadata and battery read only. */
     fun build(services: List<GattServiceRecord>): List<Operation> {
         val plan = mutableListOf<Operation>()
         services.forEach { service ->
             val serviceShort = shortUuid(service.uuid)
-            if (serviceShort == "fe59") return@forEach
+            if (serviceShort == "fe59" || serviceShort !in automaticServiceIds) return@forEach
             service.characteristics.forEach characteristicLoop@{ characteristic ->
-                val characteristicShort = shortUuid(characteristic.uuid)
                 val profile = known.firstOrNull {
-                    it.service == serviceShort && it.characteristic == characteristicShort
+                    it.service == serviceShort && it.characteristic == shortUuid(characteristic.uuid)
                 } ?: return@characteristicLoop
-                val properties = characteristic.properties
-                if (profile.read && "READ" in properties) {
-                    plan += Operation(
-                        service.uuid, characteristic.uuid, Kind.READ_STANDARD_VALUE,
-                        "Leitura Bluetooth SIG padronizada: ${profile.description}."
-                    )
-                }
-                if (profile.notify &&
-                    ("NOTIFY" in properties || "INDICATE" in properties) &&
-                    characteristic.descriptorUuids.any { shortUuid(it) == "2902" }
-                ) {
-                    plan += Operation(
-                        service.uuid, characteristic.uuid, Kind.SUBSCRIBE_STANDARD_MEASUREMENT,
-                        "Notificação/indicação Bluetooth SIG: ${profile.description}."
-                    )
-                }
+                if (!profile.read || "READ" !in characteristic.properties) return@characteristicLoop
+                plan += Operation(
+                    service.uuid,
+                    characteristic.uuid,
+                    Kind.READ_STANDARD_VALUE,
+                    "Leitura automática não clínica: ${profile.description}."
+                )
             }
         }
         return plan.distinctBy {
@@ -96,43 +87,66 @@ internal object SafeGattExplorationPlan {
     }
 
     /**
-     * Explicitly user-triggered deeper plan. Only custom services are inspected.
-     * READ is used only when the characteristic advertises READ. Notifications/
-     * indications require CCCD 0x2902. No WRITE operation is ever created.
+     * Explicitly user-triggered sensor/custom-channel plan. Standard sensor profiles
+     * and proprietary channels are eligible only after confirmation. Device identifiers,
+     * Generic Access/Attribute, NUS and Secure DFU are excluded.
      */
     fun buildDeep(services: List<GattServiceRecord>): List<Operation> {
         val plan = mutableListOf<Operation>()
         services.forEach { service ->
             val serviceShort = shortUuid(service.uuid)
             val normalizedService = service.uuid.trim().lowercase()
-            if (serviceShort == "fe59" ||
-                serviceShort in standardServiceIds ||
+            if (serviceShort == "fe59" || serviceShort in setOf("1800", "1801") ||
                 normalizedService == NUS_SERVICE
             ) return@forEach
 
-            service.characteristics.forEach characteristicLoop@{ characteristic ->
-                val characteristicShort = shortUuid(characteristic.uuid)
-                if (characteristicShort in setOf("2a25", "2a23", "2a50")) {
-                    return@characteristicLoop
+            if (serviceShort in standardServiceIds) {
+                if (serviceShort in automaticServiceIds) {
+                    // Battery notifications are optional; only subscribe in the manual flow.
+                    if (serviceShort != "180f") return@forEach
                 }
-                if (normalizedService == NUS_SERVICE &&
-                    characteristic.uuid.trim().lowercase() in setOf(NUS_RX, NUS_TX)
-                ) return@characteristicLoop
-
-                val properties = characteristic.properties
-                if ("READ" in properties) {
-                    plan += Operation(
-                        service.uuid, characteristic.uuid, Kind.READ_PROPRIETARY_VALUE,
-                        "Leitura manual de canal customizado; nenhum payload será escrito."
-                    )
+                service.characteristics.forEach characteristicLoop@{ characteristic ->
+                    val shortCharacteristic = shortUuid(characteristic.uuid)
+                    if (shortCharacteristic in setOf("2a25", "2a23", "2a50")) return@characteristicLoop
+                    val profile = known.firstOrNull {
+                        it.service == serviceShort && it.characteristic == shortCharacteristic
+                    } ?: return@characteristicLoop
+                    val properties = characteristic.properties
+                    if (profile.read && "READ" in properties) {
+                        plan += Operation(
+                            service.uuid, characteristic.uuid, Kind.READ_STANDARD_VALUE,
+                            "Leitura manual de perfil de sensor Bluetooth SIG: ${profile.description}."
+                        )
+                    }
+                    if (profile.notify &&
+                        ("NOTIFY" in properties || "INDICATE" in properties) &&
+                        characteristic.descriptorUuids.any { shortUuid(it) == "2902" }
+                    ) {
+                        plan += Operation(
+                            service.uuid, characteristic.uuid, Kind.SUBSCRIBE_STANDARD_MEASUREMENT,
+                            "Inscrição manual em medição Bluetooth SIG: ${profile.description}."
+                        )
+                    }
                 }
-                if (("NOTIFY" in properties || "INDICATE" in properties) &&
-                    characteristic.descriptorUuids.any { shortUuid(it) == "2902" }
-                ) {
-                    plan += Operation(
-                        service.uuid, characteristic.uuid, Kind.SUBSCRIBE_PROPRIETARY_CHANNEL,
-                        "Inscrição manual via CCCD padrão; sem envio de comando proprietário."
-                    )
+            } else {
+                service.characteristics.forEach characteristicLoop@{ characteristic ->
+                    val shortCharacteristic = shortUuid(characteristic.uuid)
+                    if (shortCharacteristic in setOf("2a25", "2a23", "2a50")) return@characteristicLoop
+                    val properties = characteristic.properties
+                    if ("READ" in properties) {
+                        plan += Operation(
+                            service.uuid, characteristic.uuid, Kind.READ_PROPRIETARY_VALUE,
+                            "Leitura manual de canal customizado; nenhum payload será escrito."
+                        )
+                    }
+                    if (("NOTIFY" in properties || "INDICATE" in properties) &&
+                        characteristic.descriptorUuids.any { shortUuid(it) == "2902" }
+                    ) {
+                        plan += Operation(
+                            service.uuid, characteristic.uuid, Kind.SUBSCRIBE_PROPRIETARY_CHANNEL,
+                            "Inscrição manual via CCCD padrão; sem envio de comando proprietário."
+                        )
+                    }
                 }
             }
         }

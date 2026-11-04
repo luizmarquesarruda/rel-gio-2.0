@@ -176,12 +176,12 @@ class FeatureDiscoveryActivity : Activity() {
         addText(body, "Limites e segurança", 17f, 0xFF14212B.toInt(), true)
         addText(
             body,
-            "A descoberta não lê características arbitrárias nem ativa novos canais de notificação. " +
-                "A hora só é enviada pela característica Bluetooth CTS padrão 0x1805/0x2A2B, e apenas " +
-                "quando ela anuncia WRITE. A inscrição NUS TX existente continua condicionada ao fingerprint " +
-                "do GT3 MAX Call. Escritas proprietárias, NUS RX, DFU, OTA e reset permanecem bloqueados. " +
-                "O catálogo guarda metadados e contagens; o log de diagnóstico existente pode conter HEX " +
-                "e só é incluído no TXT por exportação manual.",
+            "A exploração automática limita-se a leituras básicas de dispositivo/bateria. " +
+                "A exploração de sensores Bluetooth SIG e canais proprietários exige confirmação manual " +
+                "na tela principal; usa somente READ e inscrições NOTIFY/INDICATE via CCCD. " +
+                "Nenhum payload de escrita é enviado. NUS RX, DFU, OTA e reset permanecem bloqueados. " +
+                "O catálogo guarda metadados e contagens; o log de diagnóstico pode conter HEX e só é " +
+                "incluído no TXT por exportação manual.",
             12f,
             0xFF526574.toInt()
         )

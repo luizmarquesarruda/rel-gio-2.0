@@ -7,7 +7,7 @@ import org.junit.Test
 
 class SafeGattExplorationPlanTest {
     @Test
-    fun plansOnlyKnownStandardReadsAndMeasurements() {
+    fun automaticPlanReadsOnlyBasicDeviceMetadataAndBattery() {
         val plan = SafeGattExplorationPlan.build(
             listOf(
                 GattServiceRecord(
@@ -17,12 +17,41 @@ class SafeGattExplorationPlanTest {
                         setOf("READ", "NOTIFY"),
                         setOf("00002902-0000-1000-8000-00805f9b34fb")
                     ))
+                ),
+                GattServiceRecord(
+                    "0000180d-0000-1000-8000-00805f9b34fb",
+                    listOf(GattCharacteristicRecord(
+                        "00002a37-0000-1000-8000-00805f9b34fb",
+                        setOf("NOTIFY"),
+                        setOf("00002902-0000-1000-8000-00805f9b34fb")
+                    ))
                 )
             )
         )
-        assertEquals(2, plan.size)
-        assertTrue(plan.any { it.kind == SafeGattExplorationPlan.Kind.READ_STANDARD_VALUE })
-        assertTrue(plan.any { it.kind == SafeGattExplorationPlan.Kind.SUBSCRIBE_STANDARD_MEASUREMENT })
+        assertEquals(1, plan.size)
+        assertEquals(SafeGattExplorationPlan.Kind.READ_STANDARD_VALUE, plan.single().kind)
+        assertFalse(plan.any { it.kind.name.contains("SUBSCRIBE") })
+    }
+
+    @Test
+    fun manualPlanIncludesStandardHealthNotificationsOnlyAfterUserAction() {
+        val plan = SafeGattExplorationPlan.buildDeep(
+            listOf(
+                GattServiceRecord(
+                    "0000180d-0000-1000-8000-00805f9b34fb",
+                    listOf(GattCharacteristicRecord(
+                        "00002a37-0000-1000-8000-00805f9b34fb",
+                        setOf("NOTIFY"),
+                        setOf("00002902-0000-1000-8000-00805f9b34fb")
+                    ))
+                )
+            )
+        )
+        assertEquals(1, plan.size)
+        assertEquals(
+            SafeGattExplorationPlan.Kind.SUBSCRIBE_STANDARD_MEASUREMENT,
+            plan.single().kind
+        )
     }
 
     @Test
@@ -85,7 +114,7 @@ class SafeGattExplorationPlanTest {
 
     @Test
     fun doesNotSubscribeWithoutCccd() {
-        val plan = SafeGattExplorationPlan.build(
+        val plan = SafeGattExplorationPlan.buildDeep(
             listOf(
                 GattServiceRecord(
                     "0000180f-0000-1000-8000-00805f9b34fb",
@@ -101,7 +130,7 @@ class SafeGattExplorationPlanTest {
 
     @Test
     fun standardPlanDetectsEnvironmentalTemperatureAndBloodPressure() {
-        val plan = SafeGattExplorationPlan.build(
+        val plan = SafeGattExplorationPlan.buildDeep(
             listOf(
                 GattServiceRecord(
                     "0000181a-0000-1000-8000-00805f9b34fb",
