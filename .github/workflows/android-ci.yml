@@ -113,6 +113,8 @@ jobs:
       - name: Prepare diagnostic installation package
         id: prepare_diagnostic_package
         if: always() && steps.build.outcome == 'success' && steps.lint.outcome == 'success' && steps.privacy_guardrails.outcome == 'success' && steps.audit_apks.outcome == 'success'
+        env:
+          SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
         shell: bash
         run: |
           set -euo pipefail
@@ -135,7 +137,8 @@ jobs:
           package=com.luizmarquesarruda.relogio20.diagnostic
           version=${APP_VERSION}-diagnostic
           build_type=debug
-          commit=$GITHUB_SHA
+          source_commit=$SOURCE_COMMIT
+          tested_commit=$GITHUB_SHA
           workflow_run=$GITHUB_RUN_ID
           notification_listener=absent
           internet_permission=absent

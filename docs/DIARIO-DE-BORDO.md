@@ -384,3 +384,30 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Testes físicos de BLE e interface no Galaxy A06/GT3 MAX Call, TalkBack, escala de fonte e comparação da bateria com Wearfit Pro: **não validados**.
 - Integração Wearfit Partner SDK, sensores, rotas e encaminhamento BLE de notificações permanecem pendentes de contrato/protocolo validado.
 - OTA/DFU, reset, comandos proprietários e gravação de dados de saúde continuam bloqueados.
+
+
+## 04/11/2026 — Segunda rodada de auditoria: obsolescência, manifesto e proveniência do APK
+
+### Evidências da nova rodada
+- A execução #193 da PR #9 passou em Lint, testes, builds diagnostic/companion, guardrails, auditoria dos manifestos/assinaturas e publicação do APK. O relatório Lint ainda mostrava Activity KTX 1.10.1 e coroutines Android 1.10.2, ausência de ícone e regras explícitas de extração, além de referências Bluetooth API 31 no caminho legado.
+- O manifesto declarava BLUETOOTH_SCAN/CONNECT como permissões comuns, embora sejam permissões do Android 12/API31+. O atributo neverForLocation também aparecia no nó comum.
+- Após a retirada dos botões de leitura GATT, dois callbacks onCharacteristicRead e handleRead permaneceram sem chamadores.
+- README.md ainda instruía usar os botões Ler/Ouvir, informava a versão 0.4.0-alpha.2 e descrevia seleção manual, divergindo do fluxo atual de identificação por endereço local e conexão automática.
+- BUILD-INFO.txt registrava o SHA de merge/teste usado pelo evento pull_request, sem distinguir o SHA fonte da branch/PR.
+
+### Correções aplicadas nesta rodada
+- Atualizadas AndroidX Activity KTX para 1.13.0 e kotlinx-coroutines-android para 1.11.0, versões estáveis publicadas pelos respectivos projetos. Health Connect 1.1.0 foi mantido.
+- BLUETOOTH_SCAN e BLUETOOTH_CONNECT movidos para uses-permission-sdk-31; a permissão de localização para versões legadas continua limitada a maxSdkVersion=30.
+- Adicionado ícone vetorial local e regras de exclusão para backup legado, backup em nuvem e transferência entre dispositivos. allowBackup permanece false.
+- Auditor de manifestos ampliado para verificar permissões uses-permission-sdk-31, ícone, dataExtractionRules e fullBackupContent.
+- Removidos callbacks GATT de leitura e função handleRead que ficaram sem chamadores. O fluxo CCCD mantém o retorno Boolean legado e isola a chamada moderna em helper anotado para API 33+.
+- Workflow passa a registrar source_commit (HEAD da PR) e tested_commit (SHA efetivamente testado pelo GitHub Actions).
+- README atualizado para refletir identificação local, conexão automática, inventário GATT passivo e versão canônica.
+- targetSdk 36 mantido: desde 31/08/2026, o Google Play exige API 36 ou superior para novas apps/atualizações. A elevação a API 37 não é necessária para cumprir o requisito atual e fica pendente de testes Android 17.
+- Avisos menores de internacionalização/setTextI18n e recomendações UseKtx podem permanecer, mesmo com compilação e testes aprovados.
+
+### Validação
+- Os testes de contrato foram executados primeiro e falharam em 7 condições nos runs #194/#195, identificando as inconsistências antes da correção.
+- O CI deverá validar novamente os contratos, os dois sabores, permissões/serviços mesclados, assinatura e artefatos no HEAD final.
+- Galaxy A06/Android 16, instalação, TalkBack, transferências do Android e comunicação física GT3 MAX: **não validados nesta rodada**.
+- Nenhum sensor, protocolo proprietário, notificação enviada ao relógio, OTA/DFU ou reset foi habilitado.

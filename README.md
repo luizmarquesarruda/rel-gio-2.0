@@ -1,6 +1,6 @@
 # Relógio 2.0
 
-Aplicativo Android de Saúde e Fitness que acompanha dados de um smartwatch pareado pelo Wearfit Pro, organiza métricas autorizadas e oferece uma ponte de leitura de notificações para o dispositivo vestível.
+Aplicativo Android de Saúde e Fitness que se conecta diretamente ao GT3 MAX por BLE/GATT, consulta passos agregados no Health Connect e oferece captura consentida de notificações na variante companion. O Wearfit Pro permanece uma referência/companheiro externo; o app não depende de API ou nuvem privada dele.
 
 ## Finalidade do produto
 
@@ -30,8 +30,8 @@ Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALT
 - Procura dispositivos BLE próximos.
 - Mostra nome e RSSI, ocultando parte do endereço MAC na interface.
 - Conecta ao dispositivo escolhido e enumera serviços, características, propriedades e descritores GATT.
-- Permite leitura explícita de características que declaram a propriedade Read.
-- Permite inscrição explícita em notificações por meio do descritor padrão CCCD (0x2902).
+- Exibe inventário GATT passivo: serviços, características, propriedades e descritores.
+- Inscreve automaticamente somente NUS TX no GT3 MAX Call quando o nome e o fingerprint GATT completo coincidem; usa o CCCD padrão e não escreve payload na NUS RX.
 - Registra localmente na tela os bytes recebidos em hexadecimal.
 - Reconhece um quadro de bateria `0x91/0x80` como **candidato**, sem confirmar o valor no GT3 Maxx.
 
@@ -66,13 +66,12 @@ CI verde não equivale a aprovação do Play Protect nem a teste físico no Gala
 
 ## Como usar a prova de conceito
 
-1. Instale o APK debug no Android.
-2. Ative o Bluetooth.
-3. Toque em **Procurar relógio** e conceda a permissão de dispositivos próximos.
-4. Selecione **GT3 MAX**.
-5. Aguarde a descoberta GATT.
-6. Use **Ler** somente nas características com Read.
-7. Use **Ouvir** somente quando quiser observar notificações; o app não apresenta botão de escrita de característica.
+1. Instale o APK diagnostic debug no Android e ative o Bluetooth.
+2. Toque em **Configurar identificação do GT3 MAX** e informe o endereço Bluetooth da unidade. O endereço é salvo somente nas preferências privadas deste aparelho.
+3. Toque em **Buscar e conectar automaticamente** e conceda a permissão de dispositivos próximos.
+4. O app procura por até 15 segundos e tenta conectar somente quando encontra o endereço configurado, com RSSI acima do limite operacional. A seleção de outro dispositivo é bloqueada.
+5. Após a descoberta, o inventário GATT é passivo. A inscrição NUS TX ocorre automaticamente apenas quando nome e fingerprint completo do perfil GT3 MAX Call coincidem.
+6. Não existem ações manuais de leitura/inscrição para características desconhecidas; NUS RX e características proprietárias não recebem payloads.
 
 ## Documentação
 
@@ -101,7 +100,7 @@ A captura local usa NotificationListenerService e acesso especial concedido manu
 
 ## Versão do aplicativo
 
-Versão de desenvolvimento registrada: `0.4.0-alpha.2`. Não é release estável e aguarda validação do CI e testes físicos.
+A versão de desenvolvimento canônica está no arquivo `VERSION`. Para cada APK, confira `BUILD-INFO.txt`, que registra versão, variante, commit de origem da PR e commit efetivamente testado pelo GitHub Actions. Builds debug não são releases de produção.
 
 ## Segurança e privacidade
 

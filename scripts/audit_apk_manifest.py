@@ -113,6 +113,7 @@ def audit_manifest(manifest_xml: str, variant: str) -> list[AuditIssue]:
         "uses-permission",
         "uses-permission-sdk-23",
         "uses-permission-sdk-m",
+        "uses-permission-sdk-31",
     ):
         for permission in root.findall(permission_tag):
             name = _attr(permission, "name") or ""
@@ -147,6 +148,24 @@ def audit_manifest(manifest_xml: str, variant: str) -> list[AuditIssue]:
         issues.append(AuditIssue(
             "backup_must_be_disabled",
             "android:allowBackup must be explicitly false for this app.",
+        ))
+
+    if not _attr(application, "icon"):
+        issues.append(AuditIssue(
+            "application_icon_missing",
+            "Application must declare an explicit launcher icon.",
+        ))
+
+    if _attr(application, "dataExtractionRules") != "@xml/data_extraction_rules":
+        issues.append(AuditIssue(
+            "data_extraction_rules_missing",
+            "Application must declare the explicit Android 12+ data extraction policy.",
+        ))
+
+    if _attr(application, "fullBackupContent") != "@xml/backup_rules":
+        issues.append(AuditIssue(
+            "legacy_backup_rules_missing",
+            "Application must declare the explicit legacy backup exclusion policy.",
         ))
 
     if _bool_attr(application, "usesCleartextTraffic") is True:

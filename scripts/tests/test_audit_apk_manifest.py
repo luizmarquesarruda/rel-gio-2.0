@@ -15,7 +15,7 @@ audit_manifest = audit_module.audit_manifest
 ANDROID = "http://schemas.android.com/apk/res/android"
 
 
-def manifest(permissions="", services="", app_attrs='android:allowBackup="false" android:usesCleartextTraffic="false"', package_name="com.luizmarquesarruda.relogio20.diagnostic"):
+def manifest(permissions="", services="", app_attrs='android:allowBackup="false" android:usesCleartextTraffic="false" android:icon="@drawable/ic_launcher" android:dataExtractionRules="@xml/data_extraction_rules" android:fullBackupContent="@xml/backup_rules"', package_name="com.luizmarquesarruda.relogio20.diagnostic"):
     return f'''<?xml version="1.0" encoding="utf-8"?>
     <manifest xmlns:android="{ANDROID}" package="{package_name}">
       {permissions}
@@ -76,11 +76,11 @@ class CompanionVariantTests(unittest.TestCase):
 
 class SharedSecurityPolicyTests(unittest.TestCase):
     def test_apkanalyzer_raw_ampersand_in_label_is_normalized(self):
-        xml = manifest(app_attrs='android:allowBackup="false" android:usesCleartextTraffic="false" android:label="Saúde & Fitness"')
+        xml = manifest(app_attrs='android:allowBackup="false" android:usesCleartextTraffic="false" android:icon="@drawable/ic_launcher" android:dataExtractionRules="@xml/data_extraction_rules" android:fullBackupContent="@xml/backup_rules" android:label="Saúde & Fitness"')
         self.assertEqual([], audit_manifest(xml, "diagnostic"))
 
     def test_valid_xml_ampersand_entity_is_preserved(self):
-        xml = manifest(app_attrs='android:allowBackup="false" android:usesCleartextTraffic="false" android:label="Saúde &amp; Fitness"')
+        xml = manifest(app_attrs='android:allowBackup="false" android:usesCleartextTraffic="false" android:icon="@drawable/ic_launcher" android:dataExtractionRules="@xml/data_extraction_rules" android:fullBackupContent="@xml/backup_rules" android:label="Saúde &amp; Fitness"')
         self.assertEqual([], audit_manifest(xml, "diagnostic"))
 
     def test_both_variants_reject_internet_permission(self):

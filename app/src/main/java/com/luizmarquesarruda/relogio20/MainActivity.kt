@@ -3,6 +3,7 @@ package com.luizmarquesarruda.relogio20
 import android.Manifest
 import android.app.AlertDialog
 import android.annotation.SuppressLint
+import android.annotation.TargetApi
 import android.content.Intent
 import com.luizmarquesarruda.relogio20.notifications.NotificationCenterActivity
 import com.luizmarquesarruda.relogio20.device.ble.gatt.SerialGattOperationQueue
@@ -895,29 +896,6 @@ class MainActivity : ComponentActivity() {
         }
 
         @Deprecated("Deprecated by Android API 33")
-        override fun onCharacteristicRead(
-            gatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic,
-            status: Int
-        ) {
-            if (bluetoothGatt !== gatt) return
-            val value = characteristic.value ?: byteArrayOf()
-            handleRead(characteristic.uuid.toString(), status, value)
-            completeGattOperation(gatt)
-        }
-
-        override fun onCharacteristicRead(
-            gatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic,
-            value: ByteArray,
-            status: Int
-        ) {
-            if (bluetoothGatt !== gatt) return
-            handleRead(characteristic.uuid.toString(), status, value)
-            completeGattOperation(gatt)
-        }
-
-        @Deprecated("Deprecated by Android API 33")
         override fun onCharacteristicChanged(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic
@@ -1118,27 +1096,23 @@ class MainActivity : ComponentActivity() {
                     appendLog("Android recusou a inscrição local em " + characteristic.uuid)
                     false
                 } else {
-                    val writeStatus = if (Build.VERSION.SDK_INT >= 33) {
-                        gatt.writeDescriptor(descriptor, descriptorValue)
+                    val writeStarted = if (Build.VERSION.SDK_INT >= 33) {
+                        writeDescriptorApi33(gatt, descriptor, descriptorValue)
                     } else {
                         @Suppress("DEPRECATION")
                         run {
                             descriptor.value = descriptorValue
-                            if (gatt.writeDescriptor(descriptor)) {
-                                BluetoothStatusCodes.SUCCESS
-                            } else {
-                                BluetoothStatusCodes.ERROR_UNKNOWN
-                            }
+                            gatt.writeDescriptor(descriptor)
                         }
                     }
-                    if (writeStatus == BluetoothStatusCodes.SUCCESS) {
+                    if (writeStarted) {
                         appendLog("CCCD solicitado para " + characteristic.uuid +
                             "; aguardando confirmação do callback GATT.")
                         true
                     } else {
                         pendingNotifications.remove(key)
                         gatt.setCharacteristicNotification(characteristic, false)
-                        appendLog("Falha ao solicitar CCCD. Código: " + writeStatus)
+                        appendLog("O Android recusou iniciar a inscrição CCCD para " + characteristic.uuid)
                         false
                     }
                 }
@@ -1146,15 +1120,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @TargetApi(Build.VERSION_CODES.TIRAMISU)
+    @SuppressLint("MissingPermission")
+    private fun writeDescriptorApi33(
+        gatt: BluetoothGatt,
+        descriptor: BluetoothGattDescriptor,
+        value: ByteArray
+    ): Boolean =
+        gatt.writeDescriptor(descriptor, value) == BluetoothStatusCodes.SUCCESS
     private fun completeGattOperation(gatt: BluetoothGatt) {
         if (bluetoothGatt !== gatt) return
         gattOperationQueue.onOperationCompleted()
-    }
-
-    private fun handleRead(uuid: String, status: Int, value: ByteArray) {
-        val description = if (value.isEmpty()) "0 bytes" else
-            value.size.toString() + " bytes: " + BleValueFormatter.toHex(value)
-        appendLog("Leitura " + uuid + " | status=" + status + " | " + description)
     }
 
     private fun handleNotification(serviceUuid: String, uuid: String, value: ByteArray) {
