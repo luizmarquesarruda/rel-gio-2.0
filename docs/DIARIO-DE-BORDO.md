@@ -1,3 +1,12 @@
+## 04/11/2026 — Correção do auditor de manifesto APK
+
+- Run 41764184171 falhou somente na etapa de auditoria do manifesto final: `apkanalyzer manifest print` emitiu `Saúde & Fitness` com ampersand não escapado, e o XML deixou de ser bem-formado para o parser Python.
+- A falha não demonstra que o manifesto binário do APK estava inválido; é uma incompatibilidade na serialização textual do `apkanalyzer`. O pacote de instalação foi corretamente retido e não publicado.
+- Corrigido `scripts/audit_apk_manifest.py` para normalizar ampersands crus sem alterar entidades XML válidas. Adicionados testes para ampersand cru e `&amp;`; o reconhecimento de entidades numéricas foi corrigido.
+- Atualizado `docs/INVESTIGACAO-BLOQUEIO-PLAY-PROTECT-2026-11-04.md` com a causa e o estado.
+- Nova execução no SHA `4cac663eef14f5c9b236e725837bddcd52c61d55`: run 41764797014, inicialmente em fila. A atualização documental subsequente pode disparar outra execução; validar sempre o SHA mais recente.
+- O Play Protect e a instalação física no Galaxy A06 continuam **não validados**.
+
 ## 04/11/2026 — Classificação B do bloqueio Play Protect
 
 - O usuário identificou o aviso como “O app foi bloqueado para proteger seu dispositivo”, com base em síntese do Gemini; a transcrição literal e a captura de tela não estão disponíveis.
