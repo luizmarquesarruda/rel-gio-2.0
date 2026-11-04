@@ -127,10 +127,10 @@ Até obter SDK oficial, protocolo documentado ou captura comparativa reproduzív
 - Android `BluetoothGattCallback`: https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback
 - Bluetooth SIG Assigned Numbers: https://www.bluetooth.com/specifications/assigned-numbers/
 - Bluetooth SIG GATT specifications: https://www.bluetooth.com/specifications/specs/
-- Pulse Oximeter Service 1.0.1: https://www.bluetooth.com/specifications/specs/pulse-oximeter-service/
+- Pulse Oximeter Service 1.0.1: https://www.bluetooth.com/wp-content/uploads/Files/Specification/HTML/PLXS_v1.0.1/out/en/index-en.html
 - Body Composition Service 1.0.1: https://www.bluetooth.com/specifications/specs/body-composition-service-bcs/
 - Running Speed and Cadence Service 1.0.1: https://www.bluetooth.com/specifications/specs/running-speed-and-cadence-service/
-- Cycling Speed and Cadence Service: https://www.bluetooth.com/specifications/specs/cycling-speed-and-cadence-service/
+- Cycling Speed and Cadence Service 1.0.1: https://files.bluetooth.com/download/cscs_v-1-0-1-pdf/
 
 ## Estado dos testes
 
