@@ -1,3 +1,12 @@
+## 04/11/2026 — Correção do empacotamento dos artefatos Android CI
+
+- Corrigido o workflow `.github/workflows/android-ci.yml`: o artefato `relogio-2.0-diagnostic-debug-apk` passa a receber diretamente o único arquivo `app-diagnostic-debug.apk`, sem diretório auxiliar e sem TXT/XML anexados.
+- Os arquivos `diagnostic-build-info.txt`, manifestos, permissões, badging, assinaturas/certificados e hashes SHA-256 permanecem no artefato separado `android-validation-reports`.
+- Mantidos dois artefatos distintos: **APK instalável** e **relatórios de validação**. A variante companion continua compilada/testada/auditada, mas não publicada como instalação.
+- README e changelog alinhados com a separação.
+- A execução anterior #297 ainda estava na auditoria dos APKs quando esta correção foi iniciada; ela não valida o novo empacotamento. A CI disparada pelo novo HEAD deverá confirmar a estrutura final dos artefatos.
+- Teste físico no Galaxy A06/Android 16: **não validado**.
+
 ## 04/11/2026 — Acesso direto à exploração pelo laboratório
 
 - Adicionado à tela Testes e descobertas um atalho para solicitar a exploração aprofundada de todos os canais GATT elegíveis.
