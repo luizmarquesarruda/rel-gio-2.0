@@ -28,6 +28,18 @@ Isto é evidência de que o ecossistema Wearfit Pro prevê integração de aplic
 
 Portanto, a política abre uma rota oficial plausível, mas a implementação real exige o SDK/contrato técnico fornecido pela Weike/WAKE UP e autorização do programa de parceiros.
 
+## 1A. Escopo da permissão e compatibilidade do GT3 MAX Call
+
+A versão chinesa publicada pela própria Weike está marcada como atualizada em 04/08/2023 e efetiva desde 10/03/2022. Ela contém o texto correspondente à cópia enviada pelo proprietário, em especial a seção 1.3.2. A versão inglesa oficial localizada no domínio wearfit.app é uma revisão mais antiga, de 24/02/2022. Para detalhes que diferem, a cópia chinesa de 2023 é a referência mais próxima da versão fornecida.
+
+A política distingue:
+- o ecossistema Wearfit Pro, que inclui produtos Weike/afiliadas e dispositivos de terceiros;
+- o caminho de integração de aplicativos de terceiros descrito especificamente para **dispositivos vestíveis Weike pareados** e acessados por meio do Wearfit Pro.
+
+Essa distinção é importante para o GT3 MAX Call. A captura BLE prova que o relógio usa o aplicativo Wearfit Pro e expõe serviços GATT; não prova, por si só, que o hardware seja fabricado pela Weike ou que esteja habilitado no programa de aplicativos parceiros. Uma amostra regulatória pública associada ao nome GT3 MAX identifica NJY Technology como requerente, mas não confirma a placa/variante desta unidade nem seu vínculo comercial com Weike. Logo, a elegibilidade do GT3 MAX Call para o SDK de parceiros está **não confirmada** e deve ser perguntada diretamente ao fornecedor.
+
+A frase “terceiros podem interagir por meio do Wearfit Pro” não define o mecanismo técnico. Não autoriza o Relógio 2.0 a ler o banco privado do Wearfit Pro, acessar seus arquivos internos, reutilizar credenciais, imitar tráfego autenticado ou supor que exista um broadcast/Content Provider público.
+
 ## 2. Não confundir a lista de SDKs de terceiros
 
 A página third_Party_SDK_en.html é um inventário dos SDKs que o próprio Wearfit Pro integra (estatística/analytics, publicidade, mapas, push, pagamento, autenticação, TTS e afins). Ela **não é um download de SDK de integração do relógio** e não apresenta documentação de API do canal de terceiros descrito na política.
@@ -98,7 +110,8 @@ Não implementar API inventada, não fazer introspecção de sessão privada do 
 
 ## Fontes
 
-- Wearfit Pro — Statement on Wearfit Pro and Privacy: https://wearfit.app/statement-on-wearfit-pro-and-privacy/
+- Wearfit Pro — Statement on Wearfit Pro and Privacy (versão chinesa, atualização 04/08/2023): https://h5.iwhop.com/login/privacy_policy/hw_privacy_policy.html
+- Wearfit Pro — Statement on Wearfit Pro and Privacy (versão inglesa localizada, atualização 24/02/2022): https://wearfit.app/statement-on-wearfit-pro-and-privacy/
 - WAKE UP / WEARFIT — página de produto e plataforma/ecossistema aberto: https://iwhop.cn/terminalAPP
 - Wearfit Pro — Third-Party SDK List (inventário dos SDKs usados pelo próprio app, não SDK público do relógio): https://h5.iwhop.com/login/privacy_policy/third_Party_SDK_en.html
 - Política de privacidade detalhada fornecida pelo proprietário nesta conversa, marcada como atualizada em 04/08/2023.
