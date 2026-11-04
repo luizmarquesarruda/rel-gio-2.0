@@ -688,7 +688,7 @@ class MainActivity : ComponentActivity() {
             characteristic: BluetoothGattCharacteristic
         ) {
             if (bluetoothGatt !== gatt) return
-            handleNotification(characteristic.uuid.toString(), characteristic.value ?: byteArrayOf())
+            handleNotification(characteristic.service.uuid.toString(), characteristic.uuid.toString(), characteristic.value ?: byteArrayOf())
         }
 
         override fun onCharacteristicChanged(
@@ -697,7 +697,7 @@ class MainActivity : ComponentActivity() {
             value: ByteArray
         ) {
             if (bluetoothGatt !== gatt) return
-            handleNotification(characteristic.uuid.toString(), value)
+            handleNotification(characteristic.service.uuid.toString(), characteristic.uuid.toString(), value)
         }
 
         @SuppressLint("MissingPermission")
@@ -738,10 +738,13 @@ class MainActivity : ComponentActivity() {
                 "A escuta usa somente o descritor padrão CCCD (0x2902).", 12f)
 
             val nusService = gatt.getService(WearfitProtocolProfile.SERVICE_UUID)
+            val rxCharacteristic = nusService?.getCharacteristic(
+                WearfitProtocolProfile.RX_CHARACTERISTIC_UUID
+            )
             val txCharacteristic = nusService?.getCharacteristic(
                 WearfitProtocolProfile.TX_CHARACTERISTIC_UUID
             )
-            if (txCharacteristic != null) {
+            if (rxCharacteristic != null && txCharacteristic != null) {
                 addText(
                     content,
                     "Perfil BLE candidato: NUS + quadros AB (compatibilidade observada em referência DT78). " +
@@ -922,12 +925,13 @@ class MainActivity : ComponentActivity() {
         appendLog("Leitura " + uuid + " | status=" + status + " | " + description)
     }
 
-    private fun handleNotification(uuid: String, value: ByteArray) {
+    private fun handleNotification(serviceUuid: String, uuid: String, value: ByteArray) {
         val description = if (value.isEmpty()) "0 bytes" else
             value.size.toString() + " bytes: " + BleValueFormatter.toHex(value)
         appendLog("NOTIFICAÇÃO " + uuid + " | " + description)
 
-        if (uuid.equals(WearfitProtocolProfile.TX_CHARACTERISTIC_UUID.toString(), ignoreCase = true)) {
+        if (serviceUuid.equals(WearfitProtocolProfile.SERVICE_UUID.toString(), ignoreCase = true) &&
+            uuid.equals(WearfitProtocolProfile.TX_CHARACTERISTIC_UUID.toString(), ignoreCase = true)) {
             val frame = WearfitAbFrameParser.parse(value)
             val battery = frame?.batteryPercent
             if (battery != null) {
