@@ -59,7 +59,7 @@ class FeatureDiscoveryActivity : Activity() {
     override fun onResume() {
         super.onResume()
         if (::body.isInitialized) {
-            updateTimerUi(store.activeSession(System.currentTimeMillis()))
+            render()
             scheduleCountdown()
         }
     }
