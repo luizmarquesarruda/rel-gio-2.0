@@ -8,7 +8,7 @@ Usar o Wearfit Pro como referência funcional para o Relógio 2.0, sem copiar pr
 
 | Área | Função de referência | Fonte/canal possível | Prioridade | Situação no Relógio 2.0 |
 |---|---|---|---|---|
-| Dispositivo | Pareamento, estado conectado e bateria/carga | Wearfit Pro ou BLE validado | P0 | BLE GATT provado; bateria ainda não identificada |
+| Dispositivo | Pareamento, estado conectado e bateria/carga | Wearfit Pro ou BLE validado | P0 | Conexão/descoberta GATT implementadas; bateria AB/NUS é candidata, leitura automática por fingerprint adicionada e correlação com Wearfit Pro pendente |
 | Atividade | Passos diários | Health Connect ou driver BLE | P0 | Health Connect agregado lido na PR #5; origem GT3 não confirmada |
 | Atividade | Histórico de passos e tendências | Health Connect/local | P1 | Planejado |
 | Saúde | Frequência cardíaca | Wearfit Pro/Health Connect/BLE | P1 | Sem parser GT3 validado |
