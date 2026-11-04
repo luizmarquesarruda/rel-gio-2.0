@@ -101,7 +101,8 @@ NUS RX, escritas de payload em características customizadas, controles de medi�
 - A biblioteca privada do app aplica seus limites existentes de quantidade e tamanho de arquivo/registro.
 - O TXT exportado pode conter dados de saúde quando houve captura consentida; deve ser tratado como relatório privado.
 - Fora de uma sessão ativa, o log não inclui HEX bruto de notificação/leitura.
-- Pausar finaliza a sessão de captura e agenda a desinscrição dos canais ativados pelo modo automático. A política separada de NUS TX preexistente permanece inalterada.
+- Pausar finaliza uma sessão quando ela foi criada pelo modo automático e agenda a desinscrição dos canais ativados por ele. Se o modo automático tiver reutilizado uma sessão iniciada manualmente, essa sessão manual é preservada. A política separada de NUS TX preexistente permanece inalterada.
+- A tela Testes e descobertas informa o estado da automação e atualiza o inventário quando retorna ao primeiro plano. A biblioteca exibe serviço, característica, origem, confiança e HEX somente quando houve sessão autorizada.
 
 ## Limites que não podem ser confundidos
 
