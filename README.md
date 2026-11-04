@@ -2,6 +2,12 @@
 
 Aplicativo Android de Saúde e Fitness que se conecta diretamente ao GT3 MAX por BLE/GATT, consulta passos agregados no Health Connect e oferece captura consentida de notificações na variante companion. O Wearfit Pro permanece uma referência/companheiro externo; o app não depende de API ou nuvem privada dele.
 
+## Reconexão automática BLE
+
+Depois da primeira conexão GATT bem-sucedida com o GT3 MAX configurado localmente, o app habilita a reconexão automática. Em perda inesperada, procura somente o endereço Bluetooth salvo, com varreduras de baixa potência e intervalos de 1, 2, 5, 10, 20 e até 30 segundos. A ação **Parar reconexão** cancela as tentativas e desativa a preferência local.
+
+A recuperação nesta fase ocorre enquanto o app está em primeiro plano ou quando ele é reaberto/retomado. O Android pode suspender o processo em segundo plano ou após encerramento forçado; recuperação contínua em segundo plano ainda não está implementada. A reconexão restaura o transporte GATT e reinscreve apenas a notificação NUS TX já permitida; não valida sensores e não envia payload ao relógio.
+
 ## Finalidade do produto
 
 O Relógio 2.0 é um companheiro de Saúde e Fitness. O fluxo de destino é: sensores do relógio → conexão com o app → dados validados no Conexão Saúde (Health Connect). No sentido inverso, o Android entrega notificações selecionadas ao app para a ponte com o relógio; o app lê os alertas e não responde nem modifica o aplicativo de origem.
