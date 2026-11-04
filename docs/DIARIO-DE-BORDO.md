@@ -2,6 +2,17 @@
 
 Este arquivo é o registro cronológico principal. Atualizar em toda PR que altere arquitetura, funções, dependências, versão, dados ou protocolo.
 
+## 03/11/2026 — Alinhamento com documentação oficial Google/Android
+
+- Analisada a documentação de integração do app complementar Google Pixel Watch, Wearable Data Layer, permissões Bluetooth, Companion Device Manager, notificações Wear OS, NotificationListenerService, Health Connect, Health Services e qualidade Wear OS.
+- Decisão: o GT3 Maxx permanece tratado como dispositivo BLE/GATT genérico pareado pelo Wearfit Pro; não existe evidência que permita classificá-lo como Wear OS.
+- A Wearable Data Layer e Health Services não são adotadas no dispositivo atual, pois são APIs do ecossistema Wear OS.
+- Para o telefone Android, manter permissões BLE mínimas, Health Connect somente para leitura autorizada e origem dos dados preservada.
+- A ponte de notificações do Wear OS é feita pelo sistema; no GT3 Maxx, nenhum envio de mensagens por GATT será implementado sem protocolo comprovado.
+- Companion Device Manager fica como experimento futuro, sujeito à compatibilidade do anúncio real do relógio e testes de regressão.
+- Documento de referência criado em `docs/ALINHAMENTO-GOOGLE-ANDROID-WEAROS.md`.
+- Nenhuma dependência Wear OS foi adicionada. Teste físico Galaxy A06/GT3 Maxx: **não validado**.
+
 ## 03/11/2026 — Endurecimento de privacidade das notificações (PR #5)
 
 - Adicionada expiração de prévias após 15 minutos usando tempo monotônico, evitando depender de alterações do relógio civil do aparelho.
