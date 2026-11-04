@@ -1546,8 +1546,11 @@ class MainActivity : ComponentActivity() {
             if (!deepExplorationAttempted.add(attemptKey)) return@forEach
             val serviceUuid = runCatching { UUID.fromString(operation.serviceUuid) }.getOrNull()
             val characteristicUuid = runCatching { UUID.fromString(operation.characteristicUuid) }.getOrNull()
-            val characteristic = serviceUuid?.let(gatt::getService)
-                ?.getCharacteristic(characteristicUuid)
+            val characteristic = if (serviceUuid != null && characteristicUuid != null) {
+                gatt.getService(serviceUuid)?.getCharacteristic(characteristicUuid)
+            } else {
+                null
+            }
             if (characteristic == null) {
                 appendLog("Canal ignorado: característica não está mais disponível: " + operation.characteristicUuid)
                 return@forEach
