@@ -17,6 +17,7 @@ import com.luizmarquesarruda.relogio20.device.gt3max.protocol.Gt3MaxCallDevicePr
 import com.luizmarquesarruda.relogio20.data.discovery.FeatureDiscoveryStore
 import com.luizmarquesarruda.relogio20.device.discovery.GattCharacteristicRecord
 import com.luizmarquesarruda.relogio20.device.discovery.GattServiceRecord
+import com.luizmarquesarruda.relogio20.device.discovery.SafeGattExplorationPlan
 import com.luizmarquesarruda.relogio20.HealthPrivacyActivity
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectAvailability
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsRepository
@@ -1199,6 +1200,7 @@ class MainActivity : ComponentActivity() {
                 appendLog("Serviços descobertos: " + gatt.services.size)
                 captureFeatureDiscovery(gatt)
                 renderGattServices(gatt)
+                runSafeGattExploration(gatt)
                 inspectGt3MaxProfileAndSubscribe(gatt)
                 syncClockUsingCurrentTimeService(gatt)
                 updateStatus("Conectado. Serviços encontrados: " + gatt.services.size)
@@ -1210,6 +1212,29 @@ class MainActivity : ComponentActivity() {
                     scheduleAutoReconnect("Falha na descoberta dos serviços GATT")
                 }
             }
+        }
+
+        @Deprecated("Deprecated by Android API 33")
+        override fun onCharacteristicRead(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            status: Int
+        ) {
+            if (bluetoothGatt !== gatt) return
+            val value = characteristic.value ?: byteArrayOf()
+            logSafeGattRead(characteristic, value, status)
+            completeGattOperation(gatt)
+        }
+
+        override fun onCharacteristicRead(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            value: ByteArray,
+            status: Int
+        ) {
+            if (bluetoothGatt !== gatt) return
+            logSafeGattRead(characteristic, value, status)
+            completeGattOperation(gatt)
         }
 
         @Deprecated("Deprecated by Android API 33")
@@ -1363,6 +1388,68 @@ class MainActivity : ComponentActivity() {
                 "Autodescoberta BLE não sobrescreveu o catálogo local: conteúdo inválido " +
                     "ou schema mais novo detectado."
             )
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun runSafeGattExploration(gatt: BluetoothGatt) {
+        if (bluetoothGatt !== gatt || isGattDisconnecting) return
+        val inventory = gatt.services.map { service ->
+            GattServiceRecord(
+                uuid = service.uuid.toString(),
+                characteristics = service.characteristics.map { characteristic ->
+                    val properties = linkedSetOf<String>()
+                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_READ != 0) properties.add("READ")
+                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0) properties.add("NOTIFY")
+                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0) properties.add("INDICATE")
+                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE != 0) properties.add("WRITE")
+                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0) properties.add("WRITE_NO_RESPONSE")
+                    GattCharacteristicRecord(
+                        uuid = characteristic.uuid.toString(),
+                        properties = properties,
+                        descriptorUuids = characteristic.descriptors.map { it.uuid.toString() }.toSet()
+                    )
+                }
+            )
+        }
+        val plan = SafeGattExplorationPlan.build(inventory)
+        appendLog("Exploração GATT segura: " + plan.size + " operações padronizadas elegíveis; canais proprietários, NUS RX e DFU excluídos.")
+        plan.forEach { operation ->
+            val service = gatt.getService(runCatching { UUID.fromString(operation.serviceUuid) }.getOrNull())
+            val characteristic = service?.getCharacteristic(runCatching { UUID.fromString(operation.characteristicUuid) }.getOrNull())
+            if (characteristic == null) {
+                appendLog("Operação GATT ignorada: característica não está mais disponível: " + operation.characteristicUuid)
+                return@forEach
+            }
+            when (operation.kind) {
+                SafeGattExplorationPlan.Kind.READ_STANDARD_VALUE -> {
+                    gattOperationQueue.enqueue {
+                        if (bluetoothGatt !== gatt || isGattDisconnecting) false
+                        else {
+                            val started = gatt.readCharacteristic(characteristic)
+                            if (started) appendLog("Leitura GATT padronizada solicitada: " + characteristic.uuid)
+                            else appendLog("Android recusou leitura GATT padronizada: " + characteristic.uuid)
+                            started
+                        }
+                    }
+                }
+                SafeGattExplorationPlan.Kind.SUBSCRIBE_STANDARD_MEASUREMENT -> {
+                    enableNotifications(gatt, characteristic)
+                }
+            }
+        }
+    }
+
+    private fun logSafeGattRead(
+        characteristic: BluetoothGattCharacteristic,
+        value: ByteArray,
+        status: Int
+    ) {
+        if (status == BluetoothGatt.GATT_SUCCESS) {
+            appendLog("Leitura GATT padronizada concluída: " + characteristic.uuid +
+                " | " + value.size + " bytes | HEX=" + BleValueFormatter.toHex(value))
+        } else {
+            appendLog("Leitura GATT padronizada falhou: " + characteristic.uuid + " | status=" + status)
         }
     }
 
