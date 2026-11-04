@@ -590,6 +590,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private val gattCallback = object : BluetoothGattCallback() {
+        @SuppressLint("MissingPermission")
         override fun onConnectionStateChange(
             gatt: BluetoothGatt,
             status: Int,
@@ -629,6 +630,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        @SuppressLint("MissingPermission")
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             if (bluetoothGatt !== gatt || isGattDisconnecting) return
             if (status == BluetoothGatt.GATT_SUCCESS) {
@@ -682,6 +684,7 @@ class MainActivity : ComponentActivity() {
             handleNotification(characteristic.uuid.toString(), value)
         }
 
+        @SuppressLint("MissingPermission")
         override fun onDescriptorWrite(
             gatt: BluetoothGatt,
             descriptor: BluetoothGattDescriptor,
@@ -697,7 +700,11 @@ class MainActivity : ComponentActivity() {
                 appendLog("Notificação confirmada pelo callback GATT para " + characteristic.uuid)
             } else if (wasPending) {
                 activeNotifications.remove(key)
-                gatt.setCharacteristicNotification(characteristic, false)
+                if (hasBlePermissions()) {
+                    runCatching { gatt.setCharacteristicNotification(characteristic, false) }
+                } else {
+                    appendLog("Permissão Bluetooth revogada; não foi possível desativar a inscrição local.")
+                }
                 appendLog("Falha na confirmação do CCCD para " + characteristic.uuid + ". Status: " + status)
             } else {
                 appendLog("Callback de descritor sem inscrição pendente: " + descriptor.uuid)
@@ -706,6 +713,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @SuppressLint("MissingPermission")
     private fun renderGattServices(gatt: BluetoothGatt) {
         runOnUiThread {
             content.removeAllViews()
@@ -952,6 +960,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @SuppressLint("MissingPermission")
     override fun onDestroy() {
         stopBleScan()
         gattOperationQueue.reset()
