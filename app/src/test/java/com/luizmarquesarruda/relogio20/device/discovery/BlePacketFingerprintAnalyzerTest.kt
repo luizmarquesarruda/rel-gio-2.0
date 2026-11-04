@@ -17,7 +17,7 @@ class BlePacketFingerprintAnalyzerTest {
         assertEquals(first.sha256Prefix, second.sha256Prefix)
         assertEquals(1, first.repeatedCount)
         assertEquals(2, second.repeatedCount)
-        assertEquals(10, second.sha256Prefix.length)
+        assertEquals(12, second.sha256Prefix.length)
     }
 
     @Test
