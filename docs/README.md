@@ -8,6 +8,7 @@ Este índice separa decisões de arquitetura, integrações, evidências do disp
 - [Inventário de funções do Wearfit Pro](INVENTARIO-FUNCOES-WEARFIT-PRO.md) — funcionalidades de referência e prioridade.
 
 ## Integrações Android
+- [Alinhamento com Google Android/Wear OS](ALINHAMENTO-GOOGLE-ANDROID-WEAROS.md) — decisões de compatibilidade, BLE, notificações, Health Connect e limites do GT3 Maxx.
 - [Passos e referência de horário](INTEGRACAO-HEALTH-CONNECT-PASSOS-HORARIO.md) — Health Connect e limite da sincronização do relógio.
 - [Notificações, WhatsApp e Android](INTEGRACAO-NOTIFICACOES-ANDROID-WHATSAPP.md) — NotificationListenerService, consentimento e ponte BLE pendente.
 - [Pesquisa Wearfit Pro](PESQUISA-WEARFIT-PRO.md) — documentação pública, lacunas de SDK/API e referências independentes.
