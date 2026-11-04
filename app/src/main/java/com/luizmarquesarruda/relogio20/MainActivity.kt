@@ -19,6 +19,7 @@ import com.luizmarquesarruda.relogio20.device.discovery.GattCharacteristicRecord
 import com.luizmarquesarruda.relogio20.device.discovery.GattServiceRecord
 import com.luizmarquesarruda.relogio20.device.discovery.SafeGattExplorationPlan
 import com.luizmarquesarruda.relogio20.device.discovery.BlePacketFingerprintAnalyzer
+import com.luizmarquesarruda.relogio20.device.discovery.PassiveBleObservationTracker
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbStreamDecoder
 import com.luizmarquesarruda.relogio20.HealthPrivacyActivity
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectAvailability
