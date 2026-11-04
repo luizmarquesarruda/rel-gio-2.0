@@ -212,6 +212,11 @@ class NotificationCenterActivity : Activity() {
                         NotificationCaptureStore.removePackage(packageName)
                     }
                     NotificationCaptureSettings.setAllowedPackages(this@NotificationCenterActivity, next)
+                    if (next.isEmpty()) {
+                        NotificationCaptureSettings.setEnabled(this@NotificationCenterActivity, false)
+                        captureSwitch.isChecked = false
+                        statusView.text = "Nenhum aplicativo selecionado. Captura pausada."
+                    }
                     renderEvents()
                 }
             }
@@ -268,11 +273,15 @@ class NotificationCenterActivity : Activity() {
 
     private fun refreshStatus() {
         val access = hasNotificationAccess()
-        statusView.text = if (access) {
-            "Acesso Android autorizado. A captura só funciona quando ativada e com aplicativos selecionados."
-        } else {
-            "Acesso Android ainda não concedido. A captura permanece inativa."
+        if (!access) {
+            NotificationCaptureSettings.setEnabled(this, false)
+            NotificationCaptureStore.clear()
+            if (::captureSwitch.isInitialized) captureSwitch.isChecked = false
+            statusView.text = "Acesso Android ainda não concedido. A captura permanece desativada."
+            return
         }
+        statusView.text =
+            "Acesso Android autorizado. A captura só funciona após ativação explícita e seleção de aplicativos."
     }
 
     private fun hasNotificationAccess(): Boolean {
