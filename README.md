@@ -52,7 +52,7 @@ O workflow **Android CI** executa Lint, testes e builds `diagnosticDebug` e `com
 
 **Atenção ao Play Protect:** o Google documenta que apps instalados por sideload da internet com capacidade de acesso a notificações podem sofrer bloqueios em mercados selecionados. A variante `companion` mantém essa capacidade; a variante `diagnostic` a exclui. CI verde não equivale a aprovação do Play Protect nem a teste físico. Não desative a proteção do aparelho. Consulte [Play Protect e distribuição segura](docs/ALINHAMENTO-PLAY-PROTECT-DISTRIBUICAO.md).
 
-Arquivo esperado: `app/build/outputs/apk/debug/app-debug.apk`.
+Arquivo do artefato diagnostic: `app/build/outputs/apk/diagnostic/debug/app-diagnostic-debug.apk`.
 
 ## Como usar a prova de conceito
 
@@ -70,6 +70,7 @@ Consulte o [índice completo da documentação](docs/README.md).
 
 - [Mapa de módulos](docs/MAPA-DE-MODULOS.md)
 - [Inventário de funções Wearfit Pro](docs/INVENTARIO-FUNCOES-WEARFIT-PRO.md)
+- [Matriz de compatibilidade GT3 MAX](docs/MATRIZ-COMPATIBILIDADE-GT3-MAXX.md)
 - [Integração Android, WhatsApp e notificações](docs/INTEGRACAO-NOTIFICACOES-ANDROID-WHATSAPP.md)
 - [Diário de bordo](docs/DIARIO-DE-BORDO.md)
 - [Changelog](CHANGELOG.md)
@@ -89,7 +90,7 @@ A captura local usa NotificationListenerService e acesso especial concedido manu
 
 ## Versão do aplicativo
 
-Versão de desenvolvimento registrada: `0.3.0-alpha.4`. Não é release estável e aguarda validação do CI e testes físicos.
+Versão de desenvolvimento registrada: `0.4.0-alpha.1`. Não é release estável e aguarda validação do CI e testes físicos.
 
 ## Segurança e privacidade
 

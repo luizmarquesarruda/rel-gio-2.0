@@ -1,4 +1,4 @@
-package com.luizmarquesarruda.relogio20
+package com.luizmarquesarruda.relogio20.device.gt3max.protocol
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

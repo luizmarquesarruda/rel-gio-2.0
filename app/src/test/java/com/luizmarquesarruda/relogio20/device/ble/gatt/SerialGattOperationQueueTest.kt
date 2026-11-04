@@ -1,4 +1,4 @@
-package com.luizmarquesarruda.relogio20
+package com.luizmarquesarruda.relogio20.device.ble.gatt
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

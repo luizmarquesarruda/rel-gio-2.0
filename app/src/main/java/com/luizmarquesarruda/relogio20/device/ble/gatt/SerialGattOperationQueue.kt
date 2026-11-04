@@ -1,4 +1,4 @@
-package com.luizmarquesarruda.relogio20
+package com.luizmarquesarruda.relogio20.device.ble.gatt
 
 import java.util.ArrayDeque
 

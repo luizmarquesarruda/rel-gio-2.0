@@ -1,3 +1,14 @@
+## 04/11/2026 — Alinhamento de módulos e catálogo GT3 MAX
+
+- Revisadas as funções fornecidas do Wearfit Pro e registradas em matriz com 33 entradas, separando funções Android locais, dependências BLE/protocolo, Bluetooth Classic, integrações externas e ações bloqueadas. A presença no catálogo não comprova suporte no GT3 MAX específico.
+- Criado `docs/MATRIZ-COMPATIBILIDADE-GT3-MAXX.md` com módulo responsável, dependências, prioridade, risco e estado de cada entrada.
+- Corrigidos mapa de módulos e arquitetura para refletir o aplicativo Android nativo Kotlin; não presumir Wear OS, SDK proprietário ou chipset.
+- Movidos `SerialGattOperationQueue` para `device/ble/gatt` e `WearfitProtocolProfile`/`WearfitAbFrameParser` para `device/gt3max/protocol`; os testes acompanham os pacotes. Lógica e bytes não foram alterados.
+- `MainActivity.kt` continua concentrando UI, ciclo GATT e leitura Health Connect. A extração do coordenador e do adaptador Health Connect permanece como dívida técnica explícita.
+- Corrigido o caminho do APK diagnostic no README e alinhada a versão documental para `0.4.0-alpha.1`.
+- Nenhuma permissão, SDK, integração em nuvem ou escrita BLE proprietária foi adicionada. OTA/DFU, reset, restauração de fábrica, Alipay e cartão de acesso permanecem bloqueados.
+- CI após este commit: aguardando execução. Testes físicos das 33 funções no Galaxy A06/GT3 MAX: **não validados**.
+
 ## 04/11/2026 — Continuidade: substituição progressiva do Wearfit Pro
 
 - Objetivo consolidado: Relógio 2.0 deve conectar diretamente ao GT3 Maxx por BLE/GATT e integrar somente dados reais e validados ao Health Connect. Wearfit Pro fica temporariamente como referência comparativa, não como dependência permanente.

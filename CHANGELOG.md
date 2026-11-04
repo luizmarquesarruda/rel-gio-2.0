@@ -1,5 +1,12 @@
 # Changelog
 
+## Não lançado — matriz GT3 MAX e alinhamento de módulos
+
+- Catálogo de 33 funções fornecidas do Wearfit Pro organizado em matriz de compatibilidade, sem presumir suporte do GT3 MAX.
+- Fila GATT e parser BLE candidato movidos para pacotes próprios, com testes correspondentes e sem alteração de comportamento/protocolo.
+- Arquitetura, mapa de módulos, índice documental e caminho do artefato diagnostic no README alinhados.
+- CI deste conjunto e teste físico: **aguardando validação**. A versão `0.4.0-alpha.1` não foi promovida por esta alteração.
+
 ## 0.4.0-alpha.1 — 04/11/2026
 
 ### Direção Saúde & Fitness

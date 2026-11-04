@@ -4,6 +4,9 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import com.luizmarquesarruda.relogio20.notifications.NotificationCenterActivity
+import com.luizmarquesarruda.relogio20.device.ble.gatt.SerialGattOperationQueue
+import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbFrameParser
+import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitProtocolProfile
 import com.luizmarquesarruda.relogio20.HealthPrivacyActivity
 import androidx.activity.ComponentActivity
 import androidx.health.connect.client.HealthConnectClient
