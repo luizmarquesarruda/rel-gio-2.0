@@ -12,6 +12,7 @@ import android.widget.TextView
 import com.luizmarquesarruda.relogio20.data.discovery.FeatureDiscoveryReadResult
 import com.luizmarquesarruda.relogio20.data.discovery.FeatureDiscoveryStore
 import com.luizmarquesarruda.relogio20.device.discovery.DiscoverySnapshot
+import com.luizmarquesarruda.relogio20.device.discovery.WatchExperimentCatalog
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
