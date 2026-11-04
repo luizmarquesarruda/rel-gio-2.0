@@ -34,12 +34,28 @@ internal object GattValueDecoder {
                 decodeDeviceInformation(characteristic, payload)
             service == "180d" && characteristic == "2a37" ->
                 decodeHeartRate(payload)
+            service == "180d" && characteristic == "2a38" ->
+                decodeBodySensorLocation(payload)
             service == "1810" && characteristic == "2a35" ->
                 decodeBloodPressure(payload)
+            service == "1810" && characteristic == "2a36" ->
+                decodeIntermediateCuffPressure(payload)
+            service == "1810" && characteristic == "2a49" ->
+                decodeBloodPressureFeature(payload)
+            service == "1814" && characteristic == "2a53" ->
+                decodeRunningSpeedAndCadence(payload)
+            service == "1816" && characteristic == "2a5b" ->
+                decodeCyclingSpeedAndCadence(payload)
+            service == "1814" && characteristic == "2a54" ->
+                decodeRunningSpeedAndCadenceFeature(payload)
+            service == "1816" && characteristic == "2a5c" ->
+                decodeCyclingSpeedAndCadenceFeature(payload)
             service == "1809" && characteristic == "2a1c" ->
                 decodeHealthThermometer(payload)
             service == "1809" && characteristic == "2a1e" ->
                 decodeIntermediateTemperature(payload)
+            service == "181a" && characteristic == "2a6d" ->
+                decodeEnvironmentalPressure(payload)
             service == "181a" && characteristic == "2a6e" ->
                 decodeEnvironmentalTemperature(payload)
             service == "181a" && characteristic == "2a6f" ->
@@ -168,6 +184,167 @@ internal object GattValueDecoder {
         return results
     }
 
+    private fun decodeBodySensorLocation(value: ByteArray): List<DecodedGattValue> {
+        if (value.size != 1) return emptyList()
+        val location = when (value[0].toInt() and 0xff) {
+            0x00 -> "Outro"
+            0x01 -> "Peito"
+            0x02 -> "Pulso"
+            0x03 -> "Dedo"
+            0x04 -> "Mão"
+            0x05 -> "Lóbulo da orelha"
+            0x06 -> "Pé"
+            else -> return emptyList()
+        }
+        return listOf(DecodedGattValue("Localização declarada do sensor", location))
+    }
+
+    private fun decodeBloodPressureFeature(value: ByteArray): List<DecodedGattValue> {
+        if (value.size != 2) return emptyList()
+        val flags = readUInt16(value, 0)
+        val labels = listOf(
+            "Detecção de movimento corporal",
+            "Detecção de ajuste da braçadeira",
+            "Detecção de pulso irregular",
+            "Detecção de faixa de frequência do pulso",
+            "Detecção da posição de medição",
+            "Suporte a múltiplos vínculos",
+            "Suporte a CRC ponta a ponta",
+            "Suporte ao serviço de dados do usuário",
+            "Suporte a horário apresentado ao usuário"
+        )
+        return labels.mapIndexed { bit, label ->
+            DecodedGattValue("Recurso de pressão • $label", if (flags and (1 shl bit) != 0) "suportado" else "não sinalizado")
+        }
+    }
+
+    private fun decodeIntermediateCuffPressure(value: ByteArray): List<DecodedGattValue> {
+        // 2A36 contains current cuff pressure plus two mandatory NaN placeholders.
+        if (value.size < 7) return emptyList()
+        val flags = value[0].toInt() and 0xff
+        var offset = 1
+        val pressure = readSFloat(value, offset) ?: return emptyList()
+        offset += 2
+        if (readUInt16(value, offset) != 0x07ff || readUInt16(value, offset + 2) != 0x07ff) {
+            return emptyList()
+        }
+        offset += 4
+        val unit = if (flags and 0x01 != 0) "kPa" else "mmHg"
+        val results = mutableListOf(
+            DecodedGattValue(
+                "Pressão intermediária da braçadeira",
+                String.format(Locale.US, "%.1f %s", pressure, unit)
+            )
+        )
+        if (flags and 0x02 != 0) {
+            val timestamp = decodeDateTime(value, offset) ?: return emptyList()
+            results += DecodedGattValue("Horário da pressão intermediária", timestamp)
+            offset += 7
+        }
+        if (flags and 0x04 != 0) {
+            val pulse = readSFloat(value, offset) ?: return emptyList()
+            results += DecodedGattValue(
+                "Pulso na pressão intermediária",
+                String.format(Locale.US, "%.1f bpm", pulse)
+            )
+            offset += 2
+        }
+        if (flags and 0x08 != 0) {
+            if (value.size < offset + 1) return emptyList()
+            results += DecodedGattValue("Identificador de usuário do sensor", (value[offset].toInt() and 0xff).toString())
+            offset += 1
+        }
+        if (flags and 0x10 != 0) {
+            if (value.size < offset + 2) return emptyList()
+            results += DecodedGattValue(
+                "Status da pressão intermediária",
+                "0x" + readUInt16(value, offset).toString(16).uppercase(Locale.US)
+            )
+        }
+        return results
+    }
+
+    private fun decodeRunningSpeedAndCadence(value: ByteArray): List<DecodedGattValue> {
+        if (value.size < 4) return emptyList()
+        val flags = value[0].toInt() and 0xff
+        val speed = readUInt16(value, 1) / 256.0
+        val cadence = value[3].toInt() and 0xff
+        val results = mutableListOf(
+            DecodedGattValue("Velocidade instantânea RSC", String.format(Locale.US, "%.3f m/s", speed)),
+            DecodedGattValue("Cadência instantânea RSC", "$cadence passos/min")
+        )
+        var offset = 4
+        if (flags and 0x01 != 0) {
+            if (value.size < offset + 2) return emptyList()
+            val stride = readUInt16(value, offset) / 100.0
+            results += DecodedGattValue("Comprimento de passada RSC", String.format(Locale.US, "%.2f m", stride))
+            offset += 2
+        }
+        if (flags and 0x02 != 0) {
+            if (value.size < offset + 4) return emptyList()
+            val distance = readUInt32(value, offset) / 10.0
+            results += DecodedGattValue("Distância total RSC", String.format(Locale.US, "%.1f m", distance))
+            offset += 4
+        }
+        if (flags and 0x04 != 0) {
+            results += DecodedGattValue(
+                "Estado de deslocamento RSC",
+                if (flags and 0x04 != 0) "corrida" else "caminhada"
+            )
+        }
+        return results
+    }
+
+    private fun decodeCyclingSpeedAndCadence(value: ByteArray): List<DecodedGattValue> {
+        if (value.isEmpty()) return emptyList()
+        val flags = value[0].toInt() and 0xff
+        var offset = 1
+        val results = mutableListOf<DecodedGattValue>()
+        if (flags and 0x01 != 0) {
+            if (value.size < offset + 6) return emptyList()
+            val revolutions = readUInt32(value, offset)
+            val eventTime = readUInt16(value, offset + 4) / 1024.0
+            results += DecodedGattValue("Revoluções acumuladas da roda CSC", revolutions.toString())
+            results += DecodedGattValue("Último evento da roda CSC", String.format(Locale.US, "%.3f s", eventTime))
+            offset += 6
+        }
+        if (flags and 0x02 != 0) {
+            if (value.size < offset + 4) return emptyList()
+            val revolutions = readUInt16(value, offset)
+            val eventTime = readUInt16(value, offset + 2) / 1024.0
+            results += DecodedGattValue("Revoluções acumuladas do pedivela CSC", revolutions.toString())
+            results += DecodedGattValue("Último evento do pedivela CSC", String.format(Locale.US, "%.3f s", eventTime))
+            offset += 4
+        }
+        if (results.isEmpty() || offset != value.size) return emptyList()
+        return results
+    }
+
+    private fun decodeRunningSpeedAndCadenceFeature(value: ByteArray): List<DecodedGattValue> {
+        if (value.size != 2) return emptyList()
+        val flags = readUInt16(value, 0)
+        val labels = listOf(
+            "Medição de passada instantânea",
+            "Medição de distância total",
+            "Estado caminhada/corrida",
+            "Procedimento de calibração",
+            "Múltiplas localizações do sensor"
+        )
+        return labels.mapIndexed { bit, label ->
+            DecodedGattValue("Recurso RSC • $label", if (flags and (1 shl bit) != 0) "suportado" else "não sinalizado")
+        }
+    }
+
+    private fun decodeCyclingSpeedAndCadenceFeature(value: ByteArray): List<DecodedGattValue> {
+        if (value.size != 2) return emptyList()
+        val flags = readUInt16(value, 0)
+        return listOf(
+            DecodedGattValue("Recurso CSC • Dados de revolução da roda", if (flags and 0x01 != 0) "suportado" else "não sinalizado"),
+            DecodedGattValue("Recurso CSC • Dados de revolução do pedivela", if (flags and 0x02 != 0) "suportado" else "não sinalizado"),
+            DecodedGattValue("Recurso CSC • Múltiplas localizações do sensor", if (flags and 0x04 != 0) "suportado" else "não sinalizado")
+        )
+    }
+
     private fun decodeHealthThermometer(value: ByteArray): List<DecodedGattValue> =
         decodeTemperatureMeasurement(value, "Temperatura do termômetro")
 
@@ -199,6 +376,18 @@ internal object GattValueDecoder {
             results += DecodedGattValue("Tipo de temperatura GATT", (value[offset].toInt() and 0xff).toString())
         }
         return results
+    }
+
+    private fun decodeEnvironmentalPressure(value: ByteArray): List<DecodedGattValue> {
+        if (value.size != 2) return emptyList()
+        val pressure = readSFloat(value, 0) ?: return emptyList()
+        if (pressure <= 0.0) return emptyList()
+        return listOf(
+            DecodedGattValue(
+                "Pressão atmosférica",
+                String.format(Locale.US, "%.2f Pa", pressure)
+            )
+        )
     }
 
     private fun decodeEnvironmentalTemperature(value: ByteArray): List<DecodedGattValue> {
