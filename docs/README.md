@@ -17,12 +17,14 @@ Este índice separa decisões de arquitetura, integrações, evidências do disp
 - [Investigação do bloqueio B do Play Protect](INVESTIGACAO-BLOQUEIO-PLAY-PROTECT-2026-11-04.md) — classificação recebida, evidências por variante e próximos passos.
 - [Arquitetura Saúde & Fitness](SAUDE-FITNESS-ARQUITETURA.md)
 - [Passos e referência de horário](INTEGRACAO-HEALTH-CONNECT-PASSOS-HORARIO.md)
+- [Plano de mapas, rotas e sinais vitais](PLANO-MAPAS-E-ROTAS-HEALTH-CONNECT.md)
 - [Notificações, WhatsApp e Android](INTEGRACAO-NOTIFICACOES-ANDROID-WHATSAPP.md)
 - [Pesquisa Wearfit Pro](PESQUISA-WEARFIT-PRO.md)
 
 ## Dispositivo e evidências
 - [Identificação do relógio](IDENTIFICACAO-DO-RELOGIO.md)
 - [Perfil GT3 Maxx](PERFIL-GT3-MAXX.md)
+- [Análise de firmware OTA do Wearfit Pro](ANALISE-FIRMWARE-OTA-WEARFIT-PRO.md) — identidade regulatória, serviço Nordic Secure DFU e procedimento seguro para obter o pacote.
 - [Captura BLE de 03/11/2026](CAPTURA-BLE-GT3-MAX-2026-11-03.md)
 - [Perfil BLE candidato NUS/AB](PROTOCOLO-BLE-CANDIDATO.md)
 

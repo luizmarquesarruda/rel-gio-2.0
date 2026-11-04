@@ -9,21 +9,18 @@ import com.luizmarquesarruda.relogio20.device.ble.gatt.SerialGattOperationQueue
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbFrameParser
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitProtocolProfile
 import com.luizmarquesarruda.relogio20.HealthPrivacyActivity
+import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectAvailability
+import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsRepository
+import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsResult
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
-import androidx.health.connect.client.permission.HealthPermission
-import androidx.health.connect.client.records.StepsRecord
-import androidx.health.connect.client.request.AggregateRequest
-import androidx.health.connect.client.time.TimeRangeFilter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.ZoneId
+import kotlin.coroutines.cancellation.CancellationException
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
@@ -64,18 +61,20 @@ class MainActivity : ComponentActivity() {
     private lateinit var clockView: TextView
     private lateinit var stepsView: TextView
     private lateinit var healthStatusView: TextView
-    private var healthConnectClient: HealthConnectClient? = null
+    private val healthConnectRepository by lazy(LazyThreadSafetyMode.NONE) {
+        HealthConnectStepsRepository(this)
+    }
+    private var healthConnectInitialized = false
     private val healthScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    private val stepReadPermissions = setOf(
-        HealthPermission.getReadPermission(StepsRecord::class)
-    )
     private val healthPermissionLauncher = registerForActivityResult(
         PermissionController.createRequestPermissionResultContract()
     ) { granted ->
-        if (granted.containsAll(stepReadPermissions)) {
+        if (granted.containsAll(healthConnectRepository.readPermissions)) {
+            healthConnectInitialized = true
             appendLog("Permissão READ_STEPS concedida no Health Connect.")
             readTodaySteps()
         } else {
+            healthConnectInitialized = false
             healthStatusView.text = "Permissão de passos não concedida."
             appendLog("Acesso aos passos negado pelo usuário.")
         }
@@ -94,7 +93,7 @@ class MainActivity : ComponentActivity() {
     }
     private val stepsTicker = object : Runnable {
         override fun run() {
-            if (healthConnectClient != null) readTodaySteps()
+            if (healthConnectInitialized) readTodaySteps()
             handler.postDelayed(this, 60_000L)
         }
     }
@@ -341,29 +340,35 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun connectHealthConnect() {
-        val availability = HealthConnectClient.getSdkStatus(this)
-        if (availability == HealthConnectClient.SDK_UNAVAILABLE) {
-            healthStatusView.text = "Conexão Saúde indisponível. Verifique se está instalada/ativada."
-            appendLog("Health Connect indisponível neste aparelho.")
-            return
-        }
-        if (availability == HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED) {
-            healthStatusView.text = "Atualize a Conexão Saúde na Play Store."
-            appendLog("Health Connect precisa de atualização.")
-            return
+        when (healthConnectRepository.availability()) {
+            HealthConnectAvailability.PROVIDER_UNAVAILABLE -> {
+                healthConnectInitialized = false
+                healthStatusView.text = "Conexão Saúde indisponível. Verifique se está instalada/ativada."
+                appendLog("Health Connect indisponível neste aparelho.")
+                return
+            }
+            HealthConnectAvailability.PROVIDER_UPDATE_REQUIRED -> {
+                healthConnectInitialized = false
+                healthStatusView.text = "Atualize a Conexão Saúde na Play Store."
+                appendLog("Health Connect precisa de atualização.")
+                return
+            }
+            HealthConnectAvailability.AVAILABLE -> Unit
         }
 
-        val client = HealthConnectClient.getOrCreate(this)
-        healthConnectClient = client
         healthScope.launch {
             try {
-                val granted = client.permissionController.getGrantedPermissions()
-                if (granted.containsAll(stepReadPermissions)) {
+                if (healthConnectRepository.hasReadPermission()) {
+                    healthConnectInitialized = true
                     readTodaySteps()
                 } else {
-                    healthPermissionLauncher.launch(stepReadPermissions)
+                    healthConnectInitialized = false
+                    healthPermissionLauncher.launch(healthConnectRepository.readPermissions)
                 }
+            } catch (error: CancellationException) {
+                throw error
             } catch (error: Exception) {
+                healthConnectInitialized = false
                 healthStatusView.text = "Não foi possível consultar as permissões."
                 appendLog("Erro Health Connect: " + (error.message ?: "desconhecido"))
             }
@@ -371,45 +376,45 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun readTodaySteps() {
-        val client = healthConnectClient
-        if (client == null) {
+        if (!healthConnectInitialized) {
             connectHealthConnect()
             return
         }
         healthScope.launch {
-            try {
-                val granted = client.permissionController.getGrantedPermissions()
-                if (!granted.containsAll(stepReadPermissions)) {
+            when (val result = healthConnectRepository.readTodaySteps()) {
+                is HealthConnectStepsResult.Success -> {
+                    val count = result.snapshot.totalSteps
+                    stepsView.text = StepsCountFormatter.label(count)
+                    if (count == null) {
+                        healthStatusView.text = "Health Connect não retornou registros de passos para hoje."
+                        appendLog("Health Connect sem registros de passos hoje; valor mantido como indisponível, não como zero.")
+                    } else {
+                        healthStatusView.text =
+                            "Dados agregados do Health Connect • atualizado " +
+                            SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+                        appendLog("Total agregado de passos de hoje no Health Connect: " + count)
+                    }
+                }
+                HealthConnectStepsResult.PermissionRequired -> {
+                    healthConnectInitialized = false
                     stepsView.text = "Passos hoje: sem acesso"
-                    healthStatusView.text = "Permissão READ_STEPS ausente. Use Conectar Health Connect para autorizar."
-                    return@launch
+                    healthStatusView.text = "Permissão READ_STEPS ausente ou revogada."
+                    appendLog("Permissão READ_STEPS ausente ou revogada durante a leitura.")
                 }
-                val zone = ZoneId.systemDefault()
-                val start = LocalDate.now(zone).atStartOfDay(zone).toInstant()
-                val end = java.time.Instant.now()
-                val response = client.aggregate(
-                    AggregateRequest(
-                        metrics = setOf(StepsRecord.COUNT_TOTAL),
-                        timeRangeFilter = TimeRangeFilter.between(start, end)
-                    )
-                )
-                val count = response[StepsRecord.COUNT_TOTAL]
-                stepsView.text = StepsCountFormatter.label(count)
-                if (count == null) {
-                    healthStatusView.text = "Health Connect não retornou registros de passos para hoje."
-                    appendLog("Health Connect sem registros de passos hoje; valor mantido como indisponível, não como zero.")
-                } else {
-                    healthStatusView.text =
-                        "Dados agregados do Health Connect • atualizado " +
-                        SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
-                    appendLog("Total agregado de passos de hoje no Health Connect: " + count)
+                HealthConnectStepsResult.ProviderUnavailable -> {
+                    healthConnectInitialized = false
+                    healthStatusView.text = "Conexão Saúde indisponível. Verifique se está instalada/ativada."
+                    appendLog("Health Connect ficou indisponível durante a leitura.")
                 }
-            } catch (error: SecurityException) {
-                healthStatusView.text = "Acesso aos passos revogado ou não autorizado."
-                appendLog("Permissão READ_STEPS ausente: " + (error.message ?: "sem detalhes"))
-            } catch (error: Exception) {
-                healthStatusView.text = "Falha ao ler passos do Health Connect."
-                appendLog("Erro ao ler passos: " + (error.message ?: "desconhecido"))
+                HealthConnectStepsResult.ProviderUpdateRequired -> {
+                    healthConnectInitialized = false
+                    healthStatusView.text = "Atualize a Conexão Saúde na Play Store."
+                    appendLog("Health Connect precisa de atualização.")
+                }
+                is HealthConnectStepsResult.Failure -> {
+                    healthStatusView.text = "Falha ao ler passos do Health Connect."
+                    appendLog("Erro ao ler passos: " + result.reason)
+                }
             }
         }
     }
@@ -419,7 +424,7 @@ class MainActivity : ComponentActivity() {
         handler.removeCallbacks(clockTicker)
         handler.post(clockTicker)
         handler.removeCallbacks(stepsTicker)
-        if (healthConnectClient != null) readTodaySteps()
+        if (healthConnectInitialized) readTodaySteps()
         handler.postDelayed(stepsTicker, 60_000L)
     }
 

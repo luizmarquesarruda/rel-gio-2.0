@@ -82,6 +82,7 @@ Consulte o [índice completo da documentação](docs/README.md).
 - [Inventário de funções Wearfit Pro](docs/INVENTARIO-FUNCOES-WEARFIT-PRO.md)
 - [Matriz de compatibilidade GT3 MAX](docs/MATRIZ-COMPATIBILIDADE-GT3-MAXX.md)
 - [Integração Android, WhatsApp e notificações](docs/INTEGRACAO-NOTIFICACOES-ANDROID-WHATSAPP.md)
+- [Integração Health Connect, passos, rotas e horário](docs/INTEGRACAO-HEALTH-CONNECT-PASSOS-HORARIO.md)
 - [Diário de bordo](docs/DIARIO-DE-BORDO.md)
 - [Changelog](CHANGELOG.md)
 - [Versão](VERSION)
@@ -100,7 +101,7 @@ A captura local usa NotificationListenerService e acesso especial concedido manu
 
 ## Versão do aplicativo
 
-Versão de desenvolvimento registrada: `0.4.0-alpha.1`. Não é release estável e aguarda validação do CI e testes físicos.
+Versão de desenvolvimento registrada: `0.4.0-alpha.2`. Não é release estável e aguarda validação do CI e testes físicos.
 
 ## Segurança e privacidade
 
