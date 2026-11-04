@@ -90,7 +90,7 @@ class CurrentAndroidContractTests(unittest.TestCase):
         workflow = (ROOT / ".github/workflows/android-ci.yml").read_text(encoding="utf-8")
         self.assertIn('id("com.android.application") version "8.13.2"', root_build)
         self.assertIn('id("org.jetbrains.kotlin.android") version "2.4.21"', root_build)
-        self.assertIn('gradle-version: "9.7.0"', workflow)
+        self.assertIn('gradle-version: "9.5.0"', workflow)
         self.assertNotIn('gradle-version: "8.13"', workflow)
 
     def test_gatt_api33_helper_uses_requires_api_and_preferences_use_ktx(self):

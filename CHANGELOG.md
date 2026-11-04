@@ -2,10 +2,10 @@
 
 ## Não lançado — atualização compatível do toolchain e limpeza Lint
 
-- Atualizados Kotlin Gradle Plugin para 2.4.21 e Gradle para 9.7.0, mantendo Android Gradle Plugin 8.13.2 dentro da matriz oficial de compatibilidade.
+- Atualizados Kotlin Gradle Plugin para 2.4.21 e Gradle para 9.5.0, mantendo Android Gradle Plugin 8.13.2 dentro da matriz oficial de compatibilidade.
 - Substituído TargetApi por RequiresApi no helper de API33+ e aplicado SharedPreferences KTX para remover avisos locais.
 - README passa a descrever somente a conexão ao endereço GT3 MAX configurado localmente.
-- AGP9 não foi incluído por exigir migração separada da integração Kotlin.
+- AGP9 não foi incluído por exigir migração separada da integração Kotlin. Gradle 9.7 foi rejeitado pela API interna removida no Gradle 9.6; ajustado para Gradle 9.5 com AGP8.13.2.
 - CI da nova combinação ainda precisa concluir.
 
 
