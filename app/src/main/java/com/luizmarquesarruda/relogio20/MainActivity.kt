@@ -6,6 +6,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import com.luizmarquesarruda.relogio20.notifications.NotificationCenterActivity
 import com.luizmarquesarruda.relogio20.device.ble.gatt.SerialGattOperationQueue
+import com.luizmarquesarruda.relogio20.device.ble.core.BleReconnectPolicy
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbFrameParser
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitProtocolProfile
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.Gt3MaxCallDeviceProfile
@@ -111,6 +112,15 @@ class MainActivity : ComponentActivity() {
     private val expectedWatchAddress: String? get() = BleDeviceIdentity.normalize(identityPrefs.getString("gt3_max_address", null))
     private var autoConnectAttempted = false
     private var weakSignalWarningLogged = false
+    private var isAutoReconnectScan = false
+    private var isActivityResumed = false
+    private var isGattConnected = false
+    private var reconnectRunnable: Runnable? = null
+    private var connectionTimeoutTask: Runnable? = null
+    private val connectionPrefs by lazy { getSharedPreferences("device_connection", MODE_PRIVATE) }
+    private val reconnectPolicy by lazy {
+        BleReconnectPolicy(connectionPrefs.getBoolean("auto_reconnect_enabled", false))
+    }
     private val diagnosticExportLauncher = registerForActivityResult(
         ActivityResultContracts.CreateDocument("text/plain")
     ) { uri ->
@@ -140,6 +150,8 @@ class MainActivity : ComponentActivity() {
     companion object {
         private const val REQUEST_BLE_PERMISSIONS = 2401
         private const val SCAN_DURATION_MS = 15_000L
+        private const val AUTO_RECONNECT_SCAN_DURATION_MS = 8_000L
+        private const val GATT_CONNECT_TIMEOUT_MS = 15_000L
         private const val AUTO_CONNECT_MIN_RSSI = -90
         private const val MAX_LOG_LINES = 250
     }
@@ -150,6 +162,9 @@ class MainActivity : ComponentActivity() {
         buildScreen()
         appendLog("Aplicativo iniciado. Diagnóstico BLE local.")
         appendLog("Nenhum comando será enviado às características do relógio.")
+        if (reconnectPolicy.isEnabled) {
+            appendLog("Reconexão automática restaurada para a identidade GT3 MAX configurada localmente.")
+        }
     }
 
     private fun buildScreen() {
@@ -442,14 +457,22 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        isActivityResumed = true
         handler.removeCallbacks(clockTicker)
         handler.post(clockTicker)
         handler.removeCallbacks(stepsTicker)
         if (healthConnectInitialized) readTodaySteps()
         handler.postDelayed(stepsTicker, 60_000L)
+        if (reconnectPolicy.isEnabled && bluetoothGatt == null && currentScanCallback == null) {
+            scheduleAutoReconnect("Aplicativo retomado", immediate = true)
+        }
     }
 
     override fun onPause() {
+        isActivityResumed = false
+        reconnectRunnable?.let(handler::removeCallbacks)
+        reconnectRunnable = null
+        if (currentScanCallback != null) stopBleScan()
         handler.removeCallbacks(clockTicker)
         handler.removeCallbacks(stepsTicker)
         super.onPause()
@@ -557,6 +580,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun beginAutomaticConnection() {
+        cancelReconnectTask()
         if (expectedWatchAddress == null) configureExpectedWatchAddress { startBleScan() }
         else startBleScan()
     }
@@ -574,12 +598,18 @@ class MainActivity : ComponentActivity() {
             .setView(input)
             .setNegativeButton("Cancelar", null)
             .setNeutralButton("Remover") { _, _ ->
+                disconnectGatt()
                 identityPrefs.edit { remove("gt3_max_address") }
+                appendLog("Identidade GT3 MAX removida; reconexão automática desativada.")
             }
             .setPositiveButton("Salvar") { _, _ ->
                 val address = BleDeviceIdentity.normalize(input.text.toString())
                 if (address == null) updateStatus("Endereço inválido. Use AA:BB:CC:DD:EE:FF.")
                 else {
+                    if (expectedWatchAddress != null && expectedWatchAddress != address) {
+                        disconnectGatt()
+                        appendLog("Identidade do relógio alterada; uma nova conexão manual será necessária para habilitar a reconexão automática.")
+                    }
                     identityPrefs.edit { putString("gt3_max_address", address) }
                     appendLog("Identidade GT3 MAX salva localmente: " + maskAddress(address))
                     afterSave?.invoke()
@@ -589,7 +619,11 @@ class MainActivity : ComponentActivity() {
     }
 
     @SuppressLint("MissingPermission")
-    private fun startBleScan() {
+    private fun startBleScan(automatic: Boolean = false) {
+        if (automatic && !isActivityResumed) {
+            appendLog("Reconexão automática adiada: aplicativo fora do primeiro plano.")
+            return
+        }
         if (bluetoothGatt != null) {
             val currentState = if (isGattDisconnecting) {
                 "Desconectando..."
@@ -601,7 +635,12 @@ class MainActivity : ComponentActivity() {
             return
         }
         if (!hasBlePermissions()) {
-            requestBlePermissions()
+            if (automatic) {
+                updateStatus("Permissão Bluetooth necessária para reconectar.")
+                appendLog("Reconexão pausada: permissão Bluetooth ausente; nenhuma solicitação automática foi exibida.")
+            } else {
+                requestBlePermissions()
+            }
             return
         }
 
@@ -609,11 +648,13 @@ class MainActivity : ComponentActivity() {
         if (adapter == null) {
             updateStatus("Este telefone não disponibilizou um adaptador Bluetooth.")
             appendLog("Bluetooth indisponível neste aparelho.")
+            if (automatic || reconnectPolicy.isEnabled) scheduleAutoReconnect("Adaptador Bluetooth indisponível")
             return
         }
         if (!adapter.isEnabled) {
             updateStatus("Ative o Bluetooth do telefone e tente novamente.")
             appendLog("Busca não iniciada: Bluetooth desligado.")
+            if (automatic || reconnectPolicy.isEnabled) scheduleAutoReconnect("Bluetooth do telefone desligado")
             return
         }
 
@@ -621,17 +662,19 @@ class MainActivity : ComponentActivity() {
         if (scanner == null) {
             updateStatus("Scanner BLE indisponível.")
             appendLog("Scanner BLE não foi disponibilizado pelo Android.")
+            if (automatic || reconnectPolicy.isEnabled) scheduleAutoReconnect("Scanner BLE indisponível")
             return
         }
 
         stopBleScan()
+        isAutoReconnectScan = automatic
         autoConnectAttempted = false
         weakSignalWarningLogged = false
         scanResults.clear()
         content.removeAllViews()
         addText(content, "Dispositivos encontrados", 18f, true)
-        updateStatus("Procurando dispositivos BLE por 15 segundos...")
-        appendLog("Início da busca BLE por 15 segundos.")
+        updateStatus(if (automatic) "Procurando GT3 MAX para reconexão automática..." else "Procurando dispositivos BLE por 15 segundos...")
+        appendLog(if (automatic) "Início da busca automática pelo endereço GT3 MAX salvo localmente." else "Início da busca BLE por 15 segundos.")
 
         val callback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
@@ -642,6 +685,7 @@ class MainActivity : ComponentActivity() {
                         appendLog("Resultado BLE ignorado: permissão para identificar dispositivo indisponível.")
                         return@runOnUiThread
                     }
+                    if (automatic && !BleDeviceIdentity.matches(expectedWatchAddress, address)) return@runOnUiThread
                     val name = result.scanRecord?.deviceName
                         ?: safeDeviceName(result.device)
                         ?: "Dispositivo sem nome"
@@ -658,7 +702,7 @@ class MainActivity : ComponentActivity() {
                             autoConnectAttempted = true
                             appendLog("Correspondência exata do GT3 MAX confirmada; iniciando conexão automática.")
                             stopBleScan()
-                            connectToDevice(result.device)
+                            connectToDevice(result.device, automaticAttempt = automatic)
                             return@runOnUiThread
                         }
                     }
@@ -675,6 +719,8 @@ class MainActivity : ComponentActivity() {
                     updateStatus("Falha na busca BLE (código " + errorCode + ").")
                     appendLog("Falha no scan BLE: " + errorCode)
                     currentScanCallback = null
+                    isAutoReconnectScan = false
+                    if (automatic || reconnectPolicy.isEnabled) scheduleAutoReconnect("Falha no scan BLE: " + errorCode)
                 }
             }
         }
@@ -684,19 +730,23 @@ class MainActivity : ComponentActivity() {
             scanner.startScan(
                 null,
                 ScanSettings.Builder()
-                    .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                    .setScanMode(if (automatic) ScanSettings.SCAN_MODE_LOW_POWER else ScanSettings.SCAN_MODE_LOW_LATENCY)
                     .build(),
                 callback
             )
         } catch (error: SecurityException) {
             currentScanCallback = null
+            isAutoReconnectScan = false
             updateStatus("Permissão Bluetooth foi revogada. Autorize novamente.")
             appendLog("Scan BLE cancelado por SecurityException: " + (error.message ?: "sem detalhes"))
+            if (automatic || reconnectPolicy.isEnabled) scheduleAutoReconnect("Permissão Bluetooth revogada")
             return
         } catch (error: IllegalStateException) {
             currentScanCallback = null
+            isAutoReconnectScan = false
             updateStatus("Não foi possível iniciar a busca BLE. Verifique o Bluetooth.")
             appendLog("Scan BLE não iniciado: " + (error.message ?: "estado inválido"))
+            if (automatic || reconnectPolicy.isEnabled) scheduleAutoReconnect("Falha ao iniciar o scan BLE")
             return
         }
         val timeout = Runnable {
@@ -709,18 +759,25 @@ class MainActivity : ComponentActivity() {
                     else "Busca concluída. GT3 MAX não identificado.")
                 appendLog("Busca BLE concluída. Total=" + scanResults.size + "; identidade esperada encontrada=" + foundExpected)
                 renderScanResults()
+                if ((automatic || reconnectPolicy.isEnabled) && !foundExpected) {
+                    scheduleAutoReconnect("GT3 MAX não localizado nesta tentativa")
+                } else if (automatic && foundExpected) {
+                    scheduleAutoReconnect("Sinal do GT3 MAX insuficiente nesta tentativa")
+                }
             }
         }
         scanStopTask = timeout
-        handler.postDelayed(timeout, SCAN_DURATION_MS)
+        handler.postDelayed(timeout, if (automatic) AUTO_RECONNECT_SCAN_DURATION_MS else SCAN_DURATION_MS)
     }
 
     @SuppressLint("MissingPermission")
     private fun stopBleScan() {
         scanStopTask?.let(handler::removeCallbacks)
         scanStopTask = null
-        val callback = currentScanCallback ?: return
+        val callback = currentScanCallback
         currentScanCallback = null
+        isAutoReconnectScan = false
+        if (callback == null) return
         runCatching {
             bluetoothAdapter?.bluetoothLeScanner?.stopScan(callback)
         }
@@ -786,7 +843,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @SuppressLint("MissingPermission")
-    private fun connectToDevice(device: BluetoothDevice) {
+    private fun connectToDevice(device: BluetoothDevice, automaticAttempt: Boolean = false) {
         val observedAddress = safeDeviceAddress(device)
         if (!BleDeviceIdentity.matches(expectedWatchAddress, observedAddress)) {
             updateStatus("Dispositivo não identificado. Conexão bloqueada.")
@@ -794,10 +851,17 @@ class MainActivity : ComponentActivity() {
             return
         }
         if (!hasBlePermissions()) {
-            requestBlePermissions()
+            if (automaticAttempt) {
+                updateStatus("Permissão Bluetooth necessária para reconectar.")
+                appendLog("Tentativa automática interrompida: permissão Bluetooth foi revogada; nenhuma caixa de permissão foi aberta.")
+            } else {
+                requestBlePermissions()
+            }
             return
         }
         isGattDisconnecting = false
+        isGattConnected = false
+        cancelConnectionTimeout()
         lastConnectedDeviceName = safeDeviceName(device) ?: "Dispositivo sem nome"
         lastConnectedDeviceAddress = safeDeviceAddress(device)
         gattOperationQueue.reset()
@@ -821,18 +885,37 @@ class MainActivity : ComponentActivity() {
         } catch (error: SecurityException) {
             updateStatus("Permissão Bluetooth foi revogada. Autorize novamente.")
             appendLog("Conexão GATT bloqueada por permissão: " + (error.message ?: "sem detalhes"))
+            if (reconnectPolicy.isEnabled) scheduleAutoReconnect("Permissão Bluetooth revogada durante conexão")
             return
         } catch (error: IllegalArgumentException) {
             updateStatus("Dispositivo BLE inválido ou indisponível.")
             appendLog("Não foi possível iniciar GATT: " + (error.message ?: "argumento inválido"))
+            if (reconnectPolicy.isEnabled) scheduleAutoReconnect("Dispositivo BLE indisponível")
             return
         }
         if (newGatt == null) {
             updateStatus("O Android não iniciou a conexão GATT.")
             appendLog("connectGatt retornou null.")
+            if (reconnectPolicy.isEnabled) scheduleAutoReconnect("Android não iniciou a conexão GATT")
             return
         }
         bluetoothGatt = newGatt
+        val timeout = Runnable {
+            if (bluetoothGatt === newGatt && !isGattConnected) {
+                bluetoothGatt = null
+                isGattDisconnecting = false
+                gattOperationQueue.reset()
+                pendingNotifications.clear()
+                activeNotifications.clear()
+                runCatching { newGatt.disconnect() }
+                runCatching { newGatt.close() }
+                updateStatus("Falha na conexão GATT: tempo limite aguardando conexão.")
+                appendLog("Tempo limite de conexão GATT após ${GATT_CONNECT_TIMEOUT_MS} ms.")
+                if (automaticAttempt || reconnectPolicy.isEnabled) scheduleAutoReconnect("Tempo limite de conexão GATT")
+            }
+        }
+        connectionTimeoutTask = timeout
+        handler.postDelayed(timeout, GATT_CONNECT_TIMEOUT_MS)
     }
 
     private val gattCallback = object : BluetoothGattCallback() {
@@ -847,12 +930,23 @@ class MainActivity : ComponentActivity() {
                 return
             }
             appendLog("Estado GATT: status=" + status + ", estado=" + newState)
+            if (isGattDisconnecting && newState == BluetoothProfile.STATE_CONNECTED) {
+                appendLog("Conexão GATT concluída após cancelamento manual; encerrando sem reativar a reconexão automática.")
+                runCatching { gatt.disconnect() }
+                return
+            }
             if (status == BluetoothGatt.GATT_SUCCESS &&
                 newState == BluetoothProfile.STATE_CONNECTING) {
                 updateStatus("Conectando ao dispositivo BLE...")
             } else if (status == BluetoothGatt.GATT_SUCCESS &&
                 newState == BluetoothProfile.STATE_CONNECTED) {
                 isGattDisconnecting = false
+                isGattConnected = true
+                cancelConnectionTimeout()
+                cancelReconnectTask()
+                reconnectPolicy.markConnected()
+                connectionPrefs.edit { putBoolean("auto_reconnect_enabled", true) }
+                appendLog("Reconexão automática habilitada após conexão GATT confirmada.")
                 updateStatus("Conectado. Descobrindo serviços GATT...")
                 val started = runCatching { gatt.discoverServices() }.getOrDefault(false)
                 appendLog("Descoberta de serviços solicitada: " + started)
@@ -862,6 +956,8 @@ class MainActivity : ComponentActivity() {
                 }
             } else if (status != BluetoothGatt.GATT_SUCCESS) {
                 isGattDisconnecting = false
+                isGattConnected = false
+                cancelConnectionTimeout()
                 gattOperationQueue.reset()
                 pendingNotifications.clear()
                 activeNotifications.clear()
@@ -869,8 +965,11 @@ class MainActivity : ComponentActivity() {
                 updateStatus("Falha na conexão GATT. Status: " + status)
                 appendLog("Conexão GATT falhou; estado e fila foram limpos.")
                 runCatching { gatt.close() }
+                if (reconnectPolicy.isEnabled) scheduleAutoReconnect("Falha na conexão GATT: " + status)
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 isGattDisconnecting = false
+                isGattConnected = false
+                cancelConnectionTimeout()
                 deviceBatteryView.text = "Bateria do relógio: sem sessão BLE ativa"
                 updateStatus("Relógio desconectado.")
                 appendLog("Conexão GATT encerrada.")
@@ -881,6 +980,7 @@ class MainActivity : ComponentActivity() {
                     bluetoothGatt = null
                 }
                 runCatching { gatt.close() }
+                if (reconnectPolicy.isEnabled) scheduleAutoReconnect("Conexão GATT perdida")
             }
         }
 
@@ -895,6 +995,10 @@ class MainActivity : ComponentActivity() {
             } else {
                 updateStatus("Falha ao descobrir serviços GATT.")
                 appendLog("Falha na descoberta GATT. Status: " + status)
+                if (reconnectPolicy.isEnabled) {
+                    runCatching { gatt.disconnect() }
+                    scheduleAutoReconnect("Falha na descoberta dos serviços GATT")
+                }
             }
         }
 
@@ -1170,6 +1274,10 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("MissingPermission")
     private fun disconnectGatt() {
         stopBleScan()
+        cancelReconnectTask()
+        reconnectPolicy.markManuallyDisconnected()
+        connectionPrefs.edit { putBoolean("auto_reconnect_enabled", false) }
+        appendLog("Reconexão automática desativada por solicitação do usuário.")
         val gatt = bluetoothGatt
         if (gatt == null) {
             updateStatus("Nenhuma conexão ativa.")
@@ -1190,9 +1298,23 @@ class MainActivity : ComponentActivity() {
             val detail: String
             val indicatorColor: Int
             when {
+                value.startsWith("Reconexão automática aguardando") -> {
+                    headline = "Reconexão automática"
+                    detail = value + ". O aplicativo tentará localizar somente o GT3 MAX salvo neste aparelho."
+                    indicatorColor = 0xFFE0A12B.toInt()
+                }
+                value.startsWith("Reconectando") -> {
+                    headline = "Reconectando GT3 MAX"
+                    detail = "Tentativa automática em andamento; nenhum comando de escrita será enviado ao relógio."
+                    indicatorColor = 0xFFE0A12B.toInt()
+                }
                 value.startsWith("Procurando") -> {
                     headline = "Procurando relógio"
-                    detail = "Busca BLE ativa por até 15 segundos. Mantenha o GT3 MAX próximo ao celular."
+                    detail = if (value.contains("reconexão automática")) {
+                        "Busca automática de baixa potência pelo GT3 MAX salvo localmente."
+                    } else {
+                        "Busca BLE ativa por até 15 segundos. Mantenha o GT3 MAX próximo ao celular."
+                    }
                     indicatorColor = 0xFFE0A12B.toInt()
                 }
                 value.startsWith("Busca em andamento") -> {
@@ -1264,8 +1386,10 @@ class MainActivity : ComponentActivity() {
             val scanInProgress = value.startsWith("Procurando") ||
                 value.startsWith("Busca em andamento")
             scanButton.isEnabled = !gattSessionExists && !scanInProgress &&
-                !value.startsWith("Conectando") && !value.startsWith("Desconectando")
-            disconnectButton.isEnabled = gattSessionExists
+                !value.startsWith("Conectando") && !value.startsWith("Desconectando") &&
+                !value.startsWith("Reconectando")
+            disconnectButton.text = if (gattSessionExists) "Desconectar" else "Parar reconexão"
+            disconnectButton.isEnabled = gattSessionExists || reconnectPolicy.isEnabled || reconnectRunnable != null || isAutoReconnectScan
         }
     }
 
@@ -1299,8 +1423,53 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun cancelReconnectTask() {
+        reconnectRunnable?.let(handler::removeCallbacks)
+        reconnectRunnable = null
+    }
+
+    private fun cancelConnectionTimeout() {
+        connectionTimeoutTask?.let(handler::removeCallbacks)
+        connectionTimeoutTask = null
+    }
+
+    private fun scheduleAutoReconnect(reason: String, immediate: Boolean = false) {
+        if (!reconnectPolicy.isEnabled) return
+        if (expectedWatchAddress == null) {
+            appendLog("Reconexão automática bloqueada: identidade GT3 MAX não está configurada.")
+            return
+        }
+        if (!isActivityResumed) {
+            appendLog("Reconexão automática aguardará o aplicativo voltar ao primeiro plano.")
+            return
+        }
+        if (bluetoothGatt != null || currentScanCallback != null) return
+
+        cancelReconnectTask()
+        val delayMillis = if (immediate) 0L else reconnectPolicy.nextRetryDelayMillis() ?: return
+        appendLog(reason + ". Próxima tentativa de reconexão em " + delayMillis + " ms.")
+        updateStatus(if (delayMillis == 0L) "Reconectando GT3 MAX..." else "Reconexão automática aguardando " + delayMillis + " ms")
+
+        val task = Runnable {
+            reconnectRunnable = null
+            if (!isActivityResumed) return@Runnable
+            if (!reconnectPolicy.isEnabled || bluetoothGatt != null || currentScanCallback != null) return@Runnable
+            if (!hasBlePermissions()) {
+                updateStatus("Permissão Bluetooth necessária para reconectar.")
+                appendLog("Reconexão pausada: restaure a permissão Bluetooth e retorne ao aplicativo.")
+                return@Runnable
+            }
+            startBleScan(automatic = true)
+        }
+        reconnectRunnable = task
+        if (delayMillis == 0L) handler.post(task) else handler.postDelayed(task, delayMillis)
+    }
+
     @SuppressLint("MissingPermission")
     override fun onDestroy() {
+        isActivityResumed = false
+        cancelReconnectTask()
+        cancelConnectionTimeout()
         stopBleScan()
         gattOperationQueue.reset()
         pendingNotifications.clear()
