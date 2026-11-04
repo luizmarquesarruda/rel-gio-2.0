@@ -7,7 +7,7 @@ Este arquivo é o registro cronológico principal. Atualizar em toda PR que alte
 ### Causa do Lint e correções
 - O primeiro CI da PR #5 falhou em lintDebug por leitura de BluetoothDevice.name sem verificação explícita de BLUETOOTH_CONNECT. Foram centralizados helpers de nome/endereço com verificação de permissão e fallback seguro.
 - O scan agora trata SecurityException e IllegalStateException se a permissão for revogada ou o estado Bluetooth mudar entre a checagem e a chamada.
-- A API Android permite fornecer Handler a connectGatt; o app agora usa o Handler principal (minSdk 26), garantindo que callbacks GATT e fila serial compartilhem a mesma thread.
+- A API Android permite fornecer Handler a connectGatt; o app agora usa o Handler principal (minSdk 26), garantindo que callbacks GATT e fila serial compartilhem a mesma thread. Callbacks de falha e desconexão também limpam o estado, e operações são bloqueadas durante o desligamento.
 - Novas operações são bloqueadas durante a desconexão. Falhas GATT limpam estado e fila.
 - A lista de apps na tela de notificações recebeu uma área de rolagem própria.
 
