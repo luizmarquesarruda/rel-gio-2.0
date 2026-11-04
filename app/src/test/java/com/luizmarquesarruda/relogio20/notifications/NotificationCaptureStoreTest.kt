@@ -83,6 +83,25 @@ class NotificationCaptureStoreTest {
         assertTrue(afterExpiry.isEmpty())
     }
 
+    @Test
+    fun reportsDelayUntilTheOldestPreviewExpires() {
+        NotificationCaptureStore.add(
+            preview("first", "com.example.app"),
+            nowElapsedRealtimeMillis = testElapsedRealtime
+        )
+        NotificationCaptureStore.add(
+            preview("second", "com.example.app").copy(
+                capturedAtElapsedRealtimeMillis = testElapsedRealtime + 2_000L
+            ),
+            nowElapsedRealtimeMillis = testElapsedRealtime + 2_000L
+        )
+
+        assertEquals(
+            NotificationCaptureStore.RETENTION_MILLIS,
+            NotificationCaptureStore.millisUntilNextExpiry(testElapsedRealtime)
+        )
+    }
+
     private fun preview(key: String, packageName: String) = NotificationPreview(
         key = key,
         packageName = packageName,
