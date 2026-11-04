@@ -273,3 +273,25 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Status GATT 147 recebe mensagem específica de timeout, sem atribuição de causa definitiva.
 - A conexão GATT não valida, por si só, frequência cardíaca, sono, SpO2 ou outros sensores.
 - CI e teste físico no Galaxy A06/GT3 MAX após esta alteração: não validados.
+
+
+## 04/11/2026 — Correção do estado BLE e hierarquia da página principal
+
+### Evidência que motivou a correção
+- O relatório físico do GT3 MAX mostrou conexão GATT bem-sucedida (status 0 / STATE_CONNECTED) e descoberta de seis serviços. Depois disso, novas buscas BLE foram iniciadas e a interface voltou a exibir “Procurando relógio”.
+- A inspeção do código confirmou que startBleScan() não bloqueava uma nova busca quando bluetoothGatt ainda estava ativo; o botão de busca também permanecia habilitado no estado conectado.
+
+### Correções implementadas na PR #6
+- A busca BLE agora é bloqueada quando existe uma sessão GATT ativa ou em encerramento. O botão Buscar fica desabilitado durante a busca e enquanto a sessão GATT existir.
+- O estado CONNECTING é refletido na interface; a recusa do Android em iniciar discoverServices() agora produz estado e evento de diagnóstico explícitos.
+- O cartão de conexão, a configuração de identidade e a exportação TXT foram movidos para o topo da página, logo após o relógio do telefone.
+- A página principal usa uma única rolagem vertical. O inventário GATT não cria uma rolagem interna adicional.
+- O registro visual exibe as oito linhas mais recentes; o buffer interno continua limitado a 250 eventos e a exportação TXT preserva o buffer da sessão.
+- Nenhum comando foi enviado ao relógio, nenhuma característica proprietária foi escrita e nenhuma leitura de sensor foi presumida.
+
+### Validação e pendências
+- Alterações enviadas para a branch fix/ui-conexao-gt3-20261104, na PR #6; sem merge.
+- CI após estes commits: aguardando/ não validado até confirmar a execução no HEAD final.
+- MagicPath: análise visual do canvas não realizada nesta execução porque a conta retornou cota de chamadas externas esgotada. A análise de layout foi feita por inspeção do código Android e registrada em docs/NAVEGACAO-E-LAYOUT.md.
+- Renderização, TalkBack, fonte ampliada, rotação e teste físico após a correção no Galaxy A06/GT3 MAX: **não validados**.
+- A descoberta GATT comprova o canal BLE e a enumeração dos serviços, mas o protocolo dos sensores continua **não validado**.
