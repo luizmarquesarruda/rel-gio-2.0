@@ -1,6 +1,7 @@
 package com.luizmarquesarruda.relogio20
 
 import android.Manifest
+import android.app.AlertDialog
 import android.annotation.SuppressLint
 import android.content.Intent
 import com.luizmarquesarruda.relogio20.notifications.NotificationCenterActivity
@@ -9,6 +10,7 @@ import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbFramePars
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitProtocolProfile
 import com.luizmarquesarruda.relogio20.HealthPrivacyActivity
 import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.permission.HealthPermission
@@ -42,6 +44,7 @@ import android.os.Looper
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -53,6 +56,10 @@ import java.util.UUID
 class MainActivity : ComponentActivity() {
     private lateinit var content: LinearLayout
     private lateinit var statusView: TextView
+    private lateinit var statusDetailView: TextView
+    private lateinit var statusIndicatorView: TextView
+    private lateinit var scanButton: Button
+    private lateinit var disconnectButton: Button
     private lateinit var logView: TextView
     private lateinit var clockView: TextView
     private lateinit var stepsView: TextView
@@ -93,6 +100,32 @@ class MainActivity : ComponentActivity() {
     }
     private val scanResults = linkedMapOf<String, ScanResult>()
     private val logLines = mutableListOf<String>()
+    private var pendingDiagnosticReport: String? = null
+    private var lastConnectedDeviceName: String? = null
+    private var lastConnectedDeviceAddress: String? = null
+    private val identityPrefs by lazy { getSharedPreferences("device_identity", MODE_PRIVATE) }
+    private val expectedWatchAddress: String? get() = BleDeviceIdentity.normalize(identityPrefs.getString("gt3_max_address", null))
+    private var autoConnectAttempted = false
+    private var weakSignalWarningLogged = false
+    private val diagnosticExportLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("text/plain")
+    ) { uri ->
+        val report = pendingDiagnosticReport
+        pendingDiagnosticReport = null
+        if (uri == null || report == null) {
+            appendLog("Exportação do diagnóstico cancelada pelo usuário.")
+        } else {
+            runCatching {
+                contentResolver.openOutputStream(uri)?.use { output ->
+                    output.write(report.toByteArray(Charsets.UTF_8))
+                } ?: error("Não foi possível abrir o destino escolhido.")
+            }.onSuccess {
+                appendLog("Relatório TXT exportado localmente com sucesso.")
+            }.onFailure { error ->
+                appendLog("Falha ao exportar relatório TXT: " + (error.message ?: "erro desconhecido"))
+            }
+        }
+    }
     private val activeNotifications = mutableSetOf<String>()
     private val pendingNotifications = mutableSetOf<String>()
     private val gattOperationQueue = SerialGattOperationQueue()
@@ -103,6 +136,7 @@ class MainActivity : ComponentActivity() {
     companion object {
         private const val REQUEST_BLE_PERMISSIONS = 2401
         private const val SCAN_DURATION_MS = 15_000L
+        private const val AUTO_CONNECT_MIN_RSSI = -90
         private const val MAX_LOG_LINES = 250
     }
 
@@ -142,6 +176,73 @@ class MainActivity : ComponentActivity() {
         }
         root.addView(clockView)
         updatePhoneClock()
+
+        addText(root, "Conexão do relógio", 18f, true)
+
+        val connectionCard = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(16), dp(16), dp(16))
+            background = roundedSurface(0xFFFFFFFF.toInt(), 0xFFE1E7EF.toInt())
+            elevation = dp(2).toFloat()
+        }
+        val connectionHeading = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        statusIndicatorView = TextView(this).apply {
+            text = "●"
+            textSize = 18f
+            setTextColor(0xFF8A94A6.toInt())
+            setPadding(0, 0, dp(10), 0)
+            contentDescription = "Indicador do estado Bluetooth"
+        }
+        connectionHeading.addView(statusIndicatorView)
+        statusView = TextView(this).apply {
+            text = "Relógio não conectado"
+            textSize = 17f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTextColor(0xFF17212B.toInt())
+        }
+        connectionHeading.addView(statusView)
+        connectionCard.addView(connectionHeading)
+
+        statusDetailView = TextView(this).apply {
+            text = "Ative o Bluetooth e toque em Buscar relógio para localizar o GT3 MAX."
+            textSize = 13f
+            setTextColor(0xFF526170.toInt())
+            setPadding(0, dp(8), 0, dp(14))
+        }
+        connectionCard.addView(statusDetailView)
+
+        val actions = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+        }
+        scanButton = makeButton("Buscar e conectar automaticamente") { beginAutomaticConnection() }.apply {
+            backgroundTintList = android.content.res.ColorStateList.valueOf(0xFF176B5B.toInt())
+            setTextColor(0xFFFFFFFF.toInt())
+        }
+        disconnectButton = makeButton("Desconectar") { disconnectGatt() }.apply {
+            isEnabled = false
+        }
+        actions.addView(scanButton, LinearLayout.LayoutParams(0, dp(48), 1f))
+        actions.addView(disconnectButton, LinearLayout.LayoutParams(0, dp(48), 1f).apply {
+            marginStart = dp(8)
+        })
+        connectionCard.addView(actions)
+        root.addView(connectionCard, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            topMargin = dp(6)
+            bottomMargin = dp(8)
+        })
+
+        root.addView(makeButton("Configurar identificação do GT3 MAX") { configureExpectedWatchAddress() }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(44)).apply { bottomMargin = dp(6) })
+
+        root.addView(makeButton("Exportar diagnóstico TXT") {
+            exportDiagnosticReport()
+        }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(46)
+        ).apply { bottomMargin = dp(6) })
 
         stepsView = TextView(this).apply {
             text = "Passos hoje: aguardando dados da Conexão Saúde"
@@ -200,57 +301,38 @@ class MainActivity : ComponentActivity() {
         addText(root, "Horário do relógio: sincronização ainda não disponível. " +
             "O protocolo de ajuste do GT3 MAX não foi identificado.", 12f)
 
-        statusView = TextView(this).apply {
-            text = "Relógio desconectado. Procure o dispositivo para iniciar a leitura BLE."
-            textSize = 14f
-            setTextColor(0xFF263746.toInt())
-            setPadding(0, dp(12), 0, dp(12))
-        }
-        root.addView(statusView)
-
-        val actions = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-        }
-        actions.addView(makeButton("Conectar smartwatch") { startBleScan() },
-            LinearLayout.LayoutParams(0, dp(48), 1f))
-        actions.addView(makeButton("Desconectar") { disconnectGatt() },
-            LinearLayout.LayoutParams(0, dp(48), 1f).apply {
-                marginStart = dp(8)
-            })
-        root.addView(actions)
-
-        val scroll = ScrollView(this)
         content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(0, dp(8), 0, dp(8))
         }
-        scroll.addView(content)
-        root.addView(scroll, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
+        root.addView(content, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
         ))
 
         val logTitle = TextView(this).apply {
-            text = "Registro da sessão (permanece apenas nesta tela)"
+            text = "Registro da sessão (últimos 250 eventos; exportação manual disponível)"
             textSize = 12f
             setTextColor(0xFF526170.toInt())
             setPadding(0, dp(8), 0, dp(4))
         }
         root.addView(logTitle)
 
-        val logScroll = ScrollView(this).apply {
-            setBackgroundColor(0xFFFFFFFF.toInt())
-        }
         logView = TextView(this).apply {
             textSize = 11f
+            maxLines = 8
             setTextColor(0xFF263746.toInt())
             setPadding(dp(8), dp(8), dp(8), dp(8))
+            background = roundedSurface(0xFFFFFFFF.toInt(), 0xFFE1E7EF.toInt())
         }
-        logScroll.addView(logView)
-        root.addView(logScroll, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(150)
+        root.addView(logView, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
         ))
 
-        setContentView(root)
+        val pageScroll = ScrollView(this).apply {
+            isFillViewport = true
+            addView(root)
+        }
+        setContentView(pageScroll)
     }
 
     private fun updatePhoneClock() {
@@ -383,6 +465,13 @@ class MainActivity : ComponentActivity() {
         })
     }
 
+    private fun roundedSurface(fillColor: Int, strokeColor: Int) =
+        android.graphics.drawable.GradientDrawable().apply {
+            setColor(fillColor)
+            setStroke(dp(1), strokeColor)
+            cornerRadius = dp(18).toFloat()
+        }
+
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).toInt()
 
@@ -441,8 +530,48 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun beginAutomaticConnection() {
+        if (expectedWatchAddress == null) configureExpectedWatchAddress { startBleScan() }
+        else startBleScan()
+    }
+
+    private fun configureExpectedWatchAddress(afterSave: (() -> Unit)? = null) {
+        val input = EditText(this).apply {
+            hint = "AA:BB:CC:DD:EE:FF"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
+            setSingleLine(true)
+            setText(expectedWatchAddress.orEmpty())
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Identificar meu GT3 MAX")
+            .setMessage("Informe o endereço Bluetooth exibido no relógio. Será salvo somente neste aparelho, sem inclusão no código público ou no relatório TXT.")
+            .setView(input)
+            .setNegativeButton("Cancelar", null)
+            .setNeutralButton("Remover") { _, _ -> identityPrefs.edit().remove("gt3_max_address").apply() }
+            .setPositiveButton("Salvar") { _, _ ->
+                val address = BleDeviceIdentity.normalize(input.text.toString())
+                if (address == null) updateStatus("Endereço inválido. Use AA:BB:CC:DD:EE:FF.")
+                else {
+                    identityPrefs.edit().putString("gt3_max_address", address).apply()
+                    appendLog("Identidade GT3 MAX salva localmente: " + maskAddress(address))
+                    afterSave?.invoke()
+                }
+            }
+            .show()
+    }
+
     @SuppressLint("MissingPermission")
     private fun startBleScan() {
+        if (bluetoothGatt != null) {
+            val currentState = if (isGattDisconnecting) {
+                "Desconectando..."
+            } else {
+                "Conectado. A busca foi bloqueada para preservar a sessão BLE ativa."
+            }
+            updateStatus(currentState)
+            appendLog("Nova busca bloqueada: já existe uma sessão GATT ativa ou em encerramento.")
+            return
+        }
         if (!hasBlePermissions()) {
             requestBlePermissions()
             return
@@ -468,6 +597,8 @@ class MainActivity : ComponentActivity() {
         }
 
         stopBleScan()
+        autoConnectAttempted = false
+        weakSignalWarningLogged = false
         scanResults.clear()
         content.removeAllViews()
         addText(content, "Dispositivos encontrados", 18f, true)
@@ -487,6 +618,22 @@ class MainActivity : ComponentActivity() {
                         ?: safeDeviceName(result.device)
                         ?: "Dispositivo sem nome"
                     scanResults[address] = result
+                    appendLog("Dispositivo BLE observado: " + name + " | RSSI=" + result.rssi + " dBm | endereço=" + maskAddress(address))
+                    if (!autoConnectAttempted && BleDeviceIdentity.matches(expectedWatchAddress, address)) {
+                        if (result.rssi <= AUTO_CONNECT_MIN_RSSI) {
+                            if (!weakSignalWarningLogged) {
+                                weakSignalWarningLogged = true
+                                appendLog("GT3 MAX identificado, mas RSSI fraco: " + result.rssi + " dBm. Conexão automática suspensa.")
+                                updateStatus("GT3 MAX identificado, mas sinal muito fraco.")
+                            }
+                        } else {
+                            autoConnectAttempted = true
+                            appendLog("Correspondência exata do GT3 MAX confirmada; iniciando conexão automática.")
+                            stopBleScan()
+                            connectToDevice(result.device)
+                            return@runOnUiThread
+                        }
+                    }
                     renderScanResults()
                     updateStatus("Busca em andamento. Dispositivos: " + scanResults.size)
                 }
@@ -527,8 +674,12 @@ class MainActivity : ComponentActivity() {
         val timeout = Runnable {
             if (currentScanCallback === callback) {
                 stopBleScan()
-                updateStatus("Busca concluída. Dispositivos encontrados: " + scanResults.size)
-                appendLog("Busca BLE concluída. Total: " + scanResults.size)
+                val foundExpected = expectedWatchAddress?.let { expected ->
+                    scanResults.keys.any { BleDeviceIdentity.matches(expected, it) }
+                } ?: false
+                updateStatus(if (foundExpected) "GT3 MAX encontrado, mas sinal insuficiente para conexão automática."
+                    else "Busca concluída. GT3 MAX não identificado.")
+                appendLog("Busca BLE concluída. Total=" + scanResults.size + "; identidade esperada encontrada=" + foundExpected)
                 renderScanResults()
             }
         }
@@ -563,16 +714,37 @@ class MainActivity : ComponentActivity() {
                 val name = result.scanRecord?.deviceName
                     ?: safeDeviceName(result.device)
                     ?: "Dispositivo sem nome"
-                val button = makeButton(
-                    name + "  •  " + result.rssi + " dBm  •  " +
-                        maskAddress(address)
-                ) {
-                    stopBleScan()
-                    connectToDevice(result.device)
+                val deviceCard = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(dp(14), dp(12), dp(14), dp(12))
+                    background = roundedSurface(0xFFFFFFFF.toInt(), 0xFFE1E7EF.toInt())
+                    isClickable = true
+                    isFocusable = true
+                    contentDescription = "Conectar a $name. Sinal ${result.rssi} dBm."
+                    setOnClickListener {
+                        stopBleScan()
+                        connectToDevice(result.device)
+                    }
                 }
-                content.addView(button, LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, dp(52)
-                ))
+                val deviceName = TextView(this).apply {
+                    text = name
+                    textSize = 15f
+                    setTypeface(typeface, android.graphics.Typeface.BOLD)
+                    setTextColor(0xFF17212B.toInt())
+                }
+                val deviceMeta = TextView(this).apply {
+                    text = "Sinal ${result.rssi} dBm  •  identificação protegida: " + maskAddress(address)
+                    textSize = 12f
+                    setTextColor(0xFF526170.toInt())
+                    setPadding(0, dp(4), 0, 0)
+                }
+                deviceCard.addView(deviceName)
+                deviceCard.addView(deviceMeta)
+                content.addView(deviceCard, LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    bottomMargin = dp(8)
+                })
             }
     }
 
@@ -587,11 +759,19 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("MissingPermission")
     private fun connectToDevice(device: BluetoothDevice) {
+        val observedAddress = safeDeviceAddress(device)
+        if (!BleDeviceIdentity.matches(expectedWatchAddress, observedAddress)) {
+            updateStatus("Dispositivo não identificado. Conexão bloqueada.")
+            appendLog("Conexão bloqueada: endereço observado não corresponde à identidade local configurada.")
+            return
+        }
         if (!hasBlePermissions()) {
             requestBlePermissions()
             return
         }
         isGattDisconnecting = false
+        lastConnectedDeviceName = safeDeviceName(device) ?: "Dispositivo sem nome"
+        lastConnectedDeviceAddress = safeDeviceAddress(device)
         gattOperationQueue.reset()
         pendingNotifications.clear()
         activeNotifications.clear()
@@ -640,11 +820,18 @@ class MainActivity : ComponentActivity() {
             }
             appendLog("Estado GATT: status=" + status + ", estado=" + newState)
             if (status == BluetoothGatt.GATT_SUCCESS &&
+                newState == BluetoothProfile.STATE_CONNECTING) {
+                updateStatus("Conectando ao dispositivo BLE...")
+            } else if (status == BluetoothGatt.GATT_SUCCESS &&
                 newState == BluetoothProfile.STATE_CONNECTED) {
                 isGattDisconnecting = false
                 updateStatus("Conectado. Descobrindo serviços GATT...")
                 val started = runCatching { gatt.discoverServices() }.getOrDefault(false)
                 appendLog("Descoberta de serviços solicitada: " + started)
+                if (!started) {
+                    updateStatus("Falha ao iniciar descoberta dos serviços GATT.")
+                    appendLog("O Android recusou o início da descoberta GATT.")
+                }
             } else if (status != BluetoothGatt.GATT_SUCCESS) {
                 isGattDisconnecting = false
                 gattOperationQueue.reset()
@@ -779,6 +966,7 @@ class MainActivity : ComponentActivity() {
             }
 
             gatt.services.forEach { service ->
+                appendLog("GATT serviço observado: " + service.uuid)
                 addDivider(content)
                 addText(content, "Serviço", 15f, true)
                 addText(content, service.uuid.toString(), 12f)
@@ -807,7 +995,9 @@ class MainActivity : ComponentActivity() {
                         if (labels.isEmpty()) "não informadas" else labels.joinToString(" • "),
                         11f)
 
+                    appendLog("GATT característica observada: serviço=" + service.uuid + " | característica=" + characteristic.uuid + " | propriedades=" + if (labels.isEmpty()) "não informadas" else labels.joinToString(","))
                     characteristic.descriptors.forEach { descriptor ->
+                        appendLog("GATT descritor observado: " + descriptor.uuid + " | característica=" + characteristic.uuid)
                         addText(content, "Descritor: " + descriptor.uuid, 10f)
                     }
 
@@ -990,7 +1180,109 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun updateStatus(value: String) {
-        runOnUiThread { statusView.text = value }
+        runOnUiThread {
+            val headline: String
+            val detail: String
+            val indicatorColor: Int
+            when {
+                value.startsWith("Procurando") -> {
+                    headline = "Procurando relógio"
+                    detail = "Busca BLE ativa por até 15 segundos. Mantenha o GT3 MAX próximo ao celular."
+                    indicatorColor = 0xFFE0A12B.toInt()
+                }
+                value.startsWith("Busca em andamento") -> {
+                    headline = "Busca em andamento"
+                    detail = value + ". Toque no dispositivo encontrado para iniciar a conexão."
+                    indicatorColor = 0xFFE0A12B.toInt()
+                }
+                value.startsWith("Busca concluída") -> {
+                    headline = "Busca finalizada"
+                    detail = value + ". Se o relógio não apareceu, aproxime-o e tente novamente."
+                    indicatorColor = 0xFF8A94A6.toInt()
+                }
+                value.startsWith("Conectando") -> {
+                    headline = "Conectando ao relógio"
+                    detail = "O Android está abrindo a conexão Bluetooth LE. Aguarde a resposta do dispositivo."
+                    indicatorColor = 0xFFE0A12B.toInt()
+                }
+                value.startsWith("Conectado.") && value.contains("Descobrindo") -> {
+                    headline = "Bluetooth conectado"
+                    detail = "Conexão estabelecida. Identificando os serviços GATT disponíveis."
+                    indicatorColor = 0xFF16845B.toInt()
+                }
+                value.startsWith("Conectado.") -> {
+                    headline = "Bluetooth conectado"
+                    detail = value + ". Isso confirma o canal GATT, não a leitura validada dos sensores."
+                    indicatorColor = 0xFF16845B.toInt()
+                }
+                value.startsWith("Desconectando") -> {
+                    headline = "Encerrando conexão"
+                    detail = "A conexão com o relógio está sendo encerrada."
+                    indicatorColor = 0xFFE0A12B.toInt()
+                }
+                value.startsWith("Relógio desconectado") || value.startsWith("Nenhuma conexão") -> {
+                    headline = "Relógio desconectado"
+                    detail = "O relógio não está conectado. Você pode iniciar uma nova busca."
+                    indicatorColor = 0xFF8A94A6.toInt()
+                }
+                value.startsWith("Falha na conexão GATT. Status: 147") -> {
+                    headline = "Tempo limite na conexão BLE"
+                    detail = "A conexão GATT expirou (status 147). Aproxime o relógio, mantenha-o ativo e tente novamente. A causa ainda não foi determinada."
+                    indicatorColor = 0xFFCA4B4B.toInt()
+                }
+                value.startsWith("Falha") || value.startsWith("Não foi possível") ||
+                    value.startsWith("O Android não iniciou") -> {
+                    headline = "Não foi possível conectar"
+                    detail = value + " Confira a proximidade do relógio e tente novamente."
+                    indicatorColor = 0xFFCA4B4B.toInt()
+                }
+                value.startsWith("Ative o Bluetooth") -> {
+                    headline = "Bluetooth desligado"
+                    detail = value
+                    indicatorColor = 0xFFE0A12B.toInt()
+                }
+                value.startsWith("Permissão") -> {
+                    headline = "Permissão necessária"
+                    detail = value
+                    indicatorColor = 0xFFE0A12B.toInt()
+                }
+                else -> {
+                    headline = "Estado da conexão"
+                    detail = value
+                    indicatorColor = 0xFF8A94A6.toInt()
+                }
+            }
+            statusView.text = headline
+            statusDetailView.text = detail
+            statusIndicatorView.setTextColor(indicatorColor)
+            val gattSessionExists = bluetoothGatt != null
+            val scanInProgress = value.startsWith("Procurando") ||
+                value.startsWith("Busca em andamento")
+            scanButton.isEnabled = !gattSessionExists && !scanInProgress &&
+                !value.startsWith("Conectando") && !value.startsWith("Desconectando")
+            disconnectButton.isEnabled = gattSessionExists
+        }
+    }
+
+    private fun exportDiagnosticReport() {
+        val now = Date()
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(now)
+        val generatedAt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z", Locale.US).format(now)
+        val version = runCatching {
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "desconhecida"
+        }.getOrDefault("desconhecida")
+        val report = BleDiagnosticReport.build(
+            appVersion = version,
+            androidVersion = Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")",
+            connectionState = statusView.text?.toString() ?: "indisponível",
+            deviceName = lastConnectedDeviceName,
+            deviceAddress = lastConnectedDeviceAddress,
+            generatedAt = generatedAt,
+            logLines = logLines.toList()
+        )
+        pendingDiagnosticReport = report
+        diagnosticExportLauncher.launch("relogio2_diagnostico_GT3MAX_" + timestamp + ".txt")
+        appendLog("Solicitada exportação TXT. O Android abrirá o seletor para escolher onde salvar.")
     }
 
     private fun appendLog(value: String) {
@@ -998,7 +1290,7 @@ class MainActivity : ComponentActivity() {
         runOnUiThread {
             logLines.add(time + "  " + value)
             while (logLines.size > MAX_LOG_LINES) logLines.removeAt(0)
-            logView.text = logLines.joinToString("\n")
+            logView.text = logLines.takeLast(8).joinToString("\n")
         }
     }
 

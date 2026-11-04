@@ -1,3 +1,12 @@
+## 04/11/2026 — Melhoria da tela de conexão GT3 MAX
+
+- Reorganizado o painel Bluetooth em cartão de estado, com indicador visual, título contextual e instrução objetiva conforme o estado informado pelo ciclo BLE.
+- A ação principal foi renomeada para **Buscar relógio**; a ação de desconexão é habilitada apenas durante conexão, conexão estabelecida ou encerramento.
+- Dispositivos encontrados passaram a ser exibidos em cartões com nome, RSSI e endereço parcialmente mascarado, mantendo a seleção por toque.
+- Mantidos os limites semânticos: conexão GATT não significa protocolo identificado nem sensores validados. O texto da interface explicita essa distinção.
+- Alteração restrita à apresentação de MainActivity.kt; não foram alterados scan, permissões, callbacks, fila GATT, descoberta, leitura, parser, armazenamento, Health Connect ou comandos ao relógio.
+- CI da nova branch fix/ui-conexao-gt3-20261104: aguardando execução após os commits da interface. Validação visual e teste físico no Galaxy A06/GT3 MAX: **não validados**.
+
 ## 04/11/2026 — Correção do auditor de manifesto APK
 
 - Run 41764184171 falhou somente na etapa de auditoria do manifesto final: `apkanalyzer manifest print` emitiu `Saúde & Fitness` com ampersand não escapado, e o XML deixou de ser bem-formado para o parser Python.
@@ -242,3 +251,47 @@ Este arquivo é o registro cronológico principal. Atualizar em toda PR que alte
 ## Registro de versão
 
 A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada nesta branch. Não representa release publicada nem build validado. A numeração só deve ser promovida após CI verde e aprovação dos testes aplicáveis.
+
+
+## 04/11/2026 — Exportação local do diagnóstico BLE em TXT
+
+- Adicionada a ação **Exportar diagnóstico TXT** na tela principal. O Android abre o seletor nativo de destino (`CreateDocument`); o app não grava em diretório público por conta própria nem envia o relatório à rede.
+- O arquivo reúne versão do app/Android, estado da interface, identificação do dispositivo com endereço MAC mascarado, eventos da sessão, inventário GATT e payloads BLE recebidos em hexadecimal quando registrados.
+- O relatório separa observações de hipóteses e informa que conexão GATT não comprova leitura válida de sensores. Interpretações candidatas continuam explicitamente não validadas.
+- Não são exportados textos de notificações do telefone. Payloads BLE hexadecimais podem conter métricas de saúde e devem ser compartilhados somente com autorização.
+- Adicionados testes unitários para mascaramento de MAC, relatório sem eventos e preservação dos bytes observados.
+- Não foram introduzidos comandos proprietários, escrita em características desconhecidas, permissões novas, rede ou upload automático.
+- Build/CI e teste físico após esta alteração: **não validados** até a conclusão da execução correspondente.
+
+
+## 04/11/2026 — Busca e conexão automática BLE
+
+- A ação principal inicia busca BLE por até 15 segundos e conecta apenas após correspondência exata com o endereço GT3 MAX configurado localmente.
+- O endereço é informado pelo usuário e armazenado em preferências privadas do aplicativo; não é embutido no repositório público nem exportado no relatório TXT.
+- Dispositivos divergentes são bloqueados também no método de conexão, evitando bypass pela seleção manual.
+- RSSI igual ou inferior a -90 dBm suspende a conexão automática. É um limite operacional heurístico, não uma medida exata de distância ou garantia de enlace.
+- Status GATT 147 recebe mensagem específica de timeout, sem atribuição de causa definitiva.
+- A conexão GATT não valida, por si só, frequência cardíaca, sono, SpO2 ou outros sensores.
+- CI e teste físico no Galaxy A06/GT3 MAX após esta alteração: não validados.
+
+
+## 04/11/2026 — Correção do estado BLE e hierarquia da página principal
+
+### Evidência que motivou a correção
+- O relatório físico do GT3 MAX mostrou conexão GATT bem-sucedida (status 0 / STATE_CONNECTED) e descoberta de seis serviços. Depois disso, novas buscas BLE foram iniciadas e a interface voltou a exibir “Procurando relógio”.
+- A inspeção do código confirmou que startBleScan() não bloqueava uma nova busca quando bluetoothGatt ainda estava ativo; o botão de busca também permanecia habilitado no estado conectado.
+
+### Correções implementadas na PR #6
+- A busca BLE agora é bloqueada quando existe uma sessão GATT ativa ou em encerramento. O botão Buscar fica desabilitado durante a busca e enquanto a sessão GATT existir.
+- O estado CONNECTING é refletido na interface; a recusa do Android em iniciar discoverServices() agora produz estado e evento de diagnóstico explícitos.
+- O cartão de conexão, a configuração de identidade e a exportação TXT foram movidos para o topo da página, logo após o relógio do telefone.
+- A página principal usa uma única rolagem vertical. O inventário GATT não cria uma rolagem interna adicional.
+- O registro visual exibe as oito linhas mais recentes; o buffer interno continua limitado a 250 eventos e a exportação TXT preserva o buffer da sessão.
+- Nenhum comando foi enviado ao relógio, nenhuma característica proprietária foi escrita e nenhuma leitura de sensor foi presumida.
+
+### Validação e pendências
+- Alterações enviadas para a branch fix/ui-conexao-gt3-20261104, na PR #6; sem merge.
+- CI após estes commits: aguardando/ não validado até confirmar a execução no HEAD final.
+- MagicPath: análise visual do canvas não realizada nesta execução porque a conta retornou cota de chamadas externas esgotada. A análise de layout foi feita por inspeção do código Android e registrada em docs/NAVEGACAO-E-LAYOUT.md.
+- Renderização, TalkBack, fonte ampliada, rotação e teste físico após a correção no Galaxy A06/GT3 MAX: **não validados**.
+- A descoberta GATT comprova o canal BLE e a enumeração dos serviços, mas o protocolo dos sensores continua **não validado**.

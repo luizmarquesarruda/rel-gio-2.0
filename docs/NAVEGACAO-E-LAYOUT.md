@@ -27,6 +27,19 @@ A navegação secundária agrupa recursos em seis áreas:
 
 As áreas existentes de notificações e privacidade encaminham para as telas já presentes. Os demais cartões mostram descrição e estado, sem emitir comandos.
 
+## Painel de conexão — 04/11/2026
+
+A área de conexão foi reorganizada em um cartão de estado com hierarquia visual e ações explícitas:
+
+- Indicador visual e título resumem o estado conhecido: desconectado, busca, conexão, GATT conectado, desconexão ou falha.
+- Texto auxiliar explica o próximo passo sem confundir conexão Bluetooth/GATT com leitura validada de sensores.
+- A ação principal passou a ser **Buscar relógio**; **Desconectar** fica desabilitada quando não há conexão em andamento ou estabelecida.
+- Resultados de busca são apresentados em cartões tocáveis, com nome, intensidade do sinal e endereço parcialmente mascarado.
+- A tela mantém os registros técnicos em área separada; o conteúdo do log continua restrito à sessão atual.
+- A máquina BLE, permissões, tempo de busca, descoberta GATT, parser e comandos não foram alterados nesta melhoria.
+
+**Não validado:** renderização em Galaxy A06, tamanhos de fonte ampliados, TalkBack, estados de rotação e testes físicos de conexão após a mudança visual. A mensagem “Bluetooth conectado” significa somente conexão GATT; não comprova leitura de métricas do GT3 MAX.
+
 ## Semântica dos estados
 
 - **Tela existente**: existe uma tela no app para a função.
@@ -58,3 +71,29 @@ Os cartões usam texto explícito, alvos de toque amplos, foco e ordem vertical 
 - Extrair UI de `MainActivity.kt` sem alterar o ciclo BLE.
 - Criar telas funcionais somente quando a integração correspondente for implementada e validada.
 - Adicionar previews/screenshot tests após disponibilizar ambiente Android instrumentado.
+
+
+## Exportação do diagnóstico BLE — 04/11/2026
+
+A ação **Exportar diagnóstico TXT** abre o seletor de documentos do Android e permite salvar localmente o registro da sessão. O relatório inclui ambiente, estado da conexão, MAC mascarado, eventos BLE/GATT e bytes recebidos em hexadecimal. A exportação não inclui texto de notificações do telefone e não transmite dados para servidores. Como payloads BLE podem carregar métricas de saúde, o arquivo deve ser compartilhado com cautela.
+
+O relatório classifica evidências observadas e interpretações ainda não validadas. A exportação não transforma uma conexão GATT em prova de leitura correta de sensores.
+
+
+## Revisão da página principal — correção da sessão BLE e rolagem — 04/11/2026
+
+A inspeção do código da tela principal identificou dois problemas estruturais:
+
+- O cartão de conexão ficava depois de várias seções de saúde e funções, reduzindo sua visibilidade inicial.
+- Apenas o inventário GATT e o registro tinham áreas roláveis próprias; o restante da página não participava de uma rolagem vertical única, o que podia cortar controles em telas compactas.
+
+Correções aplicadas:
+
+- Cartão BLE, identificação local do relógio e exportação TXT foram movidos para logo após o relógio do telefone, antes do resumo de saúde.
+- Toda a página passou a ficar dentro de um único ScrollView vertical. A rolagem interna do inventário foi removida.
+- O registro mostra as oito linhas mais recentes para não dominar a página; o buffer da sessão e a exportação TXT continuam limitados aos 250 eventos já definidos.
+- A ação de busca fica desabilitada durante a busca e enquanto existir uma sessão GATT ativa.
+- startBleScan() agora bloqueia uma nova busca se a conexão GATT estiver ativa ou em encerramento, preservando o estado conectado.
+- O callback de conexão registra o estado intermediário CONNECTING e a falha ao iniciar discoverServices() é exibida explicitamente.
+
+**Não validado:** inspeção visual em MagicPath, screenshots, renderização real no Galaxy A06, TalkBack, escala de fonte ampliada e rotação. A análise de código não substitui esses ensaios. A revisão visual no MagicPath não pôde ser aberta nesta execução porque a cota de chamadas externas da conta estava esgotada.
