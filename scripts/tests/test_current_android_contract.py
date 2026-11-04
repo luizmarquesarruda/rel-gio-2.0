@@ -79,6 +79,25 @@ class CurrentAndroidContractTests(unittest.TestCase):
         self.assertIn("source_commit=$SOURCE_COMMIT", workflow)
         self.assertIn("tested_commit=$GITHUB_SHA", workflow)
 
+    def test_workflow_uses_current_node24_action_majors(self):
+        workflow = (ROOT / ".github/workflows/android-ci.yml").read_text(encoding="utf-8")
+        for current in (
+            "actions/checkout@v7",
+            "actions/setup-java@v6",
+            "gradle/actions/setup-gradle@v6",
+            "actions/upload-artifact@v7",
+        ):
+            with self.subTest(action=current):
+                self.assertIn(current, workflow)
+        for obsolete in (
+            "actions/checkout@v4",
+            "actions/setup-java@v4",
+            "gradle/actions/setup-gradle@v4",
+            "actions/upload-artifact@v4",
+        ):
+            with self.subTest(action=obsolete):
+                self.assertNotIn(obsolete, workflow)
+
     def test_readme_matches_current_read_only_gatt_flow_and_version_source(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         self.assertNotIn("Permite leitura explícita de características", readme)
