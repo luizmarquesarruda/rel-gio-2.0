@@ -1,3 +1,15 @@
+## 04/11/2026 — Definição do produto Saúde & Fitness e ponte wearable
+
+- O usuário confirmou o modelo funcional: os sensores físicos do relógio medem passos e outras métricas; o companion recebe e valida as amostras; somente dados reais e autorizados devem ser compartilhados com o Conexão Saúde (Health Connect).
+- Fluxo inverso separado: o Android publica notificações; o app lê apenas aplicativos selecionados e a camada de transporte faz a ponte para o relógio. A leitura não responde, apaga, arquiva nem altera notificações nos aplicativos de origem.
+- A orientação oficial Play Protect lista expressamente apps de Saúde e Fitness que retransmitem notificações aos próprios dispositivos vestíveis como caso permitido de NOTIFICATION_LISTENER. Categoria/declaração não substitui a retransmissão efetiva nem o consentimento.
+- A interface principal e o rótulo do Android foram alinhados a Saúde & Fitness; appCategory=fitness foi definido no manifesto. No Play Console, a categoria da ficha deve ser Saúde e fitness e a declaração de recurso deve ser Atividade e fitness.
+- Health Connect permanece em leitura agregada READ_STEPS nesta versão. Não declarar WRITE_STEPS nem pedir permissões de outros sensores enquanto o driver do GT3 Maxx não entregar amostras validadas.
+- Health Connect é dispositivo-cêntrico; integração cloud/account-centric com Google Health API não está implementada.
+- A tela de notificações explica finalidade de ponte, leitura somente, consentimento, filtros e limite de retenção. O encaminhamento físico ao GT3 Maxx ainda está bloqueado por ausência de protocolo validado.
+- Criados docs/SAUDE-FITNESS-ARQUITETURA.md e HealthPrivacyActivity para transparência dos dados.
+- Teste físico, integração de escrita Health Connect, ponte BLE de notificações, Play Console e Play Protect: **não validados**.
+
 # Diário de bordo — Relógio 2.0
 
 Este arquivo é o registro cronológico principal. Atualizar em toda PR que altere arquitetura, funções, dependências, versão, dados ou protocolo.

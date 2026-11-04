@@ -58,7 +58,7 @@ class NotificationCenterActivity : Activity() {
         }
 
         root.addView(TextView(this).apply {
-            text = "Notificações do Android"
+            text = "Ponte de notificações para o relógio"
             textSize = 23f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(0xFF17212B.toInt())
@@ -72,7 +72,7 @@ class NotificationCenterActivity : Activity() {
         root.addView(statusView)
 
         root.addView(TextView(this).apply {
-            text = "Privacidade: o acesso especial do Android permite que este app receba notificações do sistema. O Relógio 2.0 só processa notificações dos aplicativos que você marcar e somente depois de ativar a captura. As prévias ficam temporariamente na memória, limitadas a 30 itens por até 15 minutos; são apagadas quando o listener desconecta, quando a notificação é removida ou quando você limpa a lista. O conteúdo não é gravado em arquivos nem enviado à rede. Não conceda o acesso se não concordar com esse tratamento."
+            text = "Finalidade: ler notificações Android dos aplicativos escolhidos para fazer a ponte com o smartwatch. A leitura não responde, apaga, arquiva nem altera a notificação no aplicativo de origem. O acesso exige autorização especial do Android, seleção explícita dos aplicativos e ativação manual. Nesta versão, a captura/visualização local está implementada; o encaminhamento ao GT3 Maxx permanece desativado até validar o protocolo de envio. As prévias ficam só na memória, limitadas a 30 itens por até 15 minutos, sem gravação em arquivos ou envio à rede."
             textSize = 12f
             setTextColor(0xFF526170.toInt())
             setPadding(0, dp(4), 0, dp(10))
@@ -85,7 +85,7 @@ class NotificationCenterActivity : Activity() {
         })
 
         captureSwitch = Switch(this).apply {
-            text = "Capturar notificações dos aplicativos selecionados"
+            text = "Ler notificações dos aplicativos selecionados (somente leitura)"
             textSize = 14f
             setTextColor(0xFF17212B.toInt())
             isChecked = NotificationCaptureSettings.isEnabled(this@NotificationCenterActivity)
@@ -118,7 +118,7 @@ class NotificationCenterActivity : Activity() {
             setPadding(0, dp(14), 0, dp(4))
         })
         root.addView(TextView(this).apply {
-            text = "Marque apenas os aplicativos cujas notificações deseja visualizar. WhatsApp e WhatsApp Business aparecem se estiverem instalados."
+            text = "Escolha os aplicativos cujos alertas poderão ser lidos para a ponte com o relógio. WhatsApp e WhatsApp Business aparecem quando instalados."
             textSize = 12f
             setTextColor(0xFF526170.toInt())
         })
@@ -161,7 +161,7 @@ class NotificationCenterActivity : Activity() {
         ))
 
         val note = TextView(this).apply {
-            text = "As prévias ficam apenas na memória: no máximo 30 itens por até 15 minutos. O texto não é gravado em logs ou arquivos e não é enviado à rede. O encaminhamento ao GT3 MAX ainda não está disponível."
+            text = "A leitura é somente de notificações publicadas pelo Android. O app não responde nem altera a origem. As prévias ficam apenas na memória (máximo de 30 por até 15 minutos). O envio ao GT3 Maxx ainda aguarda protocolo validado; nenhum payload desconhecido é transmitido."
             textSize = 11f
             setTextColor(0xFF526170.toInt())
             setPadding(0, dp(8), 0, 0)

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.0-alpha.1 — 04/11/2026
+
+### Direção Saúde & Fitness
+- Produto reposicionado como companheiro de Saúde e Fitness, com o relógio como fonte principal das medições e Conexão Saúde como camada Android de compartilhamento.
+- Interface principal orientada a atividade diária, smartwatch e Conexão Saúde.
+- Mantida a ponte de notificações como função de companion: leitura consentida de notificações selecionadas, sem responder ou alterar o app de origem.
+- O Google lista a retransmissão de notificações para dispositivos vestíveis próprios como caso permitido para apps de Saúde e Fitness; a retransmissão física ao GT3 Maxx segue pendente de protocolo validado.
+- Não foi adicionada permissão WRITE_STEPS: o driver atual ainda não fornece amostras de passos do GT3 Maxx comprovadas. Não publicar dados simulados nem dados agregados do telefone como se viessem do relógio.
+- Health Connect permanece limitado à leitura agregada de passos; escrita e métricas adicionais dependem de amostras reais, consentimento por tipo e validação.
+- Teste físico no Galaxy A06/GT3 Maxx e aceitação pelo Play Protect: **não validados**.
+
+
 As alterações relevantes do Relógio 2.0 são registradas aqui. Segue SemVer: MAJOR.MINOR.PATCH; versões alpha/beta indicam desenvolvimento e não equivalem a release estável.
 
 ## 0.3.0-alpha.4 — 03/11/2026

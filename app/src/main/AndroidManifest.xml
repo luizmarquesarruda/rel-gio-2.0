@@ -37,6 +37,9 @@
             android:name=".notifications.NotificationCenterActivity"
             android:exported="false" />
         <activity
+            android:name=".HealthPrivacyActivity"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>

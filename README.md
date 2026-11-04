@@ -1,6 +1,12 @@
 # Relógio 2.0
 
-Aplicativo Android para investigar e acompanhar dados de um smartwatch atualmente pareado pelo Wearfit Pro.
+Aplicativo Android de Saúde e Fitness que acompanha dados de um smartwatch pareado pelo Wearfit Pro, organiza métricas autorizadas e oferece uma ponte de leitura de notificações para o dispositivo vestível.
+
+## Finalidade do produto
+
+O Relógio 2.0 é um companheiro de Saúde e Fitness. O fluxo de destino é: sensores do relógio → conexão com o app → dados validados no Conexão Saúde (Health Connect). No sentido inverso, o Android entrega notificações selecionadas ao app para a ponte com o relógio; o app lê os alertas e não responde nem modifica o aplicativo de origem.
+
+A categoria da ficha no Google Play deve ser **Saúde e fitness**, com o recurso declarado como **Atividade e fitness**. O atributo Android `appCategory=fitness` é apenas metadado da aplicação e não substitui a escolha da categoria, o formulário de apps de saúde, a seção Segurança dos dados ou a política de privacidade no Play Console.
 
 ## Estado atual
 
@@ -11,6 +17,7 @@ O relógio foi observado no nRF Connect como **GT3 MAX**. A conexão BLE e a des
 ## Funcionalidades em desenvolvimento nesta fase
 
 - Integração de leitura com Health Connect (Conexão Saúde) para total diário agregado de passos.
+- Preparação da integração de escrita para publicar no Health Connect apenas amostras reais do smartwatch, após validar o protocolo e solicitar a permissão específica. Ainda não há escrita de passos do GT3 Maxx nesta versão.
 - Exibição da hora e data local do Android.
 - O Google Fit legado não é integrado diretamente; os dados podem chegar pelo Health Connect se o aplicativo de origem os compartilhar.
 - Ajuste do horário do relógio físico e leitura BLE de passos seguem pendentes; a identificação parcial do quadro de bateria não comprova esses comandos.
@@ -74,7 +81,9 @@ Consulte o [índice completo da documentação](docs/README.md).
 - [Captura BLE de 03/11/2026](docs/CAPTURA-BLE-GT3-MAX-2026-11-03.md)
 - [Perfil BLE candidato NUS/AB](docs/PROTOCOLO-BLE-CANDIDATO.md)
 
-## Notificações Android
+## Notificações para o smartwatch
+
+A finalidade é retransmitir notificações selecionadas para o relógio por meio do aplicativo companheiro. O Google lista esse uso como permitido para apps de Saúde e Fitness, desde que seja realmente uma retransmissão para o wearable, com consentimento explícito. A variante companion preserva o NotificationListenerService; o acesso é somente de leitura em relação aos apps de origem. O envio ao GT3 Maxx continua bloqueado até a validação do protocolo de transporte.
 
 A captura local usa NotificationListenerService e acesso especial concedido manualmente. O processamento fica restrito aos pacotes selecionados e requer ativação explícita. As prévias permanecem somente em memória (máximo de 30) e expiram em 15 minutos; o cache é limpo na desconexão/destruição do listener. Nenhum texto de notificação é gravado em arquivos/logs ou enviado à rede. O Play Protect deve continuar ativo; CI aprovado não equivale a aprovação do Google nem a teste físico no Galaxy A06.
 

@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import com.luizmarquesarruda.relogio20.notifications.NotificationCenterActivity
+import com.luizmarquesarruda.relogio20.HealthPrivacyActivity
 import androidx.activity.ComponentActivity
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
@@ -125,7 +126,7 @@ class MainActivity : ComponentActivity() {
         root.addView(title)
 
         val subtitle = TextView(this).apply {
-            text = "Diagnóstico Bluetooth LE • fase 1"
+            text = "SAÚDE & FITNESS • smartwatch + Conexão Saúde"
             textSize = 14f
             setTextColor(0xFF526170.toInt())
         }
@@ -140,7 +141,7 @@ class MainActivity : ComponentActivity() {
         updatePhoneClock()
 
         stepsView = TextView(this).apply {
-            text = "Passos hoje: aguardando conexão"
+            text = "Passos hoje: aguardando dados da Conexão Saúde"
             textSize = 24f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             setTextColor(0xFF17212B.toInt())
@@ -149,7 +150,7 @@ class MainActivity : ComponentActivity() {
         root.addView(stepsView)
 
         healthStatusView = TextView(this).apply {
-            text = "Fonte: Conexão Saúde (Health Connect)"
+            text = "Fonte: Conexão Saúde • total agregado de fontes autorizadas"
             textSize = 12f
             setTextColor(0xFF526170.toInt())
             setPadding(0, 0, 0, dp(8))
@@ -159,27 +160,39 @@ class MainActivity : ComponentActivity() {
         val healthActions = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
         }
-        healthActions.addView(makeButton("Conectar Health Connect") {
+        healthActions.addView(makeButton("Conectar Conexão Saúde") {
             connectHealthConnect()
         }, LinearLayout.LayoutParams(0, dp(48), 1f))
-        healthActions.addView(makeButton("Atualizar passos") {
+        healthActions.addView(makeButton("Atualizar atividade") {
             readTodaySteps()
         }, LinearLayout.LayoutParams(0, dp(48), 1f).apply {
             marginStart = dp(8)
         })
         root.addView(healthActions)
 
-        root.addView(makeButton("WhatsApp e notificações Android") {
+        root.addView(makeButton("Notificações no relógio • leitura") {
             startActivity(Intent(this, NotificationCenterActivity::class.java))
         }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
+        ))
+
+        addText(root, "Fluxo de saúde: sensores do relógio → aplicativo → Conexão Saúde. " +
+            "A gravação de amostras do GT3 Maxx será ativada somente após validar os dados e sua origem.", 12f)
+
+        addText(root, "Frequência cardíaca, sono e SpO₂: aguardando integração e validação dos sensores. " +
+            "Não exibir estimativas como medições confirmadas.", 12f)
+
+        root.addView(makeButton("Dados de saúde e privacidade") {
+            startActivity(Intent(this, HealthPrivacyActivity::class.java))
+        }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
         ))
 
         addText(root, "Horário do relógio: sincronização ainda não disponível. " +
             "O protocolo de ajuste do GT3 MAX não foi identificado.", 12f)
 
         statusView = TextView(this).apply {
-            text = "Pronto para procurar dispositivos."
+            text = "Relógio desconectado. Procure o dispositivo para iniciar a leitura BLE."
             textSize = 14f
             setTextColor(0xFF263746.toInt())
             setPadding(0, dp(12), 0, dp(12))
@@ -189,7 +202,7 @@ class MainActivity : ComponentActivity() {
         val actions = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
         }
-        actions.addView(makeButton("Procurar relógio") { startBleScan() },
+        actions.addView(makeButton("Conectar smartwatch") { startBleScan() },
             LinearLayout.LayoutParams(0, dp(48), 1f))
         actions.addView(makeButton("Desconectar") { disconnectGatt() },
             LinearLayout.LayoutParams(0, dp(48), 1f).apply {

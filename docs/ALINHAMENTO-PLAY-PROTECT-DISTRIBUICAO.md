@@ -15,7 +15,7 @@ A orientação do Google para desenvolvedores descreve uma proteção específic
 
 A mensagem exemplificada pelo Google é “Este app pode pedir acesso a dados sensíveis. Isso pode aumentar o risco de roubo de identidade ou fraude financeira.” A documentação lista também o cenário distinto “App nocivo bloqueado”, que indica classificação como aplicativo potencialmente nocivo ou software indesejado.
 
-O Google reconhece usos legítimos de acesso a notificações, incluindo apps de saúde/fitness que encaminham notificações ao respectivo dispositivo vestível e apps que exibem notificações em interfaces alternativas. Isso não é uma isenção automática: a finalidade precisa corresponder ao comportamento real, com consentimento explícito e controles adequados.
+O Google reconhece expressamente como uso permitido de NOTIFICATION_LISTENER apps de Saúde e Fitness que retransmitem notificações para seus próprios dispositivos vestíveis. Esse é o caso de uso pretendido para o Relógio 2.0. A categoria declarada sozinha não é uma isenção: a função deve realmente fazer a ponte com o wearable, com consentimento explícito, filtro por aplicativo e transparência. Apps que apenas capturam conteúdo sem finalidade de retransmissão não devem se apoiar nessa exceção.
 
 **Importante:** a proteção de sideload descrita está ativa em mercados selecionados. Não temos evidência para afirmar que essa foi a regra acionada no Galaxy A06 nem que o acesso a notificações foi a causa única. A mensagem exata exibida pelo Play Protect é necessária para classificar o bloqueio.
 
@@ -27,11 +27,11 @@ Fonte oficial:
 Achados confirmados no código e no manifesto:
 
 - O workflow gera `app-debug.apk` com a variante Android `debug`; é um artefato de engenharia, não release de produção.
-- O manifesto declara `NotificationCaptureService`, protegido por `android.permission.BIND_NOTIFICATION_LISTENER_SERVICE` e com `android:exported="false"`, conforme o padrão mostrado na referência Android.
+- O manifesto comum da variante `diagnostic` não declara Notification Listener. A variante `companion` declara `NotificationCaptureService`, protegido por `android.permission.BIND_NOTIFICATION_LISTENER_SERVICE` e `android:exported="false"`.
 - Não foram encontradas declarações de `READ_SMS`, `RECEIVE_SMS` ou serviço de acessibilidade no manifesto revisado.
 - O serviço só captura após acesso especial do Android, ativação explícita e seleção dos pacotes permitidos.
 - O cache é volátil, limitado a 30 prévias e 15 minutos; não há persistência das prévias nem envio à rede no código revisado.
-- O encaminhamento ao GT3 Maxx ainda não está implementado. Portanto, não declarar que a função atual já cumpre o caso de uso de retransmissão para wearable descrito pelo Google.
+- A tela e a captura consentida estão implementadas, mas a retransmissão física ao GT3 Maxx ainda não está implementada, porque o protocolo de notificações não foi validado. Até essa ponte existir, o app ainda não cumpre integralmente o exemplo de uso permitido citado pelo Google.
 - As dependências observadas são AndroidX Activity, Health Connect e coroutines. A aprovação de CI não substitui varredura de segurança nem avaliação do Play Protect.
 
 A declaração protegida do serviço é uma boa prática de segurança Android, mas não remove a classificação de risco associada à capacidade de Notification Listener em uma distribuição por sideload.
@@ -55,7 +55,7 @@ Na variante de diagnóstico:
 
 ### 3.2 Build companion com notificações
 
-Manter a capacidade de Notification Listener isolada em uma variante `companion`. Antes de distribuir essa variante como produto:
+Manter a capacidade de Notification Listener isolada em uma variante `companion`. Essa permissão é parte da finalidade principal de Saúde e Fitness: retransmitir notificações ao próprio wearable. Antes de distribuir essa variante como produto:
 
 1. Implementar e validar o encaminhamento ao wearable compatível; atualmente o protocolo de mensagens do GT3 Maxx não está validado.
 2. Manter consentimento explícito antes de abrir as configurações de acesso especial.
@@ -65,7 +65,7 @@ Manter a capacidade de Notification Listener isolada em uma variante `companion`
 6. Permitir pausar, revogar e limpar os dados.
 7. Não solicitar SMS nem Accessibility para contornar limites do Android.
 
-Até essas condições serem cumpridas, a variante companion e o encaminhamento de mensagens permanecem **não validados**.
+A variante companion preserva o Notification Listener porque ele é parte da função de companion Health & Fitness. O encaminhamento físico ao GT3 Maxx continua **não validado** até existir protocolo confirmado. A distribuição da variante companion deve ocorrer pelo Google Play, após implementar a ponte, revisar a política, preencher Saúde e fitness/Atividade e fitness, Segurança dos dados e política de privacidade. Não distribuir essa variante por sideload de internet.
 
 ### 3.3 Distribuição por Google Play para testes
 
@@ -133,8 +133,10 @@ Se, após auditoria e correções, a classificação continuar incorreta, seguir
 | Notification Listener protegido e não exportado | Verificado na branch revisada |
 | Consentimento e filtro por pacote | Código presente |
 | Cache de prévias em memória com limite/expiração | Código presente |
-| Variante diagnostic sem Notification Listener | **Pendente** |
-| Variante companion e encaminhamento real ao GT3 Maxx | **Pendente / protocolo não validado** |
+| Variante diagnostic sem Notification Listener | **Implementada na branch; CI e instalação física pendentes** |
+| Finalidade Health & Fitness e documentação | **Registrada; falta Play Console** |
+| Variante companion com Notification Listener | **Preservada; CI/validação física pendentes** |
+| Encaminhamento real ao GT3 Maxx | **Pendente / protocolo não validado** |
 | Release assinada e AAB | **Pendente** |
 | Instalação via Play Console | **Pendente** |
 | Veredito Play Protect no Galaxy A06 | **Não validado** |
@@ -142,4 +144,4 @@ Se, após auditoria e correções, a classificação continuar incorreta, seguir
 
 ## Decisão final
 
-Não desativar proteções do Android nem tentar mascarar permissões. Separar o APK de diagnóstico sem acesso a notificações da variante companion. Usar distribuição Play para testar a variante companion, após cumprir a finalidade declarada e os requisitos de privacidade. Manter o APK debug atual apenas como artefato técnico, sem prometer que ele será instalável por sideload em todos os aparelhos.
+Não desativar proteções do Android nem tentar mascarar permissões. Manter a variante diagnostic sem acesso a notificações para testes BLE/Health Connect locais. Manter a variante companion com Notification Listener porque o produto é um app Health & Fitness cuja finalidade é retransmitir notificações para o wearable. Antes de alegar que o uso está integralmente alinhado à exceção do Google, implementar e validar a retransmissão ao GT3 Maxx. Distribuir companion pelo Google Play, com declarações de Saúde e fitness/Atividade e fitness, Segurança dos dados e política de privacidade. A categoria não garante remoção de avisos do Play Protect.
