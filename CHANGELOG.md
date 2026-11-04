@@ -1,5 +1,16 @@
 # Changelog
 
+## Não lançado — laboratório de captura e biblioteca BLE — 04/11/2026
+
+- Painel principal reorganizado para priorizar conexão GT3 MAX, laboratório/biblioteca e depois Saúde e integração.
+- Inventário GATT completo e log técnico/exportação TXT recolhidos por padrão.
+- Sessões de captura de 1, 2, 5 ou 10 minutos, com contagem regressiva, progresso e contagem de leituras/notificações; indicador de captura ativa também aparece no painel principal.
+- Biblioteca local privada com busca e filtros para descobertas, leituras/notificações e sessões. Inventários GATT e quadros AB reconhecidos são registrados como descobertas.
+- Payload HEX de leituras/notificações só é armazenado durante captura cronometrada confirmada; nenhum dado é enviado à rede ou escrito no Health Connect.
+- Codec binário versionado com AtomicFile, limite de registros/arquivo e preservação de conteúdo corrompido ou schema futuro.
+- Corrigida chamada EditText para setSingleLine(true) após erro de compilação localizado na CI #253.
+- CI sobre o HEAD que contém todas estas mudanças: **ainda não validada**.
+
 ## Em desenvolvimento — 04/11/2026
 
 - Exploração GATT automática de perfis Bluetooth SIG padronizados, sem executar escritas de payload.
