@@ -36,6 +36,30 @@ class DiscoveryLibraryCodecTest {
     }
 
     @Test
+    fun roundTripsDecodedDiscoveryLinkedToCaptureSession() {
+        val record = DiscoveryLibraryRecord(
+            id = "decoded-1",
+            occurredAtMillis = 3_000L,
+            sessionId = "session-42",
+            kind = DiscoveryLibraryKind.DISCOVERY,
+            title = "Dado GATT observado • frequência cardíaca",
+            detail = "72 bpm • formato Bluetooth SIG decodificado",
+            source = "GATT_SIG_DECODER",
+            confidence = "FORMATO_PADRONIZADO_OBSERVADO"
+        )
+        val snapshot = DiscoveryLibrarySnapshot(
+            activeSession = DiscoveryTestSession("session-42", 1_000L, 601_000L, 600),
+            records = listOf(record)
+        )
+
+        val decoded = DiscoveryLibraryCodec.decode(DiscoveryLibraryCodec.encode(snapshot))
+        assertTrue(decoded is DiscoveryLibraryReadResult.Available)
+        val actual = (decoded as DiscoveryLibraryReadResult.Available).snapshot
+        assertEquals("session-42", actual.records.single().sessionId)
+        assertEquals(DiscoveryLibraryKind.DISCOVERY, actual.records.single().kind)
+    }
+
+    @Test
     fun rejectsCorruptMagicWithoutProducingAnEmptyLibrary() {
         val decoded = DiscoveryLibraryCodec.decode(byteArrayOf(0, 1, 2, 3, 4, 5))
         assertTrue(decoded is DiscoveryLibraryReadResult.Corrupt)
