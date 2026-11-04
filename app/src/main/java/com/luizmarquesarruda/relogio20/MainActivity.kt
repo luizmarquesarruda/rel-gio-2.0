@@ -9,6 +9,7 @@ import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbFramePars
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitProtocolProfile
 import com.luizmarquesarruda.relogio20.HealthPrivacyActivity
 import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.permission.HealthPermission
@@ -97,6 +98,28 @@ class MainActivity : ComponentActivity() {
     }
     private val scanResults = linkedMapOf<String, ScanResult>()
     private val logLines = mutableListOf<String>()
+    private var pendingDiagnosticReport: String? = null
+    private var lastConnectedDeviceName: String? = null
+    private var lastConnectedDeviceAddress: String? = null
+    private val diagnosticExportLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("text/plain")
+    ) { uri ->
+        val report = pendingDiagnosticReport
+        pendingDiagnosticReport = null
+        if (uri == null || report == null) {
+            appendLog("Exportação do diagnóstico cancelada pelo usuário.")
+        } else {
+            runCatching {
+                contentResolver.openOutputStream(uri)?.use { output ->
+                    output.write(report.toByteArray(Charsets.UTF_8))
+                } ?: error("Não foi possível abrir o destino escolhido.")
+            }.onSuccess {
+                appendLog("Relatório TXT exportado localmente com sucesso.")
+            }.onFailure { error ->
+                appendLog("Falha ao exportar relatório TXT: " + (error.message ?: "erro desconhecido"))
+            }
+        }
+    }
     private val activeNotifications = mutableSetOf<String>()
     private val pendingNotifications = mutableSetOf<String>()
     private val gattOperationQueue = SerialGattOperationQueue()
@@ -262,6 +285,12 @@ class MainActivity : ComponentActivity() {
             topMargin = dp(6)
             bottomMargin = dp(8)
         })
+
+        root.addView(makeButton("Exportar diagnóstico TXT") {
+            exportDiagnosticReport()
+        }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(46)
+        ).apply { bottomMargin = dp(6) })
 
         val scroll = ScrollView(this)
         content = LinearLayout(this).apply {
@@ -538,6 +567,7 @@ class MainActivity : ComponentActivity() {
                         ?: safeDeviceName(result.device)
                         ?: "Dispositivo sem nome"
                     scanResults[address] = result
+                    appendLog("Dispositivo BLE observado: " + name + " | RSSI=" + result.rssi + " dBm | endereço=" + maskAddress(address))
                     renderScanResults()
                     updateStatus("Busca em andamento. Dispositivos: " + scanResults.size)
                 }
@@ -664,6 +694,8 @@ class MainActivity : ComponentActivity() {
             return
         }
         isGattDisconnecting = false
+        lastConnectedDeviceName = safeDeviceName(device) ?: "Dispositivo sem nome"
+        lastConnectedDeviceAddress = safeDeviceAddress(device)
         gattOperationQueue.reset()
         pendingNotifications.clear()
         activeNotifications.clear()
@@ -851,6 +883,7 @@ class MainActivity : ComponentActivity() {
             }
 
             gatt.services.forEach { service ->
+                appendLog("GATT serviço observado: " + service.uuid)
                 addDivider(content)
                 addText(content, "Serviço", 15f, true)
                 addText(content, service.uuid.toString(), 12f)
@@ -879,7 +912,9 @@ class MainActivity : ComponentActivity() {
                         if (labels.isEmpty()) "não informadas" else labels.joinToString(" • "),
                         11f)
 
+                    appendLog("GATT característica observada: serviço=" + service.uuid + " | característica=" + characteristic.uuid + " | propriedades=" + if (labels.isEmpty()) "não informadas" else labels.joinToString(","))
                     characteristic.descriptors.forEach { descriptor ->
+                        appendLog("GATT descritor observado: " + descriptor.uuid + " | característica=" + characteristic.uuid)
                         addText(content, "Descritor: " + descriptor.uuid, 10f)
                     }
 
@@ -1137,6 +1172,27 @@ class MainActivity : ComponentActivity() {
             disconnectButton.isEnabled = value.startsWith("Conectando") ||
                 value.startsWith("Conectado") || value.startsWith("Desconectando")
         }
+    }
+
+    private fun exportDiagnosticReport() {
+        val now = Date()
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(now)
+        val generatedAt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z", Locale.US).format(now)
+        val version = runCatching {
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "desconhecida"
+        }.getOrDefault("desconhecida")
+        val report = BleDiagnosticReport.build(
+            appVersion = version,
+            androidVersion = Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")",
+            connectionState = statusView.text?.toString() ?: "indisponível",
+            deviceName = lastConnectedDeviceName,
+            deviceAddress = lastConnectedDeviceAddress,
+            generatedAt = generatedAt,
+            logLines = logLines.toList()
+        )
+        pendingDiagnosticReport = report
+        diagnosticExportLauncher.launch("relogio2_diagnostico_GT3MAX_" + timestamp + ".txt")
+        appendLog("Solicitada exportação TXT. O Android abrirá o seletor para escolher onde salvar.")
     }
 
     private fun appendLog(value: String) {
