@@ -1264,6 +1264,9 @@ class MainActivity : ComponentActivity() {
         resetGattOperationQueue()
         pendingNotifications.clear()
         activeNotifications.clear()
+        pendingAutomaticNotifications.clear()
+        automaticNotificationKeys.clear()
+        pendingAutomaticUnsubscribeKeys.clear()
         deepExplorationAttempted.clear()
         nusFrameDecoder.reset()
         passiveBleObservationTracker.resetSession()
@@ -1308,6 +1311,9 @@ class MainActivity : ComponentActivity() {
                 resetGattOperationQueue()
                 pendingNotifications.clear()
                 activeNotifications.clear()
+                pendingAutomaticNotifications.clear()
+                automaticNotificationKeys.clear()
+                pendingAutomaticUnsubscribeKeys.clear()
                 runCatching { newGatt.disconnect() }
                 runCatching { newGatt.close() }
                 updateStatus("Falha na conexão GATT: tempo limite aguardando conexão.")
@@ -1362,6 +1368,9 @@ class MainActivity : ComponentActivity() {
                 resetGattOperationQueue()
                 pendingNotifications.clear()
                 activeNotifications.clear()
+                pendingAutomaticNotifications.clear()
+                automaticNotificationKeys.clear()
+                pendingAutomaticUnsubscribeKeys.clear()
                 pendingCurrentTimeWriteKey = null
                 clockSyncAttemptedForSession = false
                 deviceTimeSyncView.text = "Hora do relógio: sessão GATT encerrada antes da confirmação."
@@ -1388,6 +1397,9 @@ class MainActivity : ComponentActivity() {
                     resetGattOperationQueue()
                     pendingNotifications.clear()
                     activeNotifications.clear()
+                    pendingAutomaticNotifications.clear()
+                    automaticNotificationKeys.clear()
+                    pendingAutomaticUnsubscribeKeys.clear()
                     bluetoothGatt = null
                 }
                 runCatching { gatt.close() }
@@ -2647,6 +2659,9 @@ class MainActivity : ComponentActivity() {
         resetGattOperationQueue()
         pendingNotifications.clear()
         activeNotifications.clear()
+        pendingAutomaticNotifications.clear()
+        automaticNotificationKeys.clear()
+        pendingAutomaticUnsubscribeKeys.clear()
         gatt.disconnect()
         updateStatus("Desconectando...")
     }
@@ -2854,6 +2869,10 @@ class MainActivity : ComponentActivity() {
         stopBleScan()
         resetGattOperationQueue()
         pendingNotifications.clear()
+        activeNotifications.clear()
+        pendingAutomaticNotifications.clear()
+        automaticNotificationKeys.clear()
+        pendingAutomaticUnsubscribeKeys.clear()
         healthScope.cancel()
         isGattDisconnecting = true
         runCatching { bluetoothGatt?.disconnect() }
