@@ -138,7 +138,7 @@ class CurrentAndroidContractTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertIn("override fun onCharacteristicRead(", source)
         self.assertIn("completeGattOperation(", source)
-        self.assertIn("private fun handleRead(", source) if "private fun handleRead(" in source else None
+        self.assertNotIn("private fun handleRead(", source)
         self.assertIn("GATT_OPERATION_TIMEOUT_MS", source)
         self.assertIn("private fun runDeepGattExploration(", source)
 
