@@ -47,7 +47,7 @@ Uma captura de logs publicada por usuários do Wearfit Pro em fórum (4PDA, não
 
 `/storage/emulated/0/Android/data/com.wakeup.howear/files/Download/ota/`
 
-O mesmo exemplo registra a chamada de um gerenciador chamado `NordicOtaMgr` e a transferência via as características `8EC90001` e `8EC90002`.
+O mesmo exemplo registra uma consulta ao endpoint de atualização com parâmetros próprios do dispositivo (código/projeto/versão/identidade), uma resposta com URL de arquivo e versão-alvo, e a chamada de um gerenciador `NordicOtaMgr` para transferir via `8EC90001` e `8EC90002`. Isso explica por que o binário não é necessariamente um link público estático: o servidor seleciona a imagem a partir da identificação enviada pelo app.
 
 Fonte comunitária:
 https://4pda.to/forum/index.php?showtopic=1039984&st=5800
@@ -103,7 +103,7 @@ adb pull /sdcard/Android/data/com.wakeup.howear/files/Download/ota ./wearfit-pro
 
 No Samsung Meus Arquivos, o mesmo caminho pode aparecer em Armazenamento interno → Android → data → com.wakeup.howear → files. O Android pode restringir a navegação direta a Android/data.
 
-Antes de compartilhar logs, ocultar MAC, serial, identificadores de conta e tokens. Não compartilhar credenciais da conta Wearfit Pro.
+Antes de compartilhar logs, ocultar MAC, serial, identificadores de conta, cabeçalhos `token`/JWT, cookies, códigos de autenticação e qualquer URL assinada que contenha credenciais temporárias. O exemplo público do fórum expõe um token de sessão de outro usuário; esse token não deve ser reutilizado nem replicado. Não compartilhar credenciais da conta Wearfit Pro.
 
 ## 7. Análise exigida antes de qualquer atualização
 
