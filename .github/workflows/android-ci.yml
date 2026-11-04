@@ -45,6 +45,11 @@ jobs:
         if: always() && steps.setup_gradle.outcome == 'success'
         run: gradle --no-daemon testDiagnosticDebugUnitTest testCompanionDebugUnitTest assembleDiagnosticDebug assembleCompanionDebug
 
+      - name: Enforce privacy dependency and permission guardrails
+        id: privacy_guardrails
+        if: always() && steps.build.outcome == 'success'
+        run: bash scripts/check-privacy-guardrails.sh
+
       - name: Verify notification capability is absent from diagnostic APK
         id: verify_manifests
         if: always() && steps.build.outcome == 'success'
@@ -76,7 +81,7 @@ jobs:
           echo "Variant manifests match the distribution policy."
 
       - name: Publish diagnostic APK artifact
-        if: always() && steps.build.outcome == 'success' && steps.verify_manifests.outcome == 'success'
+        if: always() && steps.build.outcome == 'success' && steps.privacy_guardrails.outcome == 'success' && steps.verify_manifests.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: relogio-2.0-diagnostic-debug-apk
