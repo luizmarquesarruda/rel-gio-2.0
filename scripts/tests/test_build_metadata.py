@@ -10,7 +10,7 @@ class BuildMetadataTests(unittest.TestCase):
         version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
         gradle = (ROOT / "app/build.gradle.kts").read_text(encoding="utf-8")
         match = re.search(
-            r'^\\s*versionName\\s*=\\s*"([^"]+)"',
+            r'^\s*versionName\s*=\s*"([^"]+)"',
             gradle,
             flags=re.MULTILINE,
         )
