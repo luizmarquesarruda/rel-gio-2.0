@@ -48,7 +48,7 @@ Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALT
 
 - Não envia payloads a características proprietárias do relógio.
 - Não envia comandos pela Nordic UART RX.
-- A única escrita usada fora de payloads do fabricante é a configuração do descritor CCCD para habilitar uma inscrição solicitada; a sincronização de hora usa CTS padrão apenas se o relógio anunciar 0x1805/0x2A2B com WRITE.
+- Nenhuma escrita em característica é executada nesta fase. A única operação de escrita GATT é a configuração do descritor CCCD padrão para ativar uma notificação/indicação permitida; a sincronização CTS está suspensa.
 - Não toca no Secure DFU/OTA, reset, calibração ou configuração.
 - Não interpreta frequência cardíaca, passos, sono, SpO2 ou pressão sem parsers validados.
 - Não acessa servidores ou dados privados do Wearfit Pro.
