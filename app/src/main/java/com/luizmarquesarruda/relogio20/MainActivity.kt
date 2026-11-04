@@ -1399,6 +1399,8 @@ class MainActivity : ComponentActivity() {
             if (bluetoothGatt === newGatt && !isGattConnected) {
                 bluetoothGatt = null
                 isGattDisconnecting = false
+                gattExplorationProgress.markRemainingSkipped()
+                updateGattProgressUi()
                 resetGattOperationQueue()
                 pendingNotifications.clear()
                 activeNotifications.clear()
@@ -2210,7 +2212,7 @@ class MainActivity : ComponentActivity() {
         )
         discoveryLibraryStore.recordDiscovery(
             title = if (automatic) "Exploração automática iniciada" else "Exploração manual iniciada",
-            detail = operationsToRun.size.toString() + " operações elegíveis no inventário GATT.,
+            detail = operationsToRun.size.toString() + " operações elegíveis no inventário GATT.",
             nowMillis = System.currentTimeMillis(),
             source = probeSource,
             confidence = "OPERACOES_PLANEJADAS"
@@ -2227,6 +2229,15 @@ class MainActivity : ComponentActivity() {
                 null
             }
             if (characteristic == null) {
+                gattExplorationProgress.markSkipped(
+                    operation.serviceUuid, operation.characteristicUuid,
+                    when (operation.kind) {
+                        SafeGattExplorationPlan.Kind.READ_STANDARD_VALUE,
+                        SafeGattExplorationPlan.Kind.READ_PROPRIETARY_VALUE -> GattProgressOperation.READ
+                        else -> GattProgressOperation.SUBSCRIBE
+                    }
+                )
+                updateGattProgressUi()
                 appendLog("Canal ignorado: característica não está mais disponível: " + operation.characteristicUuid)
                 return@forEach
             }
@@ -2555,8 +2566,21 @@ class MainActivity : ComponentActivity() {
     ) {
         val key = characteristic.service.uuid.toString() + "/" +
             characteristic.uuid.toString()
-        if (activeNotifications.contains(key) || pendingNotifications.contains(key)) {
-            appendLog("Notificação já ativa ou pendente para " + characteristic.uuid)
+        if (activeNotifications.contains(key)) {
+            gattExplorationProgress.markSubscriptionResult(
+                characteristic.service.uuid.toString(), characteristic.uuid.toString(), true
+            )
+            updateGattProgressUi()
+            appendLog("Notificação já ativa para " + characteristic.uuid)
+            return
+        }
+        if (pendingNotifications.contains(key)) {
+            gattExplorationProgress.markStarted(
+                characteristic.service.uuid.toString(), characteristic.uuid.toString(),
+                GattProgressOperation.SUBSCRIBE
+            )
+            updateGattProgressUi()
+            appendLog("Notificação já pendente para " + characteristic.uuid)
             return
         }
         if (bluetoothGatt !== gatt || isGattDisconnecting) {
@@ -2601,14 +2625,24 @@ class MainActivity : ComponentActivity() {
                 appendLog("Inscrição CCCD expirou para " + characteristic.uuid + "; inscrição local desativada.")
             }
         ) {
-            if (bluetoothGatt !== gatt) {
+            if (bluetoothGatt !== gatt || isGattDisconnecting) {
                 pendingNotifications.remove(key)
                 pendingAutomaticNotifications.remove(key)
+                gattExplorationProgress.markSkipped(
+                    characteristic.service.uuid.toString(), characteristic.uuid.toString(),
+                    GattProgressOperation.SUBSCRIBE
+                )
+                updateGattProgressUi()
                 appendLog("Inscrição descartada: conexão GATT mudou antes da execução.")
                 false
             } else if (automaticDiscovery && !automaticGattDiscoveryEnabled) {
                 pendingNotifications.remove(key)
                 pendingAutomaticNotifications.remove(key)
+                gattExplorationProgress.markSkipped(
+                    characteristic.service.uuid.toString(), characteristic.uuid.toString(),
+                    GattProgressOperation.SUBSCRIBE
+                )
+                updateGattProgressUi()
                 appendLog("Inscrição automática cancelada: coleta automática foi pausada.")
                 false
             } else {
