@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 from dataclasses import dataclass
 from pathlib import Path
 import sys
@@ -78,8 +79,17 @@ def audit_manifest(manifest_xml: str, variant: str) -> list[AuditIssue]:
     if variant not in {"diagnostic", "companion"}:
         raise ValueError("variant must be 'diagnostic' or 'companion'")
 
+    # apkanalyzer manifest print may emit raw ampersands from decoded Android
+    # string resources (for example, "Saúde & Fitness") instead of XML entities.
+    # Escape only ampersands that are not already valid XML entities so the
+    # policy audit can inspect the APK manifest without changing its semantics.
+    xml_safe_manifest = re.sub(
+        r"&(?!amp;|lt;|gt;|quot;|apos;|#\\d+;|#x[0-9A-Fa-f]+;)",
+        "&amp;",
+        manifest_xml,
+    )
     try:
-        root = ET.fromstring(manifest_xml)
+        root = ET.fromstring(xml_safe_manifest)
     except ET.ParseError as error:
         return [AuditIssue("manifest_parse_error", f"Invalid APK manifest XML: {error}")]
 
