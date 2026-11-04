@@ -1,5 +1,16 @@
 # Changelog
 
+## Não lançado — reconexão automática BLE
+
+- Após uma conexão GATT bem-sucedida, o app persiste localmente a opção de reconexão para a identidade GT3 MAX já configurada.
+- Perdas inesperadas GATT e falhas de busca/conexão iniciam novas tentativas com intervalos de 1, 2, 5, 10, 20 e 30 segundos (limite de 30 s).
+- Tentativas automáticas usam scan BLE de baixa potência e filtram o endereço salvo; não solicitam permissão automaticamente.
+- A ação Parar reconexão cancela tarefas pendentes e desativa a preferência persistida.
+- Recuperação fica limitada ao primeiro plano/retomada do app; recuperação após force-stop ou continuamente em segundo plano não está implementada.
+- Preservados inventário GATT passivo, NUS TX Notify/CCCD e bloqueio de payload NUS RX/características desconhecidas.
+- Testes físicos de desconexão/reconexão no Galaxy A06/Android 16 com GT3 MAX Call: **não validados** até execução no aparelho.
+
+
 ## Não lançado — auditoria do manifesto compilado
 
 - Auditor de APK atualizado para aceitar referências de recursos compiladas (@ref) em dataExtractionRules/fullBackupContent, mantendo a exigência de ambos os atributos.
