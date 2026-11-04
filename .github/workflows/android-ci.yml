@@ -110,7 +110,7 @@ jobs:
 
           echo "Both APK variants passed manifest policy and APK signature verification."
 
-      - name: Prepare diagnostic installation package
+      - name: Prepare diagnostic APK metadata in the reports artifact
         id: prepare_diagnostic_package
         if: always() && steps.build.outcome == 'success' && steps.lint.outcome == 'success' && steps.privacy_guardrails.outcome == 'success' && steps.audit_apks.outcome == 'success'
         env:
@@ -126,12 +126,13 @@ jobs:
           fi
 
           SOURCE_APK="app/build/outputs/apk/diagnostic/debug/app-diagnostic-debug.apk"
-          PACKAGE_DIR="app/build/distributions/relogio-2.0-diagnostic-debug"
-          mkdir -p "$PACKAGE_DIR"
-          cp "$SOURCE_APK" "$PACKAGE_DIR/app-diagnostic-debug.apk"
-          (cd "$PACKAGE_DIR" && sha256sum app-diagnostic-debug.apk > SHA256SUMS)
-          cp app/build/reports/security/diagnostic-signature.txt "$PACKAGE_DIR/SIGNATURE.txt"
-          cat > "$PACKAGE_DIR/BUILD-INFO.txt" <<EOF
+          REPORT_DIR="app/build/reports/security"
+          if [[ ! -s "$SOURCE_APK" ]]; then
+            echo "Diagnostic APK is missing or empty: $SOURCE_APK" >&2
+            exit 1
+          fi
+          mkdir -p "$REPORT_DIR"
+          cat > "$REPORT_DIR/diagnostic-build-info.txt" <<EOF
           app=Relógio 2.0
           variant=diagnosticDebug
           package=com.luizmarquesarruda.relogio20.diagnostic
@@ -145,12 +146,13 @@ jobs:
           release_ready=false
           EOF
 
-      - name: Publish diagnostic APK installation package
+      - name: Publish diagnostic APK only
         if: success() && steps.prepare_diagnostic_package.outcome == 'success'
         uses: actions/upload-artifact@v7
         with:
           name: relogio-2.0-diagnostic-debug-apk
-          path: app/build/distributions/relogio-2.0-diagnostic-debug/
+          # This artifact is intentionally a single installable APK file.
+          path: app/build/outputs/apk/diagnostic/debug/app-diagnostic-debug.apk
           if-no-files-found: error
           retention-days: 30
 
