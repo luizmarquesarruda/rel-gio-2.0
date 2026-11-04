@@ -78,3 +78,22 @@ Os cartões usam texto explícito, alvos de toque amplos, foco e ordem vertical 
 A ação **Exportar diagnóstico TXT** abre o seletor de documentos do Android e permite salvar localmente o registro da sessão. O relatório inclui ambiente, estado da conexão, MAC mascarado, eventos BLE/GATT e bytes recebidos em hexadecimal. A exportação não inclui texto de notificações do telefone e não transmite dados para servidores. Como payloads BLE podem carregar métricas de saúde, o arquivo deve ser compartilhado com cautela.
 
 O relatório classifica evidências observadas e interpretações ainda não validadas. A exportação não transforma uma conexão GATT em prova de leitura correta de sensores.
+
+
+## Revisão da página principal — correção da sessão BLE e rolagem — 04/11/2026
+
+A inspeção do código da tela principal identificou dois problemas estruturais:
+
+- O cartão de conexão ficava depois de várias seções de saúde e funções, reduzindo sua visibilidade inicial.
+- Apenas o inventário GATT e o registro tinham áreas roláveis próprias; o restante da página não participava de uma rolagem vertical única, o que podia cortar controles em telas compactas.
+
+Correções aplicadas:
+
+- Cartão BLE, identificação local do relógio e exportação TXT foram movidos para logo após o relógio do telefone, antes do resumo de saúde.
+- Toda a página passou a ficar dentro de um único ScrollView vertical. A rolagem interna do inventário foi removida.
+- O registro mostra as oito linhas mais recentes para não dominar a página; o buffer da sessão e a exportação TXT continuam limitados aos 250 eventos já definidos.
+- A ação de busca fica desabilitada durante a busca e enquanto existir uma sessão GATT ativa.
+- startBleScan() agora bloqueia uma nova busca se a conexão GATT estiver ativa ou em encerramento, preservando o estado conectado.
+- O callback de conexão registra o estado intermediário CONNECTING e a falha ao iniciar discoverServices() é exibida explicitamente.
+
+**Não validado:** inspeção visual em MagicPath, screenshots, renderização real no Galaxy A06, TalkBack, escala de fonte ampliada e rotação. A análise de código não substitui esses ensaios. A revisão visual no MagicPath não pôde ser aberta nesta execução porque a cota de chamadas externas da conta estava esgotada.
