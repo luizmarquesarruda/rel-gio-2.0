@@ -60,6 +60,19 @@ class Gt3MaxCallDeviceProfileTest {
     }
 
     @Test
+    fun doesNotAutoSubscribeWhenOnlyNameAndNusMatchWithoutCapturedCustomServices() {
+        val partial = mapOf(
+            Gt3MaxCallDeviceProfile.NUS_SERVICE_UUID to setOf(
+                Gt3MaxCallDeviceProfile.NUS_RX_CHARACTERISTIC_UUID,
+                Gt3MaxCallDeviceProfile.NUS_TX_CHARACTERISTIC_UUID
+            )
+        )
+        assertFalse(
+            Gt3MaxCallDeviceProfile.shouldAutoSubscribeBattery("GT3 MAX", partial)
+        )
+    }
+
+    @Test
     fun firmwareMetadataComesFromOwnerReport() {
         assertEquals("V1.07", Gt3MaxCallDeviceProfile.REPORTED_FIRMWARE_VERSION)
         assertEquals(
