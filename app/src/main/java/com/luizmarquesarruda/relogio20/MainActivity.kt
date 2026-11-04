@@ -614,16 +614,37 @@ class MainActivity : ComponentActivity() {
                 val name = result.scanRecord?.deviceName
                     ?: safeDeviceName(result.device)
                     ?: "Dispositivo sem nome"
-                val button = makeButton(
-                    name + "  •  " + result.rssi + " dBm  •  " +
-                        maskAddress(address)
-                ) {
-                    stopBleScan()
-                    connectToDevice(result.device)
+                val deviceCard = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(dp(14), dp(12), dp(14), dp(12))
+                    background = roundedSurface(0xFFFFFFFF.toInt(), 0xFFE1E7EF.toInt())
+                    isClickable = true
+                    isFocusable = true
+                    contentDescription = "Conectar a $name. Sinal ${result.rssi} dBm."
+                    setOnClickListener {
+                        stopBleScan()
+                        connectToDevice(result.device)
+                    }
                 }
-                content.addView(button, LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, dp(52)
-                ))
+                val deviceName = TextView(this).apply {
+                    text = name
+                    textSize = 15f
+                    setTypeface(typeface, android.graphics.Typeface.BOLD)
+                    setTextColor(0xFF17212B.toInt())
+                }
+                val deviceMeta = TextView(this).apply {
+                    text = "Sinal ${result.rssi} dBm  •  identificação protegida: " + maskAddress(address)
+                    textSize = 12f
+                    setTextColor(0xFF526170.toInt())
+                    setPadding(0, dp(4), 0, 0)
+                }
+                deviceCard.addView(deviceName)
+                deviceCard.addView(deviceMeta)
+                content.addView(deviceCard, LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    bottomMargin = dp(8)
+                })
             }
     }
 
