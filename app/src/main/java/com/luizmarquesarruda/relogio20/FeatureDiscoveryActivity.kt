@@ -39,6 +39,7 @@ class FeatureDiscoveryActivity : Activity() {
     private val store by lazy { DiscoveryLibraryStore(this) }
     private val handler = Handler(Looper.getMainLooper())
     private var selectedDurationSeconds = 120
+    private var activeSessionId: String? = null
     private var showExperiments = false
 
     private val countdownTick = object : Runnable {
@@ -302,14 +303,18 @@ class FeatureDiscoveryActivity : Activity() {
     private fun updateTimerUi(session: com.luizmarquesarruda.relogio20.data.discovery.DiscoveryTestSession?) {
         if (!::timerValue.isInitialized) return
         if (session == null) {
-            val finished = (store.read() as? DiscoveryLibraryReadResult.Available)
-                ?.snapshot?.records?.lastOrNull {
-                    it.kind == DiscoveryLibraryKind.SESSION_FINISHED
-                }
+            val completedId = activeSessionId
+            activeSessionId = null
+            val finished = if (completedId == null) null else {
+                (store.read() as? DiscoveryLibraryReadResult.Available)
+                    ?.snapshot?.records?.lastOrNull {
+                        it.sessionId == completedId && it.kind == DiscoveryLibraryKind.SESSION_FINISHED
+                    }
+            }
             if (finished != null) {
                 timerValue.text = "00:00"
                 timerStatus.text = finished.detail
-                timerCount.text = "Última sessão concluída. Abra a biblioteca para consultar as capturas."
+                timerCount.text = "Sessão concluída. Abra a biblioteca para consultar as capturas."
             } else {
                 timerValue.text = formatRemaining(selectedDurationSeconds)
                 timerStatus.text = "Pronto • aguardando início do teste."
@@ -320,6 +325,7 @@ class FeatureDiscoveryActivity : Activity() {
             stopButton.visibility = View.GONE
             return
         }
+        activeSessionId = session.id
         val now = System.currentTimeMillis()
         val remaining = session.remainingSeconds(now)
         val elapsed = (now - session.startedAtMillis).coerceAtLeast(0L)
