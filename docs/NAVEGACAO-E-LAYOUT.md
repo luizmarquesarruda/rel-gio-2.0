@@ -71,3 +71,10 @@ Os cartões usam texto explícito, alvos de toque amplos, foco e ordem vertical 
 - Extrair UI de `MainActivity.kt` sem alterar o ciclo BLE.
 - Criar telas funcionais somente quando a integração correspondente for implementada e validada.
 - Adicionar previews/screenshot tests após disponibilizar ambiente Android instrumentado.
+
+
+## Exportação do diagnóstico BLE — 04/11/2026
+
+A ação **Exportar diagnóstico TXT** abre o seletor de documentos do Android e permite salvar localmente o registro da sessão. O relatório inclui ambiente, estado da conexão, MAC mascarado, eventos BLE/GATT e bytes recebidos em hexadecimal. A exportação não inclui texto de notificações do telefone e não transmite dados para servidores. Como payloads BLE podem carregar métricas de saúde, o arquivo deve ser compartilhado com cautela.
+
+O relatório classifica evidências observadas e interpretações ainda não validadas. A exportação não transforma uma conexão GATT em prova de leitura correta de sensores.
