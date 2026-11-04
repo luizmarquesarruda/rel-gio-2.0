@@ -10,9 +10,10 @@ O firmware V1.07 e build SH0050-1_1.1.3_1.23_1.18_1.1 são metadados apresentado
 
 ### Fase 1 — Exploração GATT segura
 - Inventário automático de serviços, características, propriedades e descritores após a descoberta GATT.
-- Plano automático para perfis Bluetooth SIG conhecidos: leituras READ e inscrições NOTIFY/INDICATE com CCCD padrão.
-- Plano manual aprofundado para canais customizados: somente características que anunciam READ e NOTIFY/INDICATE com CCCD 0x2902.
+- Plano automático restrito a metadados básicos e bateria, somente em características Bluetooth SIG com READ.
+- Sensores de saúde, medições ambientais e canais customizados ficam no plano aprofundado manual, após confirmação explícita: somente READ e NOTIFY/INDICATE com CCCD 0x2902.
 - O plano manual é limitado a 24 operações por sessão e exige confirmação explícita, pois os payloads podem conter dados privados de saúde.
+- A exploração manual cobre perfis SIG como frequência cardíaca, pressão arterial, oximetria, termômetro, temperatura/pressão/umidade ambientais, composição corporal e cadência, quando anunciados pelo dispositivo.
 - FE59/DFU, NUS RX, identificadores de dispositivo (serial/system ID) e serviços SIG já tratados pelo plano padrão são excluídos.
 - Nenhuma escrita de payload em característica proprietária é criada. A única escrita de descritor é a configuração padrão CCCD para ativar notificações/indicações.
 
