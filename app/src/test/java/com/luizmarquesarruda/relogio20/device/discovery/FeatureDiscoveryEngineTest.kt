@@ -30,6 +30,27 @@ class FeatureDiscoveryEngineTest {
     }
 
     @Test
+    fun detectsStandardCurrentTimeCharacteristicAndItsWriteCapability() {
+        val snapshot = FeatureDiscoveryEngine.captureInventory(
+            listOf(
+                GattServiceRecord(
+                    uuid = "00001805-0000-1000-8000-00805f9b34fb",
+                    characteristics = listOf(
+                        GattCharacteristicRecord(
+                            uuid = "00002a2b-0000-1000-8000-00805f9b34fb",
+                            properties = setOf("READ", "NOTIFY", "WRITE")
+                        )
+                    )
+                )
+            ),
+            capturedAtMillis = 100L
+        )
+        val finding = snapshot.findings.firstOrNull { it.id == "standard:1805" }
+        assertNotNull(finding)
+        assertTrue(finding?.detail?.contains("sincronização padrão habilitável") == true)
+    }
+
+    @Test
     fun proprietaryWriteCharacteristicsAreOnlyCataloguedAsBlocked() {
         val snapshot = FeatureDiscoveryEngine.captureInventory(
             listOf(

@@ -59,6 +59,7 @@ internal object FeatureDiscoveryEngine {
     private val standardProfiles = listOf(
         StandardProfile("180d", "2a37", "Saúde", "Perfil padrão de frequência cardíaca"),
         StandardProfile("180f", "2a19", "Dispositivo", "Perfil padrão de bateria"),
+        StandardProfile("1805", "2a2b", "Dispositivo", "Sincronização de hora Bluetooth (Current Time Service)"),
         StandardProfile("1822", "2a5f", "Saúde", "Perfil padrão de oximetria de pulso"),
         StandardProfile("181b", "2a9c", "Saúde", "Perfil padrão de composição corporal"),
         StandardProfile("1814", "2a53", "Atividade", "Perfil padrão de velocidade e cadência de corrida"),
@@ -96,6 +97,10 @@ internal object FeatureDiscoveryEngine {
             if (matchingCharacteristics.isNotEmpty()) {
                 val props = matchingCharacteristics.flatMap { it.properties }.toSet()
                 val channel = when {
+                    profile.serviceUuid == "1805" && "WRITE" in props ->
+                        "característica Current Time com WRITE anunciada; sincronização padrão habilitável"
+                    profile.serviceUuid == "1805" ->
+                        "característica Current Time encontrada sem WRITE; ajuste não habilitável"
                     "NOTIFY" in props || "INDICATE" in props -> "canal de notificação anunciado"
                     "READ" in props -> "característica de leitura anunciada"
                     else -> "serviço anunciado"
