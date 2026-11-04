@@ -1,3 +1,10 @@
+## 04/11/2026 — Acesso direto à exploração pelo laboratório
+
+- Adicionado à tela Testes e descobertas um atalho para solicitar a exploração aprofundada de todos os canais GATT elegíveis.
+- O atalho retorna ao painel principal e encaminha uma solicitação local; se o relógio já estiver conectado, abre a confirmação de segurança. Se ainda não estiver conectado, a solicitação aguarda a descoberta GATT da conexão seguinte.
+- A confirmação existente continua obrigatória antes de qualquer leitura ou inscrição. Nenhum comando ou escrita de payload foi habilitado.
+- CI e teste físico no Galaxy A06/Android 16: **não validados**.
+
 ## 04/11/2026 — Exploração aprofundada sem truncamento de canais GATT
 
 - Removido o limite fixo de 24 operações que podia deixar características elegíveis fora da exploração manual sem indicação explícita.
