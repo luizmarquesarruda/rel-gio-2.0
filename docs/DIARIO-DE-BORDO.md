@@ -507,3 +507,15 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - O sucesso do callback GATT é descrito como confirmação da escrita no transporte; não comprova que firmware, RTC ou mostrador atualizaram a hora. A validação física permanece necessária.
 - Adicionados testes unitários para o payload CTS e identificação do perfil no mecanismo de autodescoberta.
 - Build/CI e teste físico Galaxy A06/Android 16 com GT3 MAX: **não validados** nesta fase.
+
+
+## 04/11/2026 — Exploração GATT ativa e laboratório de experimentos GT3 MAX
+
+- Ligado o planejador `SafeGattExplorationPlan` ao callback de descoberta de serviços. Após inventário GATT, o app executa leituras somente para características SIG explicitamente permitidas, uma por vez na `SerialGattOperationQueue`, aguardando callback de leitura.
+- Características SIG com NOTIFY/INDICATE só recebem inscrição quando possuem CCCD padrão 0x2902. O canal proprietário NUS TX existente continua restrito ao fingerprint completo GT3 MAX Call.
+- Excluídos explicitamente FE59/DFU, NUS RX, serviços/características proprietários desconhecidos e número de série (2A25) das operações automáticas. Nenhum comando proprietário é transmitido.
+- Adicionados callbacks de leitura GATT compatíveis com Android API 33+ e caminho legado, com registro de status, UUID, tamanho e HEX no log de diagnóstico exportável manualmente.
+- Tela Autodescoberta BLE ampliada com laboratório guiado: bateria, hora/data, temperatura, frequência cardíaca, SpO2, passos, sono e atividade. Ação manual do usuário é correlacionada com tráfego; não há comando automático de medição.
+- Criado teste unitário do allowlist para leitura/notificação padrão, exclusão de DFU/proprietários/NUS RX e exigência de CCCD. Resultado de CI ainda **não validado**.
+- Análise do firmware documentada: V1.07 e build SH0050... são metadados informados; binário específico não foi obtido. CTS 0x1805/2A2B e termômetro 0x1809/2A1C ausentes. Hora proprietária e temperatura seguem sem implementação até captura comparativa Wearfit Pro ou firmware correto.
+- Teste físico no Galaxy A06/Android 16 com GT3 MAX Call, leitura real de sensores, correção de hora/data e identificação de temperatura: **não validados**.
