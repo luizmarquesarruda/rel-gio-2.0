@@ -583,3 +583,5 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - O inventário GATT extenso foi colocado em painel recolhido por padrão, evitando que UUIDs e propriedades técnicas dominem a tela principal.
 
 - Corrigido o estado visual do contador: o resumo `00:00` só aparece quando a sessão recém-encerrada corresponde ao identificador ativo da tela. Ao preparar a próxima sessão, volta a aparecer a duração selecionada.
+
+- Ajustada a ordem da página principal: conexão e identidade, laboratório/biblioteca, depois Saúde e integração e, por fim, mais recursos. Isso prioriza a tarefa BLE sem remover os dados agregados do Health Connect.

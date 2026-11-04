@@ -119,3 +119,5 @@ A biblioteca persiste inventários GATT como descobertas. Leituras GATT e notifi
 **Limites:** inspeção do código confirma estrutura e comportamento planejado, mas não substitui screenshots e teste visual no Galaxy A06. O MagicPath não pôde ser acessado nesta rodada por cota externa esgotada; emulador/ADB não está disponível neste ambiente. TalkBack, escala de fonte ampliada, rotação e instalação física permanecem **não validados**.
 
 - O inventário GATT completo também fica recolhido por padrão; UUIDs e propriedades aparecem somente quando o usuário abre “Inventário GATT”.
+
+- Atalhos de laboratório e biblioteca foram posicionados logo após o cartão de conexão e a identificação local do GT3 MAX; o resumo do Health Connect passou para a seção própria “Saúde e integração”.

@@ -339,6 +339,29 @@ class MainActivity : ComponentActivity() {
 
         root.addView(makeButton("Configurar identificação do GT3 MAX") { configureExpectedWatchAddress() }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(44)).apply { bottomMargin = dp(6) })
 
+        addText(root, "Laboratório e registros", 17f, true)
+        root.addView(makeButton("Testes e descobertas BLE") {
+            startActivity(Intent(this, FeatureDiscoveryActivity::class.java))
+        }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(52)
+        ).apply { bottomMargin = dp(5) })
+
+        root.addView(makeButton("Biblioteca interna de descobertas") {
+            startActivity(Intent(this, DiscoveryLibraryActivity::class.java))
+        }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(52)
+        ).apply { bottomMargin = dp(5) })
+
+        deepScanButton = makeButton("Executar exploração manual • até 24 canais") {
+            requestDeepGattExploration()
+        }.apply {
+            isEnabled = false
+        }
+        root.addView(deepScanButton, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(52)
+        ).apply { bottomMargin = dp(8) })
+
+        addText(root, "Saúde e integração", 17f, true)
         stepsView = TextView(this).apply {
             text = "Passos hoje: aguardando dados da Conexão Saúde"
             textSize = 24f
@@ -377,28 +400,6 @@ class MainActivity : ComponentActivity() {
         root.addView(healthSettingsButton, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
         ).apply { topMargin = dp(4) })
-
-        addText(root, "Laboratório e registros", 17f, true)
-        root.addView(makeButton("Testes e descobertas BLE") {
-            startActivity(Intent(this, FeatureDiscoveryActivity::class.java))
-        }, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(52)
-        ).apply { bottomMargin = dp(5) })
-
-        root.addView(makeButton("Biblioteca interna de descobertas") {
-            startActivity(Intent(this, DiscoveryLibraryActivity::class.java))
-        }, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(52)
-        ).apply { bottomMargin = dp(5) })
-
-        deepScanButton = makeButton("Executar exploração manual • até 24 canais") {
-            requestDeepGattExploration()
-        }.apply {
-            isEnabled = false
-        }
-        root.addView(deepScanButton, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(52)
-        ).apply { bottomMargin = dp(8) })
 
         addText(root, "Mais recursos", 17f, true)
         root.addView(makeButton("Notificações do telefone") {
