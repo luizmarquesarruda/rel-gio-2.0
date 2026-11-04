@@ -262,3 +262,14 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Adicionados testes unitários para mascaramento de MAC, relatório sem eventos e preservação dos bytes observados.
 - Não foram introduzidos comandos proprietários, escrita em características desconhecidas, permissões novas, rede ou upload automático.
 - Build/CI e teste físico após esta alteração: **não validados** até a conclusão da execução correspondente.
+
+
+## 04/11/2026 — Busca e conexão automática BLE
+
+- A ação principal inicia busca BLE por até 15 segundos e conecta apenas após correspondência exata com o endereço GT3 MAX configurado localmente.
+- O endereço é informado pelo usuário e armazenado em preferências privadas do aplicativo; não é embutido no repositório público nem exportado no relatório TXT.
+- Dispositivos divergentes são bloqueados também no método de conexão, evitando bypass pela seleção manual.
+- RSSI igual ou inferior a -90 dBm suspende a conexão automática. É um limite operacional heurístico, não uma medida exata de distância ou garantia de enlace.
+- Status GATT 147 recebe mensagem específica de timeout, sem atribuição de causa definitiva.
+- A conexão GATT não valida, por si só, frequência cardíaca, sono, SpO2 ou outros sensores.
+- CI e teste físico no Galaxy A06/GT3 MAX após esta alteração: não validados.
