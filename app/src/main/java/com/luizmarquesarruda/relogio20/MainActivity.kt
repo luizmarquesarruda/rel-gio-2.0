@@ -356,7 +356,7 @@ class MainActivity : ComponentActivity() {
             LinearLayout.LayoutParams.MATCH_PARENT, dp(52)
         ).apply { bottomMargin = dp(5) })
 
-        deepScanButton = makeButton("Executar exploração manual • até 24 canais") {
+        deepScanButton = makeButton("Explorar todos os canais compatíveis") {
             requestDeepGattExploration()
         }.apply {
             isEnabled = false
@@ -1659,7 +1659,8 @@ class MainActivity : ComponentActivity() {
                 "O aplicativo vai ler somente características que anunciam READ e ativar " +
                     "notificações/indicações que anunciam NOTIFY/INDICATE com CCCD padrão. " +
                     "Isso pode revelar dados privados de saúde. Nenhum comando de característica, " +
-                    "NUS RX, DFU, OTA ou reset será enviado. A exploração pode ser encerrada " +
+                    "NUS RX, DFU, OTA ou reset será enviado. A varredura pode levar vários minutos. " +
+                    "O HEX só será salvo durante teste cronometrado ativo. A exploração pode ser encerrada " +
                     "desconectando o relógio. Continuar?"
             )
             .setNegativeButton("Cancelar", null)
@@ -1693,8 +1694,9 @@ class MainActivity : ComponentActivity() {
             appendLog("Exploração manual concluída: nenhum canal customizado adicional elegível.")
             return
         }
-        appendLog("Exploração manual GT3 MAX iniciada: " + plan.size +
-            " operações elegíveis. Somente READ e CCCD; escritas de payload continuam bloqueadas.")
+        appendLog("Exploração aprofundada iniciada: " + plan.size +
+            " operações elegíveis em todos os canais anunciados. Somente READ e CCCD padrão; " +
+            "escritas de payload continuam bloqueadas.")
         plan.forEach { operation ->
             val attemptKey = operation.serviceUuid.lowercase() + "/" +
                 operation.characteristicUuid.lowercase() + "/" + operation.kind.name
