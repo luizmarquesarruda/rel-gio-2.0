@@ -191,6 +191,24 @@ class SafeGattExplorationPlanTest {
         )
         assertFalse(plan.any { it.characteristicUuid.endsWith("2a25-0000-1000-8000-00805f9b34fb") })
     }
+
+    @Test
+    fun deepPlanIncludesBodySensorLocationRead() {
+        val plan = SafeGattExplorationPlan.buildDeep(
+            listOf(
+                GattServiceRecord(
+                    "0000180d-0000-1000-8000-00805f9b34fb",
+                    listOf(GattCharacteristicRecord(
+                        "00002a38-0000-1000-8000-00805f9b34fb",
+                        setOf("READ")
+                    ))
+                )
+            )
+        )
+        assertEquals(1, plan.size)
+        assertEquals(SafeGattExplorationPlan.Kind.READ_STANDARD_VALUE, plan.single().kind)
+    }
+
     @Test
     fun deepPlanDoesNotSilentlyTruncateCompatibleChannelsAbovePreviousLimit() {
         val services = (0 until 30).map { index ->
