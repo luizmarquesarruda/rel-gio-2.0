@@ -62,11 +62,18 @@ O módulo `GattValueDecoder` reconhece somente UUIDs e layouts padronizados:
 |---|---|
 | Battery 0x180F / 0x2A19 | Percentual de bateria (0–100) |
 | Device Information 0x180A / 0x2A24, 0x2A26, 0x2A27, 0x2A28, 0x2A29 | Modelo, fabricante e versões anunciadas como texto |
-| Heart Rate 0x180D / 0x2A37 | Frequência cardíaca, flags, contato, energia e intervalos RR quando presentes |
-| Blood Pressure 0x1810 / 0x2A35 | SFLOAT sistólica, diastólica e média; timestamp, pulso, usuário e status opcionais |
+| Heart Rate 0x180D / 0x2A37, 0x2A38 | Frequência cardíaca, flags, contato, energia, intervalos RR e localização declarada do sensor |
+| Blood Pressure 0x1810 / 0x2A35, 0x2A36, 0x2A49 | Pressão, pressão intermediária da braçadeira (incluindo os campos SFLOAT-placeholder exigidos) e recursos declarados |
 | Health Thermometer 0x1809 / 0x2A1C, 0x2A1E | Temperatura IEEE-11073 FLOAT e campos opcionais |
-| Environmental Sensing 0x181A / 0x2A6E, 0x2A6F | Temperatura ambiente SFLOAT e umidade |
-| Pulse Oximeter 0x1822 / 0x2A5E, 0x2A5F | SpO₂/pulso spot-check ou contínuos, com campos opcionais por flags |
+| Environmental Sensing 0x181A / 0x2A6D, 0x2A6E, 0x2A6F | Pressão atmosférica, temperatura ambiente SFLOAT e umidade |
+| Pulse Oximeter 0x1822 / 0x2A5E, 0x2A5F, 0x2A60 | SpO₂/pulso spot-check ou contínuos, campos opcionais e recursos/status suportados |
+| Running Speed and Cadence 0x1814 / 0x2A53, 0x2A54 | Velocidade, cadência, passada/distância opcionais, estado caminhada/corrida e recursos |
+| Cycling Speed and Cadence 0x1816 / 0x2A5B, 0x2A5C | Contadores de revolução da roda/pedivela, horários dos últimos eventos e recursos |
+| Body Composition 0x181B / 0x2A9B | Recursos de composição corporal e resoluções declaradas de massa/altura; a característica 0x2A9C permanece capturada sem conversão semântica nesta revisão |
+
+A decodificação da característica 0x2A9B informa capacidades e resoluções anunciadas, não uma medição corporal. A característica 0x2A9C (Body Composition Measurement) ainda é preservada em HEX durante a captura, sem apresentar peso, altura, gordura ou massa como valores confirmados: o parser completo precisa respeitar todos os flags, unidades, resoluções do 0x2A9B e regras de pacotes múltiplos.
+
+Para CSC, o aplicativo registra revoluções acumuladas e horários de evento, mas não calcula velocidade/cadência final sem circunferência da roda e histórico temporal suficiente. Para RSC, os campos decodificados são os reportados pelo sensor, não uma validação independente.
 
 Decodificar o formato não valida precisão, calibração, qualidade clínica, localização do sensor ou correspondência com a tela do relógio. Esses dados não são gravados no Health Connect nesta fase.
 
@@ -120,6 +127,10 @@ Até obter SDK oficial, protocolo documentado ou captura comparativa reproduzív
 - Android `BluetoothGattCallback`: https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback
 - Bluetooth SIG Assigned Numbers: https://www.bluetooth.com/specifications/assigned-numbers/
 - Bluetooth SIG GATT specifications: https://www.bluetooth.com/specifications/specs/
+- Pulse Oximeter Service 1.0.1: https://www.bluetooth.com/specifications/specs/pulse-oximeter-service/
+- Body Composition Service 1.0.1: https://www.bluetooth.com/specifications/specs/body-composition-service-bcs/
+- Running Speed and Cadence Service 1.0.1: https://www.bluetooth.com/specifications/specs/running-speed-and-cadence-service/
+- Cycling Speed and Cadence Service: https://www.bluetooth.com/specifications/specs/cycling-speed-and-cadence-service/
 
 ## Estado dos testes
 
