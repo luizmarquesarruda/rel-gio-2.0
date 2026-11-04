@@ -1,3 +1,14 @@
+## 04/11/2026 — Continuidade: substituição progressiva do Wearfit Pro
+
+- Objetivo consolidado: Relógio 2.0 deve conectar diretamente ao GT3 Maxx por BLE/GATT e integrar somente dados reais e validados ao Health Connect. Wearfit Pro fica temporariamente como referência comparativa, não como dependência permanente.
+- Revisão da captura BLE: conexão e descoberta GATT foram observadas no Galaxy A06; NUS e quadro AB seguem candidatos. Não há evidência para classificar GT3 Maxx como Wear OS nem para validar passos, frequência cardíaca, pressão, sono, SpO₂ ou notificações retransmitidas.
+- Auditoria arquitetural identificou dívida: `MainActivity.kt` ainda concentra UI, permissões BLE, ciclo de vida GATT, fila e leitura Health Connect. A extração em serviços independentes deve ser incremental, com testes e sem alterar o protocolo.
+- Criado `docs/PLANO-SUBSTITUICAO-WEARFIT.md` com fases de captura passiva, correlação de métricas, parser isolado, persistência, Health Connect, UX e critérios para considerar o Wearfit Pro substituível.
+- Corrigido erro XML em `app/src/main/AndroidManifest.xml`: o ampersand do rótulo Saúde & Fitness precisava ser escapado como `&amp;`. Commit: `b485bada2fb4d7de238796093f061077c57ce75e`.
+- Atualizada a descrição da PR #5 para remover afirmação incorreta sobre `android:appCategory=fitness` e refletir o objetivo real de substituir progressivamente o Wearfit Pro.
+- CI anterior do SHA `687f3a5` falhou no parse do manifesto antes de Lint/testes/build. Nova execução para `b485bada`: **em andamento** no momento deste registro. APK novo ainda não validado/disponível.
+- PR #5 permanece aberta, draft e sem merge. Teste físico com GT3 Maxx/Galaxy A06, validação de sensores, sincronização Health Connect e ponte de notificações: **não validados**.
+
 ## 04/11/2026 — Definição do produto Saúde & Fitness e ponte wearable
 
 - O usuário confirmou o modelo funcional: os sensores físicos do relógio medem passos e outras métricas; o companion recebe e valida as amostras; somente dados reais e autorizados devem ser compartilhados com o Conexão Saúde (Health Connect).
