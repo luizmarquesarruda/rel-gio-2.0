@@ -24,6 +24,7 @@ Este índice separa decisões de arquitetura, integrações, evidências do disp
 ## Dispositivo e evidências
 - [Identificação do relógio](IDENTIFICACAO-DO-RELOGIO.md)
 - [Perfil GT3 Maxx](PERFIL-GT3-MAXX.md)
+- [Análise de firmware OTA do Wearfit Pro](ANALISE-FIRMWARE-OTA-WEARFIT-PRO.md) — identidade regulatória, serviço Nordic Secure DFU e procedimento seguro para obter o pacote.
 - [Captura BLE de 03/11/2026](CAPTURA-BLE-GT3-MAX-2026-11-03.md)
 - [Perfil BLE candidato NUS/AB](PROTOCOLO-BLE-CANDIDATO.md)
 
