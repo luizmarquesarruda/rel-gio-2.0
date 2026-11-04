@@ -84,7 +84,7 @@ def audit_manifest(manifest_xml: str, variant: str) -> list[AuditIssue]:
     # Escape only ampersands that are not already valid XML entities so the
     # policy audit can inspect the APK manifest without changing its semantics.
     xml_safe_manifest = re.sub(
-        r"&(?!amp;|lt;|gt;|quot;|apos;|#\\d+;|#x[0-9A-Fa-f]+;)",
+        r"&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9A-Fa-f]+;)",
         "&amp;",
         manifest_xml,
     )
