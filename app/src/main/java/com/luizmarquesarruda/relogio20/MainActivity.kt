@@ -2913,6 +2913,7 @@ class MainActivity : ComponentActivity() {
             return
         }
         appendLog("Desconexão solicitada pelo usuário.")
+        recordPendingGattDiscoveryInterruption("Desconexão solicitada pelo usuário.")
         isGattDisconnecting = true
         resetGattOperationQueue()
         pendingNotifications.clear()
@@ -3089,6 +3090,18 @@ class MainActivity : ComponentActivity() {
         connectionTimeoutTask = null
     }
 
+    private fun recordPendingGattDiscoveryInterruption(reason: String) {
+        if (serviceDiscoveryTimeoutTask == null || bluetoothGatt == null) return
+        discoveryLibraryStore.recordDiscovery(
+            title = "Descoberta GATT interrompida antes do callback",
+            detail = reason + " O inventário de uma conexão anterior não representa esta tentativa.",
+            nowMillis = System.currentTimeMillis(),
+            source = "GATT_LIFECYCLE",
+            confidence = "INTERRUPTIDA"
+        )
+        appendLog("Descoberta GATT interrompida: " + reason)
+    }
+
     private fun scheduleGattServiceDiscoveryTimeout(gatt: BluetoothGatt) {
         cancelGattServiceDiscoveryTimeout()
         val timeout = Runnable {
@@ -3183,6 +3196,7 @@ class MainActivity : ComponentActivity() {
         isActivityResumed = false
         cancelReconnectTask()
         cancelConnectionTimeout()
+        recordPendingGattDiscoveryInterruption("Aplicativo encerrado antes do callback onServicesDiscovered.")
         cancelGattServiceDiscoveryTimeout()
         stopBleScan()
         finishAutomaticCaptureSession("Aplicativo encerrado")
