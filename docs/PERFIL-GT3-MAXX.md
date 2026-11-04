@@ -8,6 +8,17 @@
 - Telefone de desenvolvimento: Samsung Galaxy A06, Android 16
 - Estado: pareamento pelo Wearfit Pro informado pelo usuário; protocolo e chipset ainda não identificados.
 
+## Identificação da unidade física informada (04/11/2026)
+
+- Nome comercial exibido: GT3 MAX Call
+- Modelo exibido: GT3 MAX
+- Firmware informado: `V1.07`
+- Kernel / versão de software: `SH0050-1_1.1.3_1.23_1.18_1.1`
+
+O usuário também forneceu número de série, código e endereço Bluetooth para identificação. Esses identificadores foram omitidos deste arquivo para evitar exposição em documentação pública.
+
+**Interpretação pendente:** a string SH0050 pode representar plataforma/build ou versão composta, mas não há documentação pública confiável que permita identificar o SoC ou decodificar os componentes. A versão V1.07 não corresponde textualmente à versão NJY-N03-1.0.4 da amostra FCC de 2022. Não assumir que são a mesma revisão de hardware.
+
 ## Características físicas/comerciais relatadas (04/11/2026)
 
 O usuário compartilhou a seguinte descrição geral do produto/anúncio:
