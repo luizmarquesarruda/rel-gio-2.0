@@ -27,7 +27,6 @@ internal object SafeGattExplorationPlan {
     private val known = listOf(
         KnownCharacteristic("180a", "2a29", true, false, "fabricante"),
         KnownCharacteristic("180a", "2a24", true, false, "modelo"),
-        KnownCharacteristic("180a", "2a25", true, false, "número de série"),
         KnownCharacteristic("180a", "2a26", true, false, "versão de firmware"),
         KnownCharacteristic("180a", "2a27", true, false, "versão de hardware"),
         KnownCharacteristic("180a", "2a28", true, false, "versão de software"),
