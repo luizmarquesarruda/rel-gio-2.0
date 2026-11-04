@@ -136,8 +136,11 @@ class CurrentAndroidContractTests(unittest.TestCase):
         triggers = workflow.split("concurrency:", 1)[0]
         self.assertIn("pull_request:", triggers)
         self.assertIn("push:", triggers)
-        self.assertIn("      - main", triggers)
-        self.assertNotIn("      - 'fix/**'", triggers)
+        push_triggers = triggers.split("pull_request:", 1)[0]
+        pull_request_triggers = triggers.split("pull_request:", 1)[1]
+        self.assertIn("      - main", push_triggers)
+        self.assertNotIn("      - 'fix/**'", push_triggers)
+        self.assertIn("      - 'fix/**'", pull_request_triggers)
 
         for step in (
             "Run unit tests and assemble both variants",
