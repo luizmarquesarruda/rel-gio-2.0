@@ -3,8 +3,10 @@
 - Corrigido o workflow `.github/workflows/android-ci.yml`: o artefato `relogio-2.0-diagnostic-debug-apk` passa a receber diretamente o único arquivo `app-diagnostic-debug.apk`, sem diretório auxiliar e sem TXT/XML anexados.
 - Os arquivos `diagnostic-build-info.txt`, manifestos, permissões, badging, assinaturas/certificados e hashes SHA-256 permanecem no artefato separado `android-validation-reports`.
 - Mantidos dois artefatos distintos: **APK instalável** e **relatórios de validação**. A variante companion continua compilada/testada/auditada, mas não publicada como instalação.
-- README e changelog alinhados com a separação.
-- A execução anterior #297 ainda estava na auditoria dos APKs quando esta correção foi iniciada; ela não valida o novo empacotamento. A CI disparada pelo novo HEAD deverá confirmar a estrutura final dos artefatos.
+- README e changelog alinhados com a separação; instrução antiga de procurar BUILD-INFO.txt dentro do APK foi corrigida.
+- Adicionado teste Python de contrato para impedir regressão: o artefato instalável deve apontar para um único `.apk`, enquanto o relatório técnico permanece em artefato separado.
+- A execução #297, anterior à correção do empacotamento, concluiu com sucesso em Lint, testes, builds, guardrails, auditoria e publicação dos dois artefatos; confirmou-se que o pacote do APK incluía arquivos auxiliares junto do instalador.
+- A nova execução #303 foi disparada para o HEAD com o workflow corrigido; seu resultado ainda precisa ser conferido. A estrutura do novo artefato não será considerada validada até inspecionar a execução que usa este workflow.
 - Teste físico no Galaxy A06/Android 16: **não validado**.
 
 ## 04/11/2026 — Acesso direto à exploração pelo laboratório
