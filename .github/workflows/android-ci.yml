@@ -28,17 +28,34 @@ jobs:
           java-version: "17"
 
       - name: Set up Gradle
+        id: setup_gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.13"
 
+      - name: Run Android Lint
+        id: lint
+        run: gradle --no-daemon lintDebug
+
       - name: Run unit tests and assemble APK
-        run: gradle --no-daemon lintDebug testDebugUnitTest assembleDebug
+        id: build
+        if: always() && steps.setup_gradle.outcome == 'success'
+        run: gradle --no-daemon testDebugUnitTest assembleDebug
 
       - name: Publish debug APK artifact
+        if: always() && steps.build.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: relogio-2.0-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish Android Lint report
+        if: always() && steps.setup_gradle.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-lint-report
+          path: app/build/reports/lint-results-debug.html
+          if-no-files-found: warn
           retention-days: 14
