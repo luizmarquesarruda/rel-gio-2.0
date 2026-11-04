@@ -95,6 +95,50 @@ class GattValueDecoderTest {
         assertEquals(1, unsupported.size)
     }
 
+
+    @Test
+    fun decodesIntermediateCuffPressureOnlyWithRequiredNaNPlaceholders() {
+        val valid = byteArrayOf(0, 0x78, 0, 0xff.toByte(), 0x07, 0xff.toByte(), 0x07)
+        val decoded = GattValueDecoder.decode("1810", "2a36", valid)
+        assertEquals("Pressão intermediária da braçadeira", decoded.single().metric)
+        assertEquals("120.0 mmHg", decoded.single().value)
+
+        val malformed = byteArrayOf(0, 0x78, 0, 0, 0, 0xff.toByte(), 0x07)
+        assertTrue(GattValueDecoder.decode("1810", "2a36", malformed).isEmpty())
+    }
+
+    @Test
+    fun decodesEnvironmentalPressureAndBodySensorLocation() {
+        val pressure = GattValueDecoder.decode(
+            "181a", "2a6d", byteArrayOf(0x10, 0x27)
+        )
+        assertEquals("Pressão atmosférica", pressure.single().metric)
+        assertEquals("10000.00 Pa", pressure.single().value)
+
+        val location = GattValueDecoder.decode("180d", "2a38", byteArrayOf(0x02))
+        assertEquals("Localização declarada do sensor", location.single().metric)
+        assertEquals("Pulso", location.single().value)
+    }
+
+    @Test
+    fun decodesRscAndCscMeasurementsWithoutInventingDerivedSpeedOrCadence() {
+        val rsc = GattValueDecoder.decode(
+            "1814", "2a53",
+            byteArrayOf(0x07, 0x00, 0x01, 90, 0x2c, 0x01, 0x64, 0, 0, 0)
+        )
+        assertTrue(rsc.any { it.metric == "Velocidade instantânea RSC" && it.value == "1.000 m/s" })
+        assertTrue(rsc.any { it.metric == "Cadência instantânea RSC" && it.value == "90 passos/min" })
+        assertTrue(rsc.any { it.metric == "Comprimento de passada RSC" && it.value == "3.00 m" })
+        assertTrue(rsc.any { it.metric == "Distância total RSC" && it.value == "10.0 m" })
+
+        val csc = GattValueDecoder.decode(
+            "1816", "2a5b",
+            byteArrayOf(0x03, 0x10, 0, 0, 0, 0, 0x00, 0x04, 0x02, 0x00)
+        )
+        assertTrue(csc.any { it.metric == "Revoluções acumuladas da roda CSC" && it.value == "16" })
+        assertTrue(csc.any { it.metric == "Revoluções acumuladas do pedivela CSC" && it.value == "4" })
+    }
+
     @Test
     fun decodesDeviceInformationFirmwareString() {
         val decoded = GattValueDecoder.decode(
