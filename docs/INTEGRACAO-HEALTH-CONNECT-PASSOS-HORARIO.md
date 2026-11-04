@@ -77,3 +77,9 @@ Health Connect oferece tipos de registro para frequência cardíaca, saturação
 - O módulo UI não monta mais diretamente AggregateRequest nem conhece StepsRecord.
 - Foram adicionados testes para zero, ausência, origem e intervalo.
 - As demais métricas e rotas permanecem **não implementadas/não validadas**.
+
+## Referências oficiais
+
+- Migração do Google Fit: https://developer.android.com/health-and-fitness/health-connect/migration/fit?hl=pt-br
+- Rotas de exercício e permissões: https://developer.android.com/health-and-fitness/health-connect/features/exercise-routes?hl=pt-br
+- Sinais vitais e permissões por tipo: https://developer.android.com/health-and-fitness/health-connect/experiences/vitals?hl=pt-br
