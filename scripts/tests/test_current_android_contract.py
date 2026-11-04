@@ -86,7 +86,7 @@ class CurrentAndroidContractTests(unittest.TestCase):
         self.assertNotIn("Use **Ouvir**", readme)
         self.assertNotIn("0.4.0-alpha.2", readme)
         self.assertIn("VERSION", readme)
-        self.assertIn("conexão automática", readme.lower())
+        self.assertIn("buscar e conectar automaticamente", readme.lower())
 
     def test_removed_manual_characteristic_read_has_no_dead_callbacks(self):
         source = (
