@@ -570,3 +570,12 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Não foi adicionada permissão, dependência externa, serviço Charming remoto ou chamada de rede. A implementação não adiciona criptografia própria ao arquivo local.
 - CI #248 foi enfileirada antes desta implementação e não valida os commits novos. Compilação, lint, testes, auditoria dos APKs, screenshot em emulador/aparelho e validação física: **aguardando CI/testes**.
 - MagicPath indisponível por cota de chamadas externas esgotada; ADB/emulador não disponível no ambiente de execução. A revisão do layout foi estrutural, pelo código, e não uma auditoria visual baseada em screenshots.
+
+### Registro técnico da implementação — 04/11/2026
+
+- Commit de implementação: `2725d61c59eb45622ea50b8669570347fa36127c`.
+- O contador utiliza o prazo absoluto da sessão e não reinicia quando a tela é fechada; a tela mostra 00:00 e o resumo quando a duração termina.
+- O contador apenas acompanha a sessão. A captura BLE continua dependendo dos callbacks e operações GATT já autorizados.
+- O inventário GATT e os quadros AB reconhecidos geram registros de descoberta. HEX de notificações e leituras GATT só é guardado durante sessão de captura confirmada.
+- A interface da biblioteca tem busca e filtros; os registros ficam privados no aparelho e não são sincronizados externamente.
+- A CI precisa validar o HEAD com esta entrega; o run #248 foi criado antes da implementação e não deve ser usado como prova de validação desta fase.
