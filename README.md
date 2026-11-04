@@ -109,7 +109,7 @@ A captura local usa NotificationListenerService e acesso especial concedido manu
 
 ## Versão do aplicativo
 
-A versão de desenvolvimento canônica está no arquivo `VERSION`. Para cada APK, confira `BUILD-INFO.txt`, que registra versão, variante, commit de origem da PR e commit efetivamente testado pelo GitHub Actions. Builds debug não são releases de produção.
+A versão de desenvolvimento canônica está no arquivo `VERSION`. Os metadados do build ficam no artefato `android-validation-reports`, no arquivo `diagnostic-build-info.txt`; o artefato instalável contém somente o APK. Builds debug não são releases de produção.
 
 ## Segurança e privacidade
 
