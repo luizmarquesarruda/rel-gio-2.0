@@ -74,11 +74,11 @@ Consulte o [índice completo da documentação](docs/README.md).
 
 ## Notificações Android
 
-A captura local foi implementada na branch de desenvolvimento 0.3.0-alpha.1: NotificationListenerService, acesso especial concedido manualmente, filtro por aplicativo, pausa e prévias efêmeras em memória. A implementação aguarda CI e teste físico no Galaxy A06. O conteúdo não é encaminhado ao relógio: o protocolo BLE de notificações do GT3 MAX ainda não foi identificado.
+A captura local usa NotificationListenerService e acesso especial concedido manualmente. O processamento fica restrito aos pacotes selecionados e requer ativação explícita. As prévias permanecem somente em memória (máximo de 30) e expiram em 15 minutos; o cache é limpo na desconexão/destruição do listener. Nenhum texto de notificação é gravado em arquivos/logs ou enviado à rede. O Play Protect deve continuar ativo; CI aprovado não equivale a aprovação do Google nem a teste físico no Galaxy A06.
 
 ## Versão do aplicativo
 
-Versão de desenvolvimento registrada: `0.3.0-alpha.3`. Não é release estável e aguarda validação do CI e testes físicos.
+Versão de desenvolvimento registrada: `0.3.0-alpha.4`. Não é release estável e aguarda validação do CI e testes físicos.
 
 ## Segurança e privacidade
 
