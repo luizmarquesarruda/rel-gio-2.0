@@ -1,5 +1,16 @@
 # Changelog
 
+## Não lançado — reconexão automática BLE
+
+- Após uma conexão GATT bem-sucedida, o app persiste localmente a opção de reconexão para a identidade GT3 MAX já configurada.
+- Perdas inesperadas GATT e falhas de conexão/busca iniciam tentativas com intervalos de 1, 2, 5, 10, 20 e 30 segundos (limite de 30 s).
+- Tentativas automáticas usam scan BLE de baixa potência e filtram o endereço salvo; não solicitam permissão automaticamente.
+- A ação Parar reconexão cancela tarefas pendentes e desativa a preferência persistida.
+- Recuperação fica limitada ao primeiro plano/retomada do app; recuperação após force-stop ou continuamente em segundo plano não está implementada.
+- Preservados inventário GATT passivo, NUS TX Notify/CCCD e bloqueio de payload NUS RX/características desconhecidas.
+- Testes físicos de desconexão/reconexão no Galaxy A06/Android 16 com GT3 MAX Call: **não validados** até execução no aparelho.
+
+
 ## Não lançado — atualização compatível do toolchain e limpeza Lint
 
 - Atualizados Kotlin Gradle Plugin para 2.4.21 e Gradle para 9.5.0, mantendo Android Gradle Plugin 8.13.2 dentro da matriz oficial de compatibilidade.
