@@ -303,7 +303,7 @@ class MainActivity : ComponentActivity() {
         ))
 
         val logTitle = TextView(this).apply {
-            text = "Registro da sessão (permanece apenas nesta tela)"
+            text = "Registro da sessão (últimos 250 eventos; exportação manual disponível)"
             textSize = 12f
             setTextColor(0xFF526170.toInt())
             setPadding(0, dp(8), 0, dp(4))
