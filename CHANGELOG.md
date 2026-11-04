@@ -136,3 +136,5 @@ As alterações relevantes do Relógio 2.0 são registradas aqui. Segue SemVer: 
 - Exibição da hora local do telefone; sem ajuste do relógio físico.
 
 - A atualização periódica do Health Connect é suspensa quando READ_STEPS não foi concedida ou foi revogada.
+
+- Janela diária calculada a partir do instante da consulta; cancelamento é propagado e polling é suspenso ao perder o provider.
