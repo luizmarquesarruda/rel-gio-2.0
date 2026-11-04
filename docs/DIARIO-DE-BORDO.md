@@ -7,7 +7,7 @@
 - Adicionado `GattValueDecoder` para os formatos Bluetooth SIG de bateria, Device Information, frequência cardíaca, pressão arterial, termômetro, temperatura/umidade ambientais e oximetria spot-check/contínua. A decodificação indica formato observado, não exatidão clínica/calibração do sensor.
 - Leituras e notificações só persistem HEX e valores decodificados durante captura consentida na biblioteca local. As janelas são de até 10 minutos e renovadas enquanto o modo automático permanece ativo, GATT conectado e a MainActivity em primeiro plano; a renovação suspende em segundo plano e retoma ao voltar, pois ainda não existe serviço foreground BLE. Fora da captura, logs contêm tamanho/fingerprint, não HEX bruto.
 - Pausar encerra a janela atual e agenda cancelamento das inscrições criadas pela exploração automática via CCCD padrão; as inscrições NUS TX preexistentes continuam seguindo a política separada já existente.
-- Adicionados testes unitários para decoders, contato do sensor cardíaco, leitura da versão de firmware, política de consentimento e execução dos perfis GATT.
+- Adicionados testes unitários para decoders, contato do sensor cardíaco, versão de firmware, flags de recursos PLX/Body Composition, RSC/CSC, pressão intermediária, flags reservadas e payloads malformados, além da política de consentimento e plano de exploração.
 - A presença de um serviço/UUID não garante que o firmware gere medição. Inscrição NOTIFY/INDICATE apenas permite receber atualizações; não envia comando que inicie pressão, SpO2 ou outra medição.
 - CI/build desta alteração e teste físico no Samsung Galaxy A06/Android 16 com GT3 MAX: **não validados** até a nova execução e teste no aparelho.
 
