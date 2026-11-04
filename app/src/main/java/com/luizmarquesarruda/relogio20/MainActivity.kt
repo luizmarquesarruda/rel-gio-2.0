@@ -17,6 +17,7 @@ import com.luizmarquesarruda.relogio20.device.gt3max.protocol.Gt3MaxCallDevicePr
 import com.luizmarquesarruda.relogio20.data.discovery.FeatureDiscoveryStore
 import com.luizmarquesarruda.relogio20.data.discovery.DiscoveryLibraryKind
 import com.luizmarquesarruda.relogio20.data.discovery.DiscoveryLibraryStore
+import com.luizmarquesarruda.relogio20.data.discovery.DiscoveryLibraryReadResult
 import com.luizmarquesarruda.relogio20.device.discovery.GattCharacteristicRecord
 import com.luizmarquesarruda.relogio20.device.discovery.GattServiceRecord
 import com.luizmarquesarruda.relogio20.device.discovery.SafeGattExplorationPlan
@@ -159,6 +160,8 @@ class MainActivity : ComponentActivity() {
     private val identityPrefs by lazy { getSharedPreferences("device_identity", MODE_PRIVATE) }
     private val expectedWatchAddress: String? get() = BleDeviceIdentity.normalize(identityPrefs.getString("gt3_max_address", null))
     private var autoConnectAttempted = false
+    private var initialDiscoveryPending = true
+    private var connectionFromDiscoveryCandidate = false
     private var weakSignalWarningLogged = false
     private var isAutoReconnectScan = false
     private var isActivityResumed = false
@@ -338,7 +341,7 @@ class MainActivity : ComponentActivity() {
             bottomMargin = dp(8)
         })
 
-        root.addView(makeButton("Configurar identificação do GT3 MAX") { configureExpectedWatchAddress() }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(44)).apply { bottomMargin = dp(6) })
+        root.addView(makeButton("Configurar endereço manualmente (opcional)") { configureExpectedWatchAddress() }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(44)).apply { bottomMargin = dp(6) })
 
         addText(root, "Laboratório e registros", 17f, true)
         root.addView(makeButton("Testes e descobertas BLE") {
@@ -750,7 +753,12 @@ class MainActivity : ComponentActivity() {
         if (healthConnectInitialized) readTodaySteps() else refreshHealthConnectPermissionState()
         handler.postDelayed(stepsTicker, 60_000L)
         if (reconnectPolicy.isEnabled && bluetoothGatt == null && currentScanCallback == null) {
+            initialDiscoveryPending = false
             scheduleAutoReconnect("Aplicativo retomado", immediate = true)
+        } else if (initialDiscoveryPending && bluetoothGatt == null && currentScanCallback == null) {
+            initialDiscoveryPending = false
+            appendLog("Busca BLE geral iniciada automaticamente ao abrir o aplicativo; não é necessário digitar o endereço do relógio.")
+            startBleScan()
         }
     }
 
@@ -872,8 +880,7 @@ class MainActivity : ComponentActivity() {
 
     private fun beginAutomaticConnection() {
         cancelReconnectTask()
-        if (expectedWatchAddress == null) configureExpectedWatchAddress { startBleScan() }
-        else startBleScan()
+        startBleScan()
     }
 
     private fun configureExpectedWatchAddress(afterSave: (() -> Unit)? = null) {
@@ -885,7 +892,7 @@ class MainActivity : ComponentActivity() {
         }
         AlertDialog.Builder(this)
             .setTitle("Identificar meu GT3 MAX")
-            .setMessage("Informe o endereço Bluetooth exibido no relógio. Será salvo somente neste aparelho, sem inclusão no código público ou no relatório TXT.")
+            .setMessage("Opcional. O aplicativo procura dispositivos BLE automaticamente e valida o perfil GATT do GT3 MAX. Informe um endereço somente se quiser fixar manualmente a identidade; ele fica salvo neste aparelho.")
             .setView(input)
             .setNegativeButton("Cancelar", null)
             .setNeutralButton("Remover") { _, _ ->
@@ -964,8 +971,8 @@ class MainActivity : ComponentActivity() {
         scanResults.clear()
         content.removeAllViews()
         addText(content, "Dispositivos encontrados", 18f, true)
-        updateStatus(if (automatic) "Procurando GT3 MAX para reconexão automática..." else "Procurando dispositivos BLE por 15 segundos...")
-        appendLog(if (automatic) "Início da busca automática pelo endereço GT3 MAX salvo localmente." else "Início da busca BLE por 15 segundos.")
+        updateStatus(if (automatic) "Procurando GT3 MAX e candidatos BLE próximos..." else "Busca geral de dispositivos BLE por 15 segundos...")
+        appendLog(if (automatic) "Início da busca BLE geral para localizar o GT3 MAX; endereço salvo será usado como pista, não como único filtro." else "Início da busca BLE geral por 15 segundos; dispositivos sem nome também serão listados.")
 
         val callback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
@@ -976,29 +983,39 @@ class MainActivity : ComponentActivity() {
                         appendLog("Resultado BLE ignorado: permissão para identificar dispositivo indisponível.")
                         return@runOnUiThread
                     }
-                    if (automatic && !BleDeviceIdentity.matches(expectedWatchAddress, address)) return@runOnUiThread
                     val name = result.scanRecord?.deviceName
                         ?: safeDeviceName(result.device)
                         ?: "Dispositivo sem nome"
+                    val previous = scanResults[address]
                     scanResults[address] = result
-                    appendLog("Dispositivo BLE observado: " + name + " | RSSI=" + result.rssi + " dBm | endereço=" + maskAddress(address))
-                    if (!autoConnectAttempted && BleDeviceIdentity.matches(expectedWatchAddress, address)) {
+                    val candidateMatch = scanCandidateMatch(result, address, name)
+                    if (previous == null) {
+                        appendLog("Sinal BLE encontrado: " + name + " | RSSI=" + result.rssi +
+                            " dBm | endereço=" + maskAddress(address) + " | classificação=" + candidateMatch.name)
+                    } else if (kotlin.math.abs(previous.rssi - result.rssi) >= 8) {
+                        appendLog("RSSI atualizado: " + name + " | " + result.rssi + " dBm")
+                    }
+                    if (!autoConnectAttempted && candidateMatch != BleScanCandidatePolicy.Match.OTHER) {
                         if (result.rssi <= AUTO_CONNECT_MIN_RSSI) {
                             if (!weakSignalWarningLogged) {
                                 weakSignalWarningLogged = true
-                                appendLog("GT3 MAX identificado, mas RSSI fraco: " + result.rssi + " dBm. Conexão automática suspensa.")
-                                updateStatus("GT3 MAX identificado, mas sinal muito fraco.")
+                                appendLog("Candidato GT3 MAX encontrado, mas RSSI fraco: " + result.rssi + " dBm. A conexão automática aguardará sinal melhor.")
+                                updateStatus("GT3 MAX candidato encontrado, mas sinal muito fraco.")
                             }
                         } else {
                             autoConnectAttempted = true
-                            appendLog("Correspondência exata do GT3 MAX confirmada; iniciando conexão automática.")
+                            appendLog("Candidato BLE compatível (" + candidateMatch.name + "); iniciando conexão para validar fingerprint GATT antes de explorar serviços.")
                             stopBleScan()
-                            connectToDevice(result.device, automaticAttempt = automatic)
+                            connectToDevice(
+                                result.device,
+                                automaticAttempt = automatic,
+                                discoveryCandidate = candidateMatch != BleScanCandidatePolicy.Match.SAVED_ADDRESS
+                            )
                             return@runOnUiThread
                         }
                     }
                     renderScanResults()
-                    updateStatus("Busca em andamento. Dispositivos: " + scanResults.size)
+                    updateStatus("Busca em andamento. Dispositivos BLE encontrados: " + scanResults.size)
                 }
             }
 
@@ -1043,17 +1060,21 @@ class MainActivity : ComponentActivity() {
         val timeout = Runnable {
             if (currentScanCallback === callback) {
                 stopBleScan()
-                val foundExpected = expectedWatchAddress?.let { expected ->
-                    scanResults.keys.any { BleDeviceIdentity.matches(expected, it) }
-                } ?: false
-                updateStatus(if (foundExpected) "GT3 MAX encontrado, mas sinal insuficiente para conexão automática."
-                    else "Busca concluída. GT3 MAX não identificado.")
-                appendLog("Busca BLE concluída. Total=" + scanResults.size + "; identidade esperada encontrada=" + foundExpected)
+                val foundCandidate = scanResults.values.any { result ->
+                    val address = safeDeviceAddress(result.device)
+                    address != null && scanCandidateMatch(
+                        result, address, result.scanRecord?.deviceName ?: safeDeviceName(result.device)
+                    ) != BleScanCandidatePolicy.Match.OTHER
+                }
+                updateStatus(if (foundCandidate) "Candidato GT3 MAX encontrado, aguardando sinal adequado."
+                    else "Busca concluída: " + scanResults.size + " dispositivos BLE observados; GT3 MAX ainda não identificado.")
+                appendLog("Busca BLE concluída. Total observado=" + scanResults.size +
+                    "; candidato GT3 MAX encontrado=" + foundCandidate)
                 renderScanResults()
-                if ((automatic || reconnectPolicy.isEnabled) && !foundExpected) {
-                    scheduleAutoReconnect("GT3 MAX não localizado nesta tentativa")
-                } else if (automatic && foundExpected) {
-                    scheduleAutoReconnect("Sinal do GT3 MAX insuficiente nesta tentativa")
+                if ((automatic || reconnectPolicy.isEnabled) && !foundCandidate) {
+                    scheduleAutoReconnect("GT3 MAX não localizado na busca geral")
+                } else if (automatic && foundCandidate) {
+                    scheduleAutoReconnect("Sinal do candidato GT3 MAX insuficiente nesta tentativa")
                 }
             }
         }
@@ -1074,9 +1095,26 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun scanCandidateMatch(
+        result: ScanResult,
+        address: String,
+        observedName: String?
+    ): BleScanCandidatePolicy.Match {
+        val advertisedServices = result.scanRecord?.serviceUuids
+            ?.map { it.uuid.toString() }
+            ?.toSet()
+            .orEmpty()
+        return BleScanCandidatePolicy.evaluate(
+            savedAddress = expectedWatchAddress,
+            observedAddress = address,
+            advertisedName = observedName,
+            advertisedServiceUuids = advertisedServices
+        )
+    }
+
     private fun renderScanResults() {
         content.removeAllViews()
-        addText(content, "Toque no GT3 MAX para conectar", 18f, true)
+        addText(content, "Dispositivos BLE encontrados • toque no GT3 MAX ou em um dispositivo para validar o perfil GATT", 18f, true)
 
         if (scanResults.isEmpty()) {
             addText(content, "Nenhum dispositivo encontrado até agora.")
@@ -1099,7 +1137,8 @@ class MainActivity : ComponentActivity() {
                     contentDescription = "Conectar a $name. Sinal ${result.rssi} dBm."
                     setOnClickListener {
                         stopBleScan()
-                        connectToDevice(result.device)
+                        val savedIdentity = BleDeviceIdentity.matches(expectedWatchAddress, address)
+                        connectToDevice(result.device, discoveryCandidate = !savedIdentity)
                     }
                 }
                 val deviceName = TextView(this).apply {
@@ -1134,13 +1173,19 @@ class MainActivity : ComponentActivity() {
     }
 
     @SuppressLint("MissingPermission")
-    private fun connectToDevice(device: BluetoothDevice, automaticAttempt: Boolean = false) {
+    private fun connectToDevice(
+        device: BluetoothDevice,
+        automaticAttempt: Boolean = false,
+        discoveryCandidate: Boolean = false
+    ) {
         val observedAddress = safeDeviceAddress(device)
-        if (!BleDeviceIdentity.matches(expectedWatchAddress, observedAddress)) {
+        val savedIdentityMatches = BleDeviceIdentity.matches(expectedWatchAddress, observedAddress)
+        if (!savedIdentityMatches && !discoveryCandidate) {
             updateStatus("Dispositivo não identificado. Conexão bloqueada.")
-            appendLog("Conexão bloqueada: endereço observado não corresponde à identidade local configurada.")
+            appendLog("Conexão bloqueada: dispositivo não corresponde à identidade salva nem foi selecionado para validação GATT.")
             return
         }
+        connectionFromDiscoveryCandidate = discoveryCandidate && !savedIdentityMatches
         if (!hasBlePermissions()) {
             if (automaticAttempt) {
                 updateStatus("Permissão Bluetooth necessária para reconectar.")
@@ -1295,6 +1340,7 @@ class MainActivity : ComponentActivity() {
             if (bluetoothGatt !== gatt || isGattDisconnecting) return
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 appendLog("Serviços descobertos: " + gatt.services.size)
+                if (!verifyDiscoveryCandidateBeforeExploration(gatt)) return
                 captureFeatureDiscovery(gatt)
                 renderGattServices(gatt)
                 runSafeGattExploration(gatt)
@@ -1416,6 +1462,35 @@ class MainActivity : ComponentActivity() {
                 gattOperationKey(characteristic.service.uuid.toString(), characteristic.uuid.toString(), "CCCD")
             )
         }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun verifyDiscoveryCandidateBeforeExploration(gatt: BluetoothGatt): Boolean {
+        if (!connectionFromDiscoveryCandidate) return true
+        val observed = gatt.services.associate { service ->
+            service.uuid to service.characteristics.map { it.uuid }.toSet()
+        }
+        val match = Gt3MaxCallDeviceProfile.evaluate(lastConnectedDeviceName, observed)
+        if (match != Gt3MaxCallDeviceProfile.Match.CAPTURED_GATT_FINGERPRINT) {
+            appendLog("Dispositivo candidato rejeitado antes da exploração: fingerprint GATT não corresponde ao GT3 MAX Call (" +
+                match.name + "). Nenhuma leitura de sensor ou inscrição foi iniciada.")
+            connectionFromDiscoveryCandidate = false
+            isGattDisconnecting = true
+            isGattConnected = false
+            updateStatus("Dispositivo BLE não corresponde ao GT3 MAX. Conexão encerrada.")
+            runCatching { gatt.disconnect() }
+            return false
+        }
+        val address = safeDeviceAddress(gatt.device)
+        if (address != null) {
+            identityPrefs.edit { putString("gt3_max_address", address) }
+            appendLog("Identidade GT3 MAX salva automaticamente após fingerprint GATT completo: " + maskAddress(address))
+        } else {
+            appendLog("Fingerprint GATT completo observado, mas o endereço não pôde ser salvo por falta de permissão.")
+        }
+        connectionFromDiscoveryCandidate = false
+        appendLog("GT3 MAX Call validado por compatibilidade do fingerprint GATT; iniciando inventário e exploração permitida.")
+        return true
     }
 
     @SuppressLint("MissingPermission")
@@ -2224,6 +2299,25 @@ class MainActivity : ComponentActivity() {
         val version = runCatching {
             packageManager.getPackageInfo(packageName, 0).versionName ?: "desconhecida"
         }.getOrDefault("desconhecida")
+        val discoveryEntries = when (val stored = discoveryLibraryStore.read()) {
+            DiscoveryLibraryReadResult.Empty -> listOf("Nenhuma descoberta persistida até esta exportação.")
+            is DiscoveryLibraryReadResult.Available -> stored.snapshot.records.takeLast(1_000).map { record ->
+                val occurredAt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+                    .format(Date(record.occurredAtMillis))
+                buildString {
+                    append(occurredAt).append(" | ").append(record.kind).append(" | ")
+                    append(record.title).append(" | ").append(record.detail)
+                    append(" | origem=").append(record.source).append(" | confiança=").append(record.confidence)
+                    record.serviceUuid?.let { append(" | serviço=").append(it) }
+                    record.characteristicUuid?.let { append(" | característica=").append(it) }
+                    record.payloadHex?.let { append(" | HEX=").append(it) }
+                }
+            }
+            DiscoveryLibraryReadResult.Corrupt -> listOf("Biblioteca local corrompida; conteúdo preservado e não sobrescrito.")
+            is DiscoveryLibraryReadResult.UnsupportedSchema -> listOf(
+                "Biblioteca local usa schema futuro (" + stored.version + "); conteúdo preservado e não sobrescrito."
+            )
+        }
         val report = BleDiagnosticReport.build(
             appVersion = version,
             androidVersion = Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")",
@@ -2231,7 +2325,8 @@ class MainActivity : ComponentActivity() {
             deviceName = lastConnectedDeviceName,
             deviceAddress = lastConnectedDeviceAddress,
             generatedAt = generatedAt,
-            logLines = logLines.toList()
+            logLines = logLines.toList(),
+            discoveryEntries = discoveryEntries
         )
         pendingDiagnosticReport = report
         diagnosticExportLauncher.launch("relogio2_diagnostico_GT3MAX_" + timestamp + ".txt")
@@ -2260,8 +2355,7 @@ class MainActivity : ComponentActivity() {
     private fun scheduleAutoReconnect(reason: String, immediate: Boolean = false) {
         if (!reconnectPolicy.isEnabled) return
         if (expectedWatchAddress == null) {
-            appendLog("Reconexão automática bloqueada: identidade GT3 MAX não está configurada.")
-            return
+            appendLog("Reconexão automática fará busca BLE geral; a identidade será aprendida após validação do fingerprint GATT.")
         }
         if (!isActivityResumed) {
             appendLog("Reconexão automática aguardará o aplicativo voltar ao primeiro plano.")
