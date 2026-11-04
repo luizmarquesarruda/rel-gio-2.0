@@ -146,6 +146,31 @@ class GattValueDecoderTest {
         assertTrue(csc.any { it.metric == "Revoluções acumuladas do pedivela CSC" && it.value == "4" })
     }
 
+
+    @Test
+    fun decodesPulseOximeterFeaturesAndOptionalSupportBitfields() {
+        val base = GattValueDecoder.decode("1822", "2a60", byteArrayOf(0x1f, 0))
+        assertEquals(8, base.size)
+        assertTrue(base.any {
+            it.metric == "Recurso de oximetria • Suporte a status da medição" &&
+                it.value == "suportado"
+        })
+
+        val extended = GattValueDecoder.decode(
+            "1822", "2a60",
+            byteArrayOf(0x03, 0, 0x20, 0, 0x02, 0, 0)
+        )
+        assertTrue(extended.any {
+            it.metric == "Recurso de oximetria • Status da medição bit 5" &&
+                it.value == "suportado"
+        })
+        assertTrue(extended.any {
+            it.metric == "Recurso de oximetria • Status do dispositivo/sensor bit 9" &&
+                it.value == "suportado"
+        })
+        assertTrue(GattValueDecoder.decode("1822", "2a60", byteArrayOf(0x01, 0)).isEmpty())
+    }
+
     @Test
     fun decodesDeviceInformationFirmwareString() {
         val decoded = GattValueDecoder.decode(
