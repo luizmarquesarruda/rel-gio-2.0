@@ -2784,7 +2784,7 @@ class MainActivity : ComponentActivity() {
         )
         appendLog(
             "Fingerprint BLE: tamanho=" + fingerprint.length +
-                " | prefixo=" + fingerprint.prefixHex +
+                (if (captureActive) " | prefixo HEX=" + fingerprint.prefixHex else " | prefixo HEX=oculto fora da captura") +
                 " | SHA-256/48=" + fingerprint.sha256Prefix +
                 " | repetição=" + fingerprint.repeatedCount
         )

@@ -1,5 +1,12 @@
 # Changelog
 
+## Não lançado — ocultação do prefixo HEX fora de captura — 04/11/2026
+
+- O log do fingerprint BLE não exibe mais os quatro primeiros bytes do payload fora de uma sessão consentida.
+- Tamanho, SHA-256 truncado e repetição permanecem disponíveis; HEX completo e prefixo só aparecem durante captura autorizada.
+- Documento técnico e diário de bordo atualizados.
+- CI e teste físico: **não validados nesta revisão**.
+
 ## Não lançado — precisão dos contadores do progresso GATT — 04/11/2026
 
 - Itens interrompidos/deixados na fila agora são contados como não executados, separados das operações finalizadas com resposta, confirmação, falha ou timeout.

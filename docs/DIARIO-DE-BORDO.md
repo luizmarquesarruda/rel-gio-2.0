@@ -1,3 +1,10 @@
+## 04/11/2026 — Ocultação do prefixo HEX fora da captura consentida
+
+- Auditoria de privacidade identificou que o log do fingerprint BLE exibia os quatro primeiros bytes do payload mesmo sem sessão de captura ativa.
+- Prefixo HEX agora é registrado somente durante captura consentida; fora dela, o log informa que o prefixo foi ocultado e mantém tamanho, SHA-256 truncado e contagem de repetição.
+- O armazenamento de payload completo continua vinculado à sessão autorizada. Nenhum comando BLE adicional foi introduzido.
+- CI e teste físico GT3 MAX/Galaxy A06: **não validados nesta alteração**.
+
 ## 04/11/2026 — Métricas do painel sem confundir operações puladas
 
 - Ajustado o resumo GATT: itens não executados após desconexão/pausa deixam de ser somados às operações concluídas.
@@ -611,7 +618,7 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 
 ## 04/11/2026 — Auditoria de continuidade e fechamento das lacunas da exploração GT3 MAX
 
-- Revisão das alterações anteriores identificou que BlePacketFingerprintAnalyzer estava criado, mas sem chamada no fluxo de notificação. Ligado ao callback real; cada pacote agora registra tamanho, prefixo, SHA-256 truncado e repetição no log diagnóstico.
+- Revisão das alterações anteriores identificou que BlePacketFingerprintAnalyzer estava criado, mas sem chamada no fluxo de notificação. Ligado ao callback real; cada pacote agora registra tamanho, prefixo, SHA-256 truncado e repetição no log diagnóstico. Revisão posterior: o prefixo HEX fica oculto fora da captura consentida; tamanho, hash truncado e repetição permanecem disponíveis.
 - O parser anterior aceitava exatamente um quadro AB completo por notificação. Criado WearfitAbStreamDecoder com reagrupamento de fragmentos, separação de quadros concatenados, ressincronização e buffer limitado. A interpretação semântica permanece somente para comandos documentados/candidatos.
 - O plano GATT automático foi ampliado para mais perfis SIG: bateria, hora, frequência cardíaca, pressão, temperatura/pressão/umidade ambientais, oximetria, composição corporal e cadência. Nenhuma propriedade WRITE é usada pelo plano.
 - Criado plano manual aprofundado para características proprietárias que anunciam READ e canais NOTIFY/INDICATE com CCCD. Exige confirmação explícita, limita a 24 operações por sessão e exclui FE59/DFU, NUS RX/TX, serial e identificadores de sistema; nenhuma escrita de payload proprietária é criada.
