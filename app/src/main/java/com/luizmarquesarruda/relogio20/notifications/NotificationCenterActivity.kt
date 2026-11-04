@@ -71,6 +71,13 @@ class NotificationCenterActivity : Activity() {
         }
         root.addView(statusView)
 
+        root.addView(TextView(this).apply {
+            text = "Privacidade: o acesso especial do Android permite que este app receba notificações do sistema. O Relógio 2.0 só processa notificações dos aplicativos que você marcar e somente depois de ativar a captura. As prévias ficam temporariamente na memória, limitadas a 30 itens por até 15 minutos; são apagadas quando o listener desconecta, quando a notificação é removida ou quando você limpa a lista. O conteúdo não é gravado em arquivos nem enviado à rede. Não conceda o acesso se não concordar com esse tratamento."
+            textSize = 12f
+            setTextColor(0xFF526170.toInt())
+            setPadding(0, dp(4), 0, dp(10))
+        })
+
         root.addView(makeButton("Conceder / revisar acesso a notificações") {
             runCatching {
                 startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
@@ -85,7 +92,12 @@ class NotificationCenterActivity : Activity() {
             setOnCheckedChangeListener { _, enabled ->
                 if (enabled && !hasNotificationAccess()) {
                     isChecked = false
+                    NotificationCaptureSettings.setEnabled(this@NotificationCenterActivity, false)
                     statusView.text = "Conceda primeiro o acesso especial nas configurações do Android."
+                } else if (enabled && NotificationCaptureSettings.allowedPackages(this@NotificationCenterActivity).isEmpty()) {
+                    isChecked = false
+                    NotificationCaptureSettings.setEnabled(this@NotificationCenterActivity, false)
+                    statusView.text = "Selecione ao menos um aplicativo antes de ativar a captura."
                 } else {
                     NotificationCaptureSettings.setEnabled(this@NotificationCenterActivity, enabled)
                     statusView.text = if (enabled) {
@@ -149,7 +161,7 @@ class NotificationCenterActivity : Activity() {
         ))
 
         val note = TextView(this).apply {
-            text = "O conteúdo fica apenas na memória do processo e é limitado às 30 notificações mais recentes. Nenhum texto é gravado no log ou enviado à rede. O encaminhamento ao GT3 MAX ainda não está disponível."
+            text = "As prévias ficam apenas na memória: no máximo 30 itens por até 15 minutos. O texto não é gravado em logs ou arquivos e não é enviado à rede. O encaminhamento ao GT3 MAX ainda não está disponível."
             textSize = 11f
             setTextColor(0xFF526170.toInt())
             setPadding(0, dp(8), 0, 0)
