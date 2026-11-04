@@ -60,7 +60,6 @@ internal object SafeGattExplorationPlan {
     private const val NUS_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
     private const val NUS_RX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
     private const val NUS_TX = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
-    private const val MAX_DEEP_OPERATIONS = 24
 
     /** Automatic plan: basic device metadata and battery read only. */
     fun build(services: List<GattServiceRecord>): List<Operation> {
@@ -152,7 +151,7 @@ internal object SafeGattExplorationPlan {
         }
         return plan.distinctBy {
             it.serviceUuid.lowercase() + "/" + it.characteristicUuid.lowercase() + "/" + it.kind
-        }.take(MAX_DEEP_OPERATIONS)
+        }
     }
 
     private fun shortUuid(value: String): String {
