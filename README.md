@@ -29,7 +29,7 @@ Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALT
 - Solicita permissões Bluetooth conforme a versão do Android.
 - Procura dispositivos BLE próximos.
 - Mostra nome e RSSI, ocultando parte do endereço MAC na interface.
-- Conecta ao dispositivo escolhido e enumera serviços, características, propriedades e descritores GATT.
+- Conecta automaticamente somente ao dispositivo cujo endereço Bluetooth foi configurado localmente e enumera serviços, características, propriedades e descritores GATT.
 - Exibe inventário GATT passivo: serviços, características, propriedades e descritores.
 - Inscreve automaticamente somente NUS TX no GT3 MAX Call quando o nome e o fingerprint GATT completo coincidem; usa o CCCD padrão e não escreve payload na NUS RX.
 - Registra localmente na tela os bytes recebidos em hexadecimal.

@@ -116,6 +116,20 @@ class SharedSecurityPolicyTests(unittest.TestCase):
         codes = {issue.code for issue in audit_manifest(xml, "diagnostic")}
         self.assertIn("backup_must_be_disabled", codes)
 
+    def test_compiled_resource_references_for_backup_rules_are_accepted(self):
+        xml = manifest(app_attrs='android:allowBackup="false" android:usesCleartextTraffic="false" android:icon="@ref/0x7f040006" android:dataExtractionRules="@ref/0x7f0b0001" android:fullBackupContent="@ref/0x7f0b0000"')
+        self.assertEqual([], audit_manifest(xml, "diagnostic"))
+
+    def test_missing_data_extraction_rules_are_rejected(self):
+        xml = manifest(app_attrs='android:allowBackup="false" android:usesCleartextTraffic="false" android:icon="@drawable/ic_launcher" android:fullBackupContent="@xml/backup_rules"')
+        codes = {issue.code for issue in audit_manifest(xml, "diagnostic")}
+        self.assertIn("data_extraction_rules_missing", codes)
+
+    def test_missing_legacy_backup_rules_are_rejected(self):
+        xml = manifest(app_attrs='android:allowBackup="false" android:usesCleartextTraffic="false" android:icon="@drawable/ic_launcher" android:dataExtractionRules="@xml/data_extraction_rules"')
+        codes = {issue.code for issue in audit_manifest(xml, "diagnostic")}
+        self.assertIn("legacy_backup_rules_missing", codes)
+
     def test_cleartext_traffic_must_not_be_enabled(self):
         xml = manifest(app_attrs='android:allowBackup="false" android:usesCleartextTraffic="true"')
         codes = {issue.code for issue in audit_manifest(xml, "diagnostic")}

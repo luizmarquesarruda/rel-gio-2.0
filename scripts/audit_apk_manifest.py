@@ -160,13 +160,13 @@ def audit_manifest(manifest_xml: str, variant: str) -> list[AuditIssue]:
             "Application must declare an explicit launcher icon.",
         ))
 
-    if _attr(application, "dataExtractionRules") != "@xml/data_extraction_rules":
+    if not _attr(application, "dataExtractionRules"):
         issues.append(AuditIssue(
             "data_extraction_rules_missing",
             "Application must declare the explicit Android 12+ data extraction policy.",
         ))
 
-    if _attr(application, "fullBackupContent") != "@xml/backup_rules":
+    if not _attr(application, "fullBackupContent"):
         issues.append(AuditIssue(
             "legacy_backup_rules_missing",
             "Application must declare the explicit legacy backup exclusion policy.",

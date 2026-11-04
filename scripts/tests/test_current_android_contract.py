@@ -68,7 +68,7 @@ class CurrentAndroidContractTests(unittest.TestCase):
         self.assertEqual("s", scan_permission.attrib.get(TOOLS + "targetApi"))
         self.assertIsNone(manifest.find("uses-permission-sdk-31"))
 
-    def test_manifest_policy_auditor_checks_sdk31_permission_nodes(self):
+    def test_manifest_policy_auditor_rejects_sdk31_permission_element(self):
         xml = f'''<manifest xmlns:android="{ANDROID_NS}"
             package="com.luizmarquesarruda.relogio20.diagnostic">
             <uses-permission-sdk-31 android:name="android.permission.INTERNET" />
@@ -106,6 +106,8 @@ class CurrentAndroidContractTests(unittest.TestCase):
 
     def test_readme_matches_current_read_only_gatt_flow_and_version_source(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertNotIn("Conecta ao dispositivo escolhido", readme)
+        self.assertIn("endereço Bluetooth foi configurado localmente", readme)
         self.assertNotIn("Permite leitura explícita de características", readme)
         self.assertNotIn("Use **Ler**", readme)
         self.assertNotIn("Use **Ouvir**", readme)

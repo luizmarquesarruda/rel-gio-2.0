@@ -411,3 +411,13 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - O CI deverá validar novamente os contratos, os dois sabores, permissões/serviços mesclados, assinatura e artefatos no HEAD final.
 - Galaxy A06/Android 16, instalação, TalkBack, transferências do Android e comunicação física GT3 MAX: **não validados nesta rodada**.
 - Nenhum sensor, protocolo proprietário, notificação enviada ao relógio, OTA/DFU ou reset foi habilitado.
+
+## 04/11/2026 — Ajuste final do auditor de APK compilado
+
+- Run #207 comprovou que AAPT/apkanalyzer serializa referências de recursos do manifesto como `@ref/0x...`, embora a fonte declare `@xml/data_extraction_rules` e `@xml/backup_rules`.
+- O auditor foi ajustado para exigir que ambos os atributos existam e não estejam vazios no APK final, sem exigir que o nome simbólico sobreviva à compilação.
+- Os testes de fonte continuam exigindo os identificadores de recursos exatos e confirmam que backup em nuvem, transferência e backup legado excluem os dados do aplicativo.
+- Adicionado teste que reproduz o manifesto compilado com referências `@ref` e testes de regressão para ausência de cada atributo.
+- Corrigida última frase obsoleta no README: a seleção manual de um dispositivo genérico foi removida; a conexão usa somente o endereço GT3 MAX configurado localmente.
+- Run #207 passou Lint, testes Kotlin, build das duas variantes e guardrails de dependências/permissões. Falhou somente na comparação textual dos atributos de backup no auditor. O CI seguinte deve revalidar o novo comportamento, auditoria das assinaturas e publicação.
+- Não houve instalação física ou teste de conexão no Galaxy A06 nesta rodada.

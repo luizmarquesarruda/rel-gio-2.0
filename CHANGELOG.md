@@ -1,5 +1,13 @@
 # Changelog
 
+## Não lançado — auditoria do manifesto compilado
+
+- Auditor de APK atualizado para aceitar referências de recursos compiladas (@ref) em dataExtractionRules/fullBackupContent, mantendo a exigência de ambos os atributos.
+- Testes adicionados para a forma compilada e para ausência de cada política; testes de código-fonte preservam nomes e exclusões exatos.
+- README corrigido para refletir conexão automática restrita ao endereço local configurado, sem seleção genérica manual.
+- Run #207: Lint, testes, build e guardrails passaram; auditoria de APK falhou apenas no formato textual das referências de recursos. A nova execução deverá confirmar a correção e a publicação.
+
+
 ## Não lançado — segunda rodada de auditoria e correção de obsolescência
 
 - Atualizadas AndroidX Activity KTX para 1.13.0 e coroutines Android para 1.11.0 após alertas de versão; Health Connect 1.1.0 foi mantido.
