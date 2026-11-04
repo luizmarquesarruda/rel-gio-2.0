@@ -3,7 +3,7 @@
 ## Não lançado — segunda rodada de auditoria e correção de obsolescência
 
 - Atualizadas AndroidX Activity KTX para 1.13.0 e coroutines Android para 1.11.0 após alertas de versão; Health Connect 1.1.0 foi mantido.
-- Movidas as permissões Bluetooth 12+ para uses-permission-sdk-31 e ampliado o auditor de manifestos para verificar também esse tipo de nó.
+- Mantidas as permissões Bluetooth no elemento padrão uses-permission, com tools:targetApi=s no atributo neverForLocation; o auditor rejeita o elemento não suportado uses-permission-sdk-31.
 - Adicionado ícone vetorial próprio e regras explícitas de exclusão para backup/extração em nuvem, transferência entre dispositivos e backup legado; allowBackup continua false.
 - Removidos callbacks GATT de leitura e função handleRead que ficaram sem chamadores. O fluxo CCCD separa a chamada moderna API33+ do caminho Boolean legado.
 - O artefato passa a identificar separadamente o SHA fonte da PR e o SHA efetivamente testado pelo GitHub Actions.

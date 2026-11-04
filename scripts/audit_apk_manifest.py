@@ -97,6 +97,11 @@ def audit_manifest(manifest_xml: str, variant: str) -> list[AuditIssue]:
         return [AuditIssue("manifest_root_invalid", "APK manifest root element is not <manifest>.")]
 
     issues: list[AuditIssue] = []
+    if root.find("uses-permission-sdk-31") is not None:
+        issues.append(AuditIssue(
+            "unsupported_permission_element",
+            "Android manifests do not support uses-permission-sdk-31; use uses-permission.",
+        ))
     expected_package = (
         "com.luizmarquesarruda.relogio20.diagnostic"
         if variant == "diagnostic"
@@ -113,7 +118,6 @@ def audit_manifest(manifest_xml: str, variant: str) -> list[AuditIssue]:
         "uses-permission",
         "uses-permission-sdk-23",
         "uses-permission-sdk-m",
-        "uses-permission-sdk-31",
     ):
         for permission in root.findall(permission_tag):
             name = _attr(permission, "name") or ""

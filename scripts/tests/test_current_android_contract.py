@@ -7,6 +7,8 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[2]
 ANDROID_NS = "http://schemas.android.com/apk/res/android"
 ANDROID = f"{{{ANDROID_NS}}}"
+TOOLS_NS = "http://schemas.android.com/tools"
+TOOLS = f"{{{TOOLS_NS}}}"
 
 AUDITOR = ROOT / "scripts/audit_apk_manifest.py"
 _spec = importlib.util.spec_from_file_location("audit_apk_manifest", AUDITOR)
@@ -53,14 +55,18 @@ class CurrentAndroidContractTests(unittest.TestCase):
                 f"{section_name} must exclude the app's data.",
             )
 
-    def test_android_12_bluetooth_permissions_are_sdk31_scoped(self):
+    def test_android_12_bluetooth_permissions_use_valid_permission_elements(self):
         manifest = ET.parse(ROOT / "app/src/main/AndroidManifest.xml").getroot()
-        permission_names = {
-            permission.attrib.get(ANDROID + "name")
-            for permission in manifest.findall("uses-permission-sdk-31")
+        permissions = {
+            permission.attrib.get(ANDROID + "name"): permission
+            for permission in manifest.findall("uses-permission")
         }
-        self.assertIn("android.permission.BLUETOOTH_SCAN", permission_names)
-        self.assertIn("android.permission.BLUETOOTH_CONNECT", permission_names)
+        self.assertIn("android.permission.BLUETOOTH_SCAN", permissions)
+        self.assertIn("android.permission.BLUETOOTH_CONNECT", permissions)
+        scan_permission = permissions["android.permission.BLUETOOTH_SCAN"]
+        self.assertEqual("neverForLocation", scan_permission.attrib.get(ANDROID + "usesPermissionFlags"))
+        self.assertEqual("s", scan_permission.attrib.get(TOOLS + "targetApi"))
+        self.assertIsNone(manifest.find("uses-permission-sdk-31"))
 
     def test_manifest_policy_auditor_checks_sdk31_permission_nodes(self):
         xml = f'''<manifest xmlns:android="{ANDROID_NS}"
@@ -70,7 +76,7 @@ class CurrentAndroidContractTests(unittest.TestCase):
                 android:usesCleartextTraffic="false" />
         </manifest>'''
         codes = {issue.code for issue in audit_module.audit_manifest(xml, "diagnostic")}
-        self.assertIn("network_permission_not_approved", codes)
+        self.assertIn("unsupported_permission_element", codes)
 
     def test_workflow_records_pr_head_and_tested_merge_commit_separately(self):
         workflow = (ROOT / ".github/workflows/android-ci.yml").read_text(encoding="utf-8")

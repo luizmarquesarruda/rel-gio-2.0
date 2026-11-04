@@ -397,9 +397,9 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 
 ### Correções aplicadas nesta rodada
 - Atualizadas AndroidX Activity KTX para 1.13.0 e kotlinx-coroutines-android para 1.11.0, versões estáveis publicadas pelos respectivos projetos. Health Connect 1.1.0 foi mantido.
-- BLUETOOTH_SCAN e BLUETOOTH_CONNECT movidos para uses-permission-sdk-31; a permissão de localização para versões legadas continua limitada a maxSdkVersion=30.
+- BLUETOOTH_SCAN e BLUETOOTH_CONNECT permanecem no elemento padrão uses-permission; o atributo neverForLocation recebe tools:targetApi=s para delimitar o aviso de Lint à API 31+. A permissão de localização para versões legadas continua limitada a maxSdkVersion=30.
 - Adicionado ícone vetorial local e regras de exclusão para backup legado, backup em nuvem e transferência entre dispositivos. allowBackup permanece false.
-- Auditor de manifestos ampliado para verificar permissões uses-permission-sdk-31, ícone, dataExtractionRules e fullBackupContent.
+- Auditor de manifestos ampliado para verificar permissões padrão, rejeitar o elemento não suportado uses-permission-sdk-31, além de verificar ícone, dataExtractionRules e fullBackupContent.
 - Removidos callbacks GATT de leitura e função handleRead que ficaram sem chamadores. O fluxo CCCD mantém o retorno Boolean legado e isola a chamada moderna em helper anotado para API 33+.
 - Workflow passa a registrar source_commit (HEAD da PR) e tested_commit (SHA efetivamente testado pelo GitHub Actions).
 - README atualizado para refletir identificação local, conexão automática, inventário GATT passivo e versão canônica.
