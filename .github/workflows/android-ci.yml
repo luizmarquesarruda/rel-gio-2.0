@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - 'fix/**'
+      - 'feat/**'
   pull_request:
     branches:
       - main
@@ -121,7 +122,7 @@ jobs:
           app=Relógio 2.0
           variant=diagnosticDebug
           package=com.luizmarquesarruda.relogio20.diagnostic
-          version=0.4.0-alpha.1-diagnostic
+          version=0.4.0-alpha.2-diagnostic
           build_type=debug
           commit=$GITHUB_SHA
           workflow_run=$GITHUB_RUN_ID
