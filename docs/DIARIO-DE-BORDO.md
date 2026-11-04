@@ -23,6 +23,8 @@ Este arquivo é o registro cronológico principal. Atualizar em toda PR que alte
 - Health Connect: consulta agregada permanece separada dos dados do relógio; ausência de valor não é zero; teste físico não validado.
 - Notificações: filtro por pacote, cache volátil de 30 itens, remoção por callback e revogação de pacote; conteúdo não é persistido nem enviado à rede.
 - UI: lista de aplicativos rolável; teste visual no Galaxy A06 não validado.
+- CI separado em etapas: lint, testes/build e upload do relatório Lint; o APK debug é publicado quando a etapa de testes/build passa, mesmo que o Lint mantenha a execução global vermelha.
+- Pushes para branches fix/* também iniciam o workflow, além de PRs.
 - Estrutura: MainActivity.kt continua concentrando BLE e Health Connect; extração de serviços/camadas segue como dívida arquitetural, não foi mascarada como concluída.
 
 ### Versão e validação
