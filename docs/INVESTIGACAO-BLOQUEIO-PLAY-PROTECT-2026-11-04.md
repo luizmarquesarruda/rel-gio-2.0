@@ -25,17 +25,19 @@ Se o arquivo instalado foi a variante companion ou um APK anterior que ainda con
 
 Se o arquivo instalado foi exatamente o diagnostic do run 41761934088, a regra específica baseada em Notification Listener/SMS/Accessibility não explica o bloqueio. Isso não prova que o APK é seguro nem exclui outra classificação do Play Protect. A causa não pode ser determinada sem o APK exato e a mensagem literal.
 
-## CI em andamento
+## CI e correção do auditor
 
-Run de auditoria: https://github.com/luizmarquesarruda/rel-gio-2.0/actions/runs/41764184171
+Run 41764184171: https://github.com/luizmarquesarruda/rel-gio-2.0/actions/runs/41764184171
 
-No último estado consultado:
 - Testes da política de manifesto: sucesso.
 - Android Lint nas duas variantes: sucesso.
 - Testes unitários e montagem das duas variantes: sucesso.
 - Guardrails de dependências e permissões: sucesso.
-- Auditoria dos manifestos e assinaturas: em andamento.
-- Artefatos: ainda não publicados.
+- Auditoria final falhou porque `apkanalyzer manifest print` emitiu o rótulo `Saúde & Fitness` com ampersand cru, produzindo XML inválido para o parser Python. A falha era na serialização do relatório da ferramenta, não evidência de manifesto Android inválido nem de malware.
+- O pacote de instalação não foi publicado; somente `android-validation-reports` foi publicado.
+- Corrigido o auditor para escapar ampersands não codificados antes de analisar XML e adicionados testes para ampersand cru e entidade `&amp;` já válida. Matcher de entidades numéricas também foi conferido.
+- Nova execução após a correção: run 41764797014, inicialmente na fila: https://github.com/luizmarquesarruda/rel-gio-2.0/actions/runs/41764797014
+- Artefato diagnostic novo: ainda não publicado; aguardar a nova execução.
 
 ## Próximas ações seguras
 
