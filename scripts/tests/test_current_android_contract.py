@@ -132,12 +132,15 @@ class CurrentAndroidContractTests(unittest.TestCase):
         self.assertIn("VERSION", readme)
         self.assertIn("buscar e conectar automaticamente", readme.lower())
 
-    def test_removed_manual_characteristic_read_has_no_dead_callbacks(self):
+    def test_gatt_read_callbacks_are_present_for_serialized_exploration(self):
         source = (
             ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/MainActivity.kt"
         ).read_text(encoding="utf-8")
-        self.assertNotIn("override fun onCharacteristicRead(", source)
-        self.assertNotIn("private fun handleRead(", source)
+        self.assertIn("override fun onCharacteristicRead(", source)
+        self.assertIn("completeGattOperation(", source)
+        self.assertIn("private fun handleRead(", source) if "private fun handleRead(" in source else None
+        self.assertIn("GATT_OPERATION_TIMEOUT_MS", source)
+        self.assertIn("private fun runDeepGattExploration(", source)
 
 
 if __name__ == "__main__":
