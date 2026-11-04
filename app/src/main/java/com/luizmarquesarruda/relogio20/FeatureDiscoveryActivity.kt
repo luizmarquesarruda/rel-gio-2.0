@@ -120,6 +120,7 @@ class FeatureDiscoveryActivity : Activity() {
     private fun render() {
         body.removeAllViews()
         renderTimerPanel()
+        renderDeepExplorationShortcut()
         renderLibraryShortcut()
         when (val library = store.read()) {
             DiscoveryLibraryReadResult.Empty -> {
@@ -158,6 +159,29 @@ class FeatureDiscoveryActivity : Activity() {
         addSectionTitle("Segurança da exploração")
         addMessage(
             "A captura cronometrada registra somente notificações e leituras recebidas durante a sessão. O HEX fica no armazenamento privado deste aplicativo. Nenhum comando proprietário, escrita NUS RX, DFU, OTA ou reset é enviado."
+        )
+    }
+
+
+    private fun renderDeepExplorationShortcut() {
+        val button = Button(this).apply {
+            text = "Explorar todos os canais GATT"
+            isAllCaps = false
+            textSize = 14f
+            setOnClickListener {
+                getSharedPreferences("ble_exploration_requests", MODE_PRIVATE)
+                    .edit()
+                    .putBoolean("pending_deep_exploration", true)
+                    .apply()
+                finish()
+            }
+        }
+        body.addView(button, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(50)
+        ).apply { bottomMargin = dp(6) })
+        addMessage(
+            "A ação retorna ao painel principal e solicita a exploração aprofundada. " +
+                "O aplicativo pedirá confirmação antes de ler ou ativar canais compatíveis."
         )
     }
 
