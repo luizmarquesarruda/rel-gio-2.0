@@ -197,6 +197,41 @@ class GattValueDecoderTest {
         assertTrue(GattValueDecoder.decode("181b", "2a9b", byteArrayOf(1, 0, 0)).isEmpty())
     }
 
+
+    @Test
+    fun rejectsReservedFlagsAndUnexpectedTrailingBytes() {
+        assertTrue(
+            GattValueDecoder.decode("180d", "2a37", byteArrayOf(0x20, 72)).isEmpty()
+        )
+        assertTrue(
+            GattValueDecoder.decode(
+                "1810", "2a35",
+                byteArrayOf(0, 0x78, 0, 0x4b, 0, 0x5a, 0, 0)
+            ).isEmpty()
+        )
+        assertTrue(
+            GattValueDecoder.decode(
+                "1814", "2a53",
+                byteArrayOf(0x08, 0x00, 0x01, 90)
+            ).isEmpty()
+        )
+        assertTrue(
+            GattValueDecoder.decode("1816", "2a5b", byteArrayOf(0x04)).isEmpty()
+        )
+        assertTrue(
+            GattValueDecoder.decode(
+                "1809", "2a1c",
+                byteArrayOf(0x08, 0x6d, 0x01, 0, 0xff.toByte())
+            ).isEmpty()
+        )
+        assertTrue(
+            GattValueDecoder.decode(
+                "1822", "2a5e",
+                byteArrayOf(0x80.toByte(), 0x62, 0, 0x48, 0)
+            ).isEmpty()
+        )
+    }
+
     @Test
     fun decodesDeviceInformationFirmwareString() {
         val decoded = GattValueDecoder.decode(
