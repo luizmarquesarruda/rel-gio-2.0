@@ -579,14 +579,30 @@ class MainActivity : ComponentActivity() {
         appendLog("Solicitada conexão BLE com " +
             (safeDeviceName(device) ?: "dispositivo sem nome") +
             " (" + (safeDeviceAddress(device)?.let(::maskAddress) ?: "endereço oculto") + ").")
-        bluetoothGatt = device.connectGatt(
-            this,
-            false,
-            gattCallback,
-            BluetoothDevice.TRANSPORT_LE,
-            BluetoothDevice.PHY_LE_1M_MASK,
-            handler
-        )
+        val newGatt = try {
+            device.connectGatt(
+                this,
+                false,
+                gattCallback,
+                BluetoothDevice.TRANSPORT_LE,
+                BluetoothDevice.PHY_LE_1M_MASK,
+                handler
+            )
+        } catch (error: SecurityException) {
+            updateStatus("Permissão Bluetooth foi revogada. Autorize novamente.")
+            appendLog("Conexão GATT bloqueada por permissão: " + (error.message ?: "sem detalhes"))
+            return
+        } catch (error: IllegalArgumentException) {
+            updateStatus("Dispositivo BLE inválido ou indisponível.")
+            appendLog("Não foi possível iniciar GATT: " + (error.message ?: "argumento inválido"))
+            return
+        }
+        if (newGatt == null) {
+            updateStatus("O Android não iniciou a conexão GATT.")
+            appendLog("connectGatt retornou null.")
+            return
+        }
+        bluetoothGatt = newGatt
     }
 
     private val gattCallback = object : BluetoothGattCallback() {
