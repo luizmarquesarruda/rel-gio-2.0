@@ -1,3 +1,13 @@
+## 04/11/2026 — Liberação da conexão BLE para Wearfit Pro
+
+- Adicionada ação explícita na tela principal para entregar o controle da sessão ao Wearfit Pro.
+- O Relógio 2.0 interrompe scans próprios, cancela tentativas pendentes, desativa a reconexão automática e fecha a sessão GATT gerenciada pelo próprio app.
+- A intenção de liberação fica persistida; reabrir ou retomar o Relógio 2.0 não inicia busca BLE enquanto o modo estiver ativo.
+- A retomada exige ação explícita **Retomar conexão no Relógio 2.0**, que remove a liberação e inicia nova busca manual.
+- A ação não remove pareamento Android, não desliga Bluetooth e não modifica o canal Bluetooth Classic de chamadas.
+- Testes unitários cobrem o bloqueio de reconexão e da descoberta inicial durante a liberação.
+- CI desta branch e teste físico Galaxy A06 / Android 16 + GT3 MAX / Wearfit Pro: **não validados**.
+
 ## 04/11/2026 — Watchdog e rastreabilidade do ciclo de descoberta GATT
 
 - A conexão GATT agora registra persistentemente quando `discoverServices()` foi aceito, quando `onServicesDiscovered` respondeu e quando a descoberta falhou.
