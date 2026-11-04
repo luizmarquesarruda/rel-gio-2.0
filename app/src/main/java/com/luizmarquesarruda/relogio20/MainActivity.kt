@@ -202,6 +202,9 @@ class MainActivity : ComponentActivity() {
     }
     private val activeNotifications = mutableSetOf<String>()
     private val pendingNotifications = mutableSetOf<String>()
+    private val pendingAutomaticNotifications = mutableSetOf<String>()
+    private val automaticNotificationKeys = mutableSetOf<String>()
+    private val pendingAutomaticUnsubscribeKeys = mutableSetOf<String>()
     private val gattOperationQueue = SerialGattOperationQueue()
     private var activeGattOperationKey: String? = null
     private var gattOperationTimeoutTask: Runnable? = null
@@ -379,7 +382,7 @@ class MainActivity : ComponentActivity() {
 
         automaticGattDiscoveryButton = makeButton(
             if (automaticGattDiscoveryEnabled) {
-                "Pausar testes e salvamento automáticos"
+                "Pausar coleta automática"
             } else {
                 "Ativar testes automáticos ao conectar"
             }
@@ -539,6 +542,17 @@ class MainActivity : ComponentActivity() {
             val session = discoveryLibraryStore.activeSession(nowMillis)
             if (session == null) {
                 captureSessionView.visibility = View.GONE
+                val automaticSessionId = automaticGattDiscoveryPrefs.getString(KEY_AUTOMATIC_SESSION_ID, null)
+                if (automaticGattDiscoveryEnabled &&
+                    isGattConnected &&
+                    automaticGattProbeStartedForConnection &&
+                    automaticSessionId != null
+                ) {
+                    automaticGattDiscoveryPrefs.edit { remove(KEY_AUTOMATIC_SESSION_ID) }
+                    if (ensureAutomaticCaptureSession()) {
+                        appendLog("Janela automática de captura renovada; coleta continua até pausar ou desconectar.")
+                    }
+                }
             } else {
                 val remaining = session.remainingSeconds(nowMillis)
                 val time = String.format(Locale.ROOT, "%02d:%02d", remaining / 60, remaining % 60)
@@ -1716,7 +1730,7 @@ class MainActivity : ComponentActivity() {
     private fun updateAutomaticGattDiscoveryButton() {
         if (!::automaticGattDiscoveryButton.isInitialized) return
         automaticGattDiscoveryButton.text = if (automaticGattDiscoveryEnabled) {
-            "Pausar testes e salvamento automáticos"
+            "Pausar coleta automática"
         } else {
             "Ativar testes automáticos ao conectar"
         }
@@ -1725,9 +1739,10 @@ class MainActivity : ComponentActivity() {
     private fun toggleAutomaticGattDiscovery() {
         if (automaticGattDiscoveryEnabled) {
             automaticGattDiscoveryPrefs.edit { putBoolean("enabled", false) }
-            finishAutomaticCaptureSession("Testes automáticos pausados pelo usuário")
+            finishAutomaticCaptureSession("Coleta automática pausada pelo usuário")
+            stopAutomaticGattNotifications()
             appendLog(
-                "Testes e salvamento automáticos pausados. Novas leituras/inscrições automáticas não serão iniciadas."
+                "Coleta automática pausada. Novas leituras/inscrições param; canais ativados pelo teste automático serão desinscritos via CCCD padrão."
             )
             updateAutomaticGattDiscoveryButton()
             return
@@ -1739,7 +1754,7 @@ class MainActivity : ComponentActivity() {
                 "Depois de ativar, o aplicativo vai iniciar automaticamente quando reconhecer o fingerprint GATT completo do GT3 MAX Call. " +
                     "Ele percorrerá os canais compatíveis que anunciam READ e ativará NOTIFY/INDICATE com CCCD padrão. " +
                     "Leituras e notificações recebidas serão salvas localmente, incluindo HEX que pode conter dados de saúde, em sessões de até 10 minutos. " +
-                    "A autorização fica salva neste aparelho até você pausar. Nenhum payload de escrita, comando proprietário, NUS RX, DFU, OTA ou reset será enviado. " +
+                    "A autorização fica salva neste aparelho até você pausar. A captura usa blocos locais de até 10 minutos, renovados enquanto o modo estiver ativo. Nenhum payload de escrita, comando proprietário, NUS RX, DFU, OTA ou reset será enviado. " +
                     "Ativar uma notificação não força o relógio a iniciar uma medição: o app só recebe dados que o firmware disponibilizar."
             )
             .setNegativeButton("Cancelar", null)
@@ -2262,10 +2277,13 @@ class MainActivity : ComponentActivity() {
             }
 
         pendingNotifications.add(key)
+        if (automaticDiscovery) pendingAutomaticNotifications.add(key)
         enqueueGattOperation(
             gattOperationKey(characteristic.service.uuid.toString(), characteristic.uuid.toString(), "CCCD"),
             onTimeout = {
                 pendingNotifications.remove(key)
+                pendingAutomaticNotifications.remove(key)
+                automaticNotificationKeys.remove(key)
                 activeNotifications.remove(key)
                 runCatching { gatt.setCharacteristicNotification(characteristic, false) }
                 appendLog("Inscrição CCCD expirou para " + characteristic.uuid + "; inscrição local desativada.")
@@ -2277,12 +2295,14 @@ class MainActivity : ComponentActivity() {
                 false
             } else if (automaticDiscovery && !automaticGattDiscoveryEnabled) {
                 pendingNotifications.remove(key)
-                appendLog("Inscrição automática cancelada: testes automáticos foram pausados.")
+                pendingAutomaticNotifications.remove(key)
+                appendLog("Inscrição automática cancelada: coleta automática foi pausada.")
                 false
             } else {
                 val localEnabled = gatt.setCharacteristicNotification(characteristic, true)
                 if (!localEnabled) {
                     pendingNotifications.remove(key)
+                    pendingAutomaticNotifications.remove(key)
                     appendLog("Android recusou a inscrição local em " + characteristic.uuid)
                     false
                 } else {
@@ -2301,6 +2321,7 @@ class MainActivity : ComponentActivity() {
                         true
                     } else {
                         pendingNotifications.remove(key)
+                        pendingAutomaticNotifications.remove(key)
                         gatt.setCharacteristicNotification(characteristic, false)
                         appendLog("O Android recusou iniciar a inscrição CCCD para " + characteristic.uuid)
                         false
@@ -2372,11 +2393,13 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleNotification(serviceUuid: String, uuid: String, value: ByteArray) {
-        val description = if (value.isEmpty()) "0 bytes" else
-            value.size.toString() + " bytes: " + BleValueFormatter.toHex(value)
-        appendLog("NOTIFICAÇÃO " + uuid + " | " + description)
-
         val observedAtMillis = System.currentTimeMillis()
+        val captureActive = discoveryLibraryStore.activeSession(observedAtMillis) != null
+        val description = if (value.isEmpty()) "0 bytes" else {
+            value.size.toString() + " bytes" +
+                if (captureActive) ": " + BleValueFormatter.toHex(value) else ""
+        }
+        appendLog("NOTIFICAÇÃO " + uuid + " | " + description)
         val fingerprint = BlePacketFingerprintAnalyzer.observe(serviceUuid, uuid, value)
         val observation = passiveBleObservationTracker.observe(
             serviceUuid = serviceUuid,
