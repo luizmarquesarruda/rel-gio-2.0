@@ -205,6 +205,7 @@ class MainActivity : ComponentActivity() {
     private val pendingAutomaticNotifications = mutableSetOf<String>()
     private val automaticNotificationKeys = mutableSetOf<String>()
     private val pendingAutomaticUnsubscribeKeys = mutableSetOf<String>()
+    private val queuedAutomaticUnsubscribeKeys = mutableSetOf<String>()
     private val gattOperationQueue = SerialGattOperationQueue()
     private var activeGattOperationKey: String? = null
     private var gattOperationTimeoutTask: Runnable? = null
@@ -1267,6 +1268,7 @@ class MainActivity : ComponentActivity() {
         pendingAutomaticNotifications.clear()
         automaticNotificationKeys.clear()
         pendingAutomaticUnsubscribeKeys.clear()
+        queuedAutomaticUnsubscribeKeys.clear()
         deepExplorationAttempted.clear()
         nusFrameDecoder.reset()
         passiveBleObservationTracker.resetSession()
@@ -1314,6 +1316,7 @@ class MainActivity : ComponentActivity() {
                 pendingAutomaticNotifications.clear()
                 automaticNotificationKeys.clear()
                 pendingAutomaticUnsubscribeKeys.clear()
+                queuedAutomaticUnsubscribeKeys.clear()
                 runCatching { newGatt.disconnect() }
                 runCatching { newGatt.close() }
                 updateStatus("Falha na conexão GATT: tempo limite aguardando conexão.")
@@ -1371,6 +1374,7 @@ class MainActivity : ComponentActivity() {
                 pendingAutomaticNotifications.clear()
                 automaticNotificationKeys.clear()
                 pendingAutomaticUnsubscribeKeys.clear()
+                queuedAutomaticUnsubscribeKeys.clear()
                 pendingCurrentTimeWriteKey = null
                 clockSyncAttemptedForSession = false
                 deviceTimeSyncView.text = "Hora do relógio: sessão GATT encerrada antes da confirmação."
@@ -1400,6 +1404,7 @@ class MainActivity : ComponentActivity() {
                     pendingAutomaticNotifications.clear()
                     automaticNotificationKeys.clear()
                     pendingAutomaticUnsubscribeKeys.clear()
+                    queuedAutomaticUnsubscribeKeys.clear()
                     bluetoothGatt = null
                 }
                 runCatching { gatt.close() }
@@ -1854,7 +1859,7 @@ class MainActivity : ComponentActivity() {
     private fun maybeStartAutomaticGattProbe(gatt: BluetoothGatt) {
         if (bluetoothGatt !== gatt || !isGattConnected || isGattDisconnecting) return
         if (!automaticGattDiscoveryEnabled || automaticGattProbeStartedForConnection) return
-        if (pendingAutomaticUnsubscribeKeys.isNotEmpty()) {
+        if (pendingAutomaticUnsubscribeKeys.isNotEmpty() || queuedAutomaticUnsubscribeKeys.isNotEmpty()) {
             handler.postDelayed({
                 if (bluetoothGatt === gatt) maybeStartAutomaticGattProbe(gatt)
             }, 300L)
@@ -1922,6 +1927,7 @@ class MainActivity : ComponentActivity() {
         if (gatt == null || !isGattConnected || isGattDisconnecting) {
             pendingAutomaticNotifications.clear()
             pendingAutomaticUnsubscribeKeys.clear()
+            queuedAutomaticUnsubscribeKeys.clear()
             automaticNotificationKeys.clear()
             return
         }
@@ -1958,11 +1964,12 @@ class MainActivity : ComponentActivity() {
                 return@forEach
             }
 
-            pendingAutomaticUnsubscribeKeys.add(key)
+            queuedAutomaticUnsubscribeKeys.add(key)
             enqueueGattOperation(
                 gattOperationKey(parts[0], parts[1], "CCCD"),
                 onTimeout = {
                     pendingAutomaticUnsubscribeKeys.remove(key)
+                    queuedAutomaticUnsubscribeKeys.remove(key)
                     pendingAutomaticNotifications.remove(key)
                     automaticNotificationKeys.remove(key)
                     activeNotifications.remove(key)
@@ -1974,10 +1981,11 @@ class MainActivity : ComponentActivity() {
                 }
             ) {
                 if (bluetoothGatt !== gatt || isGattDisconnecting) {
-                    pendingAutomaticUnsubscribeKeys.remove(key)
+                    queuedAutomaticUnsubscribeKeys.remove(key)
                     false
                 } else {
                     gatt.setCharacteristicNotification(characteristic, false)
+                    queuedAutomaticUnsubscribeKeys.remove(key)
                     pendingAutomaticUnsubscribeKeys.add(key)
                     val started = if (Build.VERSION.SDK_INT >= 33) {
                         writeDescriptorApi33(
@@ -1994,6 +2002,7 @@ class MainActivity : ComponentActivity() {
                     }
                     if (!started) {
                         pendingAutomaticUnsubscribeKeys.remove(key)
+                        queuedAutomaticUnsubscribeKeys.remove(key)
                         pendingAutomaticNotifications.remove(key)
                         automaticNotificationKeys.remove(key)
                         activeNotifications.remove(key)
@@ -2662,6 +2671,7 @@ class MainActivity : ComponentActivity() {
         pendingAutomaticNotifications.clear()
         automaticNotificationKeys.clear()
         pendingAutomaticUnsubscribeKeys.clear()
+        queuedAutomaticUnsubscribeKeys.clear()
         gatt.disconnect()
         updateStatus("Desconectando...")
     }
@@ -2873,6 +2883,7 @@ class MainActivity : ComponentActivity() {
         pendingAutomaticNotifications.clear()
         automaticNotificationKeys.clear()
         pendingAutomaticUnsubscribeKeys.clear()
+        queuedAutomaticUnsubscribeKeys.clear()
         healthScope.cancel()
         isGattDisconnecting = true
         runCatching { bluetoothGatt?.disconnect() }
