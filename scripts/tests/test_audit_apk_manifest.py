@@ -93,8 +93,19 @@ class CompanionVariantTests(unittest.TestCase):
 
 class SharedSecurityPolicyTests(unittest.TestCase):
     def test_health_connect_privacy_rationale_entry_points_are_accepted(self):
-        xml = manifest()
-        for variant in ("diagnostic", "companion"):
+        diagnostic_xml = manifest()
+        companion_xml = manifest(
+            package_name="com.luizmarquesarruda.relogio20",
+            services='''<service android:name=".notifications.NotificationCaptureService"
+              android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+              android:exported="false"><intent-filter><action
+              android:name="android.service.notification.NotificationListenerService" />
+              </intent-filter></service>'''
+        )
+        for variant, xml in (
+            ("diagnostic", diagnostic_xml),
+            ("companion", companion_xml),
+        ):
             with self.subTest(variant=variant):
                 self.assertEqual([], audit_manifest(xml, variant))
 
