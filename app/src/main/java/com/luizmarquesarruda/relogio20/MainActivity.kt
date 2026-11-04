@@ -1510,34 +1510,54 @@ class MainActivity : ComponentActivity() {
             val characteristic = descriptor.characteristic
             val key = characteristic.service.uuid.toString() + "/" +
                 characteristic.uuid.toString()
-            val wasPending = pendingNotifications.remove(key)
-            if (wasPending && status == BluetoothGatt.GATT_SUCCESS) {
-                activeNotifications.add(key)
-                appendLog("Notificação/indicação confirmada pelo callback GATT para " + characteristic.uuid)
-                discoveryLibraryStore.recordDiscovery(
-                    title = "Inscrição GATT confirmada • " + characteristic.uuid,
-                    detail = "Callback Android confirmou o descritor CCCD 0x2902. O app passa a aguardar dados emitidos pelo relógio.",
-                    nowMillis = System.currentTimeMillis(),
-                    source = "GATT_CCCD",
-                    confidence = "SUBSCRICAO_CONFIRMADA"
-                )
-            } else if (wasPending) {
+            val wasDisablingAutomatic = pendingAutomaticUnsubscribeKeys.remove(key)
+            if (wasDisablingAutomatic) {
+                pendingAutomaticNotifications.remove(key)
+                automaticNotificationKeys.remove(key)
                 activeNotifications.remove(key)
-                discoveryLibraryStore.recordDiscovery(
-                    title = "Inscrição GATT falhou • " + characteristic.uuid,
-                    detail = "O callback do descritor CCCD retornou status " + status + ".",
-                    nowMillis = System.currentTimeMillis(),
-                    source = "GATT_CCCD",
-                    confidence = "SUBSCRICAO_FALHOU"
-                )
-                if (hasBlePermissions()) {
-                    runCatching { gatt.setCharacteristicNotification(characteristic, false) }
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                    appendLog("Inscrição automática desativada via CCCD para " + characteristic.uuid)
                 } else {
-                    appendLog("Permissão Bluetooth revogada; não foi possível desativar a inscrição local.")
+                    appendLog(
+                        "O relógio não confirmou o cancelamento do CCCD de " +
+                            characteristic.uuid + " | status=" + status +
+                            ". A inscrição local já foi desativada."
+                    )
                 }
-                appendLog("Falha na confirmação do CCCD para " + characteristic.uuid + ". Status: " + status)
             } else {
-                appendLog("Callback de descritor sem inscrição pendente: " + descriptor.uuid)
+                val wasPending = pendingNotifications.remove(key)
+                if (wasPending && status == BluetoothGatt.GATT_SUCCESS) {
+                    activeNotifications.add(key)
+                    if (pendingAutomaticNotifications.remove(key)) {
+                        automaticNotificationKeys.add(key)
+                    }
+                    appendLog("Notificação/indicação confirmada pelo callback GATT para " + characteristic.uuid)
+                    discoveryLibraryStore.recordDiscovery(
+                        title = "Inscrição GATT confirmada • " + characteristic.uuid,
+                        detail = "Callback Android confirmou o descritor CCCD 0x2902. O app passa a aguardar dados emitidos pelo relógio.",
+                        nowMillis = System.currentTimeMillis(),
+                        source = "GATT_CCCD",
+                        confidence = "SUBSCRICAO_CONFIRMADA"
+                    )
+                } else if (wasPending) {
+                    pendingAutomaticNotifications.remove(key)
+                    activeNotifications.remove(key)
+                    discoveryLibraryStore.recordDiscovery(
+                        title = "Inscrição GATT falhou • " + characteristic.uuid,
+                        detail = "O callback do descritor CCCD retornou status " + status + ".",
+                        nowMillis = System.currentTimeMillis(),
+                        source = "GATT_CCCD",
+                        confidence = "SUBSCRICAO_FALHOU"
+                    )
+                    if (hasBlePermissions()) {
+                        runCatching { gatt.setCharacteristicNotification(characteristic, false) }
+                    } else {
+                        appendLog("Permissão Bluetooth revogada; não foi possível desativar a inscrição local.")
+                    }
+                    appendLog("Falha na confirmação do CCCD para " + characteristic.uuid + ". Status: " + status)
+                } else {
+                    appendLog("Callback de descritor sem inscrição pendente: " + descriptor.uuid)
+                }
             }
             completeGattOperation(
                 gatt,
@@ -1874,6 +1894,95 @@ class MainActivity : ComponentActivity() {
                 operationCount + " operações READ/CCCD compatíveis."
         )
         runDeepGattExploration(gatt, automatic = true)
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun stopAutomaticGattNotifications() {
+        val gatt = bluetoothGatt
+        if (gatt == null || !isGattConnected || isGattDisconnecting) {
+            pendingAutomaticNotifications.clear()
+            pendingAutomaticUnsubscribeKeys.clear()
+            automaticNotificationKeys.clear()
+            return
+        }
+
+        // Include pending operations: the queue will serialize a disable after any in-flight CCCD.
+        val keys = (automaticNotificationKeys + pendingAutomaticNotifications).toList()
+        if (keys.isEmpty()) {
+            appendLog("Nenhuma inscrição automática de sensores estava ativa.")
+            return
+        }
+
+        keys.forEach { key ->
+            val parts = key.split("/")
+            if (parts.size != 2) return@forEach
+            val serviceUuid = runCatching { UUID.fromString(parts[0]) }.getOrNull()
+            val characteristicUuid = runCatching { UUID.fromString(parts[1]) }.getOrNull()
+            val characteristic = if (serviceUuid != null && characteristicUuid != null) {
+                gatt.getService(serviceUuid)?.getCharacteristic(characteristicUuid)
+            } else {
+                null
+            }
+            if (characteristic == null) {
+                pendingAutomaticNotifications.remove(key)
+                automaticNotificationKeys.remove(key)
+                activeNotifications.remove(key)
+                return@forEach
+            }
+            val descriptor = characteristic.getDescriptor(cccdUuid)
+            if (descriptor == null) {
+                pendingAutomaticNotifications.remove(key)
+                automaticNotificationKeys.remove(key)
+                activeNotifications.remove(key)
+                runCatching { gatt.setCharacteristicNotification(characteristic, false) }
+                return@forEach
+            }
+
+            enqueueGattOperation(
+                gattOperationKey(parts[0], parts[1], "CCCD"),
+                onTimeout = {
+                    pendingAutomaticUnsubscribeKeys.remove(key)
+                    pendingAutomaticNotifications.remove(key)
+                    automaticNotificationKeys.remove(key)
+                    activeNotifications.remove(key)
+                    runCatching { gatt.setCharacteristicNotification(characteristic, false) }
+                    appendLog(
+                        "Timeout ao cancelar CCCD automático de " + characteristic.uuid +
+                            "; inscrição local desativada."
+                    )
+                }
+            ) {
+                if (bluetoothGatt !== gatt || isGattDisconnecting) {
+                    false
+                } else {
+                    gatt.setCharacteristicNotification(characteristic, false)
+                    pendingAutomaticUnsubscribeKeys.add(key)
+                    val started = if (Build.VERSION.SDK_INT >= 33) {
+                        writeDescriptorApi33(
+                            gatt,
+                            descriptor,
+                            BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
+                        )
+                    } else {
+                        @Suppress("DEPRECATION")
+                        run {
+                            descriptor.value = BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
+                            gatt.writeDescriptor(descriptor)
+                        }
+                    }
+                    if (!started) {
+                        pendingAutomaticUnsubscribeKeys.remove(key)
+                        pendingAutomaticNotifications.remove(key)
+                        automaticNotificationKeys.remove(key)
+                        activeNotifications.remove(key)
+                        appendLog("Android recusou iniciar cancelamento CCCD de " + characteristic.uuid)
+                    } else {
+                        appendLog("Cancelamento CCCD solicitado para " + characteristic.uuid)
+                    }
+                    started
+                }
+            }
+        }
     }
 
     private fun requestDeepGattExploration() {
