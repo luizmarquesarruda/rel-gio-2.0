@@ -1,5 +1,14 @@
 # Changelog
 
+## Não lançado — fase de extração Health Connect e contrato para rotas
+
+- Extraído o adaptador de leitura agregada de passos para data/healthconnect, retirando do MainActivity a dependência direta de HealthConnectClient/StepsRecord/AggregateRequest.
+- Criado StepsSnapshot com origem e intervalo explícitos; zero real é distinto de ausência de registros.
+- Adicionados testes para origem, intervalo, valores negativos e estado sem dados.
+- Documentados os limites entre dados agregados do Health Connect, medições diretas do GT3 MAX, rotas GPS do telefone e rotas importadas do wearable.
+- Nenhuma permissão de localização, Health Connect WRITE, sensor extra ou comando BLE foi adicionada.
+- CI e teste físico desta fase: **não validados** até a execução e validação no aparelho.
+
 ## Não lançado — auditoria Play Protect e integridade dos APKs
 
 - Inspecionado o APK diagnostic publicado no GitHub Actions: o ZIP corresponde ao SHA-256 do digest do GitHub e o manifesto binário não contém INTERNET, SMS, Accessibility ou Notification Listener.
