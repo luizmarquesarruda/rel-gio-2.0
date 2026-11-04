@@ -1,5 +1,7 @@
 # Changelog
 
+- BLE: exploração aprofundada agora percorre todos os canais GATT elegíveis, sem o truncamento fixo anterior de 24 operações; somente READ e CCCD padrão após confirmação explícita.
+
 ## Não lançado — descoberta BLE geral e TXT completo — 04/11/2026
 
 - Busca BLE geral iniciada automaticamente ao abrir o aplicativo; não exige digitar o endereço MAC.
