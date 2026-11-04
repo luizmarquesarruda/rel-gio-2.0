@@ -1,6 +1,7 @@
 package com.luizmarquesarruda.relogio20
 
 import android.Manifest
+import android.app.AlertDialog
 import android.annotation.SuppressLint
 import android.content.Intent
 import com.luizmarquesarruda.relogio20.notifications.NotificationCenterActivity
@@ -43,6 +44,7 @@ import android.os.Looper
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -101,6 +103,10 @@ class MainActivity : ComponentActivity() {
     private var pendingDiagnosticReport: String? = null
     private var lastConnectedDeviceName: String? = null
     private var lastConnectedDeviceAddress: String? = null
+    private val identityPrefs by lazy { getSharedPreferences("device_identity", MODE_PRIVATE) }
+    private val expectedWatchAddress: String? get() = BleDeviceIdentity.normalize(identityPrefs.getString("gt3_max_address", null))
+    private var autoConnectAttempted = false
+    private var weakSignalWarningLogged = false
     private val diagnosticExportLauncher = registerForActivityResult(
         ActivityResultContracts.CreateDocument("text/plain")
     ) { uri ->
@@ -130,6 +136,7 @@ class MainActivity : ComponentActivity() {
     companion object {
         private const val REQUEST_BLE_PERMISSIONS = 2401
         private const val SCAN_DURATION_MS = 15_000L
+        private const val AUTO_CONNECT_MIN_RSSI = -90
         private const val MAX_LOG_LINES = 250
     }
 
@@ -267,7 +274,7 @@ class MainActivity : ComponentActivity() {
         val actions = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
         }
-        scanButton = makeButton("Buscar relógio") { startBleScan() }.apply {
+        scanButton = makeButton("Buscar e conectar automaticamente") { beginAutomaticConnection() }.apply {
             backgroundTintList = android.content.res.ColorStateList.valueOf(0xFF176B5B.toInt())
             setTextColor(0xFFFFFFFF.toInt())
         }
@@ -285,6 +292,8 @@ class MainActivity : ComponentActivity() {
             topMargin = dp(6)
             bottomMargin = dp(8)
         })
+
+        root.addView(makeButton("Configurar identificação do GT3 MAX") { configureExpectedWatchAddress() }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(44)).apply { bottomMargin = dp(6) })
 
         root.addView(makeButton("Exportar diagnóstico TXT") {
             exportDiagnosticReport()
@@ -521,6 +530,36 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun beginAutomaticConnection() {
+        if (expectedWatchAddress == null) configureExpectedWatchAddress { startBleScan() }
+        else startBleScan()
+    }
+
+    private fun configureExpectedWatchAddress(afterSave: (() -> Unit)? = null) {
+        val input = EditText(this).apply {
+            hint = "AA:BB:CC:DD:EE:FF"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
+            setSingleLine(true)
+            setText(expectedWatchAddress.orEmpty())
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Identificar meu GT3 MAX")
+            .setMessage("Informe o endereço Bluetooth exibido no relógio. Será salvo somente neste aparelho, sem inclusão no código público ou no relatório TXT.")
+            .setView(input)
+            .setNegativeButton("Cancelar", null)
+            .setNeutralButton("Remover") { _, _ -> identityPrefs.edit().remove("gt3_max_address").apply() }
+            .setPositiveButton("Salvar") { _, _ ->
+                val address = BleDeviceIdentity.normalize(input.text.toString())
+                if (address == null) updateStatus("Endereço inválido. Use AA:BB:CC:DD:EE:FF.")
+                else {
+                    identityPrefs.edit().putString("gt3_max_address", address).apply()
+                    appendLog("Identidade GT3 MAX salva localmente: " + maskAddress(address))
+                    afterSave?.invoke()
+                }
+            }
+            .show()
+    }
+
     @SuppressLint("MissingPermission")
     private fun startBleScan() {
         if (!hasBlePermissions()) {
@@ -548,6 +587,8 @@ class MainActivity : ComponentActivity() {
         }
 
         stopBleScan()
+        autoConnectAttempted = false
+        weakSignalWarningLogged = false
         scanResults.clear()
         content.removeAllViews()
         addText(content, "Dispositivos encontrados", 18f, true)
@@ -568,6 +609,21 @@ class MainActivity : ComponentActivity() {
                         ?: "Dispositivo sem nome"
                     scanResults[address] = result
                     appendLog("Dispositivo BLE observado: " + name + " | RSSI=" + result.rssi + " dBm | endereço=" + maskAddress(address))
+                    if (!autoConnectAttempted && BleDeviceIdentity.matches(expectedWatchAddress, address)) {
+                        if (result.rssi <= AUTO_CONNECT_MIN_RSSI) {
+                            if (!weakSignalWarningLogged) {
+                                weakSignalWarningLogged = true
+                                appendLog("GT3 MAX identificado, mas RSSI fraco: " + result.rssi + " dBm. Conexão automática suspensa.")
+                                updateStatus("GT3 MAX identificado, mas sinal muito fraco.")
+                            }
+                        } else {
+                            autoConnectAttempted = true
+                            appendLog("Correspondência exata do GT3 MAX confirmada; iniciando conexão automática.")
+                            stopBleScan()
+                            connectToDevice(result.device)
+                            return@runOnUiThread
+                        }
+                    }
                     renderScanResults()
                     updateStatus("Busca em andamento. Dispositivos: " + scanResults.size)
                 }
@@ -608,8 +664,12 @@ class MainActivity : ComponentActivity() {
         val timeout = Runnable {
             if (currentScanCallback === callback) {
                 stopBleScan()
-                updateStatus("Busca concluída. Dispositivos encontrados: " + scanResults.size)
-                appendLog("Busca BLE concluída. Total: " + scanResults.size)
+                val foundExpected = expectedWatchAddress?.let { expected ->
+                    scanResults.keys.any { BleDeviceIdentity.matches(expected, it) }
+                } ?: false
+                updateStatus(if (foundExpected) "GT3 MAX encontrado, mas sinal insuficiente para conexão automática."
+                    else "Busca concluída. GT3 MAX não identificado.")
+                appendLog("Busca BLE concluída. Total=" + scanResults.size + "; identidade esperada encontrada=" + foundExpected)
                 renderScanResults()
             }
         }
@@ -689,6 +749,12 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("MissingPermission")
     private fun connectToDevice(device: BluetoothDevice) {
+        val observedAddress = safeDeviceAddress(device)
+        if (!BleDeviceIdentity.matches(expectedWatchAddress, observedAddress)) {
+            updateStatus("Dispositivo não identificado. Conexão bloqueada.")
+            appendLog("Conexão bloqueada: endereço observado não corresponde à identidade local configurada.")
+            return
+        }
         if (!hasBlePermissions()) {
             requestBlePermissions()
             return
@@ -1141,6 +1207,11 @@ class MainActivity : ComponentActivity() {
                     headline = "Relógio desconectado"
                     detail = "O relógio não está conectado. Você pode iniciar uma nova busca."
                     indicatorColor = 0xFF8A94A6.toInt()
+                }
+                value.startsWith("Falha na conexão GATT. Status: 147") -> {
+                    headline = "Tempo limite na conexão BLE"
+                    detail = "A conexão GATT expirou (status 147). Aproxime o relógio, mantenha-o ativo e tente novamente. A causa ainda não foi determinada."
+                    indicatorColor = 0xFFCA4B4B.toInt()
                 }
                 value.startsWith("Falha") || value.startsWith("Não foi possível") ||
                     value.startsWith("O Android não iniciou") -> {
