@@ -286,12 +286,10 @@ internal object GattValueDecoder {
             results += DecodedGattValue("Distância total RSC", String.format(Locale.US, "%.1f m", distance))
             offset += 4
         }
-        if (flags and 0x04 != 0) {
-            results += DecodedGattValue(
-                "Estado de deslocamento RSC",
-                if (flags and 0x04 != 0) "corrida" else "caminhada"
-            )
-        }
+        results += DecodedGattValue(
+            "Estado de deslocamento RSC",
+            if (flags and 0x04 != 0) "corrida" else "caminhada"
+        )
         return results
     }
 
