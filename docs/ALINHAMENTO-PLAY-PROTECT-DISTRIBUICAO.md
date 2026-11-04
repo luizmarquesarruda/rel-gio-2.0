@@ -43,7 +43,7 @@ Referência Android:
 
 ### 3.1 Build de diagnóstico para instalação local
 
-Criar uma variante `diagnostic` que não declare nem empacote o serviço Notification Listener. Ela deve manter apenas as funções que não dependem desse acesso (BLE de diagnóstico, Health Connect autorizado e interface de estado).
+A variante `diagnostic` foi criada nesta branch e não declara nem empacota o serviço Notification Listener. Ela mantém as funções que não dependem desse acesso (BLE de diagnóstico, Health Connect autorizado e interface de estado).
 
 Na variante de diagnóstico:
 - o manifesto mesclado não pode conter `NotificationCaptureService` nem o intent-filter `android.service.notification.NotificationListenerService`;
@@ -51,7 +51,7 @@ Na variante de diagnóstico:
 - não deve haver caminhos alternativos para ler notificações;
 - CI deve inspecionar o manifesto final e reprovar a build caso encontre o serviço ou permissões SMS/acessibilidade.
 
-**Estado:** recomendado; ainda não implementado.
+**Estado:** implementado nesta branch; CI e instalação física da variante ainda precisam ser validados.
 
 ### 3.2 Build companion com notificações
 

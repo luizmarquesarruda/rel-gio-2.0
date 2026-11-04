@@ -41,9 +41,9 @@ A inscrição em notificações altera somente a assinatura padrão do descritor
 
 ## Construção e artefato
 
-O workflow **Android CI** executa testes unitários e gera um APK debug em pull requests ou por execução manual. O arquivo é publicado como artefato do GitHub Actions por 14 dias; não é uma versão de produção assinada.
+O workflow **Android CI** executa Lint, testes e builds `diagnosticDebug` e `companionDebug`. Somente o APK `diagnosticDebug`, sem Notification Listener no manifesto, é publicado como artefato de instalação local. A variante `companionDebug` é compilada e testada, mas não publicada como APK de sideload.
 
-**Atenção ao Play Protect:** o APK debug atual inclui um `NotificationListenerService`. O Google documenta que apps instalados por sideload da internet com capacidade de acesso a notificações podem sofrer bloqueios de proteção em mercados selecionados. CI verde não equivale a aprovação do Play Protect. Não desative a proteção do aparelho. Consulte [Play Protect e distribuição segura](docs/ALINHAMENTO-PLAY-PROTECT-DISTRIBUICAO.md) antes de instalar ou distribuir.
+**Atenção ao Play Protect:** o Google documenta que apps instalados por sideload da internet com capacidade de acesso a notificações podem sofrer bloqueios em mercados selecionados. A variante `companion` mantém essa capacidade; a variante `diagnostic` a exclui. CI verde não equivale a aprovação do Play Protect nem a teste físico. Não desative a proteção do aparelho. Consulte [Play Protect e distribuição segura](docs/ALINHAMENTO-PLAY-PROTECT-DISTRIBUICAO.md).
 
 Arquivo esperado: `app/build/outputs/apk/debug/app-debug.apk`.
 

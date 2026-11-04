@@ -36,15 +36,6 @@
         <activity
             android:name=".notifications.NotificationCenterActivity"
             android:exported="false" />
-        <service
-            android:name=".notifications.NotificationCaptureService"
-            android:label="Relógio 2.0 — Notificações"
-            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
-            </intent-filter>
-        </service>
         <activity
             android:name=".MainActivity"
             android:exported="true">

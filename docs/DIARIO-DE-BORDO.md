@@ -9,10 +9,10 @@ Este arquivo é o registro cronológico principal. Atualizar em toda PR que alte
 - O serviço exige acesso especial, ativação explícita e seleção de aplicativos; as prévias ficam em memória, limitadas a 30 itens/15 minutos, sem gravação ou envio à rede.
 - A implementação atual ainda não encaminha notificações ao GT3 Maxx. Não declarar que já cumpre o caso de uso de retransmissão para wearable reconhecido na orientação do Google.
 - APK atual é debug e não release assinada. CI aprovado confirma build/testes, não validação Play Protect.
-- Decisão proposta: separar variante diagnostic sem Notification Listener e variante companion com o recurso isolado. A distribuição da companion deve usar canal Play de teste/revisão depois de implementar e validar o encaminhamento e a transparência ao usuário.
+- Decisão implementada nesta branch: separar variante diagnostic sem Notification Listener e variante companion com o serviço isolado em source set/manifest próprio. A diagnostic é a única variante publicada como artefato de instalação local; companion é compilada/testada, sem upload de APK de sideload.
 - Proibido orientar desativação do Play Protect, ocultar capacidades do manifesto ou contornar a análise.
 - CI da PR #5: run 41750419237 concluído com sucesso no SHA 9b7c563b206e63f6ba961a2f90ef2d5c1e2cbab2. Artefato debug e relatório Lint publicados; validade informada até 18/11/2026. Isso não significa que o Play Protect aprovou o APK.
-- Documento criado: docs/ALINHAMENTO-PLAY-PROTECT-DISTRIBUICAO.md. Bloqueio exato e teste físico no Galaxy A06: **não validados**, pois a mensagem exibida pelo Play Protect não foi fornecida.
+- Documento criado: docs/ALINHAMENTO-PLAY-PROTECT-DISTRIBUICAO.md. CI atualizado para testar as duas variantes e conferir o manifesto final de cada APK. Bloqueio exato e teste físico no Galaxy A06: **não validados**, pois a mensagem exibida pelo Play Protect não foi fornecida.
 
 ## 03/11/2026 — Alinhamento com documentação oficial Google/Android
 

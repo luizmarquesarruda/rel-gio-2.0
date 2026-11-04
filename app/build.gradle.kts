@@ -16,6 +16,19 @@ android {
         testInstrumentationRunner = "android.test.runner.AndroidJUnitRunner"
     }
 
+
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("diagnostic") {
+            dimension = "distribution"
+            applicationIdSuffix = ".diagnostic"
+            versionNameSuffix = "-diagnostic"
+        }
+        create("companion") {
+            dimension = "distribution"
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

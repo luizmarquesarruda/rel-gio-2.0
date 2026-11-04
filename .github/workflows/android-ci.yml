@@ -36,29 +36,61 @@ jobs:
         with:
           gradle-version: "8.13"
 
-      - name: Run Android Lint
+      - name: Run Android Lint for both variants
         id: lint
-        run: gradle --no-daemon lintDebug
+        run: gradle --no-daemon lintDiagnosticDebug lintCompanionDebug
 
-      - name: Run unit tests and assemble APK
+      - name: Run unit tests and assemble both variants
         id: build
         if: always() && steps.setup_gradle.outcome == 'success'
-        run: gradle --no-daemon testDebugUnitTest assembleDebug
+        run: gradle --no-daemon testDiagnosticDebugUnitTest testCompanionDebugUnitTest assembleDiagnosticDebug assembleCompanionDebug
 
-      - name: Publish debug APK artifact
+      - name: Verify notification capability is absent from diagnostic APK
+        id: verify_manifests
         if: always() && steps.build.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          if [[ -z "$SDK_ROOT" ]]; then
+            echo "Android SDK path unavailable" >&2
+            exit 1
+          fi
+          AAPT="$(find "$SDK_ROOT/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          if [[ -z "$AAPT" ]]; then
+            echo "aapt not found in Android SDK build-tools" >&2
+            exit 1
+          fi
+
+          DIAGNOSTIC_APK="app/build/outputs/apk/diagnostic/debug/app-diagnostic-debug.apk"
+          COMPANION_APK="app/build/outputs/apk/companion/debug/app-companion-debug.apk"
+          "$AAPT" dump xmltree "$DIAGNOSTIC_APK" AndroidManifest.xml > diagnostic-manifest.txt
+          "$AAPT" dump xmltree "$COMPANION_APK" AndroidManifest.xml > companion-manifest.txt
+
+          if grep -Eiq 'NotificationCaptureService|BIND_NOTIFICATION_LISTENER_SERVICE|READ_SMS|RECEIVE_SMS|BIND_ACCESSIBILITY_SERVICE|AccessibilityService' diagnostic-manifest.txt; then
+            echo "Diagnostic APK includes a restricted notification/SMS/accessibility capability." >&2
+            exit 1
+          fi
+          grep -q 'NotificationCaptureService' companion-manifest.txt
+          grep -q 'BIND_NOTIFICATION_LISTENER_SERVICE' companion-manifest.txt
+          echo "Variant manifests match the distribution policy."
+
+      - name: Publish diagnostic APK artifact
+        if: always() && steps.build.outcome == 'success' && steps.verify_manifests.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: relogio-2.0-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: relogio-2.0-diagnostic-debug-apk
+          path: app/build/outputs/apk/diagnostic/debug/app-diagnostic-debug.apk
           if-no-files-found: error
           retention-days: 14
 
-      - name: Publish Android Lint report
+      - name: Publish Android Lint reports
         if: always() && steps.setup_gradle.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: android-lint-report
-          path: app/build/reports/lint-results-debug.html
+          name: android-lint-reports
+          path: |
+            app/build/reports/lint-results-diagnosticDebug.html
+            app/build/reports/lint-results-companionDebug.html
           if-no-files-found: warn
           retention-days: 14
