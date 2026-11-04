@@ -1,5 +1,12 @@
 # Changelog
 
+## Não lançado — rastreabilidade de valores decodificados — 04/11/2026
+
+- Registros decodificados por READ/NOTIFY Bluetooth SIG agora recebem o `sessionId` da captura ativa. Valores de sensores deixam de ser gravados como descobertas sem vínculo à sessão.
+- Sem sessão consentida válida, o método de persistência de valores decodificados recusa a gravação; sessões vencidas são finalizadas sem aceitar novos valores.
+- Teste de codec adicionado para preservar o vínculo entre descoberta decodificada e sessão durante a serialização.
+- CI e teste físico GT3 MAX/Galaxy A06: **não validados nesta revisão**.
+
 ## Não lançado — testes GATT automáticos e persistência de resultados — 04/11/2026
 
 - Adicionado modo de testes automáticos com ativação local única. Ao conectar, o app exige o fingerprint GATT completo do GT3 MAX Call antes de iniciar exploração aprofundada.
