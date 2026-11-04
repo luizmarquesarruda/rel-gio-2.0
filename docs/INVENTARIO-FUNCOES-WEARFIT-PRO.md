@@ -45,6 +45,10 @@ Usar o Wearfit Pro como referência funcional para o Relógio 2.0, sem copiar pr
 
 As funções anunciadas no site são um catálogo de recursos do ecossistema, não uma garantia de que o GT3 MAX tenha todos os sensores ou recursos.
 
+## Canal de aplicativos parceiros
+
+A política de privacidade (versão Weike atualizada em 04/08/2023) prevê que aplicativos terceiros autorizados acessem dados do wearable e enviem notificações por meio do Wearfit Pro. Isso não é uma API Android pública documentada. A elegibilidade do GT3 MAX Call para esse programa ainda precisa de confirmação do fornecedor. Detalhes: [Integração de parceiro Wearfit Pro](INTEGRACAO-WEARFIT-PARTNER-SDK.md).
+
 ## Evidência pública do Wearfit Pro
 
 A página de ajuda “Message notification”, datada de 21/01/2025, ensina a ativar notificações em Dispositivo → Message notification e lista telefone, SMS, WeChat, QQ e Weibo. A página não lista WhatsApp nessa relação. Isso não prova que nenhuma versão/modelo suporte WhatsApp; significa apenas que a documentação pública consultada não confirma esse suporte.
