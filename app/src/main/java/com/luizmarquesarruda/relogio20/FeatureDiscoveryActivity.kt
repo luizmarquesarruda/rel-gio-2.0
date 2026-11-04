@@ -183,7 +183,7 @@ class FeatureDiscoveryActivity : Activity() {
 
     private fun renderDeepExplorationShortcut() {
         val button = Button(this).apply {
-            text = "Solicitar exploração manual de todos os canais GATT"
+            text = "Explorar manualmente GATT"
             isAllCaps = false
             textSize = 14f
             setOnClickListener {
