@@ -79,7 +79,7 @@ class GattValueDecoderTest {
     @Test
     fun decodesHeartRateSensorContactFlagsCorrectly() {
         val notDetected = GattValueDecoder.decode(
-            "180d", "2a37", byteArrayOf(0x02, 72)
+            "180d", "2a37", byteArrayOf(0x04, 72)
         )
         assertEquals("Sem contato detectado", notDetected.last().value)
 
@@ -87,6 +87,12 @@ class GattValueDecoderTest {
             "180d", "2a37", byteArrayOf(0x06, 72)
         )
         assertEquals("Contato detectado", detected.last().value)
+
+        // Status bit without the support bit must not be interpreted as contact.
+        val unsupported = GattValueDecoder.decode(
+            "180d", "2a37", byteArrayOf(0x02, 72)
+        )
+        assertEquals(1, unsupported.size)
     }
 
     @Test
