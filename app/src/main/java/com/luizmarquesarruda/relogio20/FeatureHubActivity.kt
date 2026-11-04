@@ -111,6 +111,15 @@ class FeatureHubActivity : Activity() {
             14f,
             0xFF526574.toInt()
         )
+        addCard(
+            body,
+            "Autodescoberta BLE",
+            "Inventário automático de perfis GATT, canais encontrados e notificações realmente recebidas. Hipóteses permanecem separadas de funções validadas.",
+            "ABRIR DESCOBERTA",
+            false
+        ) {
+            startActivity(Intent(this, FeatureDiscoveryActivity::class.java))
+        }
         sections.forEach { section ->
             addCard(
                 body,

@@ -10,6 +10,9 @@ import com.luizmarquesarruda.relogio20.device.ble.core.BleReconnectPolicy
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbFrameParser
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitProtocolProfile
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.Gt3MaxCallDeviceProfile
+import com.luizmarquesarruda.relogio20.data.discovery.FeatureDiscoveryStore
+import com.luizmarquesarruda.relogio20.device.discovery.GattCharacteristicRecord
+import com.luizmarquesarruda.relogio20.device.discovery.GattServiceRecord
 import com.luizmarquesarruda.relogio20.HealthPrivacyActivity
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectAvailability
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsRepository
@@ -69,6 +72,9 @@ class MainActivity : ComponentActivity() {
     private lateinit var healthStatusView: TextView
     private val healthConnectRepository by lazy(LazyThreadSafetyMode.NONE) {
         HealthConnectStepsRepository(this)
+    }
+    private val featureDiscoveryStore by lazy(LazyThreadSafetyMode.NONE) {
+        FeatureDiscoveryStore(this)
     }
     private var healthConnectInitialized = false
     private val healthScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -311,6 +317,12 @@ class MainActivity : ComponentActivity() {
 
         root.addView(makeButton("Notificações no relógio • leitura") {
             startActivity(Intent(this, NotificationCenterActivity::class.java))
+        }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
+        ))
+
+        root.addView(makeButton("Autodescobrir funcionalidades BLE") {
+            startActivity(Intent(this, FeatureDiscoveryActivity::class.java))
         }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
         ))
@@ -989,6 +1001,7 @@ class MainActivity : ComponentActivity() {
             if (bluetoothGatt !== gatt || isGattDisconnecting) return
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 appendLog("Serviços descobertos: " + gatt.services.size)
+                captureFeatureDiscovery(gatt)
                 renderGattServices(gatt)
                 inspectGt3MaxProfileAndSubscribe(gatt)
                 updateStatus("Conectado. Serviços encontrados: " + gatt.services.size)
@@ -1090,6 +1103,45 @@ class MainActivity : ComponentActivity() {
 
         appendLog("GT3 MAX Call reconhecido como candidato. Ativando somente NUS TX Notify via CCCD padrão; NUS RX permanece sem escrita.")
         enableNotifications(gatt, tx)
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun captureFeatureDiscovery(gatt: BluetoothGatt) {
+        val observedServices = gatt.services.map { service ->
+            GattServiceRecord(
+                uuid = service.uuid.toString(),
+                characteristics = service.characteristics.map { characteristic ->
+                    val properties = linkedSetOf<String>()
+                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_READ != 0) properties.add("READ")
+                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0) properties.add("NOTIFY")
+                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0) properties.add("INDICATE")
+                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE != 0) properties.add("WRITE")
+                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0) properties.add("WRITE_NO_RESPONSE")
+                    GattCharacteristicRecord(
+                        uuid = characteristic.uuid.toString(),
+                        properties = properties,
+                        descriptorUuids = characteristic.descriptors.map { it.uuid.toString() }.toSet()
+                    )
+                }
+            )
+        }
+        val saved = featureDiscoveryStore.recordInventory(
+            services = observedServices,
+            nowMillis = System.currentTimeMillis()
+        )
+        if (saved) {
+            val characteristicCount = observedServices.sumOf { it.characteristics.size }
+            appendLog(
+                "Autodescoberta BLE atualizada: " + observedServices.size +
+                    " serviços e " + characteristicCount + " características catalogados; " +
+                    "nenhuma leitura adicional ou inscrição nova foi iniciada."
+            )
+        } else {
+            appendLog(
+                "Autodescoberta BLE não sobrescreveu o catálogo local: conteúdo inválido " +
+                    "ou schema mais novo detectado."
+            )
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -1245,10 +1297,25 @@ class MainActivity : ComponentActivity() {
             value.size.toString() + " bytes: " + BleValueFormatter.toHex(value)
         appendLog("NOTIFICAÇÃO " + uuid + " | " + description)
 
-        if (serviceUuid.equals(WearfitProtocolProfile.SERVICE_UUID.toString(), ignoreCase = true) &&
-            uuid.equals(WearfitProtocolProfile.TX_CHARACTERISTIC_UUID.toString(), ignoreCase = true)) {
-            val frame = WearfitAbFrameParser.parse(value)
-            val battery = frame?.batteryPercent
+        val isNusTx =
+            serviceUuid.equals(WearfitProtocolProfile.SERVICE_UUID.toString(), ignoreCase = true) &&
+                uuid.equals(WearfitProtocolProfile.TX_CHARACTERISTIC_UUID.toString(), ignoreCase = true)
+        val frame = if (isNusTx) WearfitAbFrameParser.parse(value) else null
+        val battery = frame?.batteryPercent
+
+        // Keep only metadata in the discovery catalog; raw payload stays in the existing
+        // in-memory diagnostic log and is not copied into this persistent snapshot.
+        featureDiscoveryStore.recordNotification(
+            serviceUuid = serviceUuid,
+            characteristicUuid = uuid,
+            payloadBytes = value.size,
+            nowMillis = System.currentTimeMillis(),
+            frameCommand = frame?.command,
+            frameResponse = frame?.response,
+            batteryCandidatePercent = battery
+        )
+
+        if (isNusTx) {
             if (battery != null) {
                 runOnUiThread {
                     val receivedAt = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
