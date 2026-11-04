@@ -1,5 +1,16 @@
 # Changelog
 
+## Não lançado — testes GATT automáticos e persistência de resultados — 04/11/2026
+
+- Adicionado modo de testes automáticos com ativação local única. Ao conectar, o app exige o fingerprint GATT completo do GT3 MAX Call antes de iniciar exploração aprofundada.
+- O executor agora dispara tanto operações Bluetooth SIG padronizadas quanto leituras proprietárias somente READ e inscrições NOTIFY/INDICATE com CCCD 0x2902. NUS RX, escritas de payload, DFU/OTA e reset continuam bloqueados.
+- Adicionados decoders Bluetooth SIG para bateria, Device Information, frequência cardíaca, pressão arterial, termômetro, temperatura/umidade ambientais e oximetria spot-check/contínua.
+- Leituras e notificações recebidas são registradas na biblioteca privada durante sessões consentidas de até 10 minutos, renovadas enquanto o modo automático permanece ativo e conectado. HEX fora da sessão não é incluído no log/exportação.
+- Resultados distinguem solicitação, callback de leitura, inscrição CCCD e decodificação; formatos proprietários desconhecidos permanecem sem semântica.
+- Pausar encerra captura e tenta cancelar inscrições automáticas por CCCD padrão. A leitura não força medições; o firmware precisa emitir os dados.
+- Testes Kotlin adicionados para decoders, política de consentimento e campos de sensores; CI e teste físico GT3 MAX/Galaxy A06 aguardam validação.
+
+
 ## Não lançado — separação dos artefatos da CI — 04/11/2026
 
 - Corrigido o empacotamento do GitHub Actions: o artefato `relogio-2.0-diagnostic-debug-apk` agora recebe diretamente somente `app-diagnostic-debug.apk`.
