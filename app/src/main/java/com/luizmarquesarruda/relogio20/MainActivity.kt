@@ -1809,7 +1809,13 @@ class MainActivity : ComponentActivity() {
         val now = System.currentTimeMillis()
         val active = discoveryLibraryStore.activeSession(now)
         if (active != null) {
-            appendLog("Sessão de captura existente será reutilizada para os resultados automáticos.")
+            automaticGattDiscoveryPrefs.edit {
+                putString(KEY_AUTOMATIC_SESSION_ID, active.id)
+            }
+            appendLog(
+                "Sessão de captura existente será reutilizada pela coleta automática; " +
+                    "o modo automático poderá renová-la e encerrá-la ao pausar."
+            )
             return true
         }
 
