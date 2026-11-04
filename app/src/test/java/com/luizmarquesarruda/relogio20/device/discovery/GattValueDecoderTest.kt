@@ -44,9 +44,9 @@ class GattValueDecoderTest {
 
     @Test
     fun decodesEnvironmentalTemperatureAndHumidity() {
-        val temperature = GattValueDecoder.decode("181a", "2a6e", byteArrayOf(0x72, 0x00))
+        val temperature = GattValueDecoder.decode("181a", "2a6e", byteArrayOf(0x6d, 0xf1.toByte()))
         assertEquals("Temperatura ambiente", temperature.single().metric)
-        assertEquals("114.00 °C", temperature.single().value)
+        assertEquals("36.50 °C", temperature.single().value)
 
         val humidity = GattValueDecoder.decode("181a", "2a6f", byteArrayOf(0x10, 0x27))
         assertEquals("100.00 %", humidity.single().value)
