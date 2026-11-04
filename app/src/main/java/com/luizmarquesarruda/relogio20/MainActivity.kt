@@ -177,63 +177,6 @@ class MainActivity : ComponentActivity() {
         root.addView(clockView)
         updatePhoneClock()
 
-        stepsView = TextView(this).apply {
-            text = "Passos hoje: aguardando dados da Conexão Saúde"
-            textSize = 24f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(0xFF17212B.toInt())
-            setPadding(0, dp(8), 0, dp(4))
-        }
-        root.addView(stepsView)
-
-        healthStatusView = TextView(this).apply {
-            text = "Fonte: Conexão Saúde • total agregado de fontes autorizadas"
-            textSize = 12f
-            setTextColor(0xFF526170.toInt())
-            setPadding(0, 0, 0, dp(8))
-        }
-        root.addView(healthStatusView)
-
-        val healthActions = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-        }
-        healthActions.addView(makeButton("Conectar Conexão Saúde") {
-            connectHealthConnect()
-        }, LinearLayout.LayoutParams(0, dp(48), 1f))
-        healthActions.addView(makeButton("Atualizar atividade") {
-            readTodaySteps()
-        }, LinearLayout.LayoutParams(0, dp(48), 1f).apply {
-            marginStart = dp(8)
-        })
-        root.addView(healthActions)
-
-        root.addView(makeButton("Notificações no relógio • leitura") {
-            startActivity(Intent(this, NotificationCenterActivity::class.java))
-        }, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
-        ))
-
-        root.addView(makeButton("Explorar funções do relógio") {
-            startActivity(Intent(this, FeatureHubActivity::class.java))
-        }, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
-        ))
-
-        addText(root, "Fluxo de saúde: sensores do relógio → aplicativo → Conexão Saúde. " +
-            "A gravação de amostras do GT3 Maxx será ativada somente após validar os dados e sua origem.", 12f)
-
-        addText(root, "Frequência cardíaca, sono e SpO₂: aguardando integração e validação dos sensores. " +
-            "Não exibir estimativas como medições confirmadas.", 12f)
-
-        root.addView(makeButton("Dados de saúde e privacidade") {
-            startActivity(Intent(this, HealthPrivacyActivity::class.java))
-        }, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
-        ))
-
-        addText(root, "Horário do relógio: sincronização ainda não disponível. " +
-            "O protocolo de ajuste do GT3 MAX não foi identificado.", 12f)
-
         addText(root, "Conexão do relógio", 18f, true)
 
         val connectionCard = LinearLayout(this).apply {
@@ -301,14 +244,69 @@ class MainActivity : ComponentActivity() {
             LinearLayout.LayoutParams.MATCH_PARENT, dp(46)
         ).apply { bottomMargin = dp(6) })
 
-        val scroll = ScrollView(this)
+        stepsView = TextView(this).apply {
+            text = "Passos hoje: aguardando dados da Conexão Saúde"
+            textSize = 24f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTextColor(0xFF17212B.toInt())
+            setPadding(0, dp(8), 0, dp(4))
+        }
+        root.addView(stepsView)
+
+        healthStatusView = TextView(this).apply {
+            text = "Fonte: Conexão Saúde • total agregado de fontes autorizadas"
+            textSize = 12f
+            setTextColor(0xFF526170.toInt())
+            setPadding(0, 0, 0, dp(8))
+        }
+        root.addView(healthStatusView)
+
+        val healthActions = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+        }
+        healthActions.addView(makeButton("Conectar Conexão Saúde") {
+            connectHealthConnect()
+        }, LinearLayout.LayoutParams(0, dp(48), 1f))
+        healthActions.addView(makeButton("Atualizar atividade") {
+            readTodaySteps()
+        }, LinearLayout.LayoutParams(0, dp(48), 1f).apply {
+            marginStart = dp(8)
+        })
+        root.addView(healthActions)
+
+        root.addView(makeButton("Notificações no relógio • leitura") {
+            startActivity(Intent(this, NotificationCenterActivity::class.java))
+        }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
+        ))
+
+        root.addView(makeButton("Explorar funções do relógio") {
+            startActivity(Intent(this, FeatureHubActivity::class.java))
+        }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
+        ))
+
+        addText(root, "Fluxo de saúde: sensores do relógio → aplicativo → Conexão Saúde. " +
+            "A gravação de amostras do GT3 Maxx será ativada somente após validar os dados e sua origem.", 12f)
+
+        addText(root, "Frequência cardíaca, sono e SpO₂: aguardando integração e validação dos sensores. " +
+            "Não exibir estimativas como medições confirmadas.", 12f)
+
+        root.addView(makeButton("Dados de saúde e privacidade") {
+            startActivity(Intent(this, HealthPrivacyActivity::class.java))
+        }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
+        ))
+
+        addText(root, "Horário do relógio: sincronização ainda não disponível. " +
+            "O protocolo de ajuste do GT3 MAX não foi identificado.", 12f)
+
         content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(0, dp(8), 0, dp(8))
         }
-        scroll.addView(content)
-        root.addView(scroll, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
+        root.addView(content, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
         ))
 
         val logTitle = TextView(this).apply {
@@ -319,20 +317,22 @@ class MainActivity : ComponentActivity() {
         }
         root.addView(logTitle)
 
-        val logScroll = ScrollView(this).apply {
-            setBackgroundColor(0xFFFFFFFF.toInt())
-        }
         logView = TextView(this).apply {
             textSize = 11f
+            maxLines = 8
             setTextColor(0xFF263746.toInt())
             setPadding(dp(8), dp(8), dp(8), dp(8))
+            background = roundedSurface(0xFFFFFFFF.toInt(), 0xFFE1E7EF.toInt())
         }
-        logScroll.addView(logView)
-        root.addView(logScroll, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(150)
+        root.addView(logView, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
         ))
 
-        setContentView(root)
+        val pageScroll = ScrollView(this).apply {
+            isFillViewport = true
+            addView(root)
+        }
+        setContentView(pageScroll)
     }
 
     private fun updatePhoneClock() {
@@ -562,6 +562,16 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("MissingPermission")
     private fun startBleScan() {
+        if (bluetoothGatt != null) {
+            val currentState = if (isGattDisconnecting) {
+                "Desconectando..."
+            } else {
+                "Conectado. A busca foi bloqueada para preservar a sessão BLE ativa."
+            }
+            updateStatus(currentState)
+            appendLog("Nova busca bloqueada: já existe uma sessão GATT ativa ou em encerramento.")
+            return
+        }
         if (!hasBlePermissions()) {
             requestBlePermissions()
             return
@@ -810,11 +820,18 @@ class MainActivity : ComponentActivity() {
             }
             appendLog("Estado GATT: status=" + status + ", estado=" + newState)
             if (status == BluetoothGatt.GATT_SUCCESS &&
+                newState == BluetoothProfile.STATE_CONNECTING) {
+                updateStatus("Conectando ao dispositivo BLE...")
+            } else if (status == BluetoothGatt.GATT_SUCCESS &&
                 newState == BluetoothProfile.STATE_CONNECTED) {
                 isGattDisconnecting = false
                 updateStatus("Conectado. Descobrindo serviços GATT...")
                 val started = runCatching { gatt.discoverServices() }.getOrDefault(false)
                 appendLog("Descoberta de serviços solicitada: " + started)
+                if (!started) {
+                    updateStatus("Falha ao iniciar descoberta dos serviços GATT.")
+                    appendLog("O Android recusou o início da descoberta GATT.")
+                }
             } else if (status != BluetoothGatt.GATT_SUCCESS) {
                 isGattDisconnecting = false
                 gattOperationQueue.reset()
@@ -1238,10 +1255,12 @@ class MainActivity : ComponentActivity() {
             statusView.text = headline
             statusDetailView.text = detail
             statusIndicatorView.setTextColor(indicatorColor)
-            scanButton.isEnabled = !value.startsWith("Conectando") &&
-                !value.startsWith("Desconectando")
-            disconnectButton.isEnabled = value.startsWith("Conectando") ||
-                value.startsWith("Conectado") || value.startsWith("Desconectando")
+            val gattSessionExists = bluetoothGatt != null
+            val scanInProgress = value.startsWith("Procurando") ||
+                value.startsWith("Busca em andamento")
+            scanButton.isEnabled = !gattSessionExists && !scanInProgress &&
+                !value.startsWith("Conectando") && !value.startsWith("Desconectando")
+            disconnectButton.isEnabled = gattSessionExists
         }
     }
 
@@ -1271,7 +1290,7 @@ class MainActivity : ComponentActivity() {
         runOnUiThread {
             logLines.add(time + "  " + value)
             while (logLines.size > MAX_LOG_LINES) logLines.removeAt(0)
-            logView.text = logLines.joinToString("\n")
+            logView.text = logLines.takeLast(8).joinToString("\n")
         }
     }
 
