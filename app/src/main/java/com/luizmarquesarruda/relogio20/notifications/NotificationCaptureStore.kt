@@ -75,6 +75,15 @@ internal object NotificationCaptureStore {
         synchronized(lock) { events.removeAll { it.packageName == packageName } }
     }
 
+    fun millisUntilNextExpiry(
+        nowElapsedRealtimeMillis: Long = SystemClock.elapsedRealtime()
+    ): Long? = synchronized(lock) {
+        removeExpired(nowElapsedRealtimeMillis)
+        events.minOfOrNull {
+            it.capturedAtElapsedRealtimeMillis + RETENTION_MILLIS
+        }?.minus(nowElapsedRealtimeMillis)?.coerceAtLeast(0L)
+    }
+
     fun clear() {
         synchronized(lock) { events.clear() }
     }
