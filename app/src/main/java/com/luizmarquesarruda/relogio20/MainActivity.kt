@@ -3,7 +3,6 @@ package com.luizmarquesarruda.relogio20
 import android.Manifest
 import android.app.AlertDialog
 import android.annotation.SuppressLint
-import android.annotation.TargetApi
 import android.content.Intent
 import com.luizmarquesarruda.relogio20.notifications.NotificationCenterActivity
 import com.luizmarquesarruda.relogio20.device.ble.gatt.SerialGattOperationQueue
@@ -15,6 +14,8 @@ import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectAvailabil
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsRepository
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsResult
 import androidx.activity.ComponentActivity
+import androidx.annotation.RequiresApi
+import androidx.core.content.edit
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.health.connect.client.PermissionController
 import kotlinx.coroutines.CoroutineScope
@@ -572,12 +573,14 @@ class MainActivity : ComponentActivity() {
             .setMessage("Informe o endereço Bluetooth exibido no relógio. Será salvo somente neste aparelho, sem inclusão no código público ou no relatório TXT.")
             .setView(input)
             .setNegativeButton("Cancelar", null)
-            .setNeutralButton("Remover") { _, _ -> identityPrefs.edit().remove("gt3_max_address").apply() }
+            .setNeutralButton("Remover") { _, _ ->
+                identityPrefs.edit { remove("gt3_max_address") }
+            }
             .setPositiveButton("Salvar") { _, _ ->
                 val address = BleDeviceIdentity.normalize(input.text.toString())
                 if (address == null) updateStatus("Endereço inválido. Use AA:BB:CC:DD:EE:FF.")
                 else {
-                    identityPrefs.edit().putString("gt3_max_address", address).apply()
+                    identityPrefs.edit { putString("gt3_max_address", address) }
                     appendLog("Identidade GT3 MAX salva localmente: " + maskAddress(address))
                     afterSave?.invoke()
                 }
@@ -1120,7 +1123,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.TIRAMISU)
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @SuppressLint("MissingPermission")
     private fun writeDescriptorApi33(
         gatt: BluetoothGatt,

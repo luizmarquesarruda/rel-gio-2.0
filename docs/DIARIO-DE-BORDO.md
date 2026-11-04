@@ -421,3 +421,15 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Corrigida última frase obsoleta no README: a seleção manual de um dispositivo genérico foi removida; a conexão usa somente o endereço GT3 MAX configurado localmente.
 - Run #207 passou Lint, testes Kotlin, build das duas variantes e guardrails de dependências/permissões. Falhou somente na comparação textual dos atributos de backup no auditor. O CI seguinte deve revalidar o novo comportamento, auditoria das assinaturas e publicação.
 - Não houve instalação física ou teste de conexão no Galaxy A06 nesta rodada.
+
+
+## 04/11/2026 — Modernização compatível do toolchain e limpeza de Lint
+
+- O relatório Lint do APK da execução #207 mostrou 54 avisos: 50 SetTextI18n, 2 UseKtx, 1 UseRequiresApi e 1 OldTargetApi. Lint passou, mas os três avisos estruturais foram corrigidos; avisos SetTextI18n permanecem como dívida de internacionalização.
+- O Gradle 8.13 produziu aviso explícito de versão desatualizada. A matriz Kotlin declara KGP 2.4.21 compatível com Gradle até 9.7.0 e AGP entre 8.5.2 e 9.3.1. O projeto mantém AGP 8.13.2 (dentro da faixa), atualiza KGP para 2.4.21 e Gradle para 9.7.0.
+- Atualizada a anotação de helper API33+ de TargetApi para RequiresApi, propagando a exigência ao chamador.
+- Substituídas duas operações manuais SharedPreferences.edit().apply() pela extensão androidx.core.content.edit, já presente na árvore runtime.
+- Corrigida a última descrição do README que dizia que o usuário escolhia um dispositivo genérico; agora registra conexão somente ao endereço local configurado.
+- Testes Python adicionados para fixar as versões compatíveis do toolchain, exigir RequiresApi/KTX e manter o README coerente.
+- CI nesta combinação deve validar Lint, testes, montagem dos APKs, manifestos e assinatura antes de declarar a atualização aprovada.
+- A atualização do AGP para 9.x foi deixada fora deste conjunto: AGP9 muda o modelo de integração Kotlin e requer migração específica do projeto. AGP8.13.2 permanece dentro da faixa compatível do KGP 2.4.21.

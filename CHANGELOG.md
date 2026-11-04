@@ -1,5 +1,14 @@
 # Changelog
 
+## Não lançado — atualização compatível do toolchain e limpeza Lint
+
+- Atualizados Kotlin Gradle Plugin para 2.4.21 e Gradle para 9.7.0, mantendo Android Gradle Plugin 8.13.2 dentro da matriz oficial de compatibilidade.
+- Substituído TargetApi por RequiresApi no helper de API33+ e aplicado SharedPreferences KTX para remover avisos locais.
+- README passa a descrever somente a conexão ao endereço GT3 MAX configurado localmente.
+- AGP9 não foi incluído por exigir migração separada da integração Kotlin.
+- CI da nova combinação ainda precisa concluir.
+
+
 ## Não lançado — auditoria do manifesto compilado
 
 - Auditor de APK atualizado para aceitar referências de recursos compiladas (@ref) em dataExtractionRules/fullBackupContent, mantendo a exigência de ambos os atributos.
