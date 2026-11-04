@@ -32,7 +32,7 @@ A assinatura GATT (NUS + três serviços privados) pode identificar uma compatib
 
 1. O app continua exigindo correspondência com o endereço Bluetooth configurado localmente. O MAC não é compilado dentro do APK nem publicado no GitHub.
 2. Após a descoberta GATT, o app compara o nome GT3 MAX/GT3 MAX Call e o conjunto de serviços/características observado.
-3. Se nome e transporte NUS coincidirem, o app habilita automaticamente notificações apenas na característica NUS TX, usando o descritor padrão CCCD (`0x2902`).
+3. Somente se nome e fingerprint GATT completo coincidirem, o app habilita automaticamente notificações apenas na característica NUS TX, usando o descritor padrão CCCD (`0x2902`). Correspondência parcial não inicia escuta automática.
 4. O app interpreta o quadro AB `0x91/0x80` somente como **candidato de bateria**. A captura `AB 00 05 FF 91 80 00 0C` sugere 12%, mas essa semântica ainda precisa de correlação repetida com o nível mostrado pelo Wearfit Pro.
 5. O app não escreve bytes em NUS RX nem em características privadas. A configuração CCCD não é um comando proprietário.
 
