@@ -1761,6 +1761,7 @@ class MainActivity : ComponentActivity() {
             automaticGattDiscoveryPrefs.edit { putBoolean("enabled", false) }
             finishAutomaticCaptureSession("Coleta automática pausada pelo usuário")
             stopAutomaticGattNotifications()
+            automaticGattProbeStartedForConnection = false
             appendLog(
                 "Coleta automática pausada. Novas leituras/inscrições param; canais ativados pelo teste automático serão desinscritos via CCCD padrão."
             )
@@ -1841,6 +1842,12 @@ class MainActivity : ComponentActivity() {
     private fun maybeStartAutomaticGattProbe(gatt: BluetoothGatt) {
         if (bluetoothGatt !== gatt || !isGattConnected || isGattDisconnecting) return
         if (!automaticGattDiscoveryEnabled || automaticGattProbeStartedForConnection) return
+        if (pendingAutomaticUnsubscribeKeys.isNotEmpty()) {
+            handler.postDelayed({
+                if (bluetoothGatt === gatt) maybeStartAutomaticGattProbe(gatt)
+            }, 300L)
+            return
+        }
 
         val observed = gatt.services.associate { service ->
             service.uuid to service.characteristics.map { it.uuid }.toSet()
@@ -1863,6 +1870,7 @@ class MainActivity : ComponentActivity() {
         if (!shouldStart || !ensureAutomaticCaptureSession()) return
 
         automaticGattProbeStartedForConnection = true
+        deepExplorationAttempted.clear()
         val inventory = gatt.services.map { service ->
             GattServiceRecord(
                 uuid = service.uuid.toString(),
@@ -1938,6 +1946,7 @@ class MainActivity : ComponentActivity() {
                 return@forEach
             }
 
+            pendingAutomaticUnsubscribeKeys.add(key)
             enqueueGattOperation(
                 gattOperationKey(parts[0], parts[1], "CCCD"),
                 onTimeout = {
@@ -1953,6 +1962,7 @@ class MainActivity : ComponentActivity() {
                 }
             ) {
                 if (bluetoothGatt !== gatt || isGattDisconnecting) {
+                    pendingAutomaticUnsubscribeKeys.remove(key)
                     false
                 } else {
                     gatt.setCharacteristicNotification(characteristic, false)
