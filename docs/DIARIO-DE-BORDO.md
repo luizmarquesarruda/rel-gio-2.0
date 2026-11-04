@@ -452,3 +452,16 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - targetSdk 36 mantido por requisito Play; API37 não foi ativada sem testes Android 17.
 - Artefato é build debug, com certificado Android Debug e `release_ready=false`; não é release de produção.
 - PR #9 continua aberta, draft e sem merge. Galaxy A06/Android16, instalação, TalkBack e comunicação física GT3 MAX: **não validados**.
+
+## 04/11/2026 — Reconexão automática BLE do GT3 MAX
+
+- Criada política Kotlin pura `BleReconnectPolicy`, com retentativas em 1, 2, 5, 10, 20 e 30 segundos, limitadas a 30 segundos; a sequência reinicia após conexão GATT bem-sucedida.
+- A primeira conexão GATT confirmada habilita e persiste localmente `auto_reconnect_enabled`; a recuperação usa somente o endereço GT3 MAX configurado no aparelho.
+- Varreduras de recuperação usam modo de baixa potência e duração menor que a busca manual. Resultados de outros endereços são ignorados durante a recuperação.
+- Erros GATT, desconexões inesperadas, timeout de conexão e falha/não localização durante scan agendam nova tentativa quando a reconexão está habilitada.
+- Ausência de permissão não dispara diálogo em loop: a recuperação pausa até o usuário restaurar a permissão e retornar ao app.
+- O botão permite interromper a reconexão mesmo sem GATT ativo; a solicitação manual desativa e persiste a preferência desligada.
+- Ao pausar a Activity, scans em andamento são interrompidos; ao retomar/reabrir o app, a identidade previamente conectada é procurada novamente.
+- Nenhuma permissão, dependência, escrita proprietária, comando NUS RX, OTA/DFU, reset ou consulta de sensor foi adicionada.
+- Limite explícito: não há garantia de reconexão contínua após force-stop ou enquanto o processo permanece suspenso em segundo plano; CompanionDeviceManager/serviço conectado exige uma fase separada.
+- Teste físico no Galaxy A06/Android 16 com GT3 MAX Call: **não validado**. CI do HEAD final ainda precisa ser executado e inspecionado.
