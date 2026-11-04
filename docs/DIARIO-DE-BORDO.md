@@ -2,6 +2,33 @@
 
 Este arquivo é o registro cronológico principal. Atualizar em toda PR que altere arquitetura, funções, dependências, versão, dados ou protocolo.
 
+## 03/11/2026 — Auditoria adicional e perfil BLE candidato (PR #5)
+
+### Causa do Lint e correções
+- O primeiro CI da PR #5 falhou em lintDebug por leitura de BluetoothDevice.name sem verificação explícita de BLUETOOTH_CONNECT. Foram centralizados helpers de nome/endereço com verificação de permissão e fallback seguro.
+- O scan agora trata SecurityException e IllegalStateException se a permissão for revogada ou o estado Bluetooth mudar entre a checagem e a chamada.
+- A API Android permite fornecer Handler a connectGatt; o app agora usa o Handler principal (minSdk 26), garantindo que callbacks GATT e fila serial compartilhem a mesma thread.
+- Novas operações são bloqueadas durante a desconexão. Falhas GATT limpam estado e fila.
+- A lista de apps na tela de notificações recebeu uma área de rolagem própria.
+
+### Evidência de protocolo
+- A captura local contém NUS UUIDs terminados em dcca9e e quadro AB 00 05 FF 91 80 00 0C.
+- O projeto público fbiego/dt78 contém os mesmos UUIDs e uma fixture AB 00 05 FF 91 80 00 50 comentada como bateria 80%.
+- Criado perfil NUS_AB_FRAME_COMPATIBLE_CANDIDATE e parser Kotlin offline para quadros completos, com testes.
+- A hipótese de bateria 12% para o byte 0C permanece **não validada**. O GT3 Maxx não foi identificado como DT78/X8 Ultra e o chipset continua desconhecido.
+- Nenhuma escrita de payload ou comando proprietário foi enviada. A característica RX e Secure DFU continuam bloqueadas.
+
+### Auditoria de módulos
+- BLE scan/permissões, ciclo de vida GATT, serialização, callbacks e parsing: alterações e testes offline registrados.
+- Health Connect: consulta agregada permanece separada dos dados do relógio; ausência de valor não é zero; teste físico não validado.
+- Notificações: filtro por pacote, cache volátil de 30 itens, remoção por callback e revogação de pacote; conteúdo não é persistido nem enviado à rede.
+- UI: lista de aplicativos rolável; teste visual no Galaxy A06 não validado.
+- Estrutura: MainActivity.kt continua concentrando BLE e Health Connect; extração de serviços/camadas segue como dívida arquitetural, não foi mascarada como concluída.
+
+### Versão e validação
+- Versão de desenvolvimento proposta: 0.3.0-alpha.3.
+- Lint, testes e APK: aguardando execução do CI após as correções.
+- Teste físico no Galaxy A06 e GT3 Maxx: **não validado**.
 ## 03/11/2026 — Correções de integridade Android (PR de correção encadeada)
 
 ### Correções implementadas na branch `fix/integridade-android-20261103`
