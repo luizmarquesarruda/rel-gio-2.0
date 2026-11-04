@@ -68,7 +68,7 @@ Regras:
 
 | Métrica/função | Fonte pretendida | Estado real |
 |---|---|---|
-| Passos no painel | Health Connect agregado | Leitura agregada implementada; pode combinar telefone e outras fontes |
+| Passos no painel | Health Connect agregado | Leitura agregada encapsulada em HealthConnectStepsRepository; pode combinar telefone e outras fontes |
 | Passos originados no GT3 Maxx | Sensor do relógio via Wearfit Pro/BLE | Não comprovado; ainda não gravar no Health Connect |
 | Frequência cardíaca | Sensor óptico do relógio | Protocolo/SDK e dados não validados |
 | Sono | Sensor/algoritmo do relógio | Integração não validada |
@@ -76,6 +76,8 @@ Regras:
 | Bateria | Quadro BLE candidato NUS/AB | Candidato, não validado por comparação repetida |
 | Notificações selecionadas | Android NotificationListenerService | Captura local implementada; retransmissão física ainda não validada |
 | Ajuste de horário | Android ↔ relógio | Protocolo não identificado |
+
+A consulta agregada foi separada em `data/healthconnect` e a interface consome um snapshot de domínio com origem HEALTH_CONNECT_AGGREGATE. MainActivity ainda concentra UI e ciclo de vida BLE; não é considerada modularização concluída.
 
 ## 4. Google Play e Play Protect
 
