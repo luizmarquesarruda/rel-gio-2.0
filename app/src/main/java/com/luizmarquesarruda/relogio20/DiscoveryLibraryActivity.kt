@@ -81,7 +81,7 @@ class DiscoveryLibraryActivity : Activity() {
 
         search = EditText(this).apply {
             hint = "Pesquisar UUID, leitura ou descoberta"
-            singleLine = true
+            setSingleLine(true)
             textSize = 14f
             setPadding(dp(12), dp(8), dp(12), dp(8))
             background = roundedSurface()

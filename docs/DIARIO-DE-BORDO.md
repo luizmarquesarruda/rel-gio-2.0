@@ -587,3 +587,9 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Ajustada a ordem da página principal: conexão e identidade, laboratório/biblioteca, depois Saúde e integração e, por fim, mais recursos. Isso prioriza a tarefa BLE sem remover os dados agregados do Health Connect.
 
 - Adicionado ao painel principal um indicador de captura BLE ativa com contador regressivo e quantidade de registros. O indicador é atualizado pelo ticker da tela; a validade da captura continua protegida pelo deadline persistido no armazenamento.
+
+### Correção de compilação da biblioteca interna
+
+- A CI #253 no commit `cd82b8b3b1a62f826f6eef4091464887e7fcfa73` identificou erro Kotlin em `DiscoveryLibraryActivity.kt`: `EditText` não expõe a propriedade gravável `singleLine` usada no inicializador.
+- Corrigido para a chamada pública `setSingleLine(true)`. A causa foi sintática e não envolveu BLE, persistência ou layout.
+- A CI #253 foi cancelada pela concorrência após identificar a mesma falha nos dois variants. O HEAD final precisará ser recompilado integralmente.
