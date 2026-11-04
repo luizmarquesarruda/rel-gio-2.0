@@ -935,6 +935,11 @@ class MainActivity : ComponentActivity() {
                 return
             }
             appendLog("Estado GATT: status=" + status + ", estado=" + newState)
+            if (isGattDisconnecting && newState == BluetoothProfile.STATE_CONNECTED) {
+                appendLog("Conexão GATT concluída após cancelamento manual; encerrando sem reativar a reconexão automática.")
+                runCatching { gatt.disconnect() }
+                return
+            }
             if (status == BluetoothGatt.GATT_SUCCESS &&
                 newState == BluetoothProfile.STATE_CONNECTING) {
                 updateStatus("Conectando ao dispositivo BLE...")
