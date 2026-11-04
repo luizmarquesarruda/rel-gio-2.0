@@ -4,6 +4,7 @@
 - Adicionado watchdog de 12 segundos para a ausência do callback. Se a API recusar o início, retornar erro ou não responder dentro do prazo, a sessão GATT é encerrada de forma controlada e a política de reconexão pode tentar novamente.
 - O inventário anterior permanece preservado, mas o TXT passa a registrar explicitamente que ele não representa a conexão atual enquanto o callback estiver pendente ou tiver falhado.
 - Operações pendentes são classificadas como não executadas; filas, inscrições pendentes e timeouts são limpos antes da reconexão.
+- Se o usuário desconectar ou o aplicativo for encerrado antes do callback, a biblioteca grava `INTERRUPTIDA`, evitando que a tentativa pareça uma descoberta concluída.
 - Teste unitário cobre a decisão de recuperação e impede que callback já recebido ou conexão obsoleta disparem recuperação.
 - Fases de exploração serializada, decodificação Bluetooth SIG, persistência atômica e painel de progresso permanecem integradas; nenhuma semântica proprietária foi presumida.
 - CI após esta alteração e validação física no Samsung Galaxy A06 / Android 16 com GT3 MAX: **não validados**.

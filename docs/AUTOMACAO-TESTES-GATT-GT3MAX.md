@@ -165,6 +165,7 @@ O app persiste três evidências separadas:
 - `AGUARDANDO_CALLBACK`: solicitação aceita; nenhum inventário novo deve ser tratado como atual.
 - `CALLBACK_OK`: `onServicesDiscovered` retornou sucesso e o inventário da conexão atual pode ser registrado.
 - `FALHA` ou `TIMEOUT`: a descoberta não foi concluída; a conexão é encerrada, as operações pendentes são descartadas e a reconexão automática pode ser retomada.
+- `INTERRUPTIDA`: o usuário desconectou ou o aplicativo foi encerrado antes do callback; a tentativa fica registrada sem promover o inventário anterior a atual.
 
 O watchdog é de 12 segundos. Esse valor é um limite operacional do aplicativo, não um tempo garantido pelo protocolo BLE. Inventários de sessões anteriores permanecem no histórico, mas o evento de ciclo de vida mais recente permite distinguir dados antigos de uma descoberta pendente.
 
