@@ -8,6 +8,15 @@
 - Telefone de desenvolvimento: Samsung Galaxy A06, Android 16
 - Estado: pareamento pelo Wearfit Pro informado pelo usuário; protocolo e chipset ainda não identificados.
 
+## Características físicas/comerciais relatadas (04/11/2026)
+
+O usuário compartilhou a seguinte descrição geral do produto/anúncio:
+- Sensor óptico central anunciado para frequência cardíaca e oxigenação (SpO₂).
+- Bluetooth integrado para sincronização com Android e iOS.
+- Parte traseira descrita como plástico/vidro, com marcações RoHS e CE.
+
+**Classificação da evidência:** descrição comercial genérica, não inspeção independente do aparelho nem ficha técnica do fabricante. Não identifica componente óptico, fabricante do sensor, chipset, versão de firmware, serviços GATT, algoritmo, taxa de amostragem ou margem de erro. As marcações RoHS/CE, mesmo quando presentes, não comprovam precisão clínica nem liberam acesso programático às medições. O sensor e qualquer leitura direta continuam **não validados**. A descrição não fornece evidência para pressão arterial.
+
 ## Evidência BLE adicional (03/11/2026)
 
 O inventário observado inclui Nordic UART com UUIDs terminados em dcca9e e a notificação AB 00 05 FF 91 80 00 0C. Existe uma referência pública DT78/X8 Ultra com os mesmos UUIDs e uma fixture AB de bateria. Isso sustenta um perfil **NUS/AB candidato**, mas não identifica chipset ou modelo. A hipótese de bateria 12% não foi validada com o Wearfit Pro. Detalhes: PROTOCOLO-BLE-CANDIDATO.md.
