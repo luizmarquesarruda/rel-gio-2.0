@@ -2,7 +2,7 @@
 
 ## Estado estrutural observado
 
-A base é um aplicativo Android nativo Kotlin. O adaptador de consulta agregada de passos do Health Connect foi extraído para data/healthconnect; UI e ciclo de vida BLE ainda estão parcialmente concentrados em MainActivity.kt. A separação é incremental, não concluída.
+A base é um aplicativo Android nativo Kotlin. O adaptador de consulta agregada e a política de estado da permissão Health Connect foram extraídos para data/healthconnect; MainActivity coordena o ciclo de vida da permissão e a UI, enquanto o ciclo de vida BLE ainda está parcialmente concentrado no mesmo ponto. A separação é incremental, não concluída.
 
 ### Componentes implementados
 
@@ -11,6 +11,7 @@ A base é um aplicativo Android nativo Kotlin. O adaptador de consulta agregada 
 | domain/health/HealthMetricSample.kt | Domain / Health | Tipo, unidade, origem, timestamps e estado de validação sem dependência Android/BLE. |
 | domain/health/StepsSnapshot.kt | Domain / Activity | Snapshot do agregado de passos; diferencia zero de ausência e preserva intervalo, recebimento e origem Health Connect. |
 | data/healthconnect/HealthConnectStepsRepository.kt | Data / Health Connect | Disponibilidade do provider, permissão READ_STEPS e consulta agregada diária, sem atribuir a origem ao GT3 MAX. |
+| data/healthconnect/HealthConnectPermissionState.kt | Data / Health Connect | Estado local de solicitação, recusa, concessão e revogação; política pura, testável e sem substituir a autorização real do provider. |
 | data/healthconnect/HealthConnectDayWindow.kt | Data / Health Connect | Calcula o início do dia local a partir de Instant + ZoneId com compatibilidade com minSdk 26. |
 | device/ble/gatt/SerialGattOperationQueue.kt | BLE transport / GATT | Serializar operações GATT assíncronas. Não interpreta payload. |
 | device/ble/gatt/BluetoothCurrentTimePayload.kt | BLE / Bluetooth SIG CTS | Codificar os 10 bytes da característica Current Time (0x2A2B); não executa conexão nem escrita. |

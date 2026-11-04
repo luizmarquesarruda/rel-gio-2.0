@@ -1,3 +1,14 @@
+## 04/11/2026 — Recuperação explícita da permissão Health Connect
+
+- Corrigido o fluxo que fazia Atualizar atividade chamar connectHealthConnect() quando READ_STEPS não estava inicializada; atualizar agora apenas apresenta o estado sem acesso e nunca inicia uma solicitação de permissão.
+- A recusa e a revogação de READ_STEPS são persistidas localmente como estados distintos; o estado armazenado não substitui a consulta real a getGrantedPermissions().
+- Após uma recusa, a interface oferece acesso às configurações da Conexão Saúde e mantém a opção de nova solicitação somente após ação explícita do usuário.
+- Android 14+ usa a tela do sistema para gerenciar permissões de saúde da aplicação; versões anteriores usam a ação oficial de configurações do Health Connect com fallback para detalhes do provider.
+- Ao retornar das configurações, onResume reconsulta o provider e atualiza o estado sem abrir diálogos; uma autorização concedida passa a permitir leitura agregada diária.
+- Adicionados testes unitários para primeira solicitação, recusa persistida, concessão, revogação e recuperação pelas configurações.
+- Nenhuma permissão adicional, escrita no Health Connect, comando BLE ou alteração do protocolo GT3 MAX foi introduzida.
+- CI desta fase, validação em Galaxy A06/Android 16 e fluxo de configurações no aparelho: **não validados**.
+
 ## 04/11/2026 — Melhoria da tela de conexão GT3 MAX
 
 - Reorganizado o painel Bluetooth em cartão de estado, com indicador visual, título contextual e instrução objetiva conforme o estado informado pelo ciclo BLE.
