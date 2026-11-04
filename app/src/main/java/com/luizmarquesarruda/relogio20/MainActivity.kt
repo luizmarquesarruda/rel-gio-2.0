@@ -609,6 +609,10 @@ class MainActivity : ComponentActivity() {
                 val address = BleDeviceIdentity.normalize(input.text.toString())
                 if (address == null) updateStatus("Endereço inválido. Use AA:BB:CC:DD:EE:FF.")
                 else {
+                    if (expectedWatchAddress != null && expectedWatchAddress != address) {
+                        disconnectGatt()
+                        appendLog("Identidade do relógio alterada; uma nova conexão manual será necessária para habilitar a reconexão automática.")
+                    }
                     identityPrefs.edit().putString("gt3_max_address", address).apply()
                     appendLog("Identidade GT3 MAX salva localmente: " + maskAddress(address))
                     afterSave?.invoke()
@@ -647,6 +651,7 @@ class MainActivity : ComponentActivity() {
         if (adapter == null) {
             updateStatus("Este telefone não disponibilizou um adaptador Bluetooth.")
             appendLog("Bluetooth indisponível neste aparelho.")
+            if (automatic || reconnectPolicy.isEnabled) scheduleAutoReconnect("Adaptador Bluetooth indisponível")
             return
         }
         if (!adapter.isEnabled) {
@@ -849,7 +854,12 @@ class MainActivity : ComponentActivity() {
             return
         }
         if (!hasBlePermissions()) {
-            requestBlePermissions()
+            if (automaticAttempt) {
+                updateStatus("Permissão Bluetooth necessária para reconectar.")
+                appendLog("Tentativa automática interrompida: permissão Bluetooth foi revogada; nenhuma caixa de permissão foi aberta.")
+            } else {
+                requestBlePermissions()
+            }
             return
         }
         isGattDisconnecting = false
@@ -933,6 +943,7 @@ class MainActivity : ComponentActivity() {
                 isGattDisconnecting = false
                 isGattConnected = true
                 cancelConnectionTimeout()
+                cancelReconnectTask()
                 reconnectPolicy.markConnected()
                 connectionPrefs.edit().putBoolean("auto_reconnect_enabled", true).apply()
                 appendLog("Reconexão automática habilitada após conexão GATT confirmada.")
@@ -1299,7 +1310,11 @@ class MainActivity : ComponentActivity() {
                 }
                 value.startsWith("Procurando") -> {
                     headline = "Procurando relógio"
-                    detail = "Busca BLE ativa por até 15 segundos. Mantenha o GT3 MAX próximo ao celular."
+                    detail = if (value.contains("reconexão automática")) {
+                        "Busca automática de baixa potência pelo GT3 MAX salvo localmente."
+                    } else {
+                        "Busca BLE ativa por até 15 segundos. Mantenha o GT3 MAX próximo ao celular."
+                    }
                     indicatorColor = 0xFFE0A12B.toInt()
                 }
                 value.startsWith("Busca em andamento") -> {
