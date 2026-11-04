@@ -98,6 +98,7 @@ NUS RX, escritas de payload em características customizadas, controles de medi�
 - A ativação é uma autorização local persistida no aparelho até o usuário pausar.
 - Cada janela de captura tem até 10 minutos; novas janelas são renovadas automaticamente enquanto o modo está habilitado, GATT conectado e a tela principal permanece em primeiro plano. Ao ir para segundo plano, o ticker é suspenso e a renovação só retoma quando o aplicativo volta ao primeiro plano. Não existe serviço foreground nesta fase.
 - O HEX de leituras/notificações e os valores decodificados são persistidos apenas durante uma sessão válida.
+- Cada valor Bluetooth SIG decodificado é gravado como registro vinculado ao `sessionId` ativo. Sem sessão válida, ou após o prazo, o valor decodificado não é persistido; a biblioteca preserva somente os metadados de descoberta permitidos.
 - A biblioteca privada do app aplica seus limites existentes de quantidade e tamanho de arquivo/registro.
 - O TXT exportado pode conter dados de saúde quando houve captura consentida; deve ser tratado como relatório privado.
 - Fora de uma sessão ativa, o log não inclui HEX bruto de notificação/leitura.
