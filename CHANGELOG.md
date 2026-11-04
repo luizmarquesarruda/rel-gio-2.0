@@ -1,5 +1,14 @@
 # Changelog
 
+## Não lançado — descoberta BLE geral e TXT completo — 04/11/2026
+
+- Busca BLE geral iniciada automaticamente ao abrir o aplicativo; não exige digitar o endereço MAC.
+- Endereço salvo deixou de ser filtro exclusivo: nome GT3 MAX e serviço NUS anunciado também são pistas; dispositivos sem nome são listados para validação manual.
+- Nova identidade só é salva após fingerprint GATT completo; candidatos incompatíveis são desconectados antes de leituras ou inscrições.
+- TXT inclui descobertas persistidas da biblioteca local, além dos 250 eventos mais recentes; endereços MAC continuam mascarados.
+- Testes adicionados para classificação BLE, fingerprint sem nome e exportação das descobertas.
+- CI e teste físico Galaxy A06/Android 16: **não validados**.
+
 ## Não lançado — laboratório de captura e biblioteca BLE — 04/11/2026
 
 - Painel principal reorganizado para priorizar conexão GT3 MAX, laboratório/biblioteca e depois Saúde e integração.
