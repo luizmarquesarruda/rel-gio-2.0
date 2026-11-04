@@ -475,7 +475,7 @@ class MainActivity : ComponentActivity() {
             reconnectRunnable = null
             reconnectRequestedForResume = reconnectPolicy.isEnabled
         }
-        if (isAutoReconnectScan) stopBleScan()
+        if (currentScanCallback != null) stopBleScan()
         handler.removeCallbacks(clockTicker)
         handler.removeCallbacks(stepsTicker)
         super.onPause()
@@ -600,7 +600,11 @@ class MainActivity : ComponentActivity() {
             .setMessage("Informe o endereço Bluetooth exibido no relógio. Será salvo somente neste aparelho, sem inclusão no código público ou no relatório TXT.")
             .setView(input)
             .setNegativeButton("Cancelar", null)
-            .setNeutralButton("Remover") { _, _ -> identityPrefs.edit().remove("gt3_max_address").apply() }
+            .setNeutralButton("Remover") { _, _ ->
+                disconnectGatt()
+                identityPrefs.edit().remove("gt3_max_address").apply()
+                appendLog("Identidade GT3 MAX removida; reconexão automática desativada.")
+            }
             .setPositiveButton("Salvar") { _, _ ->
                 val address = BleDeviceIdentity.normalize(input.text.toString())
                 if (address == null) updateStatus("Endereço inválido. Use AA:BB:CC:DD:EE:FF.")
@@ -616,7 +620,6 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("MissingPermission")
     private fun startBleScan(automatic: Boolean = false) {
         if (automatic && !isActivityResumed) {
-            reconnectRequestedForResume = true
             appendLog("Reconexão automática adiada: aplicativo fora do primeiro plano.")
             return
         }
@@ -632,7 +635,6 @@ class MainActivity : ComponentActivity() {
         }
         if (!hasBlePermissions()) {
             if (automatic) {
-                reconnectRequestedForResume = true
                 updateStatus("Permissão Bluetooth necessária para reconectar.")
                 appendLog("Reconexão pausada: permissão Bluetooth ausente; nenhuma solicitação automática foi exibida.")
             } else {
@@ -876,15 +878,18 @@ class MainActivity : ComponentActivity() {
         } catch (error: SecurityException) {
             updateStatus("Permissão Bluetooth foi revogada. Autorize novamente.")
             appendLog("Conexão GATT bloqueada por permissão: " + (error.message ?: "sem detalhes"))
+            if (reconnectPolicy.isEnabled) scheduleAutoReconnect("Permissão Bluetooth revogada durante conexão")
             return
         } catch (error: IllegalArgumentException) {
             updateStatus("Dispositivo BLE inválido ou indisponível.")
             appendLog("Não foi possível iniciar GATT: " + (error.message ?: "argumento inválido"))
+            if (reconnectPolicy.isEnabled) scheduleAutoReconnect("Dispositivo BLE indisponível")
             return
         }
         if (newGatt == null) {
             updateStatus("O Android não iniciou a conexão GATT.")
             appendLog("connectGatt retornou null.")
+            if (reconnectPolicy.isEnabled) scheduleAutoReconnect("Android não iniciou a conexão GATT")
             return
         }
         bluetoothGatt = newGatt
@@ -930,7 +935,6 @@ class MainActivity : ComponentActivity() {
                 cancelConnectionTimeout()
                 reconnectPolicy.markConnected()
                 connectionPrefs.edit().putBoolean("auto_reconnect_enabled", true).apply()
-                reconnectRequestedForResume = false
                 appendLog("Reconexão automática habilitada após conexão GATT confirmada.")
                 updateStatus("Conectado. Descobrindo serviços GATT...")
                 val started = runCatching { gatt.discoverServices() }.getOrDefault(false)
@@ -980,6 +984,10 @@ class MainActivity : ComponentActivity() {
             } else {
                 updateStatus("Falha ao descobrir serviços GATT.")
                 appendLog("Falha na descoberta GATT. Status: " + status)
+                if (reconnectPolicy.isEnabled) {
+                    runCatching { gatt.disconnect() }
+                    scheduleAutoReconnect("Falha na descoberta dos serviços GATT")
+                }
             }
         }
 
@@ -1258,7 +1266,6 @@ class MainActivity : ComponentActivity() {
         cancelReconnectTask()
         reconnectPolicy.markManuallyDisconnected()
         connectionPrefs.edit().putBoolean("auto_reconnect_enabled", false).apply()
-        reconnectRequestedForResume = false
         appendLog("Reconexão automática desativada por solicitação do usuário.")
         val gatt = bluetoothGatt
         if (gatt == null) {
@@ -1366,7 +1373,8 @@ class MainActivity : ComponentActivity() {
             scanButton.isEnabled = !gattSessionExists && !scanInProgress &&
                 !value.startsWith("Conectando") && !value.startsWith("Desconectando") &&
                 !value.startsWith("Reconectando")
-            disconnectButton.isEnabled = gattSessionExists
+            disconnectButton.text = if (gattSessionExists) "Desconectar" else "Parar reconexão"
+            disconnectButton.isEnabled = gattSessionExists || reconnectPolicy.isEnabled || reconnectRunnable != null || isAutoReconnectScan
         }
     }
 
@@ -1417,7 +1425,6 @@ class MainActivity : ComponentActivity() {
             return
         }
         if (!isActivityResumed) {
-            reconnectRequestedForResume = true
             appendLog("Reconexão automática aguardará o aplicativo voltar ao primeiro plano.")
             return
         }
@@ -1431,12 +1438,10 @@ class MainActivity : ComponentActivity() {
         val task = Runnable {
             reconnectRunnable = null
             if (!isActivityResumed) {
-                reconnectRequestedForResume = true
                 return@Runnable
             }
             if (!reconnectPolicy.isEnabled || bluetoothGatt != null || currentScanCallback != null) return@Runnable
             if (!hasBlePermissions()) {
-                reconnectRequestedForResume = true
                 updateStatus("Permissão Bluetooth necessária para reconectar.")
                 appendLog("Reconexão pausada: restaure a permissão Bluetooth e retorne ao aplicativo.")
                 return@Runnable
