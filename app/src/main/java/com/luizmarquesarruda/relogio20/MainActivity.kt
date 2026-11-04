@@ -6,6 +6,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import com.luizmarquesarruda.relogio20.notifications.NotificationCenterActivity
 import com.luizmarquesarruda.relogio20.device.ble.gatt.SerialGattOperationQueue
+import com.luizmarquesarruda.relogio20.device.ble.gatt.BluetoothCurrentTimePayload
 import com.luizmarquesarruda.relogio20.device.ble.core.BleReconnectPolicy
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbFrameParser
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitProtocolProfile
@@ -56,6 +57,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import java.time.LocalDateTime
 
 class MainActivity : ComponentActivity() {
     private lateinit var content: LinearLayout
@@ -64,6 +66,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var statusIndicatorView: TextView
     private lateinit var deviceProfileView: TextView
     private lateinit var deviceBatteryView: TextView
+    private lateinit var deviceTimeSyncView: TextView
     private lateinit var scanButton: Button
     private lateinit var disconnectButton: Button
     private lateinit var logView: TextView
@@ -149,6 +152,8 @@ class MainActivity : ComponentActivity() {
     private val activeNotifications = mutableSetOf<String>()
     private val pendingNotifications = mutableSetOf<String>()
     private val gattOperationQueue = SerialGattOperationQueue()
+    private var clockSyncAttemptedForSession = false
+    private var pendingCurrentTimeWriteKey: String? = null
 
     private val cccdUuid: UUID =
         UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
@@ -167,7 +172,10 @@ class MainActivity : ComponentActivity() {
         bluetoothAdapter = getSystemService(BluetoothManager::class.java)?.adapter
         buildScreen()
         appendLog("Aplicativo iniciado. Diagnóstico BLE local.")
-        appendLog("Nenhum comando será enviado às características do relógio.")
+        appendLog(
+            "Nenhum comando proprietário será enviado. A hora só será escrita pelo CTS padrão " +
+                "se o serviço 0x1805 e a característica 0x2A2B com WRITE forem encontrados."
+        )
         if (reconnectPolicy.isEnabled) {
             appendLog("Reconexão automática restaurada para a identidade GT3 MAX configurada localmente.")
         }
@@ -254,6 +262,14 @@ class MainActivity : ComponentActivity() {
             setPadding(0, 0, 0, dp(12))
         }
         connectionCard.addView(deviceBatteryView)
+
+        deviceTimeSyncView = TextView(this).apply {
+            text = "Hora do relógio: aguardando conexão BLE"
+            textSize = 13f
+            setTextColor(0xFF526170.toInt())
+            setPadding(0, 0, 0, dp(12))
+        }
+        connectionCard.addView(deviceTimeSyncView)
 
         val actions = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -344,9 +360,6 @@ class MainActivity : ComponentActivity() {
         }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
         ))
-
-        addText(root, "Horário do relógio: sincronização ainda não disponível. " +
-            "O protocolo de ajuste do GT3 MAX não foi identificado.", 12f)
 
         content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -873,6 +886,11 @@ class MainActivity : ComponentActivity() {
         }
         isGattDisconnecting = false
         isGattConnected = false
+        clockSyncAttemptedForSession = false
+        pendingCurrentTimeWriteKey = null
+        if (::deviceTimeSyncView.isInitialized) {
+            deviceTimeSyncView.text = "Hora do relógio: aguardando descoberta dos serviços GATT"
+        }
         cancelConnectionTimeout()
         lastConnectedDeviceName = safeDeviceName(device) ?: "Dispositivo sem nome"
         lastConnectedDeviceAddress = safeDeviceAddress(device)
@@ -973,6 +991,9 @@ class MainActivity : ComponentActivity() {
                 gattOperationQueue.reset()
                 pendingNotifications.clear()
                 activeNotifications.clear()
+                pendingCurrentTimeWriteKey = null
+                clockSyncAttemptedForSession = false
+                deviceTimeSyncView.text = "Hora do relógio: sessão GATT encerrada antes da confirmação."
                 if (bluetoothGatt === gatt) bluetoothGatt = null
                 updateStatus("Falha na conexão GATT. Status: " + status)
                 appendLog("Conexão GATT falhou; estado e fila foram limpos.")
@@ -983,6 +1004,9 @@ class MainActivity : ComponentActivity() {
                 isGattConnected = false
                 cancelConnectionTimeout()
                 deviceBatteryView.text = "Bateria do relógio: sem sessão BLE ativa"
+                pendingCurrentTimeWriteKey = null
+                clockSyncAttemptedForSession = false
+                deviceTimeSyncView.text = "Hora do relógio: sem sessão BLE ativa"
                 updateStatus("Relógio desconectado.")
                 appendLog("Conexão GATT encerrada.")
                 if (bluetoothGatt === gatt) {
@@ -1004,6 +1028,7 @@ class MainActivity : ComponentActivity() {
                 captureFeatureDiscovery(gatt)
                 renderGattServices(gatt)
                 inspectGt3MaxProfileAndSubscribe(gatt)
+                syncClockUsingCurrentTimeService(gatt)
                 updateStatus("Conectado. Serviços encontrados: " + gatt.services.size)
             } else {
                 updateStatus("Falha ao descobrir serviços GATT.")
@@ -1031,6 +1056,31 @@ class MainActivity : ComponentActivity() {
         ) {
             if (bluetoothGatt !== gatt) return
             handleNotification(characteristic.service.uuid.toString(), characteristic.uuid.toString(), value)
+        }
+
+        override fun onCharacteristicWrite(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            status: Int
+        ) {
+            if (bluetoothGatt !== gatt) return
+            val key = characteristic.service.uuid.toString() + "/" + characteristic.uuid.toString()
+            if (pendingCurrentTimeWriteKey != key) return
+
+            pendingCurrentTimeWriteKey = null
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                deviceTimeSyncView.text =
+                    "Hora enviada pelo CTS; o GATT confirmou a escrita. O visor/RTC do relógio ainda não foi verificado."
+                appendLog(
+                    "Bluetooth CTS 0x2A2B: callback GATT confirmou a escrita da hora local do Android. " +
+                        "A aceitação GATT não comprova que o firmware atualizou o RTC ou o mostrador."
+                )
+            } else {
+                deviceTimeSyncView.text =
+                    "Falha ao gravar a hora pelo CTS (status " + status + ")."
+                appendLog("Bluetooth CTS 0x2A2B: escrita GATT falhou. Status=" + status)
+            }
+            completeGattOperation(gatt)
         }
 
         @SuppressLint("MissingPermission")
@@ -1143,6 +1193,96 @@ class MainActivity : ComponentActivity() {
             )
         }
     }
+
+    @SuppressLint("MissingPermission")
+    private fun syncClockUsingCurrentTimeService(gatt: BluetoothGatt) {
+        if (clockSyncAttemptedForSession) return
+        clockSyncAttemptedForSession = true
+
+        val serviceUuid = UUID.fromString(BluetoothCurrentTimePayload.SERVICE_UUID)
+        val characteristicUuid = UUID.fromString(BluetoothCurrentTimePayload.CURRENT_TIME_UUID)
+        val service = gatt.getService(serviceUuid)
+        if (service == null) {
+            deviceTimeSyncView.text =
+                "Hora não sincronizada: o relógio não anunciou o serviço CTS padrão (0x1805)."
+            appendLog(
+                "Sincronização automática de hora indisponível: CTS 0x1805 ausente. " +
+                    "Nenhum comando proprietário foi enviado."
+            )
+            return
+        }
+
+        val characteristic = service.getCharacteristic(characteristicUuid)
+        if (characteristic == null) {
+            deviceTimeSyncView.text =
+                "CTS encontrado, mas a característica Current Time (0x2A2B) não foi anunciada."
+            appendLog("CTS 0x1805 sem a característica obrigatória Current Time 0x2A2B.")
+            return
+        }
+        if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE == 0) {
+            deviceTimeSyncView.text =
+                "CTS encontrado, mas 0x2A2B não anuncia WRITE. Sincronização não iniciada."
+            appendLog(
+                "CTS 0x1805/0x2A2B sem propriedade GATT WRITE. " +
+                    "A sincronização automática foi suspensa sem tentar outro canal."
+            )
+            return
+        }
+
+        val localDateTime = LocalDateTime.now()
+        val payload = BluetoothCurrentTimePayload.encode(localDateTime)
+        val key = service.uuid.toString() + "/" + characteristic.uuid.toString()
+        pendingCurrentTimeWriteKey = key
+        deviceTimeSyncView.text =
+            "Sincronizando com a hora local do celular: " + localDateTime.toString()
+        appendLog(
+            "CTS compatível encontrado. Solicitada sincronização com a hora local do Android: " +
+                localDateTime.toString() + ". A operação usa somente o serviço padrão 0x1805/0x2A2B."
+        )
+
+        gattOperationQueue.enqueue {
+            if (bluetoothGatt !== gatt || !isGattConnected || isGattDisconnecting) {
+                pendingCurrentTimeWriteKey = null
+                deviceTimeSyncView.text = "Sincronização cancelada: sessão GATT não está ativa."
+                appendLog("Escrita CTS cancelada antes do início: sessão GATT mudou ou foi encerrada.")
+                false
+            } else {
+                val started = if (Build.VERSION.SDK_INT >= 33) {
+                    writeCurrentTimeApi33(gatt, characteristic, payload)
+                } else {
+                    @Suppress("DEPRECATION")
+                    run {
+                        characteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                        characteristic.value = payload
+                        gatt.writeCharacteristic(characteristic)
+                    }
+                }
+                if (started) {
+                    appendLog("Escrita CTS iniciada; aguardando callback onCharacteristicWrite.")
+                    true
+                } else {
+                    pendingCurrentTimeWriteKey = null
+                    deviceTimeSyncView.text =
+                        "O Android recusou iniciar a escrita de hora pelo CTS."
+                    appendLog("Android recusou iniciar a escrita GATT de Current Time (0x2A2B).")
+                    false
+                }
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    @SuppressLint("MissingPermission")
+    private fun writeCurrentTimeApi33(
+        gatt: BluetoothGatt,
+        characteristic: BluetoothGattCharacteristic,
+        value: ByteArray
+    ): Boolean =
+        gatt.writeCharacteristic(
+            characteristic,
+            value,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        ) == BluetoothStatusCodes.SUCCESS
 
     @SuppressLint("MissingPermission")
     private fun renderGattServices(gatt: BluetoothGatt) {
