@@ -12,6 +12,7 @@ A base é um aplicativo Android nativo Kotlin. O adaptador de consulta agregada 
 | domain/health/StepsSnapshot.kt | Domain / Activity | Snapshot do agregado de passos; diferencia zero de ausência e preserva intervalo, recebimento e origem Health Connect. |
 | data/healthconnect/HealthConnectStepsRepository.kt | Data / Health Connect | Disponibilidade do provider, permissão READ_STEPS e consulta agregada diária, sem atribuir a origem ao GT3 MAX. |
 | device/ble/gatt/SerialGattOperationQueue.kt | BLE transport / GATT | Serializar operações GATT assíncronas. Não interpreta payload. |
+| device/gt3max/protocol/Gt3MaxCallDeviceProfile.kt | Perfil do dispositivo | Identificadores GT3 MAX Call informados e fingerprint GATT da captura; sem autenticação de hardware/firmware. |
 | device/gt3max/protocol/WearfitAbFrameParser.kt | Protocolo do dispositivo | Perfil NUS/AB candidato e parser restrito. Não controla conexão. |
 | notifications/NotificationCaptureService.kt | Platform / Notifications | Captura consentida na variante companion. |
 | notifications/NotificationCaptureStore.kt | Data / Notifications | Cache volátil, filtros e preferências. |
@@ -19,7 +20,7 @@ A base é um aplicativo Android nativo Kotlin. O adaptador de consulta agregada 
 | HealthPrivacyActivity.kt | UI / Privacy | Transparência e controles de dados de saúde. |
 | MainActivity.kt | App / composição provisória | Mantém UI, permissões e ciclo de vida GATT; delega a consulta de passos ao repositório Health Connect. |
 
-Os testes unitários acompanham fila GATT, parser candidato, formatadores e contrato Domain de métricas.
+Os testes unitários acompanham fila GATT, parser candidato, perfil GATT GT3 MAX Call, formatadores e contrato Domain de métricas. A inscrição automática NUS TX exige nome reconhecido e fingerprint GATT completo da captura; não envia payload à característica NUS RX.
 
 ## Estrutura-alvo
 
