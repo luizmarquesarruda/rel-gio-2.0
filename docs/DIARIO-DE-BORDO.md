@@ -540,3 +540,11 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Exploração aprofundada continua limitada a 24 operações, somente READ e CCCD padrão; NUS RX, NUS TX nessa varredura, DFU/FE59 e identificadores seriais permanecem excluídos.
 - CI #237 falhou antes da compilação porque o teste Python antigo exigia que não existisse callback `onCharacteristicRead`, incompatível com o novo fluxo de leitura GATT serializado. O contrato do teste foi atualizado para exigir callback e watchdog; novo resultado de CI para o HEAD posterior ainda não foi registrado.
 - Nenhum teste físico, sincronização proprietária de hora/data ou leitura de temperatura corporal/clima foi confirmado nesta rodada.
+
+## 04/11/2026 — Auditoria da CI #242 e correção do contrato de testes
+
+- A execução Android CI #242 foi vinculada ao HEAD da PR (`72a64e9e84ed7dbcbde0c888b96ed0df9a83c56d`) e falhou em `testDiagnosticDebugUnitTest`; o restante do job não prosseguiu para guardrails nem publicação do APK.
+- Evidências: os 31 testes Python passaram; Android Lint passou nas duas variantes; 75 testes Kotlin foram executados e apenas `standardPlanDetectsEnvironmentalTemperatureAndBloodPressure` falhou na asserção de quantidade.
+- Causa: a característica SIG de temperatura ambiental simulada no teste anuncia simultaneamente `READ` e `NOTIFY`, portanto o planejador gera duas operações independentes para ela. A pressão arterial anuncia `INDICATE`, gerando uma terceira operação. O teste esperava incorretamente apenas duas.
+- Corrigido o teste para verificar as três operações e os respectivos tipos, sem alterar a política BLE. Nenhum comando de escrita, acesso automático a sensores ou permissão foi acrescentado.
+- Resultado do CI após a correção, build das variantes, auditoria dos APKs e publicação do artefato: **aguardando nova execução no novo HEAD**. Teste físico no Galaxy A06/Android 16 com GT3 MAX: **não validado**.
