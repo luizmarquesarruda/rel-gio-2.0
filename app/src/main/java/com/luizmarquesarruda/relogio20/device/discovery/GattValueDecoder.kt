@@ -64,6 +64,8 @@ internal object GattValueDecoder {
                 decodePulseOximeterSpotCheck(payload)
             service == "1822" && characteristic == "2a5f" ->
                 decodePulseOximeterContinuous(payload)
+            service == "1822" && characteristic == "2a60" ->
+                decodePulseOximeterFeatures(payload)
             else -> emptyList()
         }
     }
@@ -476,6 +478,55 @@ internal object GattValueDecoder {
             val index = readSFloat(value, offset) ?: return emptyList()
             results += DecodedGattValue("Índice de amplitude de pulso", formatSFloat(index, "%"))
         }
+        return results
+    }
+
+    private fun decodePulseOximeterFeatures(value: ByteArray): List<DecodedGattValue> {
+        if (value.size < 2) return emptyList()
+        val features = readUInt16(value, 0)
+        if (features and 0xff00 != 0) return emptyList()
+        var offset = 2
+        val results = mutableListOf<DecodedGattValue>()
+        val featureNames = listOf(
+            "Suporte a status da medição",
+            "Suporte a status do dispositivo/sensor",
+            "Armazenamento de medições spot-check",
+            "Timestamp em medições spot-check",
+            "Métrica SpO₂/pulso rápida",
+            "Métrica SpO₂/pulso lenta",
+            "Índice de amplitude de pulso",
+            "Múltiplos vínculos"
+        )
+        featureNames.forEachIndexed { bit, label ->
+            results += DecodedGattValue(
+                "Recurso de oximetria • $label",
+                if (features and (1 shl bit) != 0) "suportado" else "não sinalizado"
+            )
+        }
+
+        if (features and 0x0001 != 0) {
+            if (value.size < offset + 2) return emptyList()
+            val support = readUInt16(value, offset)
+            for (bit in 5..15) {
+                results += DecodedGattValue(
+                    "Recurso de oximetria • Status da medição bit $bit",
+                    if (support and (1 shl bit) != 0) "suportado" else "não sinalizado"
+                )
+            }
+            offset += 2
+        }
+        if (features and 0x0002 != 0) {
+            if (value.size < offset + 3) return emptyList()
+            val support = readUInt24(value, offset)
+            for (bit in 0..15) {
+                results += DecodedGattValue(
+                    "Recurso de oximetria • Status do dispositivo/sensor bit $bit",
+                    if (support and (1 shl bit) != 0) "suportado" else "não sinalizado"
+                )
+            }
+            offset += 3
+        }
+        if (offset != value.size) return emptyList()
         return results
     }
 
