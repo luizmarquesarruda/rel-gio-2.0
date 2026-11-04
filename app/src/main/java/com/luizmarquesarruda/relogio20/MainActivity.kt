@@ -20,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
@@ -341,11 +342,13 @@ class MainActivity : ComponentActivity() {
     private fun connectHealthConnect() {
         when (healthConnectRepository.availability()) {
             HealthConnectAvailability.PROVIDER_UNAVAILABLE -> {
+                healthConnectInitialized = false
                 healthStatusView.text = "Conexão Saúde indisponível. Verifique se está instalada/ativada."
                 appendLog("Health Connect indisponível neste aparelho.")
                 return
             }
             HealthConnectAvailability.PROVIDER_UPDATE_REQUIRED -> {
+                healthConnectInitialized = false
                 healthStatusView.text = "Atualize a Conexão Saúde na Play Store."
                 appendLog("Health Connect precisa de atualização.")
                 return
@@ -362,6 +365,8 @@ class MainActivity : ComponentActivity() {
                     healthConnectInitialized = false
                     healthPermissionLauncher.launch(healthConnectRepository.readPermissions)
                 }
+            } catch (error: CancellationException) {
+                throw error
             } catch (error: Exception) {
                 healthConnectInitialized = false
                 healthStatusView.text = "Não foi possível consultar as permissões."
@@ -397,10 +402,12 @@ class MainActivity : ComponentActivity() {
                     appendLog("Permissão READ_STEPS ausente ou revogada durante a leitura.")
                 }
                 HealthConnectStepsResult.ProviderUnavailable -> {
+                    healthConnectInitialized = false
                     healthStatusView.text = "Conexão Saúde indisponível. Verifique se está instalada/ativada."
                     appendLog("Health Connect ficou indisponível durante a leitura.")
                 }
                 HealthConnectStepsResult.ProviderUpdateRequired -> {
+                    healthConnectInitialized = false
                     healthStatusView.text = "Atualize a Conexão Saúde na Play Store."
                     appendLog("Health Connect precisa de atualização.")
                 }
