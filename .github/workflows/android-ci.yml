@@ -2,6 +2,9 @@ name: Android CI
 # Validate BLE and Health Connect integration for each phase PR
 
 on:
+  push:
+    branches:
+      - 'fix/**'
   pull_request:
     branches:
       - main
