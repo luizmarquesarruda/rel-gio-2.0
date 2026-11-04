@@ -1,3 +1,11 @@
+## 04/11/2026 — Vinculação dos valores decodificados à sessão de captura
+
+- Auditoria identificou que os payloads GATT brutos já exigiam sessão ativa, mas registros decodificados Bluetooth SIG eram gravados pela rotina genérica de descobertas, sem `sessionId`.
+- Criado `recordSessionDiscovery`, que só grava valores se existir sessão válida e associa o registro ao identificador dessa sessão. Sessão expirada é finalizada e não aceita o novo valor.
+- Leituras READ e notificações Bluetooth SIG passaram a usar a nova rotina. Inventários e metadados de descoberta continuam podendo ser registrados fora da captura, sem carregar os valores dos sensores.
+- Teste de codec cobre a persistência do vínculo da descoberta decodificada com a sessão.
+- CI após esta correção e validação física com GT3 MAX/Galaxy A06: **não validadas**.
+
 ## 04/11/2026 — Testes GATT automáticos e salvamento local de resultados
 
 - Adicionado na tela principal o controle **Ativar testes automáticos ao conectar / Pausar coleta automática**. A ativação solicita consentimento explícito uma única vez e persiste a preferência no aparelho.
