@@ -346,3 +346,17 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Testes adicionados ao código; resultado real de CI neste HEAD: **não validado** até a conclusão do workflow.
 - Teste físico no Samsung Galaxy A06/Android 16 e comparação da bateria com Wearfit Pro: **não validados**.
 - A implementação não foi instalada no telefone do usuário por esta alteração.
+
+
+## 04/11/2026 — Canal de aplicativos parceiros Wearfit Pro — análise da política de 2023
+
+- Incorporada a política oficial Weike em chinês, atualizada em 04/08/2023 e efetiva desde 10/03/2022, correspondente ao texto enviado pelo proprietário.
+- A seção 1.3.2 prevê acesso por apps terceiros autorizados a um identificador aleatório exclusivo por aplicativo, nome/hardware/estado do wearable, envio de mensagens/notificações e acesso autorizado a sensores, sono, tipo de exercício, estado de uso, logs, localização e informações do dispositivo.
+- A política não fornece nome/versão de SDK, artefato Maven/AAR, APIs, callbacks, intents, exemplo Android, estrutura de dados, unidades ou timestamps.
+- A página corporativa WAKE UP descreve uma plataforma ecológica aberta/compartilhada e fornece canal de cooperação comercial; isso sugere processo de parceria, mas não confirma SDK público ou acesso automático.
+- Escopo: a cláusula de terceiros fala especificamente de vestíveis Weike pareados. A compatibilidade/eligibilidade do GT3 MAX Call ainda precisa ser confirmada; o nome comercial e o uso do Wearfit Pro não bastam para assumir que pertence ao catálogo Weike.
+- Third-Party SDK List é a lista de dependências do próprio Wearfit Pro (analytics/publicidade/mapas/push etc.), não o SDK para um app parceiro controlar o wearable.
+- Prioridade definida: obter da WAKE UP/Weike documentação, SDK Android, autorização, exemplo e confirmação explícita para GT3 MAX Call, firmware V1.07/build SH0050.
+- Nenhuma API privada foi presumida ou simulada. Nada foi lido do armazenamento interno do Wearfit Pro; nenhuma credencial foi reutilizada; nenhuma escrita proprietária/OTA/reset foi executada.
+- Perfil BLE já adicionado continua como caminho local de compatibilidade/diagnóstico; bateria é candidata e semântica de sensores/controles continua não validada.
+- A implementação do SDK de parceiros não foi feita por ausência de SDK/contrato técnico verificável. CI e teste físico permanecem **não validados**.
