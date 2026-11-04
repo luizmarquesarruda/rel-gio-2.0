@@ -15,29 +15,17 @@ A implementação em andamento é um protótipo Android nativo em Kotlin. Não h
 7. **Platform** — APIs Android para Bluetooth Classic, mídia, chamadas, alarmes, notificações, câmera e permissões.
 8. **Privacy & diagnostics** — consentimento, minimização, retenção e logs sem conteúdo sensível.
 
-## Estrutura Kotlin alvo
-
-```text
-com.luizmarquesarruda.relogio20/
-├── app/
-├── ui/{dashboard,device,health,history,notifications,settings}/
-├── domain/{health,activity,goals,device}/
-├── device/
-│   ├── ble/{core,gatt}/
-│   └── gt3max/{protocol,metrics}/
-├── data/{healthconnect,local,notifications}/
-├── platform/{bluetooth,media,calls,alarms,camera,permissions}/
-└── common/{time,logging}/
-```
-
 ## Estado real nesta PR
 
-- `MainActivity.kt` ainda concentra apresentação, permissões BLE, conexão/ciclo GATT e leitura agregada do Health Connect.
-- `SerialGattOperationQueue` foi isolada em `device/ble/gatt`.
-- `WearfitProtocolProfile`, `WearfitAbFrame` e `WearfitAbFrameParser` foram isolados em `device/gt3max/protocol`. O nome do pacote não confirma chipset nem identidade do dispositivo.
-- Os testes acompanham os pacotes correspondentes.
-- Notification Listener permanece na variante `companion`; `diagnostic` não deve declarar essa capacidade.
-- Health Connect ainda é chamado diretamente por `MainActivity`; extração para `data/healthconnect` não foi feita.
+- MainActivity.kt ainda concentra apresentação, permissões BLE, conexão/ciclo GATT e leitura agregada do Health Connect.
+- domain/health/HealthMetricSample.kt foi criado como modelo Kotlin puro para tipo, unidade, origem, timestamps e estado de validação. Não recebe bytes BLE nem grava dados.
+- O contrato exige unidade compatível, valores finitos/não negativos, timestamp de recebimento e origem explícita; passos são inteiros e SpO₂ fica no intervalo de 0 a 100.
+- METT tem unidade MET e não é convertido automaticamente em calorias. Pressão arterial/SpO₂ não são tratados como medições clínicas.
+- SerialGattOperationQueue foi isolada em device/ble/gatt.
+- WearfitProtocolProfile, WearfitAbFrame e WearfitAbFrameParser foram isolados em device/gt3max/protocol. O nome do pacote não confirma chipset nem identidade do dispositivo.
+- Os testes acompanham os pacotes correspondentes; os testes do contrato Domain verificam unidades, limites e preservação de origem.
+- Notification Listener permanece na variante companion; diagnostic não deve declarar essa capacidade.
+- Health Connect ainda é chamado diretamente por MainActivity; extração para data/healthconnect não foi feita.
 - Não foram adicionados serviços, permissões ou escritas BLE proprietárias.
 
 ## Regras de dependência
@@ -52,7 +40,7 @@ com.luizmarquesarruda.relogio20/
 
 ## Contrato mínimo de métrica
 
-Cada amostra futura deve preservar tipo, valor, unidade, instante do relógio quando disponível, instante de recebimento, origem, identificador local do dispositivo/sessão, qualidade/estado de validação e versão do parser. Ausência não é zero; estimativa não é medição confirmada; bytes desconhecidos permanecem brutos.
+O contrato implementado está em [CONTRATO-METRICAS-SAUDE.md](CONTRATO-METRICAS-SAUDE.md). Ele registra tipo, valor, unidade, origem, instante de recebimento, instante da medição quando disponível e estado de validação. Ausência não é zero; estimativa não é medição confirmada; bytes desconhecidos permanecem brutos.
 
 ## Segurança de comandos
 
@@ -63,10 +51,10 @@ Cada amostra futura deve preservar tipo, valor, unidade, instante do relógio qu
 
 ## Sequência de extração
 
-1. Isolar utilitários puros e testes sem mudar comportamento (etapa atual).
-2. Extrair scan/máquina de estados GATT de `MainActivity` para `device/ble/core`.
-3. Extrair Health Connect para `data/healthconnect`.
-4. Introduzir modelos Domain de métricas e proveniência antes de aceitar novas leituras.
+1. Isolar utilitários puros e testes sem mudar comportamento (concluído parcialmente).
+2. Extrair scan/máquina de estados GATT de MainActivity para device/ble/core, preservando fila e callbacks antigos.
+3. Extrair Health Connect para data/healthconnect.
+4. Criar persistência local versionada e repositório para o modelo Domain.
 5. Implementar parsers somente após evidência repetível por métrica.
 6. Extrair adaptadores Platform quando os recursos Android forem priorizados.
 
