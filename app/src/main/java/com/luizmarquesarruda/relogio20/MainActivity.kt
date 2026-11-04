@@ -53,6 +53,10 @@ import java.util.UUID
 class MainActivity : ComponentActivity() {
     private lateinit var content: LinearLayout
     private lateinit var statusView: TextView
+    private lateinit var statusDetailView: TextView
+    private lateinit var statusIndicatorView: TextView
+    private lateinit var scanButton: Button
+    private lateinit var disconnectButton: Button
     private lateinit var logView: TextView
     private lateinit var clockView: TextView
     private lateinit var stepsView: TextView
@@ -200,24 +204,64 @@ class MainActivity : ComponentActivity() {
         addText(root, "Horário do relógio: sincronização ainda não disponível. " +
             "O protocolo de ajuste do GT3 MAX não foi identificado.", 12f)
 
-        statusView = TextView(this).apply {
-            text = "Relógio desconectado. Procure o dispositivo para iniciar a leitura BLE."
-            textSize = 14f
-            setTextColor(0xFF263746.toInt())
-            setPadding(0, dp(12), 0, dp(12))
+        addText(root, "Conexão do relógio", 18f, true)
+
+        val connectionCard = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(16), dp(16), dp(16))
+            background = roundedSurface(0xFFFFFFFF.toInt(), 0xFFE1E7EF.toInt())
+            elevation = dp(2).toFloat()
         }
-        root.addView(statusView)
+        val connectionHeading = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        statusIndicatorView = TextView(this).apply {
+            text = "●"
+            textSize = 18f
+            setTextColor(0xFF8A94A6.toInt())
+            setPadding(0, 0, dp(10), 0)
+            contentDescription = "Indicador do estado Bluetooth"
+        }
+        connectionHeading.addView(statusIndicatorView)
+        statusView = TextView(this).apply {
+            text = "Relógio não conectado"
+            textSize = 17f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTextColor(0xFF17212B.toInt())
+        }
+        connectionHeading.addView(statusView)
+        connectionCard.addView(connectionHeading)
+
+        statusDetailView = TextView(this).apply {
+            text = "Ative o Bluetooth e toque em Buscar relógio para localizar o GT3 MAX."
+            textSize = 13f
+            setTextColor(0xFF526170.toInt())
+            setPadding(0, dp(8), 0, dp(14))
+        }
+        connectionCard.addView(statusDetailView)
 
         val actions = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
         }
-        actions.addView(makeButton("Conectar smartwatch") { startBleScan() },
-            LinearLayout.LayoutParams(0, dp(48), 1f))
-        actions.addView(makeButton("Desconectar") { disconnectGatt() },
-            LinearLayout.LayoutParams(0, dp(48), 1f).apply {
-                marginStart = dp(8)
-            })
-        root.addView(actions)
+        scanButton = makeButton("Buscar relógio") { startBleScan() }.apply {
+            backgroundTintList = android.content.res.ColorStateList.valueOf(0xFF176B5B.toInt())
+            setTextColor(0xFFFFFFFF.toInt())
+        }
+        disconnectButton = makeButton("Desconectar") { disconnectGatt() }.apply {
+            isEnabled = false
+        }
+        actions.addView(scanButton, LinearLayout.LayoutParams(0, dp(48), 1f))
+        actions.addView(disconnectButton, LinearLayout.LayoutParams(0, dp(48), 1f).apply {
+            marginStart = dp(8)
+        })
+        connectionCard.addView(actions)
+        root.addView(connectionCard, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            topMargin = dp(6)
+            bottomMargin = dp(8)
+        })
 
         val scroll = ScrollView(this)
         content = LinearLayout(this).apply {
@@ -382,6 +426,13 @@ class MainActivity : ComponentActivity() {
             bottomMargin = dp(8)
         })
     }
+
+    private fun roundedSurface(fillColor: Int, strokeColor: Int) =
+        android.graphics.drawable.GradientDrawable().apply {
+            setColor(fillColor)
+            setStroke(dp(1), strokeColor)
+            cornerRadius = dp(18).toFloat()
+        }
 
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).toInt()
@@ -990,7 +1041,81 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun updateStatus(value: String) {
-        runOnUiThread { statusView.text = value }
+        runOnUiThread {
+            val headline: String
+            val detail: String
+            val indicatorColor: Int
+            when {
+                value.startsWith("Procurando") -> {
+                    headline = "Procurando relógio"
+                    detail = "Busca BLE ativa por até 15 segundos. Mantenha o GT3 MAX próximo ao celular."
+                    indicatorColor = 0xFFE0A12B.toInt()
+                }
+                value.startsWith("Busca em andamento") -> {
+                    headline = "Busca em andamento"
+                    detail = value + ". Toque no dispositivo encontrado para iniciar a conexão."
+                    indicatorColor = 0xFFE0A12B.toInt()
+                }
+                value.startsWith("Busca concluída") -> {
+                    headline = "Busca finalizada"
+                    detail = value + ". Se o relógio não apareceu, aproxime-o e tente novamente."
+                    indicatorColor = 0xFF8A94A6.toInt()
+                }
+                value.startsWith("Conectando") -> {
+                    headline = "Conectando ao relógio"
+                    detail = "O Android está abrindo a conexão Bluetooth LE. Aguarde a resposta do dispositivo."
+                    indicatorColor = 0xFFE0A12B.toInt()
+                }
+                value.startsWith("Conectado.") && value.contains("Descobrindo") -> {
+                    headline = "Bluetooth conectado"
+                    detail = "Conexão estabelecida. Identificando os serviços GATT disponíveis."
+                    indicatorColor = 0xFF16845B.toInt()
+                }
+                value.startsWith("Conectado.") -> {
+                    headline = "Bluetooth conectado"
+                    detail = value + ". Isso confirma o canal GATT, não a leitura validada dos sensores."
+                    indicatorColor = 0xFF16845B.toInt()
+                }
+                value.startsWith("Desconectando") -> {
+                    headline = "Encerrando conexão"
+                    detail = "A conexão com o relógio está sendo encerrada."
+                    indicatorColor = 0xFFE0A12B.toInt()
+                }
+                value.startsWith("Relógio desconectado") || value.startsWith("Nenhuma conexão") -> {
+                    headline = "Relógio desconectado"
+                    detail = "O relógio não está conectado. Você pode iniciar uma nova busca."
+                    indicatorColor = 0xFF8A94A6.toInt()
+                }
+                value.startsWith("Falha") || value.startsWith("Não foi possível") ||
+                    value.startsWith("O Android não iniciou") -> {
+                    headline = "Não foi possível conectar"
+                    detail = value + " Confira a proximidade do relógio e tente novamente."
+                    indicatorColor = 0xFFCA4B4B.toInt()
+                }
+                value.startsWith("Ative o Bluetooth") -> {
+                    headline = "Bluetooth desligado"
+                    detail = value
+                    indicatorColor = 0xFFE0A12B.toInt()
+                }
+                value.startsWith("Permissão") -> {
+                    headline = "Permissão necessária"
+                    detail = value
+                    indicatorColor = 0xFFE0A12B.toInt()
+                }
+                else -> {
+                    headline = "Estado da conexão"
+                    detail = value
+                    indicatorColor = 0xFF8A94A6.toInt()
+                }
+            }
+            statusView.text = headline
+            statusDetailView.text = detail
+            statusIndicatorView.setTextColor(indicatorColor)
+            scanButton.isEnabled = !value.startsWith("Conectando") &&
+                !value.startsWith("Desconectando")
+            disconnectButton.isEnabled = value.startsWith("Conectando") ||
+                value.startsWith("Conectado") || value.startsWith("Desconectando")
+        }
     }
 
     private fun appendLog(value: String) {
