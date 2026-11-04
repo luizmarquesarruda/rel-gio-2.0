@@ -1,3 +1,15 @@
+## 04/11/2026 — Busca BLE geral e exportação de descobertas no TXT
+
+- Corrigido o fluxo que exigia configurar manualmente o endereço Bluetooth antes de iniciar uma busca. Ao abrir o app, uma varredura BLE geral começa automaticamente; o campo de endereço passou a ser opcional.
+- A busca não descarta endereços diferentes do MAC salvo. Cada dispositivo observado é listado e registrado no log da sessão com nome disponível, RSSI e endereço mascarado.
+- Nome GT3 MAX, serviço NUS anunciado e endereço previamente salvo são pistas de descoberta, não prova de identidade. Quando o anúncio não identifica o relógio, o usuário pode selecionar um dispositivo sem digitar MAC.
+- Candidatos com endereço novo são conectados somente para validar o fingerprint GATT; sem correspondência completa do GT3 MAX Call, a conexão é encerrada antes de leituras, inscrições ou exploração.
+- Após fingerprint GATT completo, o endereço atual é salvo automaticamente. O fingerprint é compatibilidade observada, não autenticação criptográfica.
+- O TXT passou a incluir até 1.000 registros persistidos da biblioteca (inventários GATT, quadros AB e capturas consentidas), além dos 250 eventos mais recentes da sessão. MAC permanece mascarado.
+- Testes adicionados para política de candidatos BLE, fingerprint com nome ausente e inclusão/mascaramento das descobertas no TXT.
+- Nenhum comando proprietário, escrita em característica desconhecida, OTA/DFU, reset ou nova permissão foi adicionado.
+- CI, instalação e teste físico no Galaxy A06/Android 16 com GT3 MAX: **não validados**.
+
 ## 04/11/2026 — Contrato de justificativa de privacidade do Health Connect
 
 - Ligada a tela existente HealthPrivacyActivity ao intent ACTION_SHOW_PERMISSIONS_RATIONALE para versões até Android 13.
