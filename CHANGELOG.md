@@ -1,5 +1,13 @@
 # Changelog
 
+## Não lançado — liberação BLE para Wearfit Pro — 04/11/2026
+
+- Adicionada ação explícita para liberar o GT3 MAX ao Wearfit Pro: encerra a sessão GATT própria, cancela scans/tentativas e persiste a pausa da reconexão automática.
+- A liberação sobrevive à reabertura do Relógio 2.0; a reconexão só é retomada por ação manual do usuário.
+- Adicionados testes unitários para impedir reconexão e descoberta inicial durante a liberação.
+- Nenhuma escrita GATT, comando proprietário, alteração de pareamento Android ou controle Bluetooth Classic foi introduzido.
+- CI desta branch e teste físico Galaxy A06 / GT3 MAX / Wearfit Pro: **não validados**.
+
 ## Não lançado — watchdog e rastreabilidade da descoberta GATT — 04/11/2026
 
 - Persistido o estado de solicitação, callback concluído, falha ou timeout da descoberta de serviços GATT, evitando confundir inventário antigo com a conexão atual.
