@@ -172,7 +172,10 @@ class MainActivity : ComponentActivity() {
         bluetoothAdapter = getSystemService(BluetoothManager::class.java)?.adapter
         buildScreen()
         appendLog("Aplicativo iniciado. Diagnóstico BLE local.")
-        appendLog("Nenhum comando será enviado às características do relógio.")
+        appendLog(
+            "Nenhum comando proprietário será enviado. A hora só será escrita pelo CTS padrão " +
+                "se o serviço 0x1805 e a característica 0x2A2B com WRITE forem encontrados."
+        )
         if (reconnectPolicy.isEnabled) {
             appendLog("Reconexão automática restaurada para a identidade GT3 MAX configurada localmente.")
         }
@@ -988,6 +991,9 @@ class MainActivity : ComponentActivity() {
                 gattOperationQueue.reset()
                 pendingNotifications.clear()
                 activeNotifications.clear()
+                pendingCurrentTimeWriteKey = null
+                clockSyncAttemptedForSession = false
+                deviceTimeSyncView.text = "Hora do relógio: sessão GATT encerrada antes da confirmação."
                 if (bluetoothGatt === gatt) bluetoothGatt = null
                 updateStatus("Falha na conexão GATT. Status: " + status)
                 appendLog("Conexão GATT falhou; estado e fila foram limpos.")
