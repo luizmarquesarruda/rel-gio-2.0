@@ -1488,6 +1488,12 @@ class MainActivity : ComponentActivity() {
                 SafeGattExplorationPlan.Kind.SUBSCRIBE_STANDARD_MEASUREMENT -> {
                     enableNotifications(gatt, characteristic)
                 }
+                SafeGattExplorationPlan.Kind.READ_PROPRIETARY_VALUE -> {
+                    appendLog("Canal proprietário ignorado no fluxo automático; exige exploração manual.")
+                }
+                SafeGattExplorationPlan.Kind.SUBSCRIBE_PROPRIETARY_CHANNEL -> {
+                    appendLog("Inscrição proprietária ignorada no fluxo automático; exige exploração manual.")
+                }
             }
         }
     }
