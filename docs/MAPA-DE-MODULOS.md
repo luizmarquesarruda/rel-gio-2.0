@@ -6,6 +6,20 @@ A implementação atual é um protótipo Android nativo em Kotlin. BLE, Health C
 
 A separação abaixo é a estrutura-alvo. Não declarar a refatoração como concluída até que os arquivos e testes tenham sido efetivamente movidos.
 
+## Componentes efetivamente presentes nesta versão
+
+A implementação ainda não foi separada em camadas completas, mas estes componentes Kotlin já existem e são testáveis isoladamente:
+
+- `MainActivity.kt`: interface atual, permissões, scan e ciclo de vida GATT, Health Connect e apresentação de notificações BLE brutas.
+- `SerialGattOperationQueue.kt`: serialização das leituras GATT e escritas do descritor CCCD.
+- `WearfitAbFrameParser.kt`: perfil candidato NUS/AB e interpretação restrita do quadro de bateria 0x91/0x80.
+- `StepsCountFormatter.kt`: distinção entre agregado ausente e zero passos.
+- `notifications/NotificationCaptureService.kt`: listener Android.
+- `notifications/NotificationCaptureStore.kt`: cache volátil e preferências de seleção.
+- `notifications/NotificationCenterActivity.kt`: tela de consentimento, seleção de apps e prévias.
+
+O parser AB não é ainda um driver GT3 Maxx: não reagrupa fragmentos, não processa comandos desconhecidos e não envia payloads.
+
 ## Estrutura-alvo
 
 ```text
