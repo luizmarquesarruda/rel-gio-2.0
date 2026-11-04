@@ -1470,6 +1470,7 @@ class MainActivity : ComponentActivity() {
             } else if (status != BluetoothGatt.GATT_SUCCESS) {
                 isGattDisconnecting = false
                 isGattConnected = false
+                cancelGattServiceDiscoveryTimeout()
                 gattExplorationProgress.markRemainingSkipped()
                 updateGattProgressUi()
                 cancelConnectionTimeout()
@@ -1493,6 +1494,7 @@ class MainActivity : ComponentActivity() {
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 isGattDisconnecting = false
                 isGattConnected = false
+                cancelGattServiceDiscoveryTimeout()
                 gattExplorationProgress.markRemainingSkipped()
                 updateGattProgressUi()
                 cancelConnectionTimeout()
