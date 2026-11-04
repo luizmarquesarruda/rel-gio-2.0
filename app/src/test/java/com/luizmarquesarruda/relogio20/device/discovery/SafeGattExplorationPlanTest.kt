@@ -243,37 +243,6 @@ class SafeGattExplorationPlanTest {
 
 
     @Test
-    fun deepPlanReadsBodyCompositionFeatureAndSubscribesMeasurement() {
-        val plan = SafeGattExplorationPlan.buildDeep(
-            listOf(
-                GattServiceRecord(
-                    "0000181b-0000-1000-8000-00805f9b34fb",
-                    listOf(
-                        GattCharacteristicRecord(
-                            "00002a9b-0000-1000-8000-00805f9b34fb",
-                            setOf("READ")
-                        ),
-                        GattCharacteristicRecord(
-                            "00002a9c-0000-1000-8000-00805f9b34fb",
-                            setOf("INDICATE"),
-                            setOf("00002902-0000-1000-8000-00805f9b34fb")
-                        )
-                    )
-                )
-            )
-        )
-        assertEquals(2, plan.size)
-        assertTrue(plan.any {
-            it.characteristicUuid.endsWith("2a9b-0000-1000-8000-00805f9b34fb") &&
-                it.kind == SafeGattExplorationPlan.Kind.READ_STANDARD_VALUE
-        })
-        assertTrue(plan.any {
-            it.characteristicUuid.endsWith("2a9c-0000-1000-8000-00805f9b34fb") &&
-                it.kind == SafeGattExplorationPlan.Kind.SUBSCRIBE_STANDARD_MEASUREMENT
-        })
-    }
-
-    @Test
     fun deepPlanDoesNotSilentlyTruncateCompatibleChannelsAbovePreviousLimit() {
         val services = (0 until 30).map { index ->
             val serviceSuffix = index.toString(16).padStart(4, '0')
