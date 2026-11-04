@@ -1,3 +1,16 @@
+## 04/11/2026 — Testes GATT automáticos e salvamento local de resultados
+
+- Adicionado na tela principal o controle **Ativar testes automáticos ao conectar / Pausar coleta automática**. A ativação solicita consentimento explícito uma única vez e persiste a preferência no aparelho.
+- Após conexão, a coleta automática só inicia quando o fingerprint GATT completo observado do GT3 MAX Call coincide com a referência local. Nome/MAC não substituem a validação GATT; o fingerprint não é autenticação criptográfica.
+- O executor aprofundado agora despacha tanto leituras padronizadas Bluetooth SIG quanto inscrições padrão e operações READ proprietárias que já eram planejadas, em série pela fila GATT e aguardando callbacks/timeouts.
+- Canais proprietários com READ/NOTIFY/INDICATE são observados e gravados sem inventar semântica. NUS RX, escrita de payload proprietária, DFU/OTA, reset e qualquer comando de medição desconhecido continuam bloqueados.
+- Adicionado `GattValueDecoder` para os formatos Bluetooth SIG de bateria, Device Information, frequência cardíaca, pressão arterial, termômetro, temperatura/umidade ambientais e oximetria spot-check/contínua. A decodificação indica formato observado, não exatidão clínica/calibração do sensor.
+- Leituras e notificações só persistem HEX e valores decodificados durante captura consentida na biblioteca local. As janelas são de até 10 minutos e renovadas enquanto o modo automático permanece ativo e o GATT conectado. Fora da captura, logs contêm tamanho/fingerprint, não HEX bruto.
+- Pausar encerra a janela atual e agenda cancelamento das inscrições criadas pela exploração automática via CCCD padrão; as inscrições NUS TX preexistentes continuam seguindo a política separada já existente.
+- Adicionados testes unitários para decoders, contato do sensor cardíaco, leitura da versão de firmware, política de consentimento e execução dos perfis GATT.
+- A presença de um serviço/UUID não garante que o firmware gere medição. Inscrição NOTIFY/INDICATE apenas permite receber atualizações; não envia comando que inicie pressão, SpO2 ou outra medição.
+- CI/build desta alteração e teste físico no Samsung Galaxy A06/Android 16 com GT3 MAX: **não validados** até a nova execução e teste no aparelho.
+
 ## 04/11/2026 — Correção do empacotamento dos artefatos Android CI
 
 - Corrigido o workflow `.github/workflows/android-ci.yml`: o artefato `relogio-2.0-diagnostic-debug-apk` passa a receber diretamente o único arquivo `app-diagnostic-debug.apk`, sem diretório auxiliar e sem TXT/XML anexados.
