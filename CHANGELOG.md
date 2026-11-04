@@ -9,6 +9,7 @@ As alterações relevantes do Relógio 2.0 são registradas aqui. Segue SemVer: 
 - Callbacks GATT são entregues pelo Handler principal, evitando concorrência com a fila de operações.
 - Novas operações BLE são bloqueadas durante a desconexão; falhas de conexão limpam estado e fila.
 - Lista de aplicativos de notificações ganhou área rolável própria.
+- CI separado em Lint e testes/build; relatório Lint é publicado e o APK debug pode ser preservado quando build/testes passam, mesmo se Lint falhar.
 
 ### Protocolo BLE — análise de evidência
 - UUIDs NUS dcca9e e quadro recebido AB 00 05 FF 91 80 00 0C comparados com fixture pública do projeto fbiego/dt78.
