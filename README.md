@@ -76,12 +76,12 @@ CI verde não equivale a aprovação do Play Protect nem a teste físico no Gala
 1. Instale o APK diagnostic debug no Android e ative o Bluetooth.
 2. Conceda a permissão de dispositivos próximos quando o Android solicitar.
 3. Ao abrir o aplicativo, a busca BLE geral começa automaticamente; não é necessário digitar o endereço MAC.
-4. Se quiser iniciar outra varredura manualmente, toque em **Buscar e conectar automaticamente**; o endereço Bluetooth configurado localmente é apenas uma pista adicional, não um requisito.
-4. O app tenta validar candidatos com nome GT3 MAX, serviço NUS anunciado ou endereço salvo. Dispositivos sem nome aparecem na lista; ao selecioná-los, o fingerprint GATT é verificado antes da exploração.
-5. A identidade é salva automaticamente somente após correspondência do fingerprint GATT completo. O endereço manual permanece opcional.
-6. Após a descoberta, o inventário GATT é passivo. A inscrição NUS TX ocorre automaticamente apenas quando nome e fingerprint completo do perfil GT3 MAX Call coincidem.
-7. Na tela principal, toque uma vez em **Ativar testes automáticos ao conectar** e confirme o aviso de coleta local. A autorização fica salva até você pausar. O app inicia a exploração aprofundada automaticamente nesta conexão e nas próximas conexões com fingerprint completo.
-8. Os valores recebidos aparecem na biblioteca local e no relatório TXT. A captura é renovada em blocos de até 10 minutos enquanto o modo estiver ativo; pausar encerra a sessão e desativa inscrições automáticas via CCCD.
+4. Para iniciar outra varredura, toque em **Buscar e conectar automaticamente**. O endereço MAC é opcional.
+5. O app tenta validar candidatos por nome GT3 MAX, serviço NUS anunciado ou endereço salvo. Dispositivos sem nome aparecem na lista; ao selecioná-los, o fingerprint GATT é verificado antes da exploração.
+6. A identidade é salva automaticamente somente após correspondência do fingerprint GATT completo. O endereço manual permanece opcional.
+7. Após a descoberta, o NUS TX é inscrito somente quando o fingerprint completo do perfil GT3 MAX Call coincide.
+8. Na tela principal, toque uma vez em **Ativar testes automáticos ao conectar** e confirme a coleta local. A autorização fica salva até você pausar. A exploração aprofundada inicia nesta conexão e nas próximas conexões com fingerprint completo.
+9. Os valores recebidos aparecem na biblioteca local e no relatório TXT. As janelas de captura são renovadas em blocos de até 10 minutos enquanto o modo estiver ativo e conectado; pausar encerra a captura e agenda a desinscrição dos canais automáticos via CCCD padrão.
 
 ## Documentação
 
