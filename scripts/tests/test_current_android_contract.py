@@ -131,6 +131,27 @@ class CurrentAndroidContractTests(unittest.TestCase):
         )
         self.assertNotIn("github.event.pull_request.number || github.ref", workflow)
 
+    def test_ci_runs_once_for_feature_prs_and_stops_after_cancellation(self):
+        workflow = (ROOT / ".github/workflows/android-ci.yml").read_text(encoding="utf-8")
+        triggers = workflow.split("concurrency:", 1)[0]
+        self.assertIn("pull_request:", triggers)
+        self.assertIn("push:", triggers)
+        self.assertIn("      - main", triggers)
+        self.assertNotIn("      - 'fix/**'", triggers)
+
+        for step in (
+            "Run unit tests and assemble both variants",
+            "Enforce privacy dependency and permission guardrails",
+            "Audit merged APK manifests, signatures and hashes",
+            "Prepare diagnostic APK metadata in the reports artifact",
+            "Publish Android validation reports",
+        ):
+            with self.subTest(step=step):
+                start = workflow.index("- name: " + step)
+                next_step = workflow.find("\n      - name:", start + 1)
+                block = workflow[start:] if next_step < 0 else workflow[start:next_step]
+                self.assertIn("!cancelled()", block)
+
     def test_workflow_uses_current_node24_action_majors(self):
         workflow = (ROOT / ".github/workflows/android-ci.yml").read_text(encoding="utf-8")
         for current in (
