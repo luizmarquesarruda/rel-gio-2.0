@@ -9,6 +9,7 @@ on:
   pull_request:
     branches:
       - main
+      - 'fix/**'
       - feat/ble-readonly-proof-of-concept
       - 'feat/**'
       - 'docs/**'
