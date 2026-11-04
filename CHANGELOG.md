@@ -1,5 +1,13 @@
 # Changelog
 
+## Não lançado — investigação do canal de parceiros Wearfit Pro
+
+- Analisada a declaração Weike atualizada em 04/08/2023: ela prevê acesso por aplicativos terceiros autorizados a identificador aleatório do dispositivo, estado, notificações e, mediante autorização expressa, dados de sensores, sono, exercício, uso, logs e localização.
+- Documentada a distinção entre a declaração de privacidade e uma API/SDK: o texto não fornece artefato Android, contratos, callbacks, exemplos ou esquema de dados.
+- Registrada a dúvida de elegibilidade: o canal descrito aplica-se a vestíveis Weike pareados; ainda não há confirmação de que o GT3 MAX Call esteja habilitado nesse programa.
+- Prioridade dada à obtenção do SDK/API oficial e confirmação do modelo; sem leitura de armazenamento privado, credenciais, tráfego autenticado ou comandos BLE especulativos.
+- Integração de parceiro ainda não implementada; CI e teste físico não validados por esta documentação.
+
 ## Não lançado — perfil de acesso GT3 MAX Call
 
 - Adicionado perfil de dispositivo com metadados informados pelo proprietário: GT3 MAX Call, firmware V1.07 e build SH0050-1_1.1.3_1.23_1.18_1.1. Esses campos não são apresentados como leitura autenticada do GATT.
