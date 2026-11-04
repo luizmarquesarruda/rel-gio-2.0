@@ -1,5 +1,13 @@
 # Changelog
 
+## Não lançado — separação dos artefatos da CI — 04/11/2026
+
+- Corrigido o empacotamento do GitHub Actions: o artefato `relogio-2.0-diagnostic-debug-apk` agora recebe diretamente somente `app-diagnostic-debug.apk`.
+- Removidos do pacote instalável `BUILD-INFO.txt`, `SIGNATURE.txt` e `SHA256SUMS`; metadados, hash e certificado continuam disponíveis no artefato separado `android-validation-reports`.
+- Mantidos exatamente dois artefatos, com papéis separados: um APK instalável e um pacote de evidências/relatórios técnicos.
+- CI da correção: aguardando novo run no HEAD atualizado. APK ainda não validado nesta revisão.
+
+
 - UI BLE: a tela Testes e descobertas ganhou atalho para solicitar exploração GATT aprofundada pelo painel principal, mantendo confirmação explícita.
 
 - BLE: exploração aprofundada agora percorre todos os canais GATT elegíveis, sem o truncamento fixo anterior de 24 operações; somente READ e CCCD padrão após confirmação explícita.
