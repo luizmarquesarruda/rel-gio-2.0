@@ -39,6 +39,7 @@ internal object SafeGattExplorationPlan {
         KnownCharacteristic("1809", "2a1c", false, true, "temperatura medida"),
         KnownCharacteristic("1809", "2a1e", false, true, "temperatura intermediária"),
         KnownCharacteristic("180d", "2a37", false, true, "frequência cardíaca"),
+        KnownCharacteristic("180d", "2a38", true, false, "localização do sensor cardíaco"),
         KnownCharacteristic("1810", "2a35", false, true, "pressão arterial"),
         KnownCharacteristic("1810", "2a36", false, true, "pressão intermediária"),
         KnownCharacteristic("1810", "2a49", true, false, "recursos de pressão arterial"),
