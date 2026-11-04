@@ -8,6 +8,7 @@ import com.luizmarquesarruda.relogio20.notifications.NotificationCenterActivity
 import com.luizmarquesarruda.relogio20.device.ble.gatt.SerialGattOperationQueue
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbFrameParser
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitProtocolProfile
+import com.luizmarquesarruda.relogio20.device.gt3max.protocol.Gt3MaxCallDeviceProfile
 import com.luizmarquesarruda.relogio20.HealthPrivacyActivity
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectAvailability
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsRepository
@@ -55,6 +56,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var statusView: TextView
     private lateinit var statusDetailView: TextView
     private lateinit var statusIndicatorView: TextView
+    private lateinit var deviceProfileView: TextView
+    private lateinit var deviceBatteryView: TextView
     private lateinit var scanButton: Button
     private lateinit var disconnectButton: Button
     private lateinit var logView: TextView
@@ -212,6 +215,22 @@ class MainActivity : ComponentActivity() {
             setPadding(0, dp(8), 0, dp(14))
         }
         connectionCard.addView(statusDetailView)
+
+        deviceProfileView = TextView(this).apply {
+            text = "Perfil informado: GT3 MAX Call • firmware V1.07 • build SH0050-1_1.1.3_1.23_1.18_1.1"
+            textSize = 11f
+            setTextColor(0xFF526170.toInt())
+            setPadding(0, dp(2), 0, dp(6))
+        }
+        connectionCard.addView(deviceProfileView)
+
+        deviceBatteryView = TextView(this).apply {
+            text = "Bateria do relógio: aguardando notificação BLE"
+            textSize = 13f
+            setTextColor(0xFF263746.toInt())
+            setPadding(0, 0, 0, dp(12))
+        }
+        connectionCard.addView(deviceBatteryView)
 
         val actions = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -848,6 +867,7 @@ class MainActivity : ComponentActivity() {
                 runCatching { gatt.close() }
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 isGattDisconnecting = false
+                deviceBatteryView.text = "Bateria do relógio: sem sessão BLE ativa"
                 updateStatus("Relógio desconectado.")
                 appendLog("Conexão GATT encerrada.")
                 if (bluetoothGatt === gatt) {
@@ -866,6 +886,7 @@ class MainActivity : ComponentActivity() {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 appendLog("Serviços descobertos: " + gatt.services.size)
                 renderGattServices(gatt)
+                inspectGt3MaxProfileAndSubscribe(gatt)
                 updateStatus("Conectado. Serviços encontrados: " + gatt.services.size)
             } else {
                 updateStatus("Falha ao descobrir serviços GATT.")
@@ -941,6 +962,49 @@ class MainActivity : ComponentActivity() {
             }
             completeGattOperation(gatt)
         }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun inspectGt3MaxProfileAndSubscribe(gatt: BluetoothGatt) {
+        val observed = gatt.services.associate { service ->
+            service.uuid to service.characteristics.map { it.uuid }.toSet()
+        }
+        val match = Gt3MaxCallDeviceProfile.evaluate(lastConnectedDeviceName, observed)
+        val matchLabel = when (match) {
+            Gt3MaxCallDeviceProfile.Match.CAPTURED_GATT_FINGERPRINT ->
+                "assinatura GATT igual à captura de referência"
+            Gt3MaxCallDeviceProfile.Match.DEVICE_NAME_AND_NUS ->
+                "nome e transporte NUS reconhecidos; assinatura parcial"
+            Gt3MaxCallDeviceProfile.Match.DEVICE_NAME_ONLY ->
+                "nome reconhecido; transporte NUS ausente"
+            Gt3MaxCallDeviceProfile.Match.NUS_ONLY ->
+                "NUS presente; nome não confirmado"
+            Gt3MaxCallDeviceProfile.Match.OTHER ->
+                "perfil específico não identificado"
+        }
+        deviceProfileView.text =
+            "Perfil informado: GT3 MAX Call • firmware V1.07 • build SH0050-1_1.1.3_1.23_1.18_1.1\n" +
+                "Identificação GATT: " + matchLabel +
+                ". Firmware/build são metadados informados, não lidos diretamente do GATT."
+        appendLog("Identificação do perfil GT3 MAX Call: " + match.name)
+
+        if (!Gt3MaxCallDeviceProfile.shouldAutoSubscribeBattery(lastConnectedDeviceName, observed)) {
+            appendLog("Inscrição automática NUS TX não iniciada: nome e serviço/characterísticas exigidos não coincidiram.")
+            return
+        }
+
+        val tx = gatt.getService(Gt3MaxCallDeviceProfile.NUS_SERVICE_UUID)
+            ?.getCharacteristic(Gt3MaxCallDeviceProfile.NUS_TX_CHARACTERISTIC_UUID)
+        if (tx == null ||
+            tx.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY == 0 ||
+            tx.getDescriptor(cccdUuid) == null
+        ) {
+            appendLog("NUS TX detectado sem Notify/CCCD compatível; inscrição automática não realizada.")
+            return
+        }
+
+        appendLog("GT3 MAX Call reconhecido como candidato. Ativando somente NUS TX Notify via CCCD padrão; NUS RX permanece sem escrita.")
+        enableNotifications(gatt, tx)
     }
 
     @SuppressLint("MissingPermission")
@@ -1152,6 +1216,12 @@ class MainActivity : ComponentActivity() {
             val frame = WearfitAbFrameParser.parse(value)
             val battery = frame?.batteryPercent
             if (battery != null) {
+                runOnUiThread {
+                    val receivedAt = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+                    deviceBatteryView.text =
+                        "Bateria BLE candidata: " + battery + "% • recebido " + receivedAt +
+                            " • aguardando confirmação com Wearfit Pro"
+                }
                 appendLog(
                     "Interpretação candidata do quadro AB/0x91: bateria reportada pelo relógio = " +
                         battery + "%. Não validada por comparação repetida com Wearfit Pro."
