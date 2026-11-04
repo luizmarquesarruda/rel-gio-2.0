@@ -102,6 +102,30 @@ class CurrentAndroidContractTests(unittest.TestCase):
         self.assertIn("import androidx.core.content.edit", source)
         self.assertNotIn("identityPrefs.edit()", source)
 
+
+    def test_diagnostic_apk_artifact_contains_only_the_apk(self):
+        workflow = (ROOT / ".github/workflows/android-ci.yml").read_text(encoding="utf-8")
+        apk_publish = workflow.split("- name: Publish diagnostic APK only", 1)[1].split(
+            "- name: Publish Android validation reports", 1
+        )[0]
+        reports_publish = workflow.split(
+            "- name: Publish Android validation reports", 1
+        )[1]
+
+        self.assertIn("name: relogio-2.0-diagnostic-debug-apk", apk_publish)
+        self.assertIn(
+            "path: app/build/outputs/apk/diagnostic/debug/app-diagnostic-debug.apk",
+            apk_publish,
+        )
+        self.assertNotIn("build/distributions", apk_publish)
+        self.assertNotIn(".txt", apk_publish)
+        self.assertNotIn(".xml", apk_publish)
+
+        self.assertIn("name: android-validation-reports", reports_publish)
+        self.assertIn("app/build/reports/security/**", reports_publish)
+        self.assertIn('cat > "$REPORT_DIR/diagnostic-build-info.txt"', workflow)
+        self.assertNotIn('cat > "$PACKAGE_DIR/BUILD-INFO.txt"', workflow)
+
     def test_workflow_uses_current_node24_action_majors(self):
         workflow = (ROOT / ".github/workflows/android-ci.yml").read_text(encoding="utf-8")
         for current in (
