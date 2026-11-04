@@ -548,3 +548,14 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Causa: a característica SIG de temperatura ambiental simulada no teste anuncia simultaneamente `READ` e `NOTIFY`, portanto o planejador gera duas operações independentes para ela. A pressão arterial anuncia `INDICATE`, gerando uma terceira operação. O teste esperava incorretamente apenas duas.
 - Corrigido o teste para verificar as três operações e os respectivos tipos, sem alterar a política BLE. Nenhum comando de escrita, acesso automático a sensores ou permissão foi acrescentado.
 - Resultado do CI após a correção, build das variantes, auditoria dos APKs e publicação do artefato: **aguardando nova execução no novo HEAD**. Teste físico no Galaxy A06/Android 16 com GT3 MAX: **não validado**.
+## 04/11/2026 — CI #243 aprovada e observador passivo de tráfego BLE
+
+- CI #243 (`902839c4a0a540c630f707ae947e1eb7fa6106c4`) concluída com sucesso: testes de contrato Python, Android Lint nas duas variantes, testes unitários, builds diagnostic/companion, guardrails de privacidade/dependências, auditoria de manifestos/assinaturas e publicação do APK diagnostic.
+- Artefato diagnostic publicado como `relogio-2.0-diagnostic-debug-apk`; relatório de validação também foi publicado. O APK é debug e não constitui release de produção.
+- Implementado `PassiveBleObservationTracker`, limitado à sessão, para registrar sequência global, contagem por canal, bytes acumulados, intervalo entre notificações e quantidade de fingerprints distintos.
+- O observador recebe somente UUIDs, tamanho, timestamp e fingerprint calculado. Não armazena payload BLE, não cria gravação persistente e não envia comandos ao relógio.
+- Integrado ao callback de notificação existente; o diagnóstico local agora distingue cada evento e permite observar periodicidade e estabilidade de cada canal.
+- Adicionados testes unitários para sequência, intervalos, contadores, limites de memória e reinício de sessão.
+- A captura HEX já existente continua restrita ao relatório diagnóstico local/exportação manual; não foi adicionada transmissão de dados ou coleta em rede.
+- O próximo passo é comparar uma sessão sem Wearfit Pro com uma sessão iniciada pelo Wearfit Pro, mantendo a observação passiva e correlacionando horários. Nenhum protocolo proprietário, semântica de sensor ou bateria foi promovido a validado.
+- A CI dos novos commits deste observador ainda precisa executar. Teste físico no Galaxy A06/Android 16 com GT3 MAX: **não validado nesta alteração**.
