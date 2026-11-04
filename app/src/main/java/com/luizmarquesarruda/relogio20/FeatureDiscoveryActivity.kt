@@ -170,6 +170,8 @@ class FeatureDiscoveryActivity : Activity() {
             }
         }
 
+        renderExperimentGuide()
+
         addText(body, "Limites e segurança", 17f, 0xFF14212B.toInt(), true)
         addText(
             body,
@@ -182,6 +184,31 @@ class FeatureDiscoveryActivity : Activity() {
             12f,
             0xFF526574.toInt()
         )
+    }
+
+
+    private fun renderExperimentGuide() {
+        addText(body, "Laboratório de experimentos", 17f, 0xFF14212B.toInt(), true)
+        addText(
+            body,
+            "Use este roteiro para correlacionar uma ação manual no relógio com o tráfego BLE observado. " +
+                "O aplicativo não inicia medições nem envia comandos proprietários.",
+            12f,
+            0xFF526574.toInt()
+        )
+        WatchExperimentCatalog.all.forEachIndexed { index, experiment ->
+            val card = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(12), dp(9), dp(12), dp(9))
+                background = roundedSurface()
+            }
+            addText(card, (index + 1).toString() + ". " + experiment.title, 14f, 0xFF14212B.toInt(), true)
+            addText(card, experiment.instruction, 12f, 0xFF526574.toInt())
+            addText(card, "Evidência necessária: " + experiment.expectedEvidence, 11f, 0xFF687786.toInt())
+            body.addView(card, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = dp(7) })
+        }
     }
 
     private fun addText(
