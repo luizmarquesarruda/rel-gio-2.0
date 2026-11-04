@@ -18,6 +18,8 @@ import com.luizmarquesarruda.relogio20.data.discovery.FeatureDiscoveryStore
 import com.luizmarquesarruda.relogio20.device.discovery.GattCharacteristicRecord
 import com.luizmarquesarruda.relogio20.device.discovery.GattServiceRecord
 import com.luizmarquesarruda.relogio20.device.discovery.SafeGattExplorationPlan
+import com.luizmarquesarruda.relogio20.device.discovery.BlePacketFingerprintAnalyzer
+import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbStreamDecoder
 import com.luizmarquesarruda.relogio20.HealthPrivacyActivity
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectAvailability
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsRepository
@@ -76,6 +78,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var deviceTimeSyncView: TextView
     private lateinit var scanButton: Button
     private lateinit var disconnectButton: Button
+    private lateinit var deepScanButton: Button
     private lateinit var logView: TextView
     private lateinit var clockView: TextView
     private lateinit var stepsView: TextView
@@ -102,6 +105,8 @@ class MainActivity : ComponentActivity() {
             healthPermissionPrefs.edit { putString("read_steps_state", value.name) }
         }
     private var healthPermissionRequestPending = false
+    private var lastLoggedStepsTotal: Long? = null
+    private var missingStepsWasLogged = false
     private val healthScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val healthPermissionLauncher = registerForActivityResult(
         PermissionController.createRequestPermissionResultContract()
@@ -179,6 +184,10 @@ class MainActivity : ComponentActivity() {
     private val activeNotifications = mutableSetOf<String>()
     private val pendingNotifications = mutableSetOf<String>()
     private val gattOperationQueue = SerialGattOperationQueue()
+    private var activeGattOperationKey: String? = null
+    private var gattOperationTimeoutTask: Runnable? = null
+    private val deepExplorationAttempted = mutableSetOf<String>()
+    private val nusFrameDecoder = WearfitAbStreamDecoder()
     private var clockSyncAttemptedForSession = false
     private var pendingCurrentTimeWriteKey: String? = null
 
@@ -190,6 +199,7 @@ class MainActivity : ComponentActivity() {
         private const val SCAN_DURATION_MS = 15_000L
         private const val AUTO_RECONNECT_SCAN_DURATION_MS = 8_000L
         private const val GATT_CONNECT_TIMEOUT_MS = 15_000L
+        private const val GATT_OPERATION_TIMEOUT_MS = 8_000L
         private const val AUTO_CONNECT_MIN_RSSI = -90
         private const val MAX_LOG_LINES = 250
     }
@@ -308,8 +318,8 @@ class MainActivity : ComponentActivity() {
         disconnectButton = makeButton("Desconectar") { disconnectGatt() }.apply {
             isEnabled = false
         }
-        actions.addView(scanButton, LinearLayout.LayoutParams(0, dp(48), 1f))
-        actions.addView(disconnectButton, LinearLayout.LayoutParams(0, dp(48), 1f).apply {
+        actions.addView(scanButton, LinearLayout.LayoutParams(0, dp(56), 1f))
+        actions.addView(disconnectButton, LinearLayout.LayoutParams(0, dp(56), 1f).apply {
             marginStart = dp(8)
         })
         connectionCard.addView(actions)
@@ -350,10 +360,10 @@ class MainActivity : ComponentActivity() {
         }
         healthActions.addView(makeButton("Conectar Conexão Saúde") {
             connectHealthConnect()
-        }, LinearLayout.LayoutParams(0, dp(48), 1f))
+        }, LinearLayout.LayoutParams(0, dp(56), 1f))
         healthActions.addView(makeButton("Atualizar atividade") {
             readTodaySteps()
-        }, LinearLayout.LayoutParams(0, dp(48), 1f).apply {
+        }, LinearLayout.LayoutParams(0, dp(56), 1f).apply {
             marginStart = dp(8)
         })
         root.addView(healthActions)
@@ -370,19 +380,28 @@ class MainActivity : ComponentActivity() {
         root.addView(makeButton("Notificações no relógio • leitura") {
             startActivity(Intent(this, NotificationCenterActivity::class.java))
         }, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(56)
         ))
 
         root.addView(makeButton("Autodescobrir funcionalidades BLE") {
             startActivity(Intent(this, FeatureDiscoveryActivity::class.java))
         }, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(56)
+        ))
+
+        deepScanButton = makeButton("Explorar canais adicionais do GT3 MAX") {
+            requestDeepGattExploration()
+        }.apply {
+            isEnabled = false
+        }
+        root.addView(deepScanButton, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(56)
         ))
 
         root.addView(makeButton("Explorar funções do relógio") {
             startActivity(Intent(this, FeatureHubActivity::class.java))
         }, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(56)
         ))
 
         addText(root, "Fluxo de saúde: sensores do relógio → aplicativo → Conexão Saúde. " +
@@ -617,12 +636,20 @@ class MainActivity : ComponentActivity() {
                     stepsView.text = StepsCountFormatter.label(count)
                     if (count == null) {
                         healthStatusView.text = "Health Connect não retornou registros de passos para hoje."
-                        appendLog("Health Connect sem registros de passos hoje; valor mantido como indisponível, não como zero.")
+                        if (!missingStepsWasLogged) {
+                            appendLog("Health Connect sem registros de passos hoje; valor mantido como indisponível, não como zero.")
+                            missingStepsWasLogged = true
+                        }
+                        lastLoggedStepsTotal = null
                     } else {
                         healthStatusView.text =
                             "Dados agregados do Health Connect • atualizado " +
                             SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
-                        appendLog("Total agregado de passos de hoje no Health Connect: " + count)
+                        if (lastLoggedStepsTotal != count) {
+                            appendLog("Total agregado de passos de hoje no Health Connect: " + count)
+                            lastLoggedStepsTotal = count
+                        }
+                        missingStepsWasLogged = false
                     }
                 }
                 HealthConnectStepsResult.PermissionRequired -> {
@@ -680,6 +707,11 @@ class MainActivity : ComponentActivity() {
         return Button(this).apply {
             text = label
             isAllCaps = false
+            textSize = 14f
+            minHeight = dp(56)
+            maxLines = 2
+            gravity = Gravity.CENTER
+            setPadding(dp(8), dp(5), dp(8), dp(5))
             setOnClickListener { action() }
         }
     }
@@ -1067,9 +1099,12 @@ class MainActivity : ComponentActivity() {
         cancelConnectionTimeout()
         lastConnectedDeviceName = safeDeviceName(device) ?: "Dispositivo sem nome"
         lastConnectedDeviceAddress = safeDeviceAddress(device)
-        gattOperationQueue.reset()
+        resetGattOperationQueue()
         pendingNotifications.clear()
         activeNotifications.clear()
+        deepExplorationAttempted.clear()
+        nusFrameDecoder.reset()
+        BlePacketFingerprintAnalyzer.resetSession()
         runCatching { bluetoothGatt?.close() }
         bluetoothGatt = null
         updateStatus("Conectando ao dispositivo BLE...")
@@ -1107,7 +1142,7 @@ class MainActivity : ComponentActivity() {
             if (bluetoothGatt === newGatt && !isGattConnected) {
                 bluetoothGatt = null
                 isGattDisconnecting = false
-                gattOperationQueue.reset()
+                resetGattOperationQueue()
                 pendingNotifications.clear()
                 activeNotifications.clear()
                 runCatching { newGatt.disconnect() }
@@ -1161,7 +1196,7 @@ class MainActivity : ComponentActivity() {
                 isGattDisconnecting = false
                 isGattConnected = false
                 cancelConnectionTimeout()
-                gattOperationQueue.reset()
+                resetGattOperationQueue()
                 pendingNotifications.clear()
                 activeNotifications.clear()
                 pendingCurrentTimeWriteKey = null
@@ -1183,7 +1218,7 @@ class MainActivity : ComponentActivity() {
                 updateStatus("Relógio desconectado.")
                 appendLog("Conexão GATT encerrada.")
                 if (bluetoothGatt === gatt) {
-                    gattOperationQueue.reset()
+                    resetGattOperationQueue()
                     pendingNotifications.clear()
                     activeNotifications.clear()
                     bluetoothGatt = null
@@ -1223,7 +1258,10 @@ class MainActivity : ComponentActivity() {
             if (bluetoothGatt !== gatt) return
             val value = characteristic.value ?: byteArrayOf()
             logSafeGattRead(characteristic, value, status)
-            completeGattOperation(gatt)
+            completeGattOperation(
+                gatt,
+                gattOperationKey(characteristic.service.uuid.toString(), characteristic.uuid.toString(), "READ")
+            )
         }
 
         override fun onCharacteristicRead(
@@ -1234,7 +1272,10 @@ class MainActivity : ComponentActivity() {
         ) {
             if (bluetoothGatt !== gatt) return
             logSafeGattRead(characteristic, value, status)
-            completeGattOperation(gatt)
+            completeGattOperation(
+                gatt,
+                gattOperationKey(characteristic.service.uuid.toString(), characteristic.uuid.toString(), "READ")
+            )
         }
 
         @Deprecated("Deprecated by Android API 33")
@@ -1277,7 +1318,10 @@ class MainActivity : ComponentActivity() {
                     "Falha ao gravar a hora pelo CTS (status " + status + ")."
                 appendLog("Bluetooth CTS 0x2A2B: escrita GATT falhou. Status=" + status)
             }
-            completeGattOperation(gatt)
+            completeGattOperation(
+                gatt,
+                gattOperationKey(characteristic.service.uuid.toString(), characteristic.uuid.toString(), "WRITE")
+            )
         }
 
         @SuppressLint("MissingPermission")
@@ -1305,7 +1349,10 @@ class MainActivity : ComponentActivity() {
             } else {
                 appendLog("Callback de descritor sem inscrição pendente: " + descriptor.uuid)
             }
-            completeGattOperation(gatt)
+            completeGattOperation(
+                gatt,
+                gattOperationKey(characteristic.service.uuid.toString(), characteristic.uuid.toString(), "CCCD")
+            )
         }
     }
 
@@ -1423,7 +1470,12 @@ class MainActivity : ComponentActivity() {
             }
             when (operation.kind) {
                 SafeGattExplorationPlan.Kind.READ_STANDARD_VALUE -> {
-                    gattOperationQueue.enqueue {
+                    enqueueGattOperation(
+                        gattOperationKey(service.uuid.toString(), characteristic.uuid.toString(), "READ"),
+                        onTimeout = {
+                            appendLog("Leitura padronizada expirou; a fila continuará sem presumir que houve resposta.")
+                        }
+                    ) {
                         if (bluetoothGatt !== gatt || isGattDisconnecting) false
                         else {
                             val started = gatt.readCharacteristic(characteristic)
@@ -1436,6 +1488,95 @@ class MainActivity : ComponentActivity() {
                 SafeGattExplorationPlan.Kind.SUBSCRIBE_STANDARD_MEASUREMENT -> {
                     enableNotifications(gatt, characteristic)
                 }
+            }
+        }
+    }
+
+    private fun requestDeepGattExploration() {
+        val gatt = bluetoothGatt
+        if (gatt == null || !isGattConnected || isGattDisconnecting) {
+            appendLog("Exploração aprofundada indisponível: conecte primeiro o GT3 MAX.")
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Exploração manual dos canais GT3 MAX")
+            .setMessage(
+                "O aplicativo vai ler somente características que anunciam READ e ativar " +
+                    "notificações/indicações que anunciam NOTIFY/INDICATE com CCCD padrão. " +
+                    "Isso pode revelar dados privados de saúde. Nenhum comando de característica, " +
+                    "NUS RX, DFU, OTA ou reset será enviado. A exploração pode ser encerrada " +
+                    "desconectando o relógio. Continuar?"
+            )
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Iniciar exploração") { _, _ -> runDeepGattExploration(gatt) }
+            .show()
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun runDeepGattExploration(gatt: BluetoothGatt) {
+        if (bluetoothGatt !== gatt || !isGattConnected || isGattDisconnecting) return
+        val inventory = gatt.services.map { service ->
+            GattServiceRecord(
+                uuid = service.uuid.toString(),
+                characteristics = service.characteristics.map { characteristic ->
+                    val properties = linkedSetOf<String>()
+                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_READ != 0) properties.add("READ")
+                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0) properties.add("NOTIFY")
+                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0) properties.add("INDICATE")
+                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE != 0) properties.add("WRITE")
+                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0) properties.add("WRITE_NO_RESPONSE")
+                    GattCharacteristicRecord(
+                        uuid = characteristic.uuid.toString(),
+                        properties = properties,
+                        descriptorUuids = characteristic.descriptors.map { it.uuid.toString() }.toSet()
+                    )
+                }
+            )
+        }
+        val plan = SafeGattExplorationPlan.buildDeep(inventory)
+        if (plan.isEmpty()) {
+            appendLog("Exploração manual concluída: nenhum canal customizado adicional elegível.")
+            return
+        }
+        appendLog("Exploração manual GT3 MAX iniciada: " + plan.size +
+            " operações elegíveis. Somente READ e CCCD; escritas de payload continuam bloqueadas.")
+        plan.forEach { operation ->
+            val attemptKey = operation.serviceUuid.lowercase() + "/" +
+                operation.characteristicUuid.lowercase() + "/" + operation.kind.name
+            if (!deepExplorationAttempted.add(attemptKey)) return@forEach
+            val serviceUuid = runCatching { UUID.fromString(operation.serviceUuid) }.getOrNull()
+            val characteristicUuid = runCatching { UUID.fromString(operation.characteristicUuid) }.getOrNull()
+            val characteristic = serviceUuid?.let(gatt::getService)
+                ?.getCharacteristic(characteristicUuid)
+            if (characteristic == null) {
+                appendLog("Canal ignorado: característica não está mais disponível: " + operation.characteristicUuid)
+                return@forEach
+            }
+            when (operation.kind) {
+                SafeGattExplorationPlan.Kind.READ_PROPRIETARY_VALUE -> {
+                    enqueueGattOperation(
+                        gattOperationKey(operation.serviceUuid, operation.characteristicUuid, "READ"),
+                        onTimeout = {
+                            appendLog("Leitura proprietária somente READ expirou: " + operation.characteristicUuid)
+                        }
+                    ) {
+                        if (bluetoothGatt !== gatt || isGattDisconnecting) false
+                        else {
+                            val started = gatt.readCharacteristic(characteristic)
+                            appendLog(if (started) {
+                                "Leitura manual somente READ solicitada: " + operation.serviceUuid +
+                                    "/" + operation.characteristicUuid
+                            } else {
+                                "Android recusou leitura manual: " + operation.characteristicUuid
+                            })
+                            started
+                        }
+                    }
+                }
+                SafeGattExplorationPlan.Kind.SUBSCRIBE_PROPRIETARY_CHANNEL -> {
+                    enableNotifications(gatt, characteristic)
+                }
+                else -> Unit
             }
         }
     }
@@ -1499,7 +1640,13 @@ class MainActivity : ComponentActivity() {
                 localDateTime.toString() + ". A operação usa somente o serviço padrão 0x1805/0x2A2B."
         )
 
-        gattOperationQueue.enqueue {
+        enqueueGattOperation(
+            gattOperationKey(service.uuid.toString(), characteristic.uuid.toString(), "WRITE"),
+            onTimeout = {
+                pendingCurrentTimeWriteKey = null
+                deviceTimeSyncView.text = "Sincronização CTS expirou; o relógio não foi confirmado."
+            }
+        ) {
             if (bluetoothGatt !== gatt || !isGattConnected || isGattDisconnecting) {
                 pendingCurrentTimeWriteKey = null
                 deviceTimeSyncView.text = "Sincronização cancelada: sessão GATT não está ativa."
@@ -1548,8 +1695,9 @@ class MainActivity : ComponentActivity() {
         runOnUiThread {
             content.removeAllViews()
             addText(content, "Inventário GATT", 19f, true)
-            addText(content, "Inventário passivo: características desconhecidas não são lidas nem inscritas. " +
-                "Somente NUS TX pode receber inscrição automática via CCCD padrão, após o fingerprint completo do GT3 MAX Call.", 12f)
+            addText(content, "Inventário passivo. O fluxo automático usa somente perfis Bluetooth SIG permitidos; " +
+                "a exploração manual, mediante confirmação, pode ler canais customizados somente com READ " +
+                "e ativar NOTIFY/INDICATE via CCCD. Nenhum payload de escrita é enviado.", 12f)
 
             val nusService = gatt.getService(WearfitProtocolProfile.SERVICE_UUID)
             val rxCharacteristic = nusService?.getCharacteristic(
@@ -1642,7 +1790,15 @@ class MainActivity : ComponentActivity() {
             }
 
         pendingNotifications.add(key)
-        gattOperationQueue.enqueue {
+        enqueueGattOperation(
+            gattOperationKey(characteristic.service.uuid.toString(), characteristic.uuid.toString(), "CCCD"),
+            onTimeout = {
+                pendingNotifications.remove(key)
+                activeNotifications.remove(key)
+                runCatching { gatt.setCharacteristicNotification(characteristic, false) }
+                appendLog("Inscrição CCCD expirou para " + characteristic.uuid + "; inscrição local desativada.")
+            }
+        ) {
             if (bluetoothGatt !== gatt) {
                 pendingNotifications.remove(key)
                 appendLog("Inscrição descartada: conexão GATT mudou antes da execução.")
@@ -1686,9 +1842,57 @@ class MainActivity : ComponentActivity() {
         value: ByteArray
     ): Boolean =
         gatt.writeDescriptor(descriptor, value) == BluetoothStatusCodes.SUCCESS
-    private fun completeGattOperation(gatt: BluetoothGatt) {
+    private fun gattOperationKey(serviceUuid: String, characteristicUuid: String, kind: String): String =
+        serviceUuid.lowercase() + "/" + characteristicUuid.lowercase() + "/" + kind
+
+    private fun enqueueGattOperation(
+        key: String,
+        onTimeout: () -> Unit = {},
+        operation: () -> Boolean
+    ) {
+        gattOperationQueue.enqueue {
+            if (bluetoothGatt == null || isGattDisconnecting) {
+                false
+            } else {
+                activeGattOperationKey = key
+                val started = runCatching(operation).getOrDefault(false)
+                if (started) {
+                    val timeout = Runnable {
+                        if (activeGattOperationKey == key) {
+                            activeGattOperationKey = null
+                            gattOperationTimeoutTask = null
+                            appendLog("Timeout GATT após " + GATT_OPERATION_TIMEOUT_MS + " ms: " + key)
+                            runCatching(onTimeout)
+                            gattOperationQueue.onOperationCompleted()
+                        }
+                    }
+                    gattOperationTimeoutTask = timeout
+                    handler.postDelayed(timeout, GATT_OPERATION_TIMEOUT_MS)
+                } else {
+                    activeGattOperationKey = null
+                }
+                started
+            }
+        }
+    }
+
+    private fun completeGattOperation(gatt: BluetoothGatt, key: String) {
         if (bluetoothGatt !== gatt) return
+        if (activeGattOperationKey != key) {
+            appendLog("Callback GATT tardio ou não correspondente ignorado: " + key)
+            return
+        }
+        gattOperationTimeoutTask?.let(handler::removeCallbacks)
+        gattOperationTimeoutTask = null
+        activeGattOperationKey = null
         gattOperationQueue.onOperationCompleted()
+    }
+
+    private fun resetGattOperationQueue() {
+        gattOperationTimeoutTask?.let(handler::removeCallbacks)
+        gattOperationTimeoutTask = null
+        activeGattOperationKey = null
+        gattOperationQueue.reset()
     }
 
     private fun handleNotification(serviceUuid: String, uuid: String, value: ByteArray) {
@@ -1696,37 +1900,48 @@ class MainActivity : ComponentActivity() {
             value.size.toString() + " bytes: " + BleValueFormatter.toHex(value)
         appendLog("NOTIFICAÇÃO " + uuid + " | " + description)
 
+        val fingerprint = BlePacketFingerprintAnalyzer.observe(serviceUuid, uuid, value)
+        appendLog(
+            "Fingerprint BLE: tamanho=" + fingerprint.length +
+                " | prefixo=" + fingerprint.prefixHex +
+                " | SHA-256/48=" + fingerprint.sha256Prefix +
+                " | repetição=" + fingerprint.repeatedCount
+        )
+
         val isNusTx =
             serviceUuid.equals(WearfitProtocolProfile.SERVICE_UUID.toString(), ignoreCase = true) &&
                 uuid.equals(WearfitProtocolProfile.TX_CHARACTERISTIC_UUID.toString(), ignoreCase = true)
-        val frame = if (isNusTx) WearfitAbFrameParser.parse(value) else null
-        val battery = frame?.batteryPercent
+        val frames = if (isNusTx) nusFrameDecoder.append(value) else emptyList()
+        if (isNusTx && frames.isEmpty()) {
+            appendLog("NUS TX: nenhum quadro AB completo nesta notificação; aguardando fragmento ou formato ainda desconhecido.")
+        }
 
-        // Keep only metadata in the discovery catalog; raw payload stays in the existing
-        // in-memory diagnostic log and is not copied into this persistent snapshot.
+        val lastFrame = frames.lastOrNull()
+        val battery = lastFrame?.batteryPercent
         featureDiscoveryStore.recordNotification(
             serviceUuid = serviceUuid,
             characteristicUuid = uuid,
             payloadBytes = value.size,
             nowMillis = System.currentTimeMillis(),
-            frameCommand = frame?.command,
-            frameResponse = frame?.response,
+            frameCommand = lastFrame?.command,
+            frameResponse = lastFrame?.response,
             batteryCandidatePercent = battery
         )
 
-        if (isNusTx) {
-            if (battery != null) {
+        frames.forEach { frame ->
+            val candidateBattery = frame.batteryPercent
+            if (candidateBattery != null) {
                 runOnUiThread {
                     val receivedAt = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
                     deviceBatteryView.text =
-                        "Bateria BLE candidata: " + battery + "% • recebido " + receivedAt +
+                        "Bateria BLE candidata: " + candidateBattery + "% • recebido " + receivedAt +
                             " • aguardando confirmação com Wearfit Pro"
                 }
                 appendLog(
                     "Interpretação candidata do quadro AB/0x91: bateria reportada pelo relógio = " +
-                        battery + "%. Não validada por comparação repetida com Wearfit Pro."
+                        candidateBattery + "%. Não validada por comparação repetida com Wearfit Pro."
                 )
-            } else if (frame != null) {
+            } else {
                 appendLog(
                     "Quadro AB reconhecido; comando=0x" +
                         frame.command.toString(16).uppercase(Locale.US) +
@@ -1751,7 +1966,7 @@ class MainActivity : ComponentActivity() {
         }
         appendLog("Desconexão solicitada pelo usuário.")
         isGattDisconnecting = true
-        gattOperationQueue.reset()
+        resetGattOperationQueue()
         pendingNotifications.clear()
         activeNotifications.clear()
         gatt.disconnect()
@@ -1856,6 +2071,9 @@ class MainActivity : ComponentActivity() {
                 !value.startsWith("Reconectando")
             disconnectButton.text = if (gattSessionExists) "Desconectar" else "Parar reconexão"
             disconnectButton.isEnabled = gattSessionExists || reconnectPolicy.isEnabled || reconnectRunnable != null || isAutoReconnectScan
+            if (::deepScanButton.isInitialized) {
+                deepScanButton.isEnabled = isGattConnected && !isGattDisconnecting
+            }
         }
     }
 
@@ -1937,7 +2155,7 @@ class MainActivity : ComponentActivity() {
         cancelReconnectTask()
         cancelConnectionTimeout()
         stopBleScan()
-        gattOperationQueue.reset()
+        resetGattOperationQueue()
         pendingNotifications.clear()
         healthScope.cancel()
         isGattDisconnecting = true
