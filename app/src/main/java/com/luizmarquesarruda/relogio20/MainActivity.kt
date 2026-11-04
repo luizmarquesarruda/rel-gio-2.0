@@ -69,9 +69,11 @@ class MainActivity : ComponentActivity() {
         PermissionController.createRequestPermissionResultContract()
     ) { granted ->
         if (granted.containsAll(healthConnectRepository.readPermissions)) {
+            healthConnectInitialized = true
             appendLog("Permissão READ_STEPS concedida no Health Connect.")
             readTodaySteps()
         } else {
+            healthConnectInitialized = false
             healthStatusView.text = "Permissão de passos não concedida."
             appendLog("Acesso aos passos negado pelo usuário.")
         }
@@ -351,15 +353,17 @@ class MainActivity : ComponentActivity() {
             HealthConnectAvailability.AVAILABLE -> Unit
         }
 
-        healthConnectInitialized = true
         healthScope.launch {
             try {
                 if (healthConnectRepository.hasReadPermission()) {
+                    healthConnectInitialized = true
                     readTodaySteps()
                 } else {
+                    healthConnectInitialized = false
                     healthPermissionLauncher.launch(healthConnectRepository.readPermissions)
                 }
             } catch (error: Exception) {
+                healthConnectInitialized = false
                 healthStatusView.text = "Não foi possível consultar as permissões."
                 appendLog("Erro Health Connect: " + (error.message ?: "desconhecido"))
             }
@@ -387,6 +391,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 HealthConnectStepsResult.PermissionRequired -> {
+                    healthConnectInitialized = false
                     stepsView.text = "Passos hoje: sem acesso"
                     healthStatusView.text = "Permissão READ_STEPS ausente ou revogada."
                     appendLog("Permissão READ_STEPS ausente ou revogada durante a leitura.")
