@@ -79,6 +79,7 @@ CI verde não equivale a aprovação do Play Protect nem a teste físico no Gala
 1. Instale o APK diagnostic debug no Android e ative o Bluetooth.
 2. Conceda a permissão de dispositivos próximos quando o Android solicitar.
 3. Ao abrir o aplicativo, a busca BLE geral começa automaticamente; não é necessário digitar o endereço MAC.
+4. Se quiser iniciar outra varredura manualmente, toque em **Buscar e conectar automaticamente**; o endereço Bluetooth configurado localmente é apenas uma pista adicional, não um requisito.
 4. O app tenta validar candidatos com nome GT3 MAX, serviço NUS anunciado ou endereço salvo. Dispositivos sem nome aparecem na lista; ao selecioná-los, o fingerprint GATT é verificado antes da exploração.
 5. A identidade é salva automaticamente somente após correspondência do fingerprint GATT completo. O endereço manual permanece opcional.
 6. Após a descoberta, o inventário GATT é passivo. A inscrição NUS TX ocorre automaticamente apenas quando nome e fingerprint completo do perfil GT3 MAX Call coincidem.
