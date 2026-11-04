@@ -153,7 +153,8 @@ class CurrentAndroidContractTests(unittest.TestCase):
     def test_readme_matches_current_read_only_gatt_flow_and_version_source(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         self.assertNotIn("Conecta ao dispositivo escolhido", readme)
-        self.assertIn("endereço Bluetooth foi configurado localmente", readme)
+        self.assertIn("não é necessário digitar o endereço do relógio", readme)
+        self.assertIn("O endereço salvo é uma pista, não um filtro exclusivo", readme)
         self.assertNotIn("Permite leitura explícita de características", readme)
         self.assertNotIn("Use **Ler**", readme)
         self.assertNotIn("Use **Ouvir**", readme)
