@@ -188,6 +188,7 @@ class MainActivity : ComponentActivity() {
     private var gattOperationTimeoutTask: Runnable? = null
     private val deepExplorationAttempted = mutableSetOf<String>()
     private val nusFrameDecoder = WearfitAbStreamDecoder()
+    private val passiveBleObservationTracker = PassiveBleObservationTracker()
     private var clockSyncAttemptedForSession = false
     private var pendingCurrentTimeWriteKey: String? = null
 
@@ -1104,6 +1105,7 @@ class MainActivity : ComponentActivity() {
         activeNotifications.clear()
         deepExplorationAttempted.clear()
         nusFrameDecoder.reset()
+        passiveBleObservationTracker.resetSession()
         BlePacketFingerprintAnalyzer.resetSession()
         runCatching { bluetoothGatt?.close() }
         bluetoothGatt = null
@@ -1909,7 +1911,22 @@ class MainActivity : ComponentActivity() {
             value.size.toString() + " bytes: " + BleValueFormatter.toHex(value)
         appendLog("NOTIFICAÇÃO " + uuid + " | " + description)
 
+        val observedAtMillis = System.currentTimeMillis()
         val fingerprint = BlePacketFingerprintAnalyzer.observe(serviceUuid, uuid, value)
+        val observation = passiveBleObservationTracker.observe(
+            serviceUuid = serviceUuid,
+            characteristicUuid = uuid,
+            payloadBytes = value.size,
+            fingerprint = fingerprint.sha256Prefix,
+            observedAtMillis = observedAtMillis
+        )
+        appendLog(
+            "Observação passiva #" + observation.sequence +
+                " | canal=" + observation.channelNotificationCount +
+                " | bytes acumulados=" + observation.channelByteCount +
+                " | intervalo=" + (observation.intervalSincePreviousMillis?.toString() ?: "primeira") + " ms" +
+                " | fingerprints distintos=" + observation.distinctFingerprints
+        )
         appendLog(
             "Fingerprint BLE: tamanho=" + fingerprint.length +
                 " | prefixo=" + fingerprint.prefixHex +
@@ -1931,7 +1948,7 @@ class MainActivity : ComponentActivity() {
             serviceUuid = serviceUuid,
             characteristicUuid = uuid,
             payloadBytes = value.size,
-            nowMillis = System.currentTimeMillis(),
+            nowMillis = observedAtMillis,
             frameCommand = lastFrame?.command,
             frameResponse = lastFrame?.response,
             batteryCandidatePercent = battery
