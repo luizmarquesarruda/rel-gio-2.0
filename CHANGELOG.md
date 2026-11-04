@@ -1,5 +1,80 @@
 # Changelog
 
+## Não lançado — ocultação do prefixo HEX fora de captura — 04/11/2026
+
+- O log do fingerprint BLE não exibe mais os quatro primeiros bytes do payload fora de uma sessão consentida.
+- Tamanho, SHA-256 truncado e repetição permanecem disponíveis; HEX completo e prefixo só aparecem durante captura autorizada.
+- Documento técnico e diário de bordo atualizados.
+- CI e teste físico: **não validados nesta revisão**.
+
+## Não lançado — precisão dos contadores do progresso GATT — 04/11/2026
+
+- Itens interrompidos/deixados na fila agora são contados como não executados, separados das operações finalizadas com resposta, confirmação, falha ou timeout.
+- Percentual indica operações tratadas e não taxa de sucesso do sensor.
+- Testes de regressão adicionados para interrupção por desconexão.
+
+## Não lançado — prevenção de leitura GATT redundante — 04/11/2026
+
+- Removida a repetição de READ da bateria 0x2A19: a leitura continua no plano básico e o aprofundamento mantém somente a inscrição CCCD opcional.
+- Removida duplicação da entrada Body Composition Feature 0x2A9B no catálogo interno.
+- Operações READ canceladas antes do início e características que desapareçam do inventário são classificadas como não executadas no progresso, não como falha do sensor.
+- README, documento técnico, diário e teste de regressão atualizados.
+- CI e validação física no GT3 MAX/Galaxy A06: **não validadas nesta revisão**.
+
+## Não lançado — painel de progresso e correlação temporal BLE — 04/11/2026
+
+- Adicionado painel na tela principal com progresso da exploração por operação READ/CCCD, incluindo concluídas, respondidas, inscrições confirmadas, notificações, decodificações, falhas e timeouts.
+- Canais são classificados somente conforme evidências observadas; inscrição sem tráfego fica como "inscrito, aguardando dados", sem inferir defeito ou ausência do sensor.
+- Desconexão durante a exploração classifica itens pendentes como não executados.
+- Adicionado marcador temporal manual para ações realizadas no relógio; os eventos são incluídos no TXT como marcadores de usuário, separados de medições e dados do sensor.
+- Testes de unidade adicionados para estados e contadores do progresso GATT.
+- CI e teste físico no GT3 MAX/Galaxy A06: **não validados nesta revisão**.
+
+
+## Não lançado — rastreabilidade de valores decodificados — 04/11/2026
+
+- Registros decodificados por READ/NOTIFY Bluetooth SIG agora recebem o `sessionId` da captura ativa. Valores de sensores deixam de ser gravados como descobertas sem vínculo à sessão.
+- Sem sessão consentida válida, o método de persistência de valores decodificados recusa a gravação; sessões vencidas são finalizadas sem aceitar novos valores.
+- Teste de codec adicionado para preservar o vínculo entre descoberta decodificada e sessão durante a serialização.
+- CI e teste físico GT3 MAX/Galaxy A06: **não validados nesta revisão**.
+
+## Não lançado — testes GATT automáticos e persistência de resultados — 04/11/2026
+
+- Adicionado modo de testes automáticos com ativação local única. Ao conectar, o app exige o fingerprint GATT completo do GT3 MAX Call antes de iniciar exploração aprofundada.
+- O executor agora dispara tanto operações Bluetooth SIG padronizadas quanto leituras proprietárias somente READ e inscrições NOTIFY/INDICATE com CCCD 0x2902. NUS RX, escritas de payload, DFU/OTA e reset continuam bloqueados.
+- Ampliados os decoders Bluetooth SIG: bateria, Device Information, frequência cardíaca/localização do sensor, pressão arterial/intermediária/recursos, termômetro, pressão/temperatura/umidade ambientais, oximetria/recursos, RSC e CSC. Body Composition 2A9B informa capacidades/resoluções; 2A9C permanece em HEX sem conversão semântica nesta revisão.
+- Decoders agora rejeitam flags reservadas e bytes extras fora dos layouts definidos, com regressões específicas para respostas truncadas/malformadas.
+- A coleta automática distingue sessões que criou de sessões manuais reutilizadas: pausar o modo automático não encerra uma captura manual que já estava ativa.
+- “Testes e descobertas” mostra se a automação está ativa e recarrega o inventário ao voltar ao primeiro plano; a biblioteca detalha serviço e característica.
+- Leituras e notificações recebidas são registradas na biblioteca privada durante sessões consentidas de até 10 minutos, renovadas enquanto o modo automático permanece ativo e conectado. HEX fora da sessão não é incluído no log/exportação.
+- Resultados distinguem solicitação, callback de leitura, inscrição CCCD e decodificação; formatos proprietários desconhecidos permanecem sem semântica.
+- Pausar encerra captura e tenta cancelar inscrições automáticas por CCCD padrão. A leitura não força medições; o firmware precisa emitir os dados.
+- Testes Kotlin adicionados para decoders, política de consentimento e campos de sensores; CI e teste físico GT3 MAX/Galaxy A06 aguardam validação.
+
+
+## Não lançado — separação dos artefatos da CI — 04/11/2026
+
+- Corrigido o empacotamento do GitHub Actions: o artefato `relogio-2.0-diagnostic-debug-apk` agora recebe diretamente somente `app-diagnostic-debug.apk`.
+- Removidos do pacote instalável `BUILD-INFO.txt`, `SIGNATURE.txt` e `SHA256SUMS`; metadados, hash e certificado continuam disponíveis no artefato separado `android-validation-reports`.
+- Mantidos exatamente dois artefatos, com papéis separados: um APK instalável e um pacote de evidências/relatórios técnicos.
+- Concorrência CI alinhada pelo nome da branch para que eventos de push e atualização da mesma PR compartilhem o mesmo grupo e não mantenham duas compilações redundantes em paralelo.
+- CI da correção: aguardando novo run no HEAD atualizado. APK ainda não validado nesta revisão.
+
+
+- UI BLE: a tela Testes e descobertas ganhou atalho para solicitar exploração GATT aprofundada pelo painel principal, mantendo confirmação explícita.
+
+- BLE: exploração aprofundada agora percorre todos os canais GATT elegíveis, sem o truncamento fixo anterior de 24 operações; somente READ e CCCD padrão após confirmação explícita.
+
+## Não lançado — descoberta BLE geral e TXT completo — 04/11/2026
+
+- Busca BLE geral iniciada automaticamente ao abrir o aplicativo; não exige digitar o endereço MAC.
+- Endereço salvo deixou de ser filtro exclusivo: nome GT3 MAX e serviço NUS anunciado também são pistas; dispositivos sem nome são listados para validação manual.
+- Nova identidade só é salva após fingerprint GATT completo; candidatos incompatíveis são desconectados antes de leituras ou inscrições.
+- Sincronização CTS por escrita de característica suspensa; permanece somente leitura GATT e configuração padrão de CCCD para notificações/indicações.
+- TXT inclui descobertas persistidas da biblioteca local, além dos 250 eventos mais recentes; endereços MAC continuam mascarados.
+- Testes adicionados para classificação BLE, fingerprint sem nome e exportação das descobertas.
+- CI e teste físico Galaxy A06/Android 16: **não validados**.
+
 ## Não lançado — laboratório de captura e biblioteca BLE — 04/11/2026
 
 - Painel principal reorganizado para priorizar conexão GT3 MAX, laboratório/biblioteca e depois Saúde e integração.

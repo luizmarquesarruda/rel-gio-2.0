@@ -109,6 +109,38 @@ internal class DiscoveryLibraryStore(context: Context) {
         ))
     }
 
+    /** Persists a decoded value only inside the active, consented capture session. */
+    @Synchronized
+    fun recordSessionDiscovery(
+        title: String,
+        detail: String,
+        nowMillis: Long,
+        source: String = "GATT_SESSION",
+        confidence: String = "OBSERVADO"
+    ): Boolean {
+        if (nowMillis < 0L) return false
+        val current = writableSnapshot() ?: return false
+        val session = current.activeSession ?: return false
+        if (!session.isActive(nowMillis)) {
+            persist(finishSnapshot(current, nowMillis, "Tempo de captura concluído"))
+            return false
+        }
+
+        val record = DiscoveryLibraryRecord(
+            id = UUID.randomUUID().toString(),
+            occurredAtMillis = nowMillis,
+            sessionId = session.id,
+            kind = DiscoveryLibraryKind.DISCOVERY,
+            title = title.take(256),
+            detail = detail.take(6_000),
+            source = source.take(128),
+            confidence = confidence.take(64)
+        )
+        return persist(current.copy(
+            records = (current.records + record).takeLast(DiscoveryLibraryCodec.MAX_RECORDS)
+        ))
+    }
+
     @Synchronized
     fun recordPayload(
         kind: String,

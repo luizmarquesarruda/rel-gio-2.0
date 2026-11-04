@@ -28,6 +28,7 @@ Este índice separa decisões de arquitetura, integrações, evidências do disp
 - [Integração de parceiro Wearfit Pro](INTEGRACAO-WEARFIT-PARTNER-SDK.md) — autorização de terceiros, limites da API e elegibilidade do GT3 MAX Call.
 - [Análise de firmware OTA do Wearfit Pro](ANALISE-FIRMWARE-OTA-WEARFIT-PRO.md) — identidade regulatória, serviço Nordic Secure DFU e procedimento seguro para obter o pacote.
 - [Captura BLE de 03/11/2026](CAPTURA-BLE-GT3-MAX-2026-11-03.md)
+- [Automação de testes GATT e coleta local](AUTOMACAO-TESTES-GATT-GT3MAX.md) — consentimento, leituras, notificações, decoders e limites.
 - [Perfil BLE candidato NUS/AB](PROTOCOLO-BLE-CANDIDATO.md)
 
 ## Governança e versões

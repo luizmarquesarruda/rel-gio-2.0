@@ -11,8 +11,8 @@ O firmware V1.07 e build SH0050-1_1.1.3_1.23_1.18_1.1 são metadados apresentado
 ### Fase 1 — Exploração GATT segura
 - Inventário automático de serviços, características, propriedades e descritores após a descoberta GATT.
 - Plano automático restrito a metadados básicos e bateria, somente em características Bluetooth SIG com READ.
-- Sensores de saúde, medições ambientais e canais customizados ficam no plano aprofundado manual, após confirmação explícita: somente READ e NOTIFY/INDICATE com CCCD 0x2902.
-- O plano manual é limitado a 24 operações por sessão e exige confirmação explícita, pois os payloads podem conter dados privados de saúde.
+- Sensores de saúde, medições ambientais e canais customizados podem ser executados pelo plano aprofundado após ativação explícita única do modo automático ou pela ação manual: somente READ e NOTIFY/INDICATE com CCCD 0x2902.
+- O plano aprofundado percorre todas as operações elegíveis encontradas no inventário GATT, sem truncamento silencioso por quantidade fixa. No modo automático, uma confirmação local é solicitada uma única vez; o modo permanece ativo até ser pausado. O tempo depende da quantidade de leituras/inscrições e dos timeouts do Android.
 - A exploração manual cobre perfis SIG como frequência cardíaca, pressão arterial, oximetria, termômetro, temperatura/pressão/umidade ambientais, composição corporal e cadência, quando anunciados pelo dispositivo.
 - FE59/DFU, NUS RX, identificadores de dispositivo (serial/system ID) e serviços SIG já tratados pelo plano padrão são excluídos.
 - Nenhuma escrita de payload em característica proprietária é criada. A única escrita de descritor é a configuração padrão CCCD para ativar notificações/indicações.
@@ -22,12 +22,23 @@ O firmware V1.07 e build SH0050-1_1.1.3_1.23_1.18_1.1 são metadados apresentado
 - O decodificador de fluxo reagrupa quadros AB fragmentados e separa quadros concatenados, com limite de buffer e ressincronização após bytes inválidos.
 - A semântica dos comandos permanece independente do framing; comando desconhecido continua desconhecido.
 - O catálogo persistente guarda inventário, UUIDs, propriedades, contagens, tamanho e horário da última notificação; payload bruto não é persistido.
-- O HEX permanece apenas no log de diagnóstico em memória e na exportação manual TXT.
+- O HEX de leituras e notificações é persistido na biblioteca privada somente durante sessões de captura consentidas; fora da captura, o log/exportação registra UUID, tamanho e fingerprint sem incluir o payload bruto.
 - Bateria AB/0x91/0x80 continua candidata, não validada.
 
+### Fase 4 — Testes automáticos e persistência dos resultados
+- Uma autorização local única habilita coleta automática após reconhecimento do fingerprint GATT completo do GT3 MAX Call. A preferência pode ser pausada na tela principal.
+- O modo automático executa todas as operações elegíveis produzidas por `SafeGattExplorationPlan.buildDeep`: READ em características que anunciam READ e NOTIFY/INDICATE somente com CCCD 0x2902. A fila serial aguarda callback ou timeout para cada operação.
+- Resultado de leitura distingue API iniciada, callback GATT bem-sucedido, bytes recebidos, valor decodificado e erro/timeout. Um retorno `true` de `readCharacteristic` é apenas início assíncrono, não prova de resposta.
+- Decoders só reconhecem formatos Bluetooth SIG mapeados: Battery 2A19; Device Information 2A24/2A26/2A27/2A28/2A29; Heart Rate 2A37/2A38; Blood Pressure 2A35/2A36/2A49; Health Thermometer 2A1C/2A1E; Environmental Sensing 2A6D/2A6E/2A6F; Pulse Oximeter 2A5E/2A5F/2A60; Running Speed and Cadence 2A53/2A54; Cycling Speed and Cadence 2A5B/2A5C; Body Composition Feature 2A9B. Body Composition Measurement 2A9C continua bruto até parser contextual de flags, resoluções e fragmentação.
+- Canais proprietários, inclusive 0x3802/0x4A02 e características correlatas, são testados apenas por READ/CCCD autorizados; sem parser, permanecem UUID, propriedades, status, tamanho, fingerprint e HEX sob captura.
+- A biblioteca local registra resultados/descobertas. Payload HEX e valores decodificados são gravados em janelas de até 10 minutos, renovadas enquanto o modo automático está habilitado e a conexão GATT permanece ativa. O limite de armazenamento existente continua aplicado.
+- Pausar encerra a captura e cancela as inscrições automáticas através do CCCD padrão. A inscrição NUS TX automática já existente segue política própria.
+- Notificações não iniciam a medição no wearable. Para disparar sob demanda, é necessária documentação/captura validada de comando oficial; nenhum comando proprietário foi inventado ou enviado.
+- Testes Kotlin cobrem decoders e a política de consentimento; CI e teste físico no Galaxy A06/GT3 MAX ficam pendentes.
+
 ### Fase 3 — Experimentos guiados
-- A tela Autodescoberta BLE apresenta roteiro para bateria, hora/data, temperatura, frequência cardíaca, SpO2, passos, sono e atividade.
-- O roteiro exige ação manual e correlação temporal com tráfego observado; não dispara medições nem comandos.
+- A tela principal oferece ativação única dos testes GATT automáticos; após fingerprint completo do GT3 MAX Call, o aplicativo executa sozinho as leituras e inscrições elegíveis e salva resultados na biblioteca local.
+- O roteiro guiado permanece disponível para correlacionar horário de uso e tráfego; ele não dispara medições por comandos proprietários desconhecidos.
 - Dados de passos Health Connect permanecem identificados como agregado externo, sem atribuição automática ao relógio.
 
 ## Hora e data
@@ -49,7 +60,7 @@ O estudo detalhado está em docs/ATALHO-FIRMWARE-HORA-DATA-TEMPERATURA.md e docs
 ## Testes físicos pendentes
 
 - Confirmar leituras padrão no GT3 MAX real e comparar com a tela do relógio.
-- Executar exploração manual e exportar TXT com UUIDs, resultados READ, fingerprints e notificações por canal.
+- Ativar testes automáticos, conectar o GT3 MAX real, manter captura por pelo menos 10 minutos e exportar TXT com UUIDs, resultados READ, fingerprints, CCCD e notificações por canal.
 - Comparar hora/data após sincronização no Wearfit Pro e após reconectar o Relógio 2.0.
 - Comparar bateria em pelo menos três níveis.
 - Testar temperatura com identificação explícita de clima versus corporal.

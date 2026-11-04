@@ -18,9 +18,13 @@ internal object BleDiagnosticReport {
         deviceName: String?,
         deviceAddress: String?,
         generatedAt: String,
-        logLines: List<String>
+        logLines: List<String>,
+        discoveryEntries: List<String> = emptyList()
     ): String {
         val sanitizedLogs = logLines.map { line ->
+            macPattern.replace(line) { match -> maskAddress(match.value) }
+        }
+        val sanitizedDiscoveries = discoveryEntries.map { line ->
             macPattern.replace(line) { match -> maskAddress(match.value) }
         }
         return buildString {
@@ -50,6 +54,13 @@ internal object BleDiagnosticReport {
                 appendLine("Nenhum evento registrado nesta sessão.")
             } else {
                 sanitizedLogs.forEach(::appendLine)
+            }
+            appendLine()
+            appendLine("[DESCOBERTAS PERSISTIDAS — ATÉ 1.000 REGISTROS MAIS RECENTES]")
+            if (sanitizedDiscoveries.isEmpty()) {
+                appendLine("Nenhuma descoberta persistida disponível.")
+            } else {
+                sanitizedDiscoveries.forEach(::appendLine)
             }
             appendLine()
             appendLine("[CLASSIFICAÇÃO]")

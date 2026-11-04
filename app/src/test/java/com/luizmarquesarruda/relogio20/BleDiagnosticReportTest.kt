@@ -37,6 +37,23 @@ class BleDiagnosticReportTest {
     }
 
     @Test
+    fun includesPersistedDiscoveriesAndMasksAddresses() {
+        val report = BleDiagnosticReport.build(
+            appVersion = "0.4.0",
+            androidVersion = "16 (API 36)",
+            connectionState = "Procurando relógio",
+            deviceName = null,
+            deviceAddress = null,
+            generatedAt = "2026-11-04 16:00:00 -0300",
+            logLines = emptyList(),
+            discoveryEntries = listOf("GT3 MAX | C0:27:AB:64:6C:E2 | fingerprint observado")
+        )
+        assertTrue(report.contains("[DESCOBERTAS PERSISTIDAS"))
+        assertTrue(report.contains("XX:XX:XX:64:6C:E2"))
+        assertFalse(report.contains("C0:27:AB:64:6C:E2"))
+    }
+
+    @Test
     fun preservesObservedHexPayloadForOfflineAnalysis() {
         val report = BleDiagnosticReport.build(
             appVersion = "0.4.0",

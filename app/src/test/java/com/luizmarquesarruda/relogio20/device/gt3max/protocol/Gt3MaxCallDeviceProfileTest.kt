@@ -50,13 +50,15 @@ class Gt3MaxCallDeviceProfileTest {
     }
 
     @Test
-    fun autoSubscriptionRequiresKnownNameAndBothNusCharacteristics() {
-        assertTrue(
-            Gt3MaxCallDeviceProfile.shouldAutoSubscribeBattery("GT3 MAX", observedServices())
-        )
-        assertFalse(
-            Gt3MaxCallDeviceProfile.shouldAutoSubscribeBattery("Unknown watch", observedServices())
-        )
+    fun autoSubscriptionRequiresCapturedFingerprintAndNusEvenWhenNameIsMissing() {
+        assertTrue(Gt3MaxCallDeviceProfile.shouldAutoSubscribeBattery("GT3 MAX", observedServices()))
+        assertTrue(Gt3MaxCallDeviceProfile.shouldAutoSubscribeBattery(null, observedServices()))
+        assertFalse(Gt3MaxCallDeviceProfile.shouldAutoSubscribeBattery("Unknown watch", mapOf(
+            Gt3MaxCallDeviceProfile.NUS_SERVICE_UUID to setOf(
+                Gt3MaxCallDeviceProfile.NUS_RX_CHARACTERISTIC_UUID,
+                Gt3MaxCallDeviceProfile.NUS_TX_CHARACTERISTIC_UUID
+            )
+        )))
     }
 
     @Test

@@ -59,7 +59,7 @@ class FeatureDiscoveryActivity : Activity() {
     override fun onResume() {
         super.onResume()
         if (::body.isInitialized) {
-            updateTimerUi(store.activeSession(System.currentTimeMillis()))
+            render()
             scheduleCountdown()
         }
     }
@@ -120,6 +120,8 @@ class FeatureDiscoveryActivity : Activity() {
     private fun render() {
         body.removeAllViews()
         renderTimerPanel()
+        renderAutomaticDiscoveryStatus()
+        renderDeepExplorationShortcut()
         renderLibraryShortcut()
         when (val library = store.read()) {
             DiscoveryLibraryReadResult.Empty -> {
@@ -158,6 +160,45 @@ class FeatureDiscoveryActivity : Activity() {
         addSectionTitle("Segurança da exploração")
         addMessage(
             "A captura cronometrada registra somente notificações e leituras recebidas durante a sessão. O HEX fica no armazenamento privado deste aplicativo. Nenhum comando proprietário, escrita NUS RX, DFU, OTA ou reset é enviado."
+        )
+    }
+
+
+    private fun renderAutomaticDiscoveryStatus() {
+        val enabled = getSharedPreferences("automatic_gatt_discovery", MODE_PRIVATE)
+            .getBoolean("enabled", false)
+        addSectionTitle("Exploração automática GATT")
+        addMessage(
+            if (enabled) {
+                "Ativa neste aparelho. Ao reconhecer o fingerprint GATT completo do GT3 MAX Call, " +
+                    "o app executa leituras READ e inscrições NOTIFY/INDICATE elegíveis sem exigir " +
+                    "que você abra este roteiro. A coleta renova janelas de até 10 minutos enquanto " +
+                    "o painel principal permanece em primeiro plano e conectado."
+            } else {
+                "Pausada. No painel principal, ative “Ativar testes automáticos ao conectar” uma vez " +
+                    "para que o aplicativo execute e salve os testes GATT automaticamente nas conexões válidas."
+            }
+        )
+    }
+
+    private fun renderDeepExplorationShortcut() {
+        val button = Button(this).apply {
+            text = "Explorar manualmente GATT"
+            isAllCaps = false
+            textSize = 14f
+            setOnClickListener {
+                getSharedPreferences("ble_exploration_requests", MODE_PRIVATE)
+                    .edit()
+                    .putBoolean("pending_deep_exploration", true)
+                    .apply()
+                finish()
+            }
+        }
+        body.addView(button, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(50)
+        ).apply { bottomMargin = dp(6) })
+        addMessage(
+            "Esta ação é um atalho manual. O modo automático é controlado no painel principal e não exige esta confirmação a cada conexão."
         )
     }
 

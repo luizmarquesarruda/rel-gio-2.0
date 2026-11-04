@@ -69,7 +69,7 @@ internal object Gt3MaxCallDeviceProfile {
         }
 
         return when {
-            nameMatches && nusMatches && capturedCustomMatches ->
+            nusMatches && capturedCustomMatches ->
                 Match.CAPTURED_GATT_FINGERPRINT
             nameMatches && nusMatches -> Match.DEVICE_NAME_AND_NUS
             nameMatches -> Match.DEVICE_NAME_ONLY
@@ -80,7 +80,8 @@ internal object Gt3MaxCallDeviceProfile {
 
     /**
      * NUS TX notifications use the standard CCCD. The NUS RX write channel remains unused.
-     * Full captured custom-service fingerprint + name + NUS are required before auto-subscribing.
+     * Full captured custom-service fingerprint + NUS are required before auto-subscribing;
+     * the advertised local name may be absent from BLE scan/cache results.
      * This is a compatibility check, not cryptographic device authentication.
      */
     fun shouldAutoSubscribeBattery(

@@ -1,3 +1,98 @@
+## 04/11/2026 — Ocultação do prefixo HEX fora da captura consentida
+
+- Auditoria de privacidade identificou que o log do fingerprint BLE exibia os quatro primeiros bytes do payload mesmo sem sessão de captura ativa.
+- Prefixo HEX agora é registrado somente durante captura consentida; fora dela, o log informa que o prefixo foi ocultado e mantém tamanho, SHA-256 truncado e contagem de repetição.
+- O armazenamento de payload completo continua vinculado à sessão autorizada. Nenhum comando BLE adicional foi introduzido.
+- CI e teste físico GT3 MAX/Galaxy A06: **não validados nesta alteração**.
+
+## 04/11/2026 — Métricas do painel sem confundir operações puladas
+
+- Ajustado o resumo GATT: itens não executados após desconexão/pausa deixam de ser somados às operações concluídas.
+- O percentual indica operações tratadas, enquanto os contadores separam finalizadas e não executadas. Falhas/timeouts continuam visíveis como resultados, não como sucesso.
+- Testes garantem que desconectar com uma operação na fila gera 0 concluídas, 1 não executada e progresso de tratamento de 100%, sem alegar sucesso do sensor.
+
+## 04/11/2026 — Eliminação de leitura GATT redundante
+
+- Auditoria identificou que a bateria 0x2A19 já era lida pelo plano básico de conexão e podia entrar novamente como READ no plano aprofundado.
+- O plano aprofundado agora evita repetir esse READ e mantém apenas a inscrição opcional NOTIFY/INDICATE quando a propriedade e o CCCD são anunciados.
+- Removida duplicação na tabela interna de características Body Composition Feature 0x2A9B.
+- Operações READ que forem interrompidas antes do início são marcadas como não executadas no painel, sem serem contadas como falha do sensor.
+- Teste unitário garante que a exploração aprofunda a bateria sem duplicar a leitura básica.
+- CI e teste físico no GT3 MAX/Galaxy A06: **não validados nesta alteração**.
+
+## 04/11/2026 — Progresso GATT e marcadores temporais
+
+- Adicionado rastreador em memória por operação READ/CCCD para apresentar total planejado, concluído, respondido, inscrito, notificações observadas, valores decodificados, falhas, timeouts e itens na fila.
+- Cada canal recebe classificação baseada apenas em evidências de transporte. CCCD confirmado sem notificação é exibido como "inscrito, aguardando dados"; não é interpretado como sensor ausente.
+- Operações que ainda estavam na fila/em execução no momento da desconexão são marcadas como não executadas.
+- Adicionado marcador temporal manual para registrar ações feitas fisicamente no relógio. Eventos são exportados no TXT com fonte distinta e não são confundidos com medições BLE.
+- Testes unitários cobrem resumo de progresso, estados de canal silencioso/time-out/falha e interrupção da exploração.
+- Não foram adicionadas escritas GATT de payload, comandos de medição, serviços em segundo plano ou novas permissões.
+- CI e validação física no GT3 MAX/Galaxy A06: **não validadas nesta alteração**.
+
+## 04/11/2026 — Vinculação dos valores decodificados à sessão de captura
+
+- Auditoria identificou que os payloads GATT brutos já exigiam sessão ativa, mas registros decodificados Bluetooth SIG eram gravados pela rotina genérica de descobertas, sem `sessionId`.
+- Criado `recordSessionDiscovery`, que só grava valores se existir sessão válida e associa o registro ao identificador dessa sessão. Sessão expirada é finalizada e não aceita o novo valor.
+- Leituras READ e notificações Bluetooth SIG passaram a usar a nova rotina. Inventários e metadados de descoberta continuam podendo ser registrados fora da captura, sem carregar os valores dos sensores.
+- Teste de codec cobre a persistência do vínculo da descoberta decodificada com a sessão.
+- CI após esta correção e validação física com GT3 MAX/Galaxy A06: **não validadas**.
+
+## 04/11/2026 — Testes GATT automáticos e salvamento local de resultados
+
+- Adicionado na tela principal o controle **Ativar testes automáticos ao conectar / Pausar coleta automática**. A ativação solicita consentimento explícito uma única vez e persiste a preferência no aparelho.
+- Após conexão, a coleta automática só inicia quando o fingerprint GATT completo observado do GT3 MAX Call coincide com a referência local. Nome/MAC não substituem a validação GATT; o fingerprint não é autenticação criptográfica.
+- O executor aprofundado agora despacha tanto leituras padronizadas Bluetooth SIG quanto inscrições padrão e operações READ proprietárias que já eram planejadas, em série pela fila GATT e aguardando callbacks/timeouts.
+- Canais proprietários com READ/NOTIFY/INDICATE são observados e gravados sem inventar semântica. NUS RX, escrita de payload proprietária, DFU/OTA, reset e qualquer comando de medição desconhecido continuam bloqueados.
+- Adicionado `GattValueDecoder` para os formatos Bluetooth SIG de bateria, Device Information, frequência cardíaca, pressão arterial, termômetro, temperatura/umidade ambientais e oximetria spot-check/contínua. A decodificação indica formato observado, não exatidão clínica/calibração do sensor.
+- Leituras e notificações só persistem HEX e valores decodificados durante captura consentida na biblioteca local. As janelas são de até 10 minutos e renovadas enquanto o modo automático permanece ativo, GATT conectado e a MainActivity em primeiro plano; a renovação suspende em segundo plano e retoma ao voltar, pois ainda não existe serviço foreground BLE. Fora da captura, logs contêm tamanho/fingerprint, não HEX bruto.
+- Pausar encerra a janela criada pelo modo automático e agenda cancelamento das inscrições criadas por ele via CCCD padrão. Se uma sessão manual já estava ativa quando a automação começou, ela é apenas reutilizada e não será encerrada pelo botão de pausa.
+- A tela Testes e descobertas apresenta o estado do modo automático e recarrega o inventário ao retornar ao primeiro plano. A biblioteca exibe UUID de serviço e característica para cada leitura/notificação.
+- Adicionados testes unitários para decoders, contato do sensor cardíaco, versão de firmware, flags de recursos PLX/Body Composition, RSC/CSC, pressão intermediária, flags reservadas e payloads malformados, além da política de consentimento e plano de exploração.
+- A presença de um serviço/UUID não garante que o firmware gere medição. Inscrição NOTIFY/INDICATE apenas permite receber atualizações; não envia comando que inicie pressão, SpO2 ou outra medição.
+- CI/build desta alteração e teste físico no Samsung Galaxy A06/Android 16 com GT3 MAX: **não validados** até a nova execução e teste no aparelho.
+
+## 04/11/2026 — Correção do empacotamento dos artefatos Android CI
+
+- Corrigido o workflow `.github/workflows/android-ci.yml`: o artefato `relogio-2.0-diagnostic-debug-apk` passa a receber diretamente o único arquivo `app-diagnostic-debug.apk`, sem diretório auxiliar e sem TXT/XML anexados.
+- Os arquivos `diagnostic-build-info.txt`, manifestos, permissões, badging, assinaturas/certificados e hashes SHA-256 permanecem no artefato separado `android-validation-reports`.
+- Mantidos dois artefatos distintos: **APK instalável** e **relatórios de validação**. A variante companion continua compilada/testada/auditada, mas não publicada como instalação.
+- README e changelog alinhados com a separação; instrução antiga de procurar BUILD-INFO.txt dentro do APK foi corrigida.
+- Adicionado teste Python de contrato para impedir regressão: o artefato instalável deve apontar para um único `.apk`, enquanto o relatório técnico permanece em artefato separado.
+- Ajustada a chave de concorrência do workflow para usar a branch da PR (ou `github.ref_name` em push/manual); eventos `push` e `pull_request` da mesma branch agora compartilham o grupo de cancelamento e não mantêm dois builds idênticos em paralelo.
+- A execução #297, anterior à correção do empacotamento, concluiu com sucesso em Lint, testes, builds, guardrails, auditoria e publicação dos dois artefatos; confirmou-se que o pacote do APK incluía arquivos auxiliares junto do instalador.
+- A nova execução #303 foi disparada para o HEAD com o workflow corrigido; seu resultado ainda precisa ser conferido. A estrutura do novo artefato não será considerada validada até inspecionar a execução que usa este workflow.
+- Teste físico no Galaxy A06/Android 16: **não validado**.
+
+## 04/11/2026 — Acesso direto à exploração pelo laboratório
+
+- Adicionado à tela Testes e descobertas um atalho para solicitar a exploração aprofundada de todos os canais GATT elegíveis.
+- O atalho retorna ao painel principal e encaminha uma solicitação local; se o relógio já estiver conectado, abre a confirmação de segurança. Se ainda não estiver conectado, a solicitação aguarda a descoberta GATT da conexão seguinte.
+- A confirmação existente continua obrigatória antes de qualquer leitura ou inscrição. Nenhum comando ou escrita de payload foi habilitado.
+- CI e teste físico no Galaxy A06/Android 16: **não validados**.
+
+## 04/11/2026 — Exploração aprofundada sem truncamento de canais GATT
+
+- Removido o limite fixo de 24 operações que podia deixar características elegíveis fora da exploração manual sem indicação explícita.
+- A exploração aprofundada agora percorre todas as características encontradas que anunciem READ ou NOTIFY/INDICATE com CCCD padrão; NUS, DFU, identificadores e serviços excluídos continuam fora do plano.
+- A interface deixa de prometer "até 24 canais" e informa que a varredura pode levar vários minutos. A captura HEX continua condicionada à sessão cronometrada consentida.
+- Adicionado teste de regressão com 30 canais proprietários elegíveis para garantir que o plano não trunque a lista.
+- A característica observada 0x3802/0x4A02 só será inscrita se o inventário real confirmar NOTIFY/INDICATE e CCCD 0x2902; o UUID sozinho não comprova semântica. Nenhum payload de escrita será enviado.
+- CI após estas alterações: aguardando. Teste físico no Galaxy A06/Android 16 com GT3 MAX: **não validado**.
+
+## 04/11/2026 — Busca BLE geral e exportação de descobertas no TXT
+
+- Corrigido o fluxo que exigia configurar manualmente o endereço Bluetooth antes de iniciar uma busca. Ao abrir o app, uma varredura BLE geral começa automaticamente; o campo de endereço passou a ser opcional.
+- A busca não descarta endereços diferentes do MAC salvo. Cada dispositivo observado é listado e registrado no log da sessão com nome disponível, RSSI e endereço mascarado.
+- Nome GT3 MAX, serviço NUS anunciado e endereço previamente salvo são pistas de descoberta, não prova de identidade. Quando o anúncio não identifica o relógio, o usuário pode selecionar um dispositivo sem digitar MAC.
+- Candidatos com endereço novo são conectados somente para validar o fingerprint GATT; sem correspondência completa do GT3 MAX Call, a conexão é encerrada antes de leituras, inscrições ou exploração.
+- Após fingerprint GATT completo, o endereço atual é salvo automaticamente. O fingerprint é compatibilidade observada, não autenticação criptográfica.
+- O TXT passou a incluir até 1.000 registros persistidos da biblioteca (inventários GATT, quadros AB e capturas consentidas), além dos 250 eventos mais recentes da sessão. MAC permanece mascarado.
+- Testes adicionados para política de candidatos BLE, fingerprint com nome ausente e inclusão/mascaramento das descobertas no TXT.
+- A sincronização CTS por escrita de característica foi suspensa nesta fase para preservar a política somente leitura/notificações. Apenas configuração do descritor CCCD padrão permanece necessária para inscrições.
+- Nenhum comando proprietário, OTA/DFU, reset ou nova permissão foi adicionado.
+- CI, instalação e teste físico no Galaxy A06/Android 16 com GT3 MAX: **não validados**.
+
 ## 04/11/2026 — Contrato de justificativa de privacidade do Health Connect
 
 - Ligada a tela existente HealthPrivacyActivity ao intent ACTION_SHOW_PERMISSIONS_RATIONALE para versões até Android 13.
@@ -523,7 +618,7 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 
 ## 04/11/2026 — Auditoria de continuidade e fechamento das lacunas da exploração GT3 MAX
 
-- Revisão das alterações anteriores identificou que BlePacketFingerprintAnalyzer estava criado, mas sem chamada no fluxo de notificação. Ligado ao callback real; cada pacote agora registra tamanho, prefixo, SHA-256 truncado e repetição no log diagnóstico.
+- Revisão das alterações anteriores identificou que BlePacketFingerprintAnalyzer estava criado, mas sem chamada no fluxo de notificação. Ligado ao callback real; cada pacote agora registra tamanho, prefixo, SHA-256 truncado e repetição no log diagnóstico. Revisão posterior: o prefixo HEX fica oculto fora da captura consentida; tamanho, hash truncado e repetição permanecem disponíveis.
 - O parser anterior aceitava exatamente um quadro AB completo por notificação. Criado WearfitAbStreamDecoder com reagrupamento de fragmentos, separação de quadros concatenados, ressincronização e buffer limitado. A interpretação semântica permanece somente para comandos documentados/candidatos.
 - O plano GATT automático foi ampliado para mais perfis SIG: bateria, hora, frequência cardíaca, pressão, temperatura/pressão/umidade ambientais, oximetria, composição corporal e cadência. Nenhuma propriedade WRITE é usada pelo plano.
 - Criado plano manual aprofundado para características proprietárias que anunciam READ e canais NOTIFY/INDICATE com CCCD. Exige confirmação explícita, limita a 24 operações por sessão e exclui FE59/DFU, NUS RX/TX, serial e identificadores de sistema; nenhuma escrita de payload proprietária é criada.

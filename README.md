@@ -4,7 +4,7 @@ Aplicativo Android de Saúde e Fitness que se conecta diretamente ao GT3 MAX por
 
 ## Reconexão automática BLE
 
-Depois da primeira conexão GATT bem-sucedida com o GT3 MAX configurado localmente, o app habilita a reconexão automática. Em perda inesperada, procura somente o endereço Bluetooth salvo, com varreduras de baixa potência e intervalos de 1, 2, 5, 10, 20 e até 30 segundos. A ação **Parar reconexão** cancela as tentativas e desativa a preferência local.
+Ao abrir o aplicativo, uma busca BLE geral começa automaticamente; não é necessário digitar o endereço do relógio. O endereço salvo é uma pista, não um filtro exclusivo. O app também reconhece nomes GT3 MAX e anúncios NUS; quando nome/endereço não estão disponíveis, lista dispositivos próximos para validação GATT. Uma nova identidade só é salva automaticamente após o fingerprint GATT completo do GT3 MAX Call. Depois da primeira conexão validada, a reconexão automática usa varreduras de baixa potência e intervalos de 1, 2, 5, 10, 20 e até 30 segundos. A ação **Parar reconexão** cancela as tentativas e desativa a preferência local.
 
 A recuperação nesta fase ocorre enquanto o app está em primeiro plano ou quando ele é reaberto/retomado. O Android pode suspender o processo em segundo plano ou após encerramento forçado; recuperação contínua em segundo plano ainda não está implementada. A reconexão restaura o transporte GATT e reinscreve apenas a notificação NUS TX já permitida; não valida sensores e não envia payload ao relógio.
 
@@ -35,12 +35,14 @@ Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALT
 - Solicita permissões Bluetooth conforme a versão do Android.
 - Procura dispositivos BLE próximos.
 - Mostra nome e RSSI, ocultando parte do endereço MAC na interface.
-- Conecta automaticamente somente ao dispositivo cujo endereço Bluetooth foi configurado localmente e enumera serviços, características, propriedades e descritores GATT.
+- Busca dispositivos BLE automaticamente sem exigir MAC; tenta candidatos por nome GT3 MAX, serviço NUS anunciado ou endereço local salvo e só aceita identidade nova após fingerprint GATT completo.
 - Exibe inventário GATT passivo: serviços, características, propriedades e descritores.
 - Após a conexão, lê automaticamente apenas metadados básicos e bateria quando perfis Bluetooth SIG compatíveis anunciam READ.
-- Permite exploração manual aprofundada, após confirmação, de sensores SIG e canais proprietários que anunciam READ ou NOTIFY/INDICATE com CCCD padrão; a operação é limitada e não envia payload de escrita.
+- Permite ativar uma única vez os **testes automáticos GATT**. Depois do consentimento, ao reconhecer o fingerprint completo do GT3 MAX Call, o app percorre sozinho todos os canais compatíveis READ e NOTIFY/INDICATE com CCCD padrão; a exploração manual continua disponível.
 - Inscreve automaticamente somente NUS TX no GT3 MAX Call quando nome e fingerprint GATT completo coincidem; NUS RX continua sem escrita.
-- Registra localmente os bytes recebidos em hexadecimal e fingerprints de tamanho, prefixo e hash; o catálogo persistente conserva metadados, não payload bruto.
+- Registra leituras, status de callbacks, inscrições confirmadas/falhas e valores Bluetooth SIG decodificados (frequência cardíaca, pressão, oximetria, termômetro, ambiente, corrida/cadência, ciclismo e capacidades de composição corporal quando anunciados). HEX bruto é guardado na biblioteca privada somente durante captura consentida; o catálogo de inventário conserva metadados.
+- A tela Testes e descobertas mostra se os testes automáticos estão ativos; a biblioteca detalha UUID de serviço/característica e os resultados preservados.
+- O painel principal acompanha o progresso READ/CCCD por canal, distinguindo respostas, inscrições aguardando dados, notificações, decodificações, falhas e timeouts. Um marcador temporal permite registrar ações feitas fisicamente no relógio e compará-las com os eventos BLE no TXT.
 - Reagrupa quadros AB fragmentados e separa quadros concatenados sem inventar semântica para comandos desconhecidos.
 - Reconhece um quadro de bateria `0x91/0x80` como **candidato**, sem confirmar o valor no GT3 Maxx.
 
@@ -48,11 +50,11 @@ Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALT
 
 - Não envia payloads a características proprietárias do relógio.
 - Não envia comandos pela Nordic UART RX.
-- A única escrita usada fora de payloads do fabricante é a configuração do descritor CCCD para habilitar uma inscrição solicitada; a sincronização de hora usa CTS padrão apenas se o relógio anunciar 0x1805/0x2A2B com WRITE.
+- Nenhuma escrita em característica é executada nesta fase. A única operação de escrita GATT é a configuração do descritor CCCD padrão para ativar uma notificação/indicação permitida; a sincronização CTS está suspensa.
 - Não toca no Secure DFU/OTA, reset, calibração ou configuração.
-- Não interpreta frequência cardíaca, passos, sono, SpO2 ou pressão sem parsers validados.
+- Não atribui semântica a canais proprietários desconhecidos. Há decoders somente para formatos Bluetooth SIG identificados; passos e sono proprietários continuam não interpretados. Body Composition Measurement 0x2A9C também permanece bruto até completar a leitura contextual de flags, unidades, resoluções e pacotes múltiplos.
 - Não acessa servidores ou dados privados do Wearfit Pro.
-- Não persiste ou transmite dados de saúde.
+- Não transmite dados de saúde à rede nem os publica no Health Connect. A captura local de leituras/notifications e HEX exige ativação explícita e permanece no armazenamento privado do app.
 
 A inscrição em notificações altera somente a assinatura padrão do descritor CCCD. Não é uma escrita de payload em uma característica proprietária.
 
@@ -60,13 +62,10 @@ A inscrição em notificações altera somente a assinatura padrão do descritor
 
 O workflow **Android CI** executa testes de política do manifesto, Android Lint, testes unitários e builds `diagnosticDebug` e `companionDebug`. As duas variantes passam por inspeção do manifesto mesclado, verificação da assinatura APK v2 e geração de SHA-256.
 
-Somente o pacote de instalação `relogio-2.0-diagnostic-debug-apk` é publicado. Ele contém:
-- `app-diagnostic-debug.apk` — variante sem Notification Listener e sem permissão de rede;
-- `SHA256SUMS` — hash do APK para conferir a integridade após baixar;
-- `BUILD-INFO.txt` — pacote, versão, variante, commit e limites de uso;
-- `SIGNATURE.txt` — resultado e certificado apresentados pelo `apksigner`.
+A CI publica **dois artefatos separados, com finalidades diferentes**:
 
-O segundo artefato, `android-validation-reports`, reúne Android Lint, manifestos mesclados, permissões, dependências runtime, informações de assinatura e hashes das duas variantes. É um pacote de relatórios técnicos, não outro aplicativo.
+- `relogio-2.0-diagnostic-debug-apk`: contém **somente** o arquivo instalável `app-diagnostic-debug.apk`. Não inclui arquivos TXT, XML, relatórios, certificados ou checksums.
+- `android-validation-reports`: contém relatórios Android Lint, manifestos mesclados, permissões, badging, resultados/certificados de assinatura, hashes SHA-256 e `diagnostic-build-info.txt`. Não contém APK instalável.
 
 A variante `companionDebug` é compilada, testada e auditada, mas **não publicada para sideload**, pois declara Notification Listener. O encaminhamento real de notificações ao GT3 MAX ainda depende da validação do protocolo.
 
@@ -77,11 +76,14 @@ CI verde não equivale a aprovação do Play Protect nem a teste físico no Gala
 ## Como usar a prova de conceito
 
 1. Instale o APK diagnostic debug no Android e ative o Bluetooth.
-2. Toque em **Configurar identificação do GT3 MAX** e informe o endereço Bluetooth da unidade. O endereço é salvo somente nas preferências privadas deste aparelho.
-3. Toque em **Buscar e conectar automaticamente** e conceda a permissão de dispositivos próximos.
-4. O app procura por até 15 segundos e tenta conectar somente quando encontra o endereço configurado, com RSSI acima do limite operacional. A seleção de outro dispositivo é bloqueada.
-5. Após a descoberta, o inventário GATT é passivo. A inscrição NUS TX ocorre automaticamente apenas quando nome e fingerprint completo do perfil GT3 MAX Call coincidem.
-6. O fluxo automático lê somente dados básicos padronizados; para investigar sensores e canais customizados, mantenha a conexão e use **Explorar canais adicionais do GT3 MAX**. Leia o aviso e confirme. Somente READ e inscrições via CCCD são permitidos; nenhum payload de escrita é enviado.
+2. Conceda a permissão de dispositivos próximos quando o Android solicitar.
+3. Ao abrir o aplicativo, a busca BLE geral começa automaticamente; não é necessário digitar o endereço MAC.
+4. Para iniciar outra varredura, toque em **Buscar e conectar automaticamente**. O endereço MAC é opcional.
+5. O app tenta validar candidatos por nome GT3 MAX, serviço NUS anunciado ou endereço salvo. Dispositivos sem nome aparecem na lista; ao selecioná-los, o fingerprint GATT é verificado antes da exploração.
+6. A identidade é salva automaticamente somente após correspondência do fingerprint GATT completo. O endereço manual permanece opcional.
+7. Após a descoberta, o NUS TX é inscrito somente quando o fingerprint completo do perfil GT3 MAX Call coincide.
+8. Na tela principal, toque uma vez em **Ativar testes automáticos ao conectar** e confirme a coleta local. A autorização fica salva até você pausar. A exploração aprofundada inicia nesta conexão e nas próximas conexões com fingerprint completo.
+9. Os valores recebidos aparecem na biblioteca local e no relatório TXT. As janelas de captura são renovadas em blocos de até 10 minutos enquanto o app está em primeiro plano, conectado e com o modo ativo. Ao sair da tela, a renovação fica suspensa e retoma ao voltar; pausar encerra a captura e agenda a desinscrição dos canais automáticos via CCCD padrão.
 
 ## Documentação
 
@@ -110,7 +112,7 @@ A captura local usa NotificationListenerService e acesso especial concedido manu
 
 ## Versão do aplicativo
 
-A versão de desenvolvimento canônica está no arquivo `VERSION`. Para cada APK, confira `BUILD-INFO.txt`, que registra versão, variante, commit de origem da PR e commit efetivamente testado pelo GitHub Actions. Builds debug não são releases de produção.
+A versão de desenvolvimento canônica está no arquivo `VERSION`. Os metadados do build ficam no artefato `android-validation-reports`, no arquivo `diagnostic-build-info.txt`; o artefato instalável contém somente o APK. Builds debug não são releases de produção.
 
 ## Segurança e privacidade
 

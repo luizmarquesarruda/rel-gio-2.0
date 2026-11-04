@@ -102,6 +102,59 @@ class CurrentAndroidContractTests(unittest.TestCase):
         self.assertIn("import androidx.core.content.edit", source)
         self.assertNotIn("identityPrefs.edit()", source)
 
+
+    def test_diagnostic_apk_artifact_contains_only_the_apk(self):
+        workflow = (ROOT / ".github/workflows/android-ci.yml").read_text(encoding="utf-8")
+        apk_publish = workflow.split("- name: Publish diagnostic APK only", 1)[1].split(
+            "- name: Publish Android validation reports", 1
+        )[0]
+        reports_publish = workflow.split(
+            "- name: Publish Android validation reports", 1
+        )[1]
+
+        self.assertIn("name: relogio-2.0-diagnostic-debug-apk", apk_publish)
+        self.assertIn(
+            "path: app/build/outputs/apk/diagnostic/debug/app-diagnostic-debug.apk",
+            apk_publish,
+        )
+        self.assertNotIn("build/distributions", apk_publish)
+        self.assertNotIn(".txt", apk_publish)
+        self.assertNotIn(".xml", apk_publish)
+
+        self.assertIn("name: android-validation-reports", reports_publish)
+        self.assertIn("app/build/reports/security/**", reports_publish)
+        self.assertIn('cat > "$REPORT_DIR/diagnostic-build-info.txt"', workflow)
+        self.assertNotIn('cat > "$PACKAGE_DIR/BUILD-INFO.txt"', workflow)
+        self.assertIn(
+            "group: android-ci-${{ github.event.pull_request.number || github.ref_name }}",
+            workflow,
+        )
+        self.assertNotIn("group: android-ci-${{ github.event.pull_request.number || github.ref }}", workflow)
+
+    def test_ci_runs_once_for_feature_prs_and_stops_after_cancellation(self):
+        workflow = (ROOT / ".github/workflows/android-ci.yml").read_text(encoding="utf-8")
+        triggers = workflow.split("concurrency:", 1)[0]
+        self.assertIn("pull_request:", triggers)
+        self.assertIn("push:", triggers)
+        push_triggers = triggers.split("pull_request:", 1)[0]
+        pull_request_triggers = triggers.split("pull_request:", 1)[1]
+        self.assertIn("      - main", push_triggers)
+        self.assertNotIn("      - 'fix/**'", push_triggers)
+        self.assertIn("      - 'fix/**'", pull_request_triggers)
+
+        for step in (
+            "Run unit tests and assemble both variants",
+            "Enforce privacy dependency and permission guardrails",
+            "Audit merged APK manifests, signatures and hashes",
+            "Prepare diagnostic APK metadata in the reports artifact",
+            "Publish Android validation reports",
+        ):
+            with self.subTest(step=step):
+                start = workflow.index("- name: " + step)
+                next_step = workflow.find("\n      - name:", start + 1)
+                block = workflow[start:] if next_step < 0 else workflow[start:next_step]
+                self.assertIn("!cancelled()", block)
+
     def test_workflow_uses_current_node24_action_majors(self):
         workflow = (ROOT / ".github/workflows/android-ci.yml").read_text(encoding="utf-8")
         for current in (
@@ -124,7 +177,8 @@ class CurrentAndroidContractTests(unittest.TestCase):
     def test_readme_matches_current_read_only_gatt_flow_and_version_source(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         self.assertNotIn("Conecta ao dispositivo escolhido", readme)
-        self.assertIn("endereço Bluetooth foi configurado localmente", readme)
+        self.assertIn("não é necessário digitar o endereço do relógio", readme)
+        self.assertIn("O endereço salvo é uma pista, não um filtro exclusivo", readme)
         self.assertNotIn("Permite leitura explícita de características", readme)
         self.assertNotIn("Use **Ler**", readme)
         self.assertNotIn("Use **Ouvir**", readme)
