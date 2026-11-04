@@ -1,6 +1,7 @@
 package com.luizmarquesarruda.relogio20.notifications
 
 import android.app.Notification
+import android.os.SystemClock
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 
@@ -8,6 +9,16 @@ class NotificationCaptureService : NotificationListenerService() {
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
         NotificationCaptureStore.remove(sbn.key)
+    }
+
+    override fun onListenerDisconnected() {
+        NotificationCaptureStore.clear()
+        super.onListenerDisconnected()
+    }
+
+    override fun onDestroy() {
+        NotificationCaptureStore.clear()
+        super.onDestroy()
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
@@ -51,7 +62,8 @@ class NotificationCaptureService : NotificationListenerService() {
                 appLabel = appLabel,
                 title = title,
                 body = body,
-                receivedAtMillis = System.currentTimeMillis()
+                receivedAtMillis = System.currentTimeMillis(),
+                capturedAtElapsedRealtimeMillis = SystemClock.elapsedRealtime()
             )
         )
     }
