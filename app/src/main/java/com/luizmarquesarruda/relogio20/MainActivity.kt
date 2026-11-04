@@ -229,6 +229,7 @@ class MainActivity : ComponentActivity() {
         private const val MAX_LOG_LINES = 250
         private const val AUTOMATIC_GATT_CAPTURE_SECONDS = 600
         private const val KEY_AUTOMATIC_SESSION_ID = "automatic_capture_session_id"
+        private const val KEY_AUTOMATIC_SESSION_OWNED = "automatic_capture_session_owned"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -549,7 +550,10 @@ class MainActivity : ComponentActivity() {
                     automaticGattProbeStartedForConnection &&
                     automaticSessionId != null
                 ) {
-                    automaticGattDiscoveryPrefs.edit { remove(KEY_AUTOMATIC_SESSION_ID) }
+                    automaticGattDiscoveryPrefs.edit {
+                        remove(KEY_AUTOMATIC_SESSION_ID)
+                        remove(KEY_AUTOMATIC_SESSION_OWNED)
+                    }
                     if (ensureAutomaticCaptureSession()) {
                         appendLog("Janela automática de captura renovada; coleta continua até pausar ou desconectar.")
                     }
@@ -1811,10 +1815,11 @@ class MainActivity : ComponentActivity() {
         if (active != null) {
             automaticGattDiscoveryPrefs.edit {
                 putString(KEY_AUTOMATIC_SESSION_ID, active.id)
+                putBoolean(KEY_AUTOMATIC_SESSION_OWNED, false)
             }
             appendLog(
-                "Sessão de captura existente será reutilizada pela coleta automática; " +
-                    "o modo automático poderá renová-la e encerrá-la ao pausar."
+                "Sessão de captura manual existente será reutilizada sem assumir sua propriedade. " +
+                    "Ao pausar a coleta automática, o teste manual não será encerrado."
             )
             return true
         }
@@ -1836,6 +1841,7 @@ class MainActivity : ComponentActivity() {
 
         automaticGattDiscoveryPrefs.edit {
             putString(KEY_AUTOMATIC_SESSION_ID, created.id)
+            putBoolean(KEY_AUTOMATIC_SESSION_OWNED, true)
         }
         discoveryLibraryStore.recordDiscovery(
             title = "Captura automática GATT iniciada",
@@ -1853,11 +1859,20 @@ class MainActivity : ComponentActivity() {
         val ownedSessionId = automaticGattDiscoveryPrefs.getString(KEY_AUTOMATIC_SESSION_ID, null)
             ?: return
         val active = discoveryLibraryStore.activeSession(System.currentTimeMillis())
-        if (active?.id == ownedSessionId) {
+        val sessionWasCreatedAutomatically = automaticGattDiscoveryPrefs.getBoolean(
+            KEY_AUTOMATIC_SESSION_OWNED,
+            false
+        )
+        if (active?.id == ownedSessionId && sessionWasCreatedAutomatically) {
             discoveryLibraryStore.finishTestSession(System.currentTimeMillis(), reason)
             appendLog("Sessão automática de captura finalizada: " + reason)
+        } else if (active?.id == ownedSessionId) {
+            appendLog("Sessão manual compartilhada preservada; somente a coleta automática foi desativada.")
         }
-        automaticGattDiscoveryPrefs.edit { remove(KEY_AUTOMATIC_SESSION_ID) }
+        automaticGattDiscoveryPrefs.edit {
+            remove(KEY_AUTOMATIC_SESSION_ID)
+            remove(KEY_AUTOMATIC_SESSION_OWNED)
+        }
         if (::captureSessionView.isInitialized) updatePhoneClock()
     }
 
