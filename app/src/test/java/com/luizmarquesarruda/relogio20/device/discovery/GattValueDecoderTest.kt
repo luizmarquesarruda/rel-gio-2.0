@@ -130,10 +130,17 @@ class GattValueDecoderTest {
         assertTrue(rsc.any { it.metric == "Cadência instantânea RSC" && it.value == "90 passos/min" })
         assertTrue(rsc.any { it.metric == "Comprimento de passada RSC" && it.value == "3.00 m" })
         assertTrue(rsc.any { it.metric == "Distância total RSC" && it.value == "10.0 m" })
+        assertTrue(rsc.any { it.metric == "Estado de deslocamento RSC" && it.value == "corrida" })
+
+        val walking = GattValueDecoder.decode(
+            "1814", "2a53",
+            byteArrayOf(0x00, 0x00, 0x01, 90)
+        )
+        assertTrue(walking.any { it.metric == "Estado de deslocamento RSC" && it.value == "caminhada" })
 
         val csc = GattValueDecoder.decode(
             "1816", "2a5b",
-            byteArrayOf(0x03, 0x10, 0, 0, 0, 0, 0x00, 0x04, 0x02, 0x00)
+            byteArrayOf(0x03, 0x10, 0, 0, 0, 0x00, 0x04, 0x04, 0x00, 0x00, 0x00)
         )
         assertTrue(csc.any { it.metric == "Revoluções acumuladas da roda CSC" && it.value == "16" })
         assertTrue(csc.any { it.metric == "Revoluções acumuladas do pedivela CSC" && it.value == "4" })
