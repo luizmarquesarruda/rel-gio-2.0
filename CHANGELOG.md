@@ -1,5 +1,15 @@
 # Changelog
 
+## Não lançado — painel de progresso e correlação temporal BLE — 04/11/2026
+
+- Adicionado painel na tela principal com progresso da exploração por operação READ/CCCD, incluindo concluídas, respondidas, inscrições confirmadas, notificações, decodificações, falhas e timeouts.
+- Canais são classificados somente conforme evidências observadas; inscrição sem tráfego fica como "inscrito, aguardando dados", sem inferir defeito ou ausência do sensor.
+- Desconexão durante a exploração classifica itens pendentes como não executados.
+- Adicionado marcador temporal manual para ações realizadas no relógio; os eventos são incluídos no TXT como marcadores de usuário, separados de medições e dados do sensor.
+- Testes de unidade adicionados para estados e contadores do progresso GATT.
+- CI e teste físico no GT3 MAX/Galaxy A06: **não validados nesta revisão**.
+
+
 ## Não lançado — rastreabilidade de valores decodificados — 04/11/2026
 
 - Registros decodificados por READ/NOTIFY Bluetooth SIG agora recebem o `sessionId` da captura ativa. Valores de sensores deixam de ser gravados como descobertas sem vínculo à sessão.

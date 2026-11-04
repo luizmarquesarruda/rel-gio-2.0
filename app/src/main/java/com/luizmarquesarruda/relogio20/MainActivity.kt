@@ -24,6 +24,8 @@ import com.luizmarquesarruda.relogio20.device.discovery.SafeGattExplorationPlan
 import com.luizmarquesarruda.relogio20.device.discovery.AutomaticGattDiscoveryPolicy
 import com.luizmarquesarruda.relogio20.device.discovery.AutomaticCaptureSessionPolicy
 import com.luizmarquesarruda.relogio20.device.discovery.GattValueDecoder
+import com.luizmarquesarruda.relogio20.device.discovery.GattExplorationProgressTracker
+import com.luizmarquesarruda.relogio20.device.discovery.GattProgressOperation
 import com.luizmarquesarruda.relogio20.device.discovery.BlePacketFingerprintAnalyzer
 import com.luizmarquesarruda.relogio20.device.discovery.PassiveBleObservationTracker
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbStreamDecoder
@@ -88,6 +90,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var deepScanButton: Button
     private lateinit var automaticGattDiscoveryButton: Button
     private lateinit var captureSessionView: TextView
+    private lateinit var gattProgressView: TextView
+    private val gattExplorationProgress = GattExplorationProgressTracker()
     private lateinit var logView: TextView
     private lateinit var clockView: TextView
     private lateinit var stepsView: TextView
@@ -414,6 +418,22 @@ class MainActivity : ComponentActivity() {
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
         ).apply { bottomMargin = dp(10) })
 
+        gattProgressView = TextView(this).apply {
+            text = "Exploração GATT: aguardando início."
+            textSize = 12f
+            setTextColor(0xFF34495E.toInt())
+            setPadding(dp(12), dp(10), dp(12), dp(10))
+            background = roundedSurface(0xFFFFFFFF.toInt(), 0xFFE1E7EF.toInt())
+        }
+        root.addView(gattProgressView, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply { bottomMargin = dp(5) })
+        root.addView(makeButton("Registrar ação realizada no relógio") {
+            registerWearableActionMarker()
+        }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
+        ).apply { bottomMargin = dp(8) })
+
         addText(root, "Saúde e integração", 17f, true)
         stepsView = TextView(this).apply {
             text = "Passos hoje: aguardando dados da Conexão Saúde"
@@ -534,6 +554,7 @@ class MainActivity : ComponentActivity() {
         }
         setContentView(pageScroll)
         updateHealthConnectPermissionUi()
+        updateGattProgressUi()
     }
 
     private fun updatePhoneClock() {
@@ -567,6 +588,67 @@ class MainActivity : ComponentActivity() {
                     "CAPTURA BLE ATIVA • " + time + " restantes • " + captured + " registros"
                 captureSessionView.visibility = View.VISIBLE
             }
+        }
+    }
+
+    private fun updateGattProgressUi() {
+        if (!::gattProgressView.isInitialized) return
+        val snapshot = gattExplorationProgress.snapshot()
+        val details = snapshot.channelSummary()
+        gattProgressView.text = snapshot.summary() +
+            if (details.isBlank()) "" else "\n" + details
+    }
+
+    private fun registerWearableActionMarker() {
+        val actions = arrayOf(
+            "Abri a tela de frequência cardíaca",
+            "Iniciei medição de SpO₂",
+            "Iniciei medição de pressão",
+            "Iniciei medição de temperatura",
+            "Iniciei um treino",
+            "Abri a tela de sono/histórico",
+            "Outra ação"
+        )
+        AlertDialog.Builder(this)
+            .setTitle("Marcar ação no relógio")
+            .setMessage("Registre o momento da ação feita fisicamente. O horário será usado para comparar com os eventos BLE recebidos.")
+            .setItems(actions) { _, which ->
+                if (which == actions.lastIndex) {
+                    val input = EditText(this).apply {
+                        hint = "Descreva a ação"
+                        setSingleLine(true)
+                    }
+                    AlertDialog.Builder(this)
+                        .setTitle("Outra ação do relógio")
+                        .setView(input)
+                        .setNegativeButton("Cancelar", null)
+                        .setPositiveButton("Registrar") { _, _ ->
+                            val value = input.text.toString().trim().take(120)
+                            if (value.isNotBlank()) persistWearableActionMarker(value)
+                        }
+                        .show()
+                } else {
+                    persistWearableActionMarker(actions[which])
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun persistWearableActionMarker(action: String) {
+        val now = System.currentTimeMillis()
+        val saved = discoveryLibraryStore.recordDiscovery(
+            title = "Ação manual no relógio • " + action,
+            detail = "Marcador temporal informado pelo usuário para correlação com leituras e notificações BLE. Não representa uma medição confirmada.",
+            nowMillis = now,
+            source = "USER_WEARABLE_ACTION",
+            confidence = "MARCADOR_TEMPORAL_MANUAL"
+        )
+        if (saved) {
+            appendLog("Marcador temporal registrado: " + action + " • " +
+                SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault()).format(Date(now)))
+        } else {
+            appendLog("Marcador temporal não foi salvo: biblioteca indisponível, corrompida ou com schema incompatível.")
         }
     }
 
@@ -1248,6 +1330,8 @@ class MainActivity : ComponentActivity() {
         }
         connectionFromDiscoveryCandidate = discoveryCandidate && !savedIdentityMatches
         automaticGattProbeStartedForConnection = false
+        gattExplorationProgress.begin(emptyList())
+        updateGattProgressUi()
         if (!hasBlePermissions()) {
             if (automaticAttempt) {
                 updateStatus("Permissão Bluetooth necessária para reconectar.")
@@ -1372,6 +1456,8 @@ class MainActivity : ComponentActivity() {
             } else if (status != BluetoothGatt.GATT_SUCCESS) {
                 isGattDisconnecting = false
                 isGattConnected = false
+                gattExplorationProgress.markRemainingSkipped()
+                updateGattProgressUi()
                 cancelConnectionTimeout()
                 resetGattOperationQueue()
                 pendingNotifications.clear()
@@ -1393,6 +1479,8 @@ class MainActivity : ComponentActivity() {
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 isGattDisconnecting = false
                 isGattConnected = false
+                gattExplorationProgress.markRemainingSkipped()
+                updateGattProgressUi()
                 cancelConnectionTimeout()
                 deviceBatteryView.text = "Bateria do relógio: sem sessão BLE ativa"
                 pendingCurrentTimeWriteKey = null
@@ -1548,6 +1636,13 @@ class MainActivity : ComponentActivity() {
                 }
             } else {
                 val wasPending = pendingNotifications.remove(key)
+                if (wasPending) {
+                    gattExplorationProgress.markSubscriptionResult(
+                        characteristic.service.uuid.toString(), characteristic.uuid.toString(),
+                        status == BluetoothGatt.GATT_SUCCESS
+                    )
+                    updateGattProgressUi()
+                }
                 if (wasPending && status == BluetoothGatt.GATT_SUCCESS) {
                     activeNotifications.add(key)
                     if (pendingAutomaticNotifications.remove(key)) {
@@ -2085,6 +2180,13 @@ class MainActivity : ComponentActivity() {
             )
         }
         val plan = SafeGattExplorationPlan.buildDeep(inventory)
+        val operationsToRun = plan.filter { operation ->
+            val attemptKey = operation.serviceUuid.lowercase() + "/" +
+                operation.characteristicUuid.lowercase() + "/" + operation.kind.name
+            attemptKey !in deepExplorationAttempted
+        }
+        gattExplorationProgress.begin(operationsToRun)
+        updateGattProgressUi()
         if (plan.isEmpty()) {
             appendLog("Exploração concluída: nenhum canal adicional elegível no inventário atual.")
             discoveryLibraryStore.recordDiscovery(
@@ -2096,19 +2198,24 @@ class MainActivity : ComponentActivity() {
             )
             return
         }
+        if (operationsToRun.isEmpty()) {
+            appendLog("Exploração GATT: todos os canais elegíveis desta conexão já foram testados.")
+            updateGattProgressUi()
+            return
+        }
         val probeSource = if (automatic) "AUTO_GATT_PROBE" else "MANUAL_GATT_PROBE"
         appendLog(
             (if (automatic) "Exploração GATT automática iniciada: " else "Exploração GATT manual iniciada: ") +
-                plan.size + " operações elegíveis. Somente READ e CCCD padrão; escritas de payload continuam bloqueadas."
+                operationsToRun.size + " operações elegíveis. Somente READ e CCCD padrão; escritas de payload continuam bloqueadas."
         )
         discoveryLibraryStore.recordDiscovery(
             title = if (automatic) "Exploração automática iniciada" else "Exploração manual iniciada",
-            detail = plan.size.toString() + " operações elegíveis no inventário GATT.",
+            detail = operationsToRun.size.toString() + " operações elegíveis no inventário GATT.,
             nowMillis = System.currentTimeMillis(),
             source = probeSource,
             confidence = "OPERACOES_PLANEJADAS"
         )
-        plan.forEach { operation ->
+        operationsToRun.forEach { operation ->
             val attemptKey = operation.serviceUuid.lowercase() + "/" +
                 operation.characteristicUuid.lowercase() + "/" + operation.kind.name
             if (!deepExplorationAttempted.add(attemptKey)) return@forEach
@@ -2129,6 +2236,11 @@ class MainActivity : ComponentActivity() {
                     enqueueGattOperation(
                         gattOperationKey(operation.serviceUuid, operation.characteristicUuid, "READ"),
                         onTimeout = {
+                            gattExplorationProgress.markTimeout(
+                                operation.serviceUuid, operation.characteristicUuid,
+                                GattProgressOperation.READ
+                            )
+                            updateGattProgressUi()
                             appendLog("Leitura GATT somente READ expirou: " + operation.characteristicUuid)
                             discoveryLibraryStore.recordDiscovery(
                                 title = "Leitura GATT expirou • " + operation.characteristicUuid,
@@ -2141,10 +2253,26 @@ class MainActivity : ComponentActivity() {
                     ) {
                         if (bluetoothGatt !== gatt || isGattDisconnecting) false
                         else if (automatic && !automaticGattDiscoveryEnabled) {
+                            gattExplorationProgress.markSkipped(
+                                operation.serviceUuid, operation.characteristicUuid,
+                                GattProgressOperation.READ
+                            )
+                            updateGattProgressUi()
                             appendLog("Leitura automática cancelada: testes automáticos foram pausados.")
                             false
                         } else {
+                            gattExplorationProgress.markStarted(
+                                operation.serviceUuid, operation.characteristicUuid,
+                                GattProgressOperation.READ
+                            )
                             val started = gatt.readCharacteristic(characteristic)
+                            if (!started) {
+                                gattExplorationProgress.markRejected(
+                                    operation.serviceUuid, operation.characteristicUuid,
+                                    GattProgressOperation.READ
+                                )
+                            }
+                            updateGattProgressUi()
                             appendLog(if (started) {
                                 (if (automatic) "Leitura automática somente READ solicitada: " else "Leitura manual somente READ solicitada: ") +
                                     operation.serviceUuid + "/" + operation.characteristicUuid
@@ -2179,6 +2307,8 @@ class MainActivity : ComponentActivity() {
         val serviceUuid = characteristic.service.uuid.toString()
         val characteristicUuid = characteristic.uuid.toString()
         if (status != BluetoothGatt.GATT_SUCCESS) {
+            gattExplorationProgress.markReadResult(serviceUuid, characteristicUuid, false, 0, 0)
+            updateGattProgressUi()
             appendLog("Leitura GATT falhou: " + characteristicUuid + " | status=" + status)
             discoveryLibraryStore.recordDiscovery(
                 title = "Leitura GATT falhou • " + characteristicUuid,
@@ -2209,6 +2339,8 @@ class MainActivity : ComponentActivity() {
         )
 
         if (value.isEmpty()) {
+            gattExplorationProgress.markReadResult(serviceUuid, characteristicUuid, true, 0, 0)
+            updateGattProgressUi()
             discoveryLibraryStore.recordDiscovery(
                 title = "Leitura concluída sem bytes • " + characteristicUuid,
                 detail = "O relógio respondeu ao READ com comprimento zero. Isso não prova ausência de função; o canal pode depender de notificações ou de uma sequência ainda não identificada.",
@@ -2220,6 +2352,10 @@ class MainActivity : ComponentActivity() {
         }
 
         val decoded = GattValueDecoder.decode(serviceUuid, characteristicUuid, value)
+        gattExplorationProgress.markReadResult(
+            serviceUuid, characteristicUuid, true, value.size, decoded.size
+        )
+        updateGattProgressUi()
         if (decoded.isEmpty()) {
             discoveryLibraryStore.recordDiscovery(
                 title = "Valor GATT recebido • " + characteristicUuid,
@@ -2430,6 +2566,11 @@ class MainActivity : ComponentActivity() {
 
         val descriptor = characteristic.getDescriptor(cccdUuid)
         if (descriptor == null) {
+            gattExplorationProgress.markRejected(
+                characteristic.service.uuid.toString(), characteristic.uuid.toString(),
+                GattProgressOperation.SUBSCRIBE
+            )
+            updateGattProgressUi()
             appendLog("Sem CCCD (0x2902): não foi possível ativar " +
                 characteristic.uuid)
             return
@@ -2447,6 +2588,11 @@ class MainActivity : ComponentActivity() {
         enqueueGattOperation(
             gattOperationKey(characteristic.service.uuid.toString(), characteristic.uuid.toString(), "CCCD"),
             onTimeout = {
+                gattExplorationProgress.markTimeout(
+                    characteristic.service.uuid.toString(), characteristic.uuid.toString(),
+                    GattProgressOperation.SUBSCRIBE
+                )
+                updateGattProgressUi()
                 pendingNotifications.remove(key)
                 pendingAutomaticNotifications.remove(key)
                 automaticNotificationKeys.remove(key)
@@ -2466,8 +2612,17 @@ class MainActivity : ComponentActivity() {
                 appendLog("Inscrição automática cancelada: coleta automática foi pausada.")
                 false
             } else {
+                gattExplorationProgress.markStarted(
+                    characteristic.service.uuid.toString(), characteristic.uuid.toString(),
+                    GattProgressOperation.SUBSCRIBE
+                )
                 val localEnabled = gatt.setCharacteristicNotification(characteristic, true)
                 if (!localEnabled) {
+                    gattExplorationProgress.markRejected(
+                        characteristic.service.uuid.toString(), characteristic.uuid.toString(),
+                        GattProgressOperation.SUBSCRIBE
+                    )
+                    updateGattProgressUi()
                     pendingNotifications.remove(key)
                     pendingAutomaticNotifications.remove(key)
                     appendLog("Android recusou a inscrição local em " + characteristic.uuid)
@@ -2489,6 +2644,11 @@ class MainActivity : ComponentActivity() {
                     } else {
                         pendingNotifications.remove(key)
                         pendingAutomaticNotifications.remove(key)
+                        gattExplorationProgress.markRejected(
+                            characteristic.service.uuid.toString(), characteristic.uuid.toString(),
+                            GattProgressOperation.SUBSCRIBE
+                        )
+                        updateGattProgressUi()
                         gatt.setCharacteristicNotification(characteristic, false)
                         appendLog("O Android recusou iniciar a inscrição CCCD para " + characteristic.uuid)
                         false
@@ -2626,8 +2786,13 @@ class MainActivity : ComponentActivity() {
             batteryCandidatePercent = battery
         )
 
+        val decodedNotificationValues = GattValueDecoder.decode(serviceUuid, uuid, value)
+        gattExplorationProgress.observeNotification(
+            serviceUuid, uuid, value.size, decodedNotificationValues.size, observedAtMillis
+        )
+        updateGattProgressUi()
         if (discoveryLibraryStore.activeSession(observedAtMillis) != null) {
-            GattValueDecoder.decode(serviceUuid, uuid, value).forEach { item ->
+            decodedNotificationValues.forEach { item ->
                 discoveryLibraryStore.recordSessionDiscovery(
                     title = "Dado BLE observado • " + item.metric,
                     detail = item.value + " • origem=" + item.source +

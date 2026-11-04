@@ -1,3 +1,13 @@
+## 04/11/2026 — Progresso GATT e marcadores temporais
+
+- Adicionado rastreador em memória por operação READ/CCCD para apresentar total planejado, concluído, respondido, inscrito, notificações observadas, valores decodificados, falhas, timeouts e itens na fila.
+- Cada canal recebe classificação baseada apenas em evidências de transporte. CCCD confirmado sem notificação é exibido como "inscrito, aguardando dados"; não é interpretado como sensor ausente.
+- Operações que ainda estavam na fila/em execução no momento da desconexão são marcadas como não executadas.
+- Adicionado marcador temporal manual para registrar ações feitas fisicamente no relógio. Eventos são exportados no TXT com fonte distinta e não são confundidos com medições BLE.
+- Testes unitários cobrem resumo de progresso, estados de canal silencioso/time-out/falha e interrupção da exploração.
+- Não foram adicionadas escritas GATT de payload, comandos de medição, serviços em segundo plano ou novas permissões.
+- CI e validação física no GT3 MAX/Galaxy A06: **não validadas nesta alteração**.
+
 ## 04/11/2026 — Vinculação dos valores decodificados à sessão de captura
 
 - Auditoria identificou que os payloads GATT brutos já exigiam sessão ativa, mas registros decodificados Bluetooth SIG eram gravados pela rotina genérica de descobertas, sem `sessionId`.

@@ -142,3 +142,12 @@ Até obter SDK oficial, protocolo documentado ou captura comparativa reproduzív
 - Comunicação física BLE com o GT3 MAX no Galaxy A06: **não validada**.
 - Correlação dos valores recebidos com a tela do relógio/Wearfit Pro em sessões repetidas: **não validada**.
 - Escrita no Health Connect: permanece bloqueada até fonte, semântica, unidade e origem serem validadas.
+
+
+## Progresso e correlação temporal
+
+A tela principal apresenta o progresso da exploração aprofundada por operação GATT: total planejado, operações concluídas, READ respondidos, CCCD confirmados, notificações observadas, valores Bluetooth SIG decodificados, falhas e timeouts. A lista resumida classifica cada característica como na fila, em execução, READ respondido, inscrito aguardando dados, bytes observados sem semântica confirmada, dado decodificado, falha ou timeout.
+
+A ausência de notificação após CCCD confirmado é apresentada como **inscrito, aguardando dados**, não como sensor inexistente ou defeituoso. Uma leitura sem bytes é distinta de timeout. Desconectar durante a exploração marca operações ainda não executadas, sem apresentá-las como falha do relógio.
+
+O botão **Registrar ação realizada no relógio** cria um marcador temporal local (por exemplo, início de medição de SpO₂ ou pressão). O marcador é exportado no TXT com timestamp e fonte USER_WEARABLE_ACTION; ele não representa leitura nem valor de sensor. A comparação temporal com READ/NOTIFY pode indicar correlação, mas não prova causalidade nem revela automaticamente o comando proprietário.
