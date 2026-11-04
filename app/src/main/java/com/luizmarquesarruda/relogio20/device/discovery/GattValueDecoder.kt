@@ -94,8 +94,10 @@ internal object GattValueDecoder {
         )
 
         val contactBits = (flags ushr 1) and 0x03
+        // Bit 2 = contact supported; bit 1 = contact detected.
+        // 0b10 means supported without contact; 0b11 means supported with contact.
         when (contactBits) {
-            0x01 -> results += DecodedGattValue("Contato do sensor", "Sem contato detectado")
+            0x02 -> results += DecodedGattValue("Contato do sensor", "Sem contato detectado")
             0x03 -> results += DecodedGattValue("Contato do sensor", "Contato detectado")
         }
 
