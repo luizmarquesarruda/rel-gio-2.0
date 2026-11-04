@@ -82,6 +82,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var scanButton: Button
     private lateinit var disconnectButton: Button
     private lateinit var deepScanButton: Button
+    private lateinit var captureSessionView: TextView
     private lateinit var logView: TextView
     private lateinit var clockView: TextView
     private lateinit var stepsView: TextView
@@ -359,7 +360,20 @@ class MainActivity : ComponentActivity() {
         }
         root.addView(deepScanButton, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(52)
-        ).apply { bottomMargin = dp(8) })
+        ).apply { bottomMargin = dp(5) })
+
+        captureSessionView = TextView(this).apply {
+            visibility = View.GONE
+            textSize = 13f
+            setTextColor(0xFF174B3B.toInt())
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setPadding(dp(12), dp(10), dp(12), dp(10))
+            background = roundedSurface(0xFFE5F2EC.toInt(), 0xFFB7D6C7.toInt())
+            contentDescription = "Contador regressivo da captura BLE em andamento"
+        }
+        root.addView(captureSessionView, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply { bottomMargin = dp(10) })
 
         addText(root, "Saúde e integração", 17f, true)
         stepsView = TextView(this).apply {
@@ -486,6 +500,21 @@ class MainActivity : ComponentActivity() {
     private fun updatePhoneClock() {
         clockView.text = "Hora do celular: " +
             SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(Date())
+
+        if (::captureSessionView.isInitialized) {
+            val nowMillis = System.currentTimeMillis()
+            val session = discoveryLibraryStore.activeSession(nowMillis)
+            if (session == null) {
+                captureSessionView.visibility = View.GONE
+            } else {
+                val remaining = session.remainingSeconds(nowMillis)
+                val time = String.format(Locale.ROOT, "%02d:%02d", remaining / 60, remaining % 60)
+                val captured = discoveryLibraryStore.recordsForSession(session.id)
+                captureSessionView.text =
+                    "CAPTURA BLE ATIVA • " + time + " restantes • " + captured + " registros"
+                captureSessionView.visibility = View.VISIBLE
+            }
+        }
     }
 
     private fun connectHealthConnect() {

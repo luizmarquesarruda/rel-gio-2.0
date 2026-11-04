@@ -121,3 +121,5 @@ A biblioteca persiste inventários GATT como descobertas. Leituras GATT e notifi
 - O inventário GATT completo também fica recolhido por padrão; UUIDs e propriedades aparecem somente quando o usuário abre “Inventário GATT”.
 
 - Atalhos de laboratório e biblioteca foram posicionados logo após o cartão de conexão e a identificação local do GT3 MAX; o resumo do Health Connect passou para a seção própria “Saúde e integração”.
+
+- Enquanto a captura cronometrada estiver ativa, o painel principal mostra um indicador compacto com tempo restante e quantidade de registros, permitindo acompanhar o prazo ao voltar para a tela de conexão/exploração manual.

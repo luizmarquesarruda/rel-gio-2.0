@@ -585,3 +585,5 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Corrigido o estado visual do contador: o resumo `00:00` só aparece quando a sessão recém-encerrada corresponde ao identificador ativo da tela. Ao preparar a próxima sessão, volta a aparecer a duração selecionada.
 
 - Ajustada a ordem da página principal: conexão e identidade, laboratório/biblioteca, depois Saúde e integração e, por fim, mais recursos. Isso prioriza a tarefa BLE sem remover os dados agregados do Health Connect.
+
+- Adicionado ao painel principal um indicador de captura BLE ativa com contador regressivo e quantidade de registros. O indicador é atualizado pelo ticker da tela; a validade da captura continua protegida pelo deadline persistido no armazenamento.
