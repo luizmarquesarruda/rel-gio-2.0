@@ -531,3 +531,12 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Interface ganhou ação explícita para exploração manual e melhor quebra/altura de botões. Health Connect mantém a atualização visual, mas o log não repete o mesmo total de passos a cada consulta.
 - A análise continua sem firmware binário específico. Hora/data e temperatura não foram corrigidas por ausência de CTS e de serviço padrão de termômetro na captura; o caminho proprietário segue bloqueado até captura comparativa/artefato original.
 - CI do HEAD desta auditoria e testes físicos no Galaxy A06/Android 16 com GT3 MAX Call: **não validados** até nova execução.
+
+
+## 04/11/2026 — Ajuste de privacidade da exploração aprofundada
+
+- Auditoria de escopo corrigiu o comportamento para não inscrever sensores de saúde automaticamente ao conectar. A exploração automática foi limitada a metadados básicos e bateria em perfis SIG com READ.
+- Sensores padronizados (FC, pressão arterial, SpO2, termômetro e sensores ambientais) e canais proprietários só são lidos/inscritos após confirmação explícita do usuário pela ação “Explorar canais adicionais do GT3 MAX”.
+- Exploração aprofundada continua limitada a 24 operações, somente READ e CCCD padrão; NUS RX, NUS TX nessa varredura, DFU/FE59 e identificadores seriais permanecem excluídos.
+- CI #237 falhou antes da compilação porque o teste Python antigo exigia que não existisse callback `onCharacteristicRead`, incompatível com o novo fluxo de leitura GATT serializado. O contrato do teste foi atualizado para exigir callback e watchdog; novo resultado de CI para o HEAD posterior ainda não foi registrado.
+- Nenhum teste físico, sincronização proprietária de hora/data ou leitura de temperatura corporal/clima foi confirmado nesta rodada.
