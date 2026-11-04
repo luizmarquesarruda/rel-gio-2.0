@@ -21,6 +21,8 @@ import com.luizmarquesarruda.relogio20.data.discovery.DiscoveryLibraryReadResult
 import com.luizmarquesarruda.relogio20.device.discovery.GattCharacteristicRecord
 import com.luizmarquesarruda.relogio20.device.discovery.GattServiceRecord
 import com.luizmarquesarruda.relogio20.device.discovery.SafeGattExplorationPlan
+import com.luizmarquesarruda.relogio20.device.discovery.AutomaticGattDiscoveryPolicy
+import com.luizmarquesarruda.relogio20.device.discovery.GattValueDecoder
 import com.luizmarquesarruda.relogio20.device.discovery.BlePacketFingerprintAnalyzer
 import com.luizmarquesarruda.relogio20.device.discovery.PassiveBleObservationTracker
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbStreamDecoder
@@ -83,6 +85,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var scanButton: Button
     private lateinit var disconnectButton: Button
     private lateinit var deepScanButton: Button
+    private lateinit var automaticGattDiscoveryButton: Button
     private lateinit var captureSessionView: TextView
     private lateinit var logView: TextView
     private lateinit var clockView: TextView
@@ -158,6 +161,12 @@ class MainActivity : ComponentActivity() {
     private var lastConnectedDeviceName: String? = null
     private var lastConnectedDeviceAddress: String? = null
     private val identityPrefs by lazy { getSharedPreferences("device_identity", MODE_PRIVATE) }
+    private val automaticGattDiscoveryPrefs by lazy {
+        getSharedPreferences("automatic_gatt_discovery", MODE_PRIVATE)
+    }
+    private val automaticGattDiscoveryEnabled: Boolean
+        get() = automaticGattDiscoveryPrefs.getBoolean("enabled", false)
+    private var automaticGattProbeStartedForConnection = false
     private val expectedWatchAddress: String? get() = BleDeviceIdentity.normalize(identityPrefs.getString("gt3_max_address", null))
     private var autoConnectAttempted = false
     private var initialDiscoveryPending = true
@@ -214,6 +223,8 @@ class MainActivity : ComponentActivity() {
         private const val GATT_OPERATION_TIMEOUT_MS = 8_000L
         private const val AUTO_CONNECT_MIN_RSSI = -90
         private const val MAX_LOG_LINES = 250
+        private const val AUTOMATIC_GATT_CAPTURE_SECONDS = 600
+        private const val KEY_AUTOMATIC_SESSION_ID = "automatic_capture_session_id"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -365,6 +376,24 @@ class MainActivity : ComponentActivity() {
         root.addView(deepScanButton, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(52)
         ).apply { bottomMargin = dp(5) })
+
+        automaticGattDiscoveryButton = makeButton(
+            if (automaticGattDiscoveryEnabled) {
+                "Pausar testes e salvamento automáticos"
+            } else {
+                "Ativar testes automáticos ao conectar"
+            }
+        ) {
+            toggleAutomaticGattDiscovery()
+        }
+        root.addView(automaticGattDiscoveryButton, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(50)
+        ).apply { bottomMargin = dp(4) })
+        addText(
+            root,
+            "Após a ativação, o app testa sozinho o GT3 MAX identificado, lê canais READ e recebe NOTIFY/INDICATE compatíveis. Valores e HEX recebidos ficam no histórico local enquanto a captura estiver ativa.",
+            11f
+        )
 
         captureSessionView = TextView(this).apply {
             visibility = View.GONE
@@ -748,6 +777,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         isActivityResumed = true
+        updateAutomaticGattDiscoveryButton()
         val explorationRequests = getSharedPreferences("ble_exploration_requests", MODE_PRIVATE)
         pendingDeepExplorationRequest = explorationRequests.getBoolean("pending_deep_exploration", false)
         if (pendingDeepExplorationRequest) {
@@ -1197,6 +1227,7 @@ class MainActivity : ComponentActivity() {
             return
         }
         connectionFromDiscoveryCandidate = discoveryCandidate && !savedIdentityMatches
+        automaticGattProbeStartedForConnection = false
         if (!hasBlePermissions()) {
             if (automaticAttempt) {
                 updateStatus("Permissão Bluetooth necessária para reconectar.")
@@ -1323,6 +1354,8 @@ class MainActivity : ComponentActivity() {
                 if (bluetoothGatt === gatt) bluetoothGatt = null
                 updateStatus("Falha na conexão GATT. Status: " + status)
                 appendLog("Conexão GATT falhou; estado e fila foram limpos.")
+                finishAutomaticCaptureSession("Conexão GATT falhou")
+                automaticGattProbeStartedForConnection = false
                 runCatching { gatt.close() }
                 if (reconnectPolicy.isEnabled) scheduleAutoReconnect("Falha na conexão GATT: " + status)
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
@@ -1335,6 +1368,8 @@ class MainActivity : ComponentActivity() {
                 deviceTimeSyncView.text = "Hora do relógio: sem sessão BLE ativa"
                 updateStatus("Relógio desconectado.")
                 appendLog("Conexão GATT encerrada.")
+                finishAutomaticCaptureSession("Conexão BLE encerrada")
+                automaticGattProbeStartedForConnection = false
                 if (bluetoothGatt === gatt) {
                     resetGattOperationQueue()
                     pendingNotifications.clear()
@@ -1356,6 +1391,7 @@ class MainActivity : ComponentActivity() {
                 renderGattServices(gatt)
                 runSafeGattExploration(gatt)
                 inspectGt3MaxProfileAndSubscribe(gatt)
+                maybeStartAutomaticGattProbe(gatt)
                 deviceTimeSyncView.text =
                     "Hora do relógio: sincronização suspensa pela política somente leitura/notificações."
                 appendLog("CTS 0x1805: sincronização suspensa pela política atual; nenhuma escrita de característica será enviada.")
@@ -1463,9 +1499,23 @@ class MainActivity : ComponentActivity() {
             val wasPending = pendingNotifications.remove(key)
             if (wasPending && status == BluetoothGatt.GATT_SUCCESS) {
                 activeNotifications.add(key)
-                appendLog("Notificação confirmada pelo callback GATT para " + characteristic.uuid)
+                appendLog("Notificação/indicação confirmada pelo callback GATT para " + characteristic.uuid)
+                discoveryLibraryStore.recordDiscovery(
+                    title = "Inscrição GATT confirmada • " + characteristic.uuid,
+                    detail = "Callback Android confirmou o descritor CCCD 0x2902. O app passa a aguardar dados emitidos pelo relógio.",
+                    nowMillis = System.currentTimeMillis(),
+                    source = "GATT_CCCD",
+                    confidence = "SUBSCRICAO_CONFIRMADA"
+                )
             } else if (wasPending) {
                 activeNotifications.remove(key)
+                discoveryLibraryStore.recordDiscovery(
+                    title = "Inscrição GATT falhou • " + characteristic.uuid,
+                    detail = "O callback do descritor CCCD retornou status " + status + ".",
+                    nowMillis = System.currentTimeMillis(),
+                    source = "GATT_CCCD",
+                    confidence = "SUBSCRICAO_FALHOU"
+                )
                 if (hasBlePermissions()) {
                     runCatching { gatt.setCharacteristicNotification(characteristic, false) }
                 } else {
@@ -1663,6 +1713,154 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun updateAutomaticGattDiscoveryButton() {
+        if (!::automaticGattDiscoveryButton.isInitialized) return
+        automaticGattDiscoveryButton.text = if (automaticGattDiscoveryEnabled) {
+            "Pausar testes e salvamento automáticos"
+        } else {
+            "Ativar testes automáticos ao conectar"
+        }
+    }
+
+    private fun toggleAutomaticGattDiscovery() {
+        if (automaticGattDiscoveryEnabled) {
+            automaticGattDiscoveryPrefs.edit { putBoolean("enabled", false) }
+            finishAutomaticCaptureSession("Testes automáticos pausados pelo usuário")
+            appendLog(
+                "Testes e salvamento automáticos pausados. Novas leituras/inscrições automáticas não serão iniciadas."
+            )
+            updateAutomaticGattDiscoveryButton()
+            return
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Ativar testes automáticos do GT3 MAX")
+            .setMessage(
+                "Depois de ativar, o aplicativo vai iniciar automaticamente quando reconhecer o fingerprint GATT completo do GT3 MAX Call. " +
+                    "Ele percorrerá os canais compatíveis que anunciam READ e ativará NOTIFY/INDICATE com CCCD padrão. " +
+                    "Leituras e notificações recebidas serão salvas localmente, incluindo HEX que pode conter dados de saúde, em sessões de até 10 minutos. " +
+                    "A autorização fica salva neste aparelho até você pausar. Nenhum payload de escrita, comando proprietário, NUS RX, DFU, OTA ou reset será enviado. " +
+                    "Ativar uma notificação não força o relógio a iniciar uma medição: o app só recebe dados que o firmware disponibilizar."
+            )
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Ativar automaticamente") { _, _ ->
+                automaticGattDiscoveryPrefs.edit { putBoolean("enabled", true) }
+                updateAutomaticGattDiscoveryButton()
+                appendLog("Consentimento local para testes GATT automáticos ativado.")
+                bluetoothGatt?.let(::maybeStartAutomaticGattProbe)
+            }
+            .show()
+    }
+
+    private fun ensureAutomaticCaptureSession(): Boolean {
+        val now = System.currentTimeMillis()
+        val active = discoveryLibraryStore.activeSession(now)
+        if (active != null) {
+            appendLog("Sessão de captura existente será reutilizada para os resultados automáticos.")
+            return true
+        }
+
+        automaticGattDiscoveryPrefs.edit { remove(KEY_AUTOMATIC_SESSION_ID) }
+        if (!discoveryLibraryStore.startTestSession(AUTOMATIC_GATT_CAPTURE_SECONDS, now)) {
+            appendLog(
+                "Testes automáticos bloqueados: a biblioteca local não aceitou iniciar a sessão. " +
+                    "Conteúdo corrompido ou schema futuro permanece preservado."
+            )
+            return false
+        }
+
+        val created = discoveryLibraryStore.activeSession(now)
+        if (created == null) {
+            appendLog("Testes automáticos bloqueados: a sessão não foi confirmada no armazenamento local.")
+            return false
+        }
+
+        automaticGattDiscoveryPrefs.edit {
+            putString(KEY_AUTOMATIC_SESSION_ID, created.id)
+        }
+        discoveryLibraryStore.recordDiscovery(
+            title = "Captura automática GATT iniciada",
+            detail = "Fingerprint completo GT3 MAX Call. Sessão local de até 10 minutos; somente READ e CCCD padrão.",
+            nowMillis = now,
+            source = "AUTO_GATT_PROBE",
+            confidence = "CONSENTIMENTO_LOCAL"
+        )
+        appendLog("Sessão automática de captura iniciada por até 10 minutos.")
+        updatePhoneClock()
+        return true
+    }
+
+    private fun finishAutomaticCaptureSession(reason: String) {
+        val ownedSessionId = automaticGattDiscoveryPrefs.getString(KEY_AUTOMATIC_SESSION_ID, null)
+            ?: return
+        val active = discoveryLibraryStore.activeSession(System.currentTimeMillis())
+        if (active?.id == ownedSessionId) {
+            discoveryLibraryStore.finishTestSession(System.currentTimeMillis(), reason)
+            appendLog("Sessão automática de captura finalizada: " + reason)
+        }
+        automaticGattDiscoveryPrefs.edit { remove(KEY_AUTOMATIC_SESSION_ID) }
+        if (::captureSessionView.isInitialized) updatePhoneClock()
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun maybeStartAutomaticGattProbe(gatt: BluetoothGatt) {
+        if (bluetoothGatt !== gatt || !isGattConnected || isGattDisconnecting) return
+        if (!automaticGattDiscoveryEnabled || automaticGattProbeStartedForConnection) return
+
+        val observed = gatt.services.associate { service ->
+            service.uuid to service.characteristics.map { it.uuid }.toSet()
+        }
+        val fingerprintMatches =
+            Gt3MaxCallDeviceProfile.evaluate(lastConnectedDeviceName, observed) ==
+                Gt3MaxCallDeviceProfile.Match.CAPTURED_GATT_FINGERPRINT
+        val shouldStart = AutomaticGattDiscoveryPolicy.shouldStart(
+            consentEnabled = automaticGattDiscoveryEnabled,
+            fullDeviceFingerprintMatched = fingerprintMatches,
+            alreadyStartedForConnection = automaticGattProbeStartedForConnection
+        )
+        if (!fingerprintMatches) {
+            appendLog(
+                "Testes automáticos aguardam o fingerprint GATT completo do GT3 MAX Call. " +
+                    "Nenhum canal proprietário foi lido/assinado nesta conexão."
+            )
+            return
+        }
+        if (!shouldStart || !ensureAutomaticCaptureSession()) return
+
+        automaticGattProbeStartedForConnection = true
+        val inventory = gatt.services.map { service ->
+            GattServiceRecord(
+                uuid = service.uuid.toString(),
+                characteristics = service.characteristics.map { characteristic ->
+                    val properties = linkedSetOf<String>()
+                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_READ != 0) properties.add("READ")
+                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0) properties.add("NOTIFY")
+                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0) properties.add("INDICATE")
+                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE != 0) properties.add("WRITE")
+                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0) properties.add("WRITE_NO_RESPONSE")
+                    GattCharacteristicRecord(
+                        uuid = characteristic.uuid.toString(),
+                        properties = properties,
+                        descriptorUuids = characteristic.descriptors.map { it.uuid.toString() }.toSet()
+                    )
+                }
+            )
+        }
+        val operationCount = SafeGattExplorationPlan.buildDeep(inventory).size
+        discoveryLibraryStore.recordDiscovery(
+            title = "Varredura automática de sensores iniciada",
+            detail = operationCount.toString() + " operações GATT elegíveis. Escritas de características, NUS RX e DFU/OTA permanecem bloqueados.",
+            nowMillis = System.currentTimeMillis(),
+            source = "AUTO_GATT_PROBE",
+            confidence = "FINGERPRINT_COMPLETO"
+        )
+        appendLog(
+            "Fingerprint completo confirmado. Iniciando exploração automática de " +
+                operationCount + " operações READ/CCCD compatíveis."
+        )
+        runDeepGattExploration(gatt, automatic = true)
+    }
+
     private fun requestDeepGattExploration() {
         val gatt = bluetoothGatt
         if (gatt == null || !isGattConnected || isGattDisconnecting) {
@@ -1685,7 +1883,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @SuppressLint("MissingPermission")
-    private fun runDeepGattExploration(gatt: BluetoothGatt) {
+    private fun runDeepGattExploration(gatt: BluetoothGatt, automatic: Boolean = false) {
         if (bluetoothGatt !== gatt || !isGattConnected || isGattDisconnecting) return
         val inventory = gatt.services.map { service ->
             GattServiceRecord(
@@ -1707,12 +1905,28 @@ class MainActivity : ComponentActivity() {
         }
         val plan = SafeGattExplorationPlan.buildDeep(inventory)
         if (plan.isEmpty()) {
-            appendLog("Exploração manual concluída: nenhum canal customizado adicional elegível.")
+            appendLog("Exploração concluída: nenhum canal adicional elegível no inventário atual.")
+            discoveryLibraryStore.recordDiscovery(
+                title = "Exploração GATT sem canais elegíveis",
+                detail = "O inventário não contém características adicionais compatíveis com READ ou NOTIFY/INDICATE via CCCD.",
+                nowMillis = System.currentTimeMillis(),
+                source = if (automatic) "AUTO_GATT_PROBE" else "MANUAL_GATT_PROBE",
+                confidence = "INVENTARIO_OBSERVADO"
+            )
             return
         }
-        appendLog("Exploração aprofundada iniciada: " + plan.size +
-            " operações elegíveis em todos os canais anunciados. Somente READ e CCCD padrão; " +
-            "escritas de payload continuam bloqueadas.")
+        val probeSource = if (automatic) "AUTO_GATT_PROBE" else "MANUAL_GATT_PROBE"
+        appendLog(
+            (if (automatic) "Exploração GATT automática iniciada: " else "Exploração GATT manual iniciada: ") +
+                plan.size + " operações elegíveis. Somente READ e CCCD padrão; escritas de payload continuam bloqueadas."
+        )
+        discoveryLibraryStore.recordDiscovery(
+            title = if (automatic) "Exploração automática iniciada" else "Exploração manual iniciada",
+            detail = plan.size.toString() + " operações elegíveis no inventário GATT.",
+            nowMillis = System.currentTimeMillis(),
+            source = probeSource,
+            confidence = "OPERACOES_PLANEJADAS"
+        )
         plan.forEach { operation ->
             val attemptKey = operation.serviceUuid.lowercase() + "/" +
                 operation.characteristicUuid.lowercase() + "/" + operation.kind.name
@@ -1737,20 +1951,30 @@ class MainActivity : ComponentActivity() {
                         }
                     ) {
                         if (bluetoothGatt !== gatt || isGattDisconnecting) false
-                        else {
+                        else if (automatic && !automaticGattDiscoveryEnabled) {
+                            appendLog("Leitura automática cancelada: testes automáticos foram pausados.")
+                            false
+                        } else {
                             val started = gatt.readCharacteristic(characteristic)
                             appendLog(if (started) {
-                                "Leitura manual somente READ solicitada: " + operation.serviceUuid +
-                                    "/" + operation.characteristicUuid
+                                (if (automatic) "Leitura automática somente READ solicitada: " else "Leitura manual somente READ solicitada: ") +
+                                    operation.serviceUuid + "/" + operation.characteristicUuid
                             } else {
-                                "Android recusou leitura manual: " + operation.characteristicUuid
+                                "Android recusou leitura GATT: " + operation.characteristicUuid
                             })
+                            discoveryLibraryStore.recordDiscovery(
+                                title = "Leitura GATT solicitada • " + operation.characteristicUuid,
+                                detail = if (started) "Android aceitou iniciar a leitura assíncrona." else "Android recusou iniciar a leitura.",
+                                nowMillis = System.currentTimeMillis(),
+                                source = probeSource,
+                                confidence = if (started) "SOLICITADA" else "API_RECUSOU"
+                            )
                             started
                         }
                     }
                 }
                 SafeGattExplorationPlan.Kind.SUBSCRIBE_PROPRIETARY_CHANNEL -> {
-                    enableNotifications(gatt, characteristic)
+                    enableNotifications(gatt, characteristic, automaticDiscovery = automatic)
                 }
                 else -> Unit
             }
@@ -1762,24 +1986,74 @@ class MainActivity : ComponentActivity() {
         value: ByteArray,
         status: Int
     ) {
-        if (status == BluetoothGatt.GATT_SUCCESS) {
-            val nowMillis = System.currentTimeMillis()
-            val payloadHex = BleValueFormatter.toHex(value)
-            appendLog("Leitura GATT padronizada concluída: " + characteristic.uuid +
-                " | " + value.size + " bytes | HEX=" + payloadHex)
-            discoveryLibraryStore.recordPayload(
-                kind = DiscoveryLibraryKind.GATT_READ,
-                title = "Leitura GATT • " + characteristic.uuid,
-                detail = "Leitura concluída • " + value.size + " bytes",
+        val nowMillis = System.currentTimeMillis()
+        val serviceUuid = characteristic.service.uuid.toString()
+        val characteristicUuid = characteristic.uuid.toString()
+        if (status != BluetoothGatt.GATT_SUCCESS) {
+            appendLog("Leitura GATT falhou: " + characteristicUuid + " | status=" + status)
+            discoveryLibraryStore.recordDiscovery(
+                title = "Leitura GATT falhou • " + characteristicUuid,
+                detail = "Callback Android retornou status " + status + ".",
+                nowMillis = nowMillis,
                 source = "GATT_READ",
-                confidence = "OBSERVADO",
-                serviceUuid = characteristic.service.uuid.toString(),
-                characteristicUuid = characteristic.uuid.toString(),
-                payloadHex = payloadHex,
-                nowMillis = nowMillis
+                confidence = "READ_FALHOU"
+            )
+            return
+        }
+
+        val payloadHex = BleValueFormatter.toHex(value)
+        val activeSession = discoveryLibraryStore.activeSession(nowMillis) != null
+        appendLog(
+            "Leitura GATT concluída: " + characteristicUuid + " | " + value.size + " bytes" +
+                if (activeSession) " | HEX=" + payloadHex else ""
+        )
+        discoveryLibraryStore.recordPayload(
+            kind = DiscoveryLibraryKind.GATT_READ,
+            title = "Leitura GATT • " + characteristicUuid,
+            detail = "Leitura concluída • " + value.size + " bytes",
+            source = "GATT_READ",
+            confidence = "OBSERVADO",
+            serviceUuid = serviceUuid,
+            characteristicUuid = characteristicUuid,
+            payloadHex = payloadHex,
+            nowMillis = nowMillis
+        )
+
+        if (value.isEmpty()) {
+            discoveryLibraryStore.recordDiscovery(
+                title = "Leitura concluída sem bytes • " + characteristicUuid,
+                detail = "O relógio respondeu ao READ com comprimento zero. Isso não prova ausência de função; o canal pode depender de notificações ou de uma sequência ainda não identificada.",
+                nowMillis = nowMillis,
+                source = "GATT_READ",
+                confidence = "READ_OK_SEM_PAYLOAD"
+            )
+            return
+        }
+
+        val decoded = GattValueDecoder.decode(serviceUuid, characteristicUuid, value)
+        if (decoded.isEmpty()) {
+            discoveryLibraryStore.recordDiscovery(
+                title = "Valor GATT recebido • " + characteristicUuid,
+                detail = value.size.toString() +
+                    " bytes recebidos; formato não reconhecido por decoder Bluetooth SIG. HEX só é persistido durante captura ativa.",
+                nowMillis = nowMillis,
+                source = "GATT_READ",
+                confidence = "BYTES_OBSERVADOS_SEM_DECODER"
             )
         } else {
-            appendLog("Leitura GATT padronizada falhou: " + characteristic.uuid + " | status=" + status)
+            decoded.forEach { item ->
+                appendLog("Valor GATT decodificado: " + item.metric + " = " + item.value)
+                if (activeSession) {
+                    discoveryLibraryStore.recordDiscovery(
+                        title = "Dado GATT observado • " + item.metric,
+                        detail = item.value + " • origem=" + item.source +
+                            " • formato Bluetooth SIG decodificado; precisão do sensor não validada.",
+                        nowMillis = nowMillis,
+                        source = "GATT_SIG_DECODER",
+                        confidence = "FORMATO_PADRONIZADO_OBSERVADO"
+                    )
+                }
+            }
         }
     }
 
@@ -1951,7 +2225,8 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("MissingPermission")
     private fun enableNotifications(
         gatt: BluetoothGatt,
-        characteristic: BluetoothGattCharacteristic
+        characteristic: BluetoothGattCharacteristic,
+        automaticDiscovery: Boolean = false
     ) {
         val key = characteristic.service.uuid.toString() + "/" +
             characteristic.uuid.toString()
@@ -1991,6 +2266,10 @@ class MainActivity : ComponentActivity() {
             if (bluetoothGatt !== gatt) {
                 pendingNotifications.remove(key)
                 appendLog("Inscrição descartada: conexão GATT mudou antes da execução.")
+                false
+            } else if (automaticDiscovery && !automaticGattDiscoveryEnabled) {
+                pendingNotifications.remove(key)
+                appendLog("Inscrição automática cancelada: testes automáticos foram pausados.")
                 false
             } else {
                 val localEnabled = gatt.setCharacteristicNotification(characteristic, true)
@@ -2148,6 +2427,20 @@ class MainActivity : ComponentActivity() {
             frameResponse = lastFrame?.response,
             batteryCandidatePercent = battery
         )
+
+        if (discoveryLibraryStore.activeSession(observedAtMillis) != null) {
+            GattValueDecoder.decode(serviceUuid, uuid, value).forEach { item ->
+                discoveryLibraryStore.recordDiscovery(
+                    title = "Dado BLE observado • " + item.metric,
+                    detail = item.value + " • origem=" + item.source +
+                        " • formato Bluetooth SIG decodificado; precisão do sensor não validada.",
+                    nowMillis = observedAtMillis,
+                    source = "BLE_SIG_DECODER",
+                    confidence = "FORMATO_PADRONIZADO_OBSERVADO"
+                )
+                appendLog("Notificação decodificada: " + item.metric + " = " + item.value)
+            }
+        }
 
         frames.forEach { frame ->
             val candidateBattery = frame.batteryPercent
