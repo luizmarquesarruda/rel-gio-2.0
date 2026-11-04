@@ -1,5 +1,13 @@
 # Changelog
 
+## Não lançado — auditoria modular e hardening
+
+- Corrigida compatibilidade da janela de passos diários do Health Connect com Android API 26; adicionados testes para fusos horários com datas locais distintas.
+- Removida da tela GATT a leitura e inscrição manual de características arbitrárias. A única inscrição automática disponível continua condicionada ao fingerprint completo do GT3 MAX Call e limitada à NUS TX via CCCD padrão.
+- Metadados do APK diagnostic passam a ser derivados de `VERSION`, com verificação contra `versionName` do Gradle; removida a versão antiga fixa do `BUILD-INFO.txt`.
+- Adicionados testes Python de consistência dos metadados do build e atualização do mapa de módulos/diário.
+- Lint, CI no HEAD final e teste físico: **aguardando validação**.
+
 ## Não lançado — investigação do canal de parceiros Wearfit Pro
 
 - Analisada a declaração Weike atualizada em 04/08/2023: ela prevê acesso por aplicativos terceiros autorizados a identificador aleatório do dispositivo, estado, notificações e, mediante autorização expressa, dados de sensores, sono, exercício, uso, logs e localização.
