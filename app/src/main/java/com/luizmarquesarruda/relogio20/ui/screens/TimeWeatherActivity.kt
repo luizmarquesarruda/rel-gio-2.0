@@ -259,7 +259,6 @@ class TimeWeatherActivity : Activity() {
         preferences.saveLocation(location)
         selectedCityView.text = location.displayName
         weatherStatusView.text = "Localidade salva. Consultando previsão…"
-        WeatherSyncScheduler.requestImmediate(this)
         refreshWeather(showToast = false)
     }
 
