@@ -90,19 +90,29 @@ internal class DiscoveryLibraryStore(context: Context) {
     }
 
     internal fun flushPendingWrites(timeoutMillis: Long = WRITE_FLUSH_TIMEOUT_MS): Boolean =
-        try {
-            writeExecutor.submit(Runnable { }).get(timeoutMillis, TimeUnit.MILLISECONDS)
-            true
-        } catch (_: Exception) {
-            false
+        synchronized(WRITE_QUEUE_LOCK) {
+            try {
+                // The lock makes this barrier a stable boundary: no later enqueue can
+                // overtake it or have its failure mixed into the batch being flushed.
+                writeExecutor.submit(Runnable { }).get(timeoutMillis, TimeUnit.MILLISECONDS)
+                !writeFailureTracker.consumeFailure()
+            } catch (_: Exception) {
+                false
+            }
         }
 
-    private fun enqueueWrite(operation: () -> Boolean): Boolean = try {
-        writeExecutor.execute { runCatching(operation) }
-        true
-    } catch (_: RejectedExecutionException) {
-        false
-    }
+    private fun enqueueWrite(operation: () -> Boolean): Boolean =
+        synchronized(WRITE_QUEUE_LOCK) {
+            try {
+                writeExecutor.execute {
+                    val succeeded = runCatching(operation).getOrDefault(false)
+                    writeFailureTracker.record(succeeded)
+                }
+                true
+            } catch (_: RejectedExecutionException) {
+                false
+            }
+        }
 
     fun startTestSession(durationSeconds: Int, nowMillis: Long): Boolean {
         if (!flushPendingWrites()) return false
@@ -360,6 +370,8 @@ internal class DiscoveryLibraryStore(context: Context) {
         private const val WRITE_FLUSH_TIMEOUT_MS = 10_000L
         private val PAYLOAD_HEX_PATTERN = Regex("(?:[0-9A-Fa-f]{2})(?:-?[0-9A-Fa-f]{2})*")
         private val STORE_LOCK = Any()
+        private val WRITE_QUEUE_LOCK = Any()
+        private val writeFailureTracker = WriteFailureTracker()
         private var cacheInitialized = false
         private var cachedReadResult: DiscoveryLibraryReadResult? = null
         private val expiringSessionIds = mutableSetOf<String>()

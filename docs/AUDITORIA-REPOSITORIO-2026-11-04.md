@@ -28,6 +28,7 @@ Agora:
 - o lock é compartilhado entre as instâncias dentro do processo;
 - o tamanho do arquivo é conferido antes da alocação de leitura;
 - a escrita continua usando `AtomicFile`; a leitura restaura o backup `.bak` após interrupção de escrita e limita o arquivo antes de alocar o buffer;
+- a fila assíncrona agora preserva falhas de persistência até a barreira de exportação/encerramento; o flush não retorna sucesso se qualquer gravação do lote falhou;
 - o codec valida schema, tipos de registro, IDs únicos, timestamps, sessão, campos condicionais e formato HEX;
 - prazos incompatíveis com a duração declarada e timestamps antes do início são recusados;
 - não se grava payload fora de uma sessão consentida ativa.
@@ -102,3 +103,11 @@ A ponte de notificações opera com uma regra diferente: prévias são voláteis
 - `NotificationCaptureStore.addIfAllowed` revalida o estado e a allow-list sob o mesmo lock que serializa `setEnabled(false)` e alterações de aplicativos permitidos.
 - Remover um aplicativo da allow-list também purga prévias daquele pacote.
 - Testes adicionados para a barreira final quando consentimento está ativo/inativo.
+
+
+## Quarta rodada — confirmação de gravações assíncronas
+
+- Corrigido o falso positivo de flush na biblioteca de descobertas: cada tarefa agora registra o resultado real de persistência e a barreira de flush retorna falso quando uma gravação do lote falha.
+- A inserção de tarefas e a barreira usam o mesmo lock de fila para delimitar lotes sem misturar falhas de operações posteriores.
+- Adicionados testes unitários para falha seguida de sucesso, consumo/reset da falha e lote sem falhas.
+- Execução de CI e testes Android: **não validados** nesta rodada; CI não foi disparada.
