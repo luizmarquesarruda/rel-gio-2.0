@@ -20,6 +20,12 @@ class LocalFeaturePolicyTest {
     }
 
     @Test
+    fun hugeStepCountCannotOverflowProgress() {
+        assertEquals(100, LocalFeaturePolicy.progressPercent(Long.MAX_VALUE, 8_000))
+        assertEquals(0L, LocalFeaturePolicy.remainingSteps(Long.MAX_VALUE, 8_000))
+    }
+
+    @Test
     fun invalidGoalIsRejected() {
         assertThrows(IllegalArgumentException::class.java) {
             LocalFeaturePolicy.normalizeStepGoal(0)
