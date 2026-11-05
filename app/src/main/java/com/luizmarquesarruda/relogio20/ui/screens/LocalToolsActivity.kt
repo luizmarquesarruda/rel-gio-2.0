@@ -76,13 +76,10 @@ class LocalToolsActivity : Activity() {
             if (!breathingRunning || !::breathingValue.isInitialized) return
             val phases = listOf("Inspire", "Segure", "Expire")
             val seconds = listOf(4L, 2L, 6L)
-            breathingValue.text = phases[breathingPhaseIndex] + " • " + seconds[breathingPhaseIndex] + " s"
-            handler.postDelayed({
-                if (breathingRunning) {
-                    breathingPhaseIndex = (breathingPhaseIndex + 1) % phases.size
-                    breathingTick.run()
-                }
-            }, seconds[breathingPhaseIndex] * 1_000L)
+            val currentPhase = breathingPhaseIndex
+            breathingValue.text = phases[currentPhase] + " • " + seconds[currentPhase] + " s"
+            breathingPhaseIndex = (currentPhase + 1) % phases.size
+            handler.postDelayed(this, seconds[currentPhase] * 1_000L)
         }
     }
 
@@ -293,6 +290,7 @@ class LocalToolsActivity : Activity() {
     private fun addTimerSection() {
         section("Temporizador")
         timerValue = addText("Temporizador parado", 20f)
+        addText("A contagem funciona enquanto esta tela permanecer aberta; não é um alarme persistente em segundo plano.", 11f)
         val minutes = EditText(this).apply {
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
             singleLine = true
@@ -332,7 +330,8 @@ class LocalToolsActivity : Activity() {
             if (!breathingRunning) {
                 breathingRunning = true
                 breathingPhaseIndex = 0
-                breathingTick.run()
+                handler.removeCallbacks(breathingTick)
+                handler.post(breathingTick)
             }
         }, weighted())
         row.addView(actionButton("Parar") {
