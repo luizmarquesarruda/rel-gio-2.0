@@ -792,3 +792,12 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - A variante `companion` mantém o serviço de captura de notificações com permissão `BIND_NOTIFICATION_LISTENER_SERVICE`, allow-list, limite de 30 prévias e retenção de 15 minutos; as prévias são limpas quando o listener é desconectado/destruído. A variante `diagnostic` usa uma tela substituta sem serviço de captura. As duas classes `NotificationCenterActivity` são específicas de flavors e não são duplicação removível.
 - O serviço de notificação permanece com `android:exported="false"` e a permissão de binding protegida, alinhado ao exemplo oficial do Android. Nenhuma alteração de manifesto foi necessária.
 - A estrutura BLE ainda concentra responsabilidades na `MainActivity`; essa dívida foi mantida como extração incremental, não tratada como código obsoleto. O helper CTS permanece dormente para não habilitar escrita de hora sem confirmação do GT3 MAX.
+
+## Extração incremental do coordenador de reconexão BLE
+
+- Criado `device/ble/core/BleReconnectCoordinator.kt`, Kotlin puro, para decidir se a recuperação está desativada, deve aguardar o primeiro plano, está bloqueada por sessão GATT/scan ativo, deve agendar imediatamente/com backoff ou pode iniciar scan após validar permissões.
+- `MainActivity.scheduleAutoReconnect()` delega as decisões ao coordenador. A Activity ainda possui e controla `Handler`, `Runnable`, timers, estado de conexão e chamadas Android; o transporte BLE não foi movido nesta etapa.
+- A verificação de permissão é passada como lambda para não ser executada quando primeiro plano, conexão ou scan já bloqueiam a tentativa.
+- Adicionado `BleReconnectCoordinatorTest.kt` com cenários de política desativada, pausa/retomada, GATT ativo, scan ativo, tentativa imediata, preservação do backoff e validação tardia das permissões.
+- Esta etapa preserva os intervalos existentes de 1, 2, 5, 10, 20 e 30 segundos e o cancelamento manual da reconexão.
+- Os testes foram adicionados, mas **não executados**. Lint/build e validação física **não validados**. CI não disparada; nenhuma PR criada; nenhum merge.
