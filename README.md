@@ -114,7 +114,7 @@ Consulte o [índice completo da documentação](docs/README.md).
 
 ## Retenção da biblioteca BLE
 
-Leituras e HEX bruto só são capturados após consentimento e durante uma sessão cronometrada. Depois de capturados, os registros permanecem no arquivo privado local até serem removidos pela política de limite (máximo de 1.000 registros) ou pela remoção dos dados do aplicativo no Android. Nesta versão não há botão de exclusão individual da biblioteca; portanto, não interprete “captura apenas durante sessão” como expiração automática dos registros já gravados.
+Leituras e HEX bruto só são capturados após consentimento e durante uma sessão cronometrada. Depois de capturados, os registros permanecem no arquivo privado local até exclusão individual pela Biblioteca interna, remoção pela política de limite (máximo de 1.000 registros) ou remoção dos dados do aplicativo no Android. A exclusão individual solicita confirmação e grava o novo snapshot de forma atômica.
 
 ## Notificações para o smartwatch
 
