@@ -14,6 +14,7 @@ class PackageBoundaryTests(unittest.TestCase):
             "ui/screens/FeatureDiscoveryActivity.kt",
             "ui/screens/DiscoveryLibraryActivity.kt",
             "ui/screens/HealthPrivacyActivity.kt",
+            "ui/screens/TimeWeatherActivity.kt",
         )
         for relative in files:
             with self.subTest(file=relative):
