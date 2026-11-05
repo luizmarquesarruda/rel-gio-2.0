@@ -2595,6 +2595,12 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("MissingPermission")
     private fun syncClockUsingCurrentTimeService(gatt: BluetoothGatt) {
+        if (bluetoothGatt !== gatt || !isGattConnected || isGattDisconnecting) {
+            if (::clockSyncButton.isInitialized) clockSyncButton.isEnabled = false
+            deviceTimeSyncView.text = "Sincronização cancelada: a sessão BLE não está mais ativa."
+            appendLog("Escrita CTS não iniciada: a sessão GATT não é mais a conexão ativa.")
+            return
+        }
         if (clockSyncAttemptedForSession) {
             deviceTimeSyncView.text = "Sincronização CTS já tentada nesta conexão. Reconecte para uma nova tentativa."
             return
