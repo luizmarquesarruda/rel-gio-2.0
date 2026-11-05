@@ -117,7 +117,7 @@
 - Após fingerprint GATT completo, o endereço atual é salvo automaticamente. O fingerprint é compatibilidade observada, não autenticação criptográfica.
 - O TXT passou a incluir até 1.000 registros persistidos da biblioteca (inventários GATT, quadros AB e capturas consentidas), além dos 250 eventos mais recentes da sessão. MAC permanece mascarado.
 - Testes adicionados para política de candidatos BLE, fingerprint com nome ausente e inclusão/mascaramento das descobertas no TXT.
-- A sincronização CTS por escrita de característica foi suspensa nesta fase para preservar a política somente leitura/notificações. Apenas configuração do descritor CCCD padrão permanece necessária para inscrições.
+- Na fase registrada neste trecho histórico, a sincronização CTS por escrita de característica estava suspensa para preservar a política somente leitura/notificações. A decisão foi posteriormente substituída pela ação manual condicionada descrita na seção de 04/11/2026; ausência de CTS mantém a escrita desabilitada.
 - Nenhum comando proprietário, OTA/DFU, reset ou nova permissão foi adicionado.
 - CI, instalação e teste físico no Galaxy A06/Android 16 com GT3 MAX: **não validados**.
 
@@ -791,7 +791,7 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - A biblioteca limita registros, tamanho do arquivo e HEX; a fila serial permite descarregar gravações pendentes. A revisão foi estática, sem testes de recuperação de processo ou falha de disco nesta rodada.
 - A variante `companion` mantém o serviço de captura de notificações com permissão `BIND_NOTIFICATION_LISTENER_SERVICE`, allow-list, limite de 30 prévias e retenção de 15 minutos; as prévias são limpas quando o listener é desconectado/destruído. A variante `diagnostic` usa uma tela substituta sem serviço de captura. As duas classes `NotificationCenterActivity` são específicas de flavors e não são duplicação removível.
 - O serviço de notificação permanece com `android:exported="false"` e a permissão de binding protegida, alinhado ao exemplo oficial do Android. Nenhuma alteração de manifesto foi necessária.
-- A estrutura BLE ainda concentra responsabilidades na `MainActivity`; essa dívida foi mantida como extração incremental, não tratada como código obsoleto. O helper CTS permanece dormente para não habilitar escrita de hora sem confirmação do GT3 MAX.
+- A estrutura BLE ainda concentra responsabilidades na `MainActivity`; essa dívida foi mantida como extração incremental, não tratada como código obsoleto. Naquele ponto da extração, o encoder CTS ainda estava dormente; a seção seguinte registra a ativação exclusivamente manual e condicionada à capacidade GATT anunciada.
 
 ## Extração incremental do coordenador de reconexão BLE
 
