@@ -60,6 +60,34 @@ class DiscoveryLibraryCodecTest {
     }
 
     @Test
+    fun removesOnlyRequestedRecordAndPreservesActiveSession() {
+        val session = DiscoveryTestSession("session-1", 1_000L, 61_000L, 60)
+        val first = DiscoveryLibraryRecord(
+            id = "record-1", occurredAtMillis = 2_000L, sessionId = "session-1",
+            kind = DiscoveryLibraryKind.NOTIFICATION, title = "Leitura", detail = "HEX capturado",
+            source = "BLE_NOTIFY", confidence = "OBSERVADO", payloadHex = "AABB"
+        )
+        val second = first.copy(id = "record-2", payloadHex = "CCDD")
+        val snapshot = DiscoveryLibrarySnapshot(
+            activeSession = session,
+            records = listOf(first, second)
+        )
+
+        val updated = snapshot.withoutRecord("record-1")
+
+        assertEquals(listOf("record-2"), updated?.records?.map { it.id })
+        assertEquals(session, updated?.activeSession)
+        assertEquals(listOf(first, second), snapshot.records)
+    }
+
+    @Test
+    fun missingRecordDoesNotProduceModifiedSnapshot() {
+        val snapshot = DiscoveryLibrarySnapshot()
+        assertEquals(null, snapshot.withoutRecord("missing"))
+        assertEquals(null, snapshot.withoutRecord(""))
+    }
+
+    @Test
     fun rejectsCorruptMagicWithoutProducingAnEmptyLibrary() {
         val decoded = DiscoveryLibraryCodec.decode(byteArrayOf(0, 1, 2, 3, 4, 5))
         assertTrue(decoded is DiscoveryLibraryReadResult.Corrupt)
