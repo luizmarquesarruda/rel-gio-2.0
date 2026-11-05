@@ -116,10 +116,14 @@ internal class DiscoveryLibraryStore(context: Context) {
             val current = writableSnapshot() ?: return@synchronized false
             val existing = current.activeSession
             if (existing != null && nowMillis < existing.startedAtMillis) return@synchronized false
-            if (existing != null && existing.isActive(nowMillis)) return@synchronized false
 
             val base = if (existing != null) {
-                finishSnapshot(current, nowMillis, "Duração encerrada antes de iniciar nova sessão")
+                val reason = if (existing.isActive(nowMillis)) {
+                    "SESSION_ORPHANED: nova sessão iniciada antes da finalização anterior"
+                } else {
+                    "Duração encerrada antes de iniciar nova sessão"
+                }
+                finishSnapshot(current, nowMillis, reason)
             } else {
                 current
             }
