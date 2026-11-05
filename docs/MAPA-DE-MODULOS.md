@@ -21,6 +21,8 @@ A base é um aplicativo Android nativo Kotlin. O adaptador de consulta agregada 
 | device/gt3max/protocol/Gt3MaxCallDeviceProfile.kt | Perfil do dispositivo | Identificadores GT3 MAX Call informados e fingerprint GATT da captura; sem autenticação de hardware/firmware. |
 | device/gt3max/protocol/WearfitAbFrameParser.kt | Protocolo do dispositivo | Perfil NUS/AB candidato e parser restrito. Não controla conexão. |
 | device/discovery/FeatureDiscoveryEngine.kt | Descoberta de funcionalidades | Classifica inventário GATT e metadados de notificações sem inferir semântica de payload desconhecido. |
+| device/discovery/GattCapabilityMatrix.kt | Matriz GATT | Classifica onze grupos de perfis Bluetooth SIG pelos UUIDs, propriedades, CCCD e tráfego observado; ausência do perfil não prova ausência física do sensor. |
+| device/discovery/GattProfileSignature.kt | Assinatura estrutural GATT | Calcula SHA-256 de UUIDs/propriedades/descritores para comparar inventários; não identifica firmware binário nem autentica o dispositivo. |
 | data/discovery/FeatureDiscoveryStore.kt | Persistência do inventário GATT | Persiste metadados com schema estrito e bloqueio compartilhado; `apply()` evita I/O síncrono no callback, sem promessa de durabilidade imediata. Não grava HEX bruto. |
 | data/discovery/FeatureDiscoverySnapshotPolicy.kt | Validação do inventário GATT | Política Kotlin pura para limites, cardinalidade, IDs, timestamps e faixas de valores; possui testes unitários. |
 | data/discovery/DiscoveryLibraryStore.kt | Biblioteca interna de diagnóstico | Arquivo privado AtomicFile, bloqueio compartilhado, cache e fila serial limitada em thread dedicado; HEX apenas durante sessão explicitamente iniciada. |
