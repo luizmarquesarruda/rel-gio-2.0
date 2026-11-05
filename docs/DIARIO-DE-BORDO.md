@@ -1,3 +1,10 @@
+## 04/11/2026 — Controle de privacidade do histórico BLE
+
+- A biblioteca interna ganhou a ação **Excluir registro** em cada item, com confirmação antes de remover metadados e, quando presente, HEX capturado.
+- A exclusão ocorre no executor serial de persistência e grava um novo snapshot via AtomicFile; a UI não faz I/O de arquivo no thread principal.
+- A remoção atinge somente o ID selecionado, preserva os demais registros e mantém o estado da sessão ativa.
+- Testes unitários foram adicionados para remoção exata, preservação da sessão e ID inexistente.
+- Execução dos testes, lint, build, auditoria de APK e teste físico: **não validados**. CI não disparada conforme solicitação.
 ## 04/11/2026 — Liberação da conexão BLE para Wearfit Pro
 
 - Adicionada ação explícita na tela principal para entregar o controle da sessão ao Wearfit Pro.
