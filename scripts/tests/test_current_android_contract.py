@@ -68,6 +68,29 @@ class CurrentAndroidContractTests(unittest.TestCase):
         self.assertEqual("s", scan_permission.attrib.get(TOOLS + "targetApi"))
         self.assertIsNone(manifest.find("uses-permission-sdk-31"))
 
+    def test_weather_network_permissions_are_scoped_and_declared_once(self):
+        manifest = ET.parse(ROOT / "app/src/main/AndroidManifest.xml").getroot()
+        names = [
+            permission.attrib.get(ANDROID + "name")
+            for permission in manifest.findall("uses-permission")
+        ]
+        self.assertEqual(1, names.count("android.permission.INTERNET"))
+        self.assertEqual(1, names.count("android.permission.ACCESS_NETWORK_STATE"))
+        self.assertNotIn("android.permission.ACCESS_FINE_LOCATION", names)
+        self.assertNotIn("android.permission.ACCESS_COARSE_LOCATION", names)
+
+    def test_time_weather_screen_is_internal_and_reachable_from_feature_hub(self):
+        manifest = ET.parse(ROOT / "app/src/main/AndroidManifest.xml").getroot()
+        application = manifest.find("application")
+        activity = next(
+            node for node in application.findall("activity")
+            if node.attrib.get(ANDROID + "name") == ".ui.screens.TimeWeatherActivity"
+        )
+        self.assertEqual("false", activity.attrib.get(ANDROID + "exported"))
+        feature_hub = (ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/FeatureHubActivity.kt").read_text(encoding="utf-8")
+        self.assertIn('Feature("Hora e clima"', feature_hub)
+        self.assertIn('"time_weather" -> startActivity(Intent(this, TimeWeatherActivity::class.java))', feature_hub)
+
     def test_manifest_policy_auditor_rejects_sdk31_permission_element(self):
         xml = f'''<manifest xmlns:android="{ANDROID_NS}"
             package="com.luizmarquesarruda.relogio20.diagnostic">
@@ -92,6 +115,8 @@ class CurrentAndroidContractTests(unittest.TestCase):
         self.assertIn('id("org.jetbrains.kotlin.android") version "2.4.21"', root_build)
         self.assertIn('gradle-version: "9.5.0"', workflow)
         self.assertNotIn('gradle-version: "8.13"', workflow)
+        app_build = (ROOT / "app/build.gradle.kts").read_text(encoding="utf-8")
+        self.assertIn('androidx.work:work-runtime-ktx:2.10.1', app_build)
 
     def test_gatt_api33_helper_uses_requires_api_and_preferences_use_ktx(self):
         source = (
