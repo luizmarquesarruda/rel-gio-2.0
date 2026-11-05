@@ -418,7 +418,7 @@ class MainActivity : ComponentActivity() {
         connectionCard.addView(clockSyncButton, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
         ).apply { bottomMargin = dp(10) })
-        addText(connectionCard, "Ao conectar, o app envia a hora atual do Android uma única vez, somente se o relógio anunciar o serviço CTS padrão 0x1805/0x2A2B com WRITE. O GT3 MAXX capturado não anunciou esse serviço; nenhuma escrita proprietária é tentada.", 12f, false)
+        addText(connectionCard, "Ao conectar, o app envia a hora atual do Android uma única vez, somente após confirmar o fingerprint GATT completo do GT3 MAX Call e o serviço CTS padrão 0x1805/0x2A2B com WRITE. O GT3 MAXX capturado não anunciou esse serviço; nenhuma escrita proprietária é tentada.", 12f, false)
 
         val actions = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
