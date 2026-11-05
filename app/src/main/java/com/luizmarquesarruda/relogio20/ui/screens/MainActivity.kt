@@ -317,8 +317,8 @@ class MainActivity : ComponentActivity() {
         buildScreen()
         appendLog("Aplicativo iniciado. Diagnóstico BLE local.")
         appendLog(
-            "Payloads proprietários permanecem bloqueados. A sincronização de hora só pode ser iniciada manualmente " +
-                "pelo CTS padrão 0x1805/0x2A2B quando a característica anunciar WRITE."
+            "Payloads proprietários permanecem bloqueados. A hora do Android é enviada automaticamente uma vez por sessão, " +
+                "somente se o serviço CTS padrão 0x1805/0x2A2B anunciar a propriedade WRITE."
         )
         if (reconnectPolicy.isEnabled) {
             appendLog("Reconexão automática restaurada para a identidade GT3 MAX configurada localmente.")
@@ -414,7 +414,7 @@ class MainActivity : ComponentActivity() {
             setPadding(0, 0, 0, dp(12))
         }
         connectionCard.addView(deviceTimeSyncView)
-        clockSyncButton = makeButton("Sincronizar hora do relógio") {
+        clockSyncButton = makeButton("Sincronização automática de hora") {
             val activeGatt = bluetoothGatt
             if (activeGatt == null || !isGattConnected || isGattDisconnecting) {
                 deviceTimeSyncView.text = "Sincronização indisponível: conecte o relógio primeiro."
@@ -425,7 +425,7 @@ class MainActivity : ComponentActivity() {
         connectionCard.addView(clockSyncButton, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
         ).apply { bottomMargin = dp(10) })
-        addText(connectionCard, "A hora só é enviada após toque manual e somente pelo serviço Bluetooth SIG CTS, se anunciado pelo relógio.", 12f, false)
+        addText(connectionCard, "Ao conectar, o app envia a hora atual do Android uma única vez, somente se o relógio anunciar o serviço CTS padrão 0x1805/0x2A2B com WRITE. O GT3 MAXX capturado não anunciou esse serviço; nenhuma escrita proprietária é tentada.", 12f, false)
 
         val actions = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -2750,7 +2750,7 @@ class MainActivity : ComponentActivity() {
                 clockSyncButton.isEnabled = false
                 deviceTimeSyncView.text =
                     "Hora não sincronizada: CTS padrão (0x1805) ausente. Investigação passiva mantida; nenhum comando alternativo será enviado."
-                appendLog("CTS 0x1805 ausente nesta sessão. Sincronização manual indisponível; nenhum protocolo proprietário foi tentado.")
+                appendLog("CTS 0x1805 ausente nesta sessão. Sincronização indisponível; nenhum protocolo proprietário foi tentado.")
             }
             BluetoothCurrentTimeCapabilityPolicy.Capability.CHARACTERISTIC_MISSING -> {
                 clockSyncButton.isEnabled = false
@@ -2797,7 +2797,7 @@ class MainActivity : ComponentActivity() {
             deviceTimeSyncView.text =
                 "Hora não sincronizada: o relógio não anunciou o serviço CTS padrão (0x1805)."
             appendLog(
-                "Sincronização manual de hora indisponível: CTS 0x1805 ausente. " +
+                "Sincronização de hora indisponível: CTS 0x1805 ausente. " +
                     "Nenhum comando proprietário foi enviado."
             )
             return
