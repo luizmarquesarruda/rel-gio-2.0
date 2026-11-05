@@ -168,6 +168,7 @@ class FeatureHubActivity : Activity() {
                     "notifications" -> startActivity(Intent(this, NotificationCenterActivity::class.java))
                     "privacy" -> startActivity(Intent(this, HealthPrivacyActivity::class.java))
                     "local_tools" -> startActivity(Intent(this, LocalToolsActivity::class.java))
+                    "time_weather" -> startActivity(Intent(this, TimeWeatherActivity::class.java))
                     else -> showFeatureInfo(feature)
                 }
             }
