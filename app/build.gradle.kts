@@ -16,8 +16,8 @@ android {
         applicationId = "com.luizmarquesarruda.relogio20"
         minSdk = 26
         targetSdk = 36
-        versionCode = 9
-        versionName = "0.4.0-alpha.3"
+        versionCode = 10
+        versionName = "0.4.0-alpha.4"
         testInstrumentationRunner = "android.test.runner.AndroidJUnitRunner"
     }
 
@@ -53,6 +53,7 @@ kotlin {
 dependencies {
     implementation("androidx.activity:activity-ktx:1.13.0")
     implementation("androidx.health.connect:connect-client:1.1.0")
+    implementation("androidx.work:work-runtime-ktx:2.10.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
     testImplementation("junit:junit:4.13.2")
 }
