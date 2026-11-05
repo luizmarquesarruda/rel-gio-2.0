@@ -64,6 +64,13 @@
             android:name=".ui.screens.FeatureHubActivity"
             android:exported="false" />
         <activity
+            android:name=".ui.screens.LocalToolsActivity"
+            android:exported="false" />
+        <receiver
+            android:name=".ui.screens.LocalHealthReminderReceiver"
+            android:enabled="true"
+            android:exported="false" />
+        <activity
             android:name=".ui.screens.FeatureDiscoveryActivity"
             android:exported="false" />
         <activity
