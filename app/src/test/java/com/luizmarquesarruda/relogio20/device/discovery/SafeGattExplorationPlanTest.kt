@@ -113,6 +113,59 @@ class SafeGattExplorationPlanTest {
     }
 
     @Test
+    fun deepPlanSubscribesOnlyExactNusTxReceiveChannel() {
+        val plan = SafeGattExplorationPlan.buildDeep(
+            listOf(
+                GattServiceRecord(
+                    "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
+                    listOf(
+                        GattCharacteristicRecord(
+                            "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+                            setOf("WRITE", "WRITE_NO_RESPONSE")
+                        ),
+                        GattCharacteristicRecord(
+                            "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
+                            setOf("READ", "NOTIFY", "WRITE"),
+                            setOf("00002902-0000-1000-8000-00805f9b34fb")
+                        )
+                    )
+                )
+            )
+        )
+
+        assertEquals(1, plan.size)
+        assertEquals(
+            "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
+            plan.single().characteristicUuid
+        )
+        assertEquals(
+            SafeGattExplorationPlan.Kind.SUBSCRIBE_PROPRIETARY_CHANNEL,
+            plan.single().kind
+        )
+        assertTrue(plan.single().reason.contains("NUS TX"))
+        assertFalse(plan.any { it.characteristicUuid.endsWith("6e400002-b5a3-f393-e0a9-e50e24dcca9e") })
+        assertFalse(plan.any { it.kind == SafeGattExplorationPlan.Kind.READ_PROPRIETARY_VALUE })
+    }
+
+    @Test
+    fun deepPlanDoesNotSubscribeNusTxWithoutCccd() {
+        val plan = SafeGattExplorationPlan.buildDeep(
+            listOf(
+                GattServiceRecord(
+                    "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
+                    listOf(
+                        GattCharacteristicRecord(
+                            "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
+                            setOf("NOTIFY")
+                        )
+                    )
+                )
+            )
+        )
+        assertTrue(plan.isEmpty())
+    }
+
+    @Test
     fun doesNotSubscribeWithoutCccd() {
         val plan = SafeGattExplorationPlan.buildDeep(
             listOf(
