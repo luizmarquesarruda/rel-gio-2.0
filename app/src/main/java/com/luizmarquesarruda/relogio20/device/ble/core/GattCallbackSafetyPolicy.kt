@@ -36,8 +36,7 @@ internal object GattCallbackSafetyPolicy {
     fun shouldRediscoverServices(
         connectionIsCurrent: Boolean,
         connected: Boolean,
-        disconnecting: Boolean,
-        handoffActive: Boolean
+        disconnecting: Boolean
     ): Boolean =
-        connectionIsCurrent && connected && !disconnecting && !handoffActive
+        connectionIsCurrent && connected && !disconnecting
 }
