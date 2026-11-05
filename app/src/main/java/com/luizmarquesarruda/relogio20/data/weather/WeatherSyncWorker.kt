@@ -15,7 +15,7 @@ class WeatherSyncWorker(
         val location = preferences.readLocation() ?: return Result.success()
         val cached = preferences.readSnapshot()
         val cacheAge = cached?.let { System.currentTimeMillis() - it.fetchedAtEpochMillis }
-        if (cacheAge != null && cacheAge in 0 until MIN_REFRESH_AGE_MS) return Result.success()
+        if (cacheAge != null && cacheAge >= 0L && cacheAge < MIN_REFRESH_AGE_MS) return Result.success()
         return try {
             val snapshot = OpenMeteoWeatherRepository().fetchForecast(location)
             preferences.saveSnapshot(snapshot)
