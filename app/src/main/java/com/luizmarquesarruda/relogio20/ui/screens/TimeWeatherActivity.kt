@@ -59,7 +59,6 @@ class TimeWeatherActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         preferences = WeatherPreferences(this)
-        WeatherSyncScheduler.ensurePeriodic(this)
         buildScreen()
         renderCachedWeather()
         updatePhoneClock()
@@ -69,7 +68,11 @@ class TimeWeatherActivity : Activity() {
             val cached = preferences.readSnapshot()
             val cacheAge = cached?.let { System.currentTimeMillis() - it.fetchedAtEpochMillis }
                 ?: Long.MAX_VALUE
-            if (cacheAge > CACHE_REFRESH_AFTER_MS) refreshWeather(showToast = false)
+            if (cacheAge > CACHE_REFRESH_AFTER_MS) {
+                refreshWeather(showToast = false)
+            } else {
+                WeatherSyncScheduler.ensurePeriodic(this)
+            }
         }
     }
 
@@ -286,6 +289,7 @@ class TimeWeatherActivity : Activity() {
                 renderCachedWeather(keepStatus = true)
             } finally {
                 setBusy(false)
+                WeatherSyncScheduler.ensurePeriodic(this@TimeWeatherActivity)
             }
         }
     }
