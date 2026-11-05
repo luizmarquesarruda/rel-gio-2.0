@@ -62,7 +62,10 @@ internal object SafeGattExplorationPlan {
     private const val NUS_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
 
     /** Automatic plan: basic device metadata and battery read only. */
-    fun build(services: List<GattServiceRecord>): List<Operation> {
+    fun build(
+        services: List<GattServiceRecord>,
+        policy: ExplorationPolicy = ExplorationPolicy.forObservedInventory(services)
+    ): List<Operation> {
         val plan = mutableListOf<Operation>()
         services.forEach { service ->
             val serviceShort = shortUuid(service.uuid)
@@ -71,7 +74,9 @@ internal object SafeGattExplorationPlan {
                 val profile = known.firstOrNull {
                     it.service == serviceShort && it.characteristic == shortUuid(characteristic.uuid)
                 } ?: return@characteristicLoop
-                if (!profile.read || "READ" !in characteristic.properties) return@characteristicLoop
+                if (!profile.read || "READ" !in characteristic.properties ||
+                    !policy.isEligible(service.uuid, characteristic.uuid, ExplorationPolicy.Operation.READ)
+                ) return@characteristicLoop
                 plan += Operation(
                     service.uuid,
                     characteristic.uuid,
@@ -90,7 +95,10 @@ internal object SafeGattExplorationPlan {
      * and proprietary channels are eligible only after confirmation. Device identifiers,
      * Generic Access/Attribute, NUS and Secure DFU are excluded.
      */
-    fun buildDeep(services: List<GattServiceRecord>): List<Operation> {
+    fun buildDeep(
+        services: List<GattServiceRecord>,
+        policy: ExplorationPolicy = ExplorationPolicy.forObservedInventory(services)
+    ): List<Operation> {
         val plan = mutableListOf<Operation>()
         services.forEach { service ->
             val serviceShort = shortUuid(service.uuid)
@@ -114,7 +122,9 @@ internal object SafeGattExplorationPlan {
                     // Battery 0x2A19 is already read by the automatic baseline plan.
                     // Deep exploration keeps only its optional CCCD subscription.
                     val alreadyReadByBaseline = serviceShort == "180f" && shortCharacteristic == "2a19"
-                    if (profile.read && "READ" in properties && !alreadyReadByBaseline) {
+                    if (profile.read && "READ" in properties && !alreadyReadByBaseline &&
+                        policy.isEligible(service.uuid, characteristic.uuid, ExplorationPolicy.Operation.READ)
+                    ) {
                         plan += Operation(
                             service.uuid, characteristic.uuid, Kind.READ_STANDARD_VALUE,
                             "Leitura manual de perfil de sensor Bluetooth SIG: ${profile.description}."
@@ -122,7 +132,8 @@ internal object SafeGattExplorationPlan {
                     }
                     if (profile.notify &&
                         ("NOTIFY" in properties || "INDICATE" in properties) &&
-                        characteristic.descriptorUuids.any { shortUuid(it) == "2902" }
+                        characteristic.descriptorUuids.any { shortUuid(it) == "2902" } &&
+                        policy.isEligible(service.uuid, characteristic.uuid, ExplorationPolicy.Operation.READ)
                     ) {
                         plan += Operation(
                             service.uuid, characteristic.uuid, Kind.SUBSCRIBE_STANDARD_MEASUREMENT,
@@ -135,14 +146,17 @@ internal object SafeGattExplorationPlan {
                     val shortCharacteristic = shortUuid(characteristic.uuid)
                     if (shortCharacteristic in setOf("2a25", "2a23", "2a50")) return@characteristicLoop
                     val properties = characteristic.properties
-                    if ("READ" in properties) {
+                    if ("READ" in properties &&
+                        policy.isEligible(service.uuid, characteristic.uuid, ExplorationPolicy.Operation.READ)
+                    ) {
                         plan += Operation(
                             service.uuid, characteristic.uuid, Kind.READ_PROPRIETARY_VALUE,
                             "Leitura manual de canal customizado; nenhum payload será escrito."
                         )
                     }
                     if (("NOTIFY" in properties || "INDICATE" in properties) &&
-                        characteristic.descriptorUuids.any { shortUuid(it) == "2902" }
+                        characteristic.descriptorUuids.any { shortUuid(it) == "2902" } &&
+                        policy.isEligible(service.uuid, characteristic.uuid, ExplorationPolicy.Operation.READ)
                     ) {
                         plan += Operation(
                             service.uuid, characteristic.uuid, Kind.SUBSCRIBE_PROPRIETARY_CHANNEL,
