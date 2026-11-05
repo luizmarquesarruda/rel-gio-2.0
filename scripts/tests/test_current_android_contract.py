@@ -116,7 +116,7 @@ class CurrentAndroidContractTests(unittest.TestCase):
         self.assertIn('gradle-version: "9.5.0"', workflow)
         self.assertNotIn('gradle-version: "8.13"', workflow)
         app_build = (ROOT / "app/build.gradle.kts").read_text(encoding="utf-8")
-        self.assertIn('androidx.work:work-runtime-ktx:2.10.1', app_build)
+        self.assertIn('androidx.work:work-runtime-ktx:2.12.0', app_build)
 
     def test_gatt_api33_helper_uses_requires_api_and_preferences_use_ktx(self):
         source = (
