@@ -2614,7 +2614,7 @@ class MainActivity : ComponentActivity() {
             deviceTimeSyncView.text =
                 "Hora não sincronizada: o relógio não anunciou o serviço CTS padrão (0x1805)."
             appendLog(
-                "Sincronização automática de hora indisponível: CTS 0x1805 ausente. " +
+                "Sincronização manual de hora indisponível: CTS 0x1805 ausente. " +
                     "Nenhum comando proprietário foi enviado."
             )
             return
@@ -2632,7 +2632,7 @@ class MainActivity : ComponentActivity() {
                 "CTS encontrado, mas 0x2A2B não anuncia WRITE. Sincronização não iniciada."
             appendLog(
                 "CTS 0x1805/0x2A2B sem propriedade GATT WRITE. " +
-                    "A sincronização automática foi suspensa sem tentar outro canal."
+                    "A sincronização manual foi bloqueada sem tentar outro canal."
             )
             return
         }
