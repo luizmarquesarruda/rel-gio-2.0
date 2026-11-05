@@ -2547,44 +2547,50 @@ class MainActivity : ComponentActivity() {
         }
 
         val service = gatt.getService(UUID.fromString(BluetoothCurrentTimePayload.SERVICE_UUID))
-        if (service == null) {
-            clockSyncButton.isEnabled = false
-            deviceTimeSyncView.text =
-                "Hora não sincronizada: CTS padrão (0x1805) ausente. Investigação passiva mantida; nenhum comando alternativo será enviado."
-            appendLog("CTS 0x1805 ausente nesta sessão. Sincronização manual indisponível; nenhum protocolo proprietário foi tentado.")
-            return
-        }
-
-        val characteristic = service.getCharacteristic(
+        val characteristic = service?.getCharacteristic(
             UUID.fromString(BluetoothCurrentTimePayload.CURRENT_TIME_UUID)
         )
-        if (characteristic == null) {
-            clockSyncButton.isEnabled = false
-            deviceTimeSyncView.text =
-                "CTS 0x1805 anunciado, mas Current Time (0x2A2B) ausente."
-            appendLog("CTS anunciado sem 0x2A2B; sincronização manual indisponível.")
-            return
-        }
-
-        val supportsWrite =
-            characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE != 0
-        clockSyncButton.isEnabled = supportsWrite && !clockSyncAttemptedForSession
-        deviceTimeSyncView.text = if (supportsWrite) {
-            if (clockSyncAttemptedForSession) {
-                "CTS disponível; já houve uma tentativa nesta conexão. Reconecte para tentar novamente."
-            } else {
-                "CTS disponível (0x1805/0x2A2B). Toque em “Sincronizar hora do relógio” para enviar a hora local do celular."
-            }
-        } else {
-            "CTS encontrado, mas 0x2A2B não anuncia WRITE. Sincronização manual indisponível."
-        }
-        appendLog(
-            if (supportsWrite) {
-                "CTS 0x1805/0x2A2B identificado com WRITE. Sincronização habilitada somente por ação manual."
-            } else {
-                "CTS 0x1805/0x2A2B identificado sem WRITE. Nenhuma escrita será tentada."
-            }
+        val capability = BluetoothCurrentTimeCapabilityPolicy.evaluate(
+            connected = true,
+            servicePresent = service != null,
+            characteristicPresent = characteristic != null,
+            supportsWrite = characteristic?.properties?.and(
+                BluetoothGattCharacteristic.PROPERTY_WRITE
+            ) != 0
         )
+        when (capability) {
+            BluetoothCurrentTimeCapabilityPolicy.Capability.DISCONNECTED -> {
+                clockSyncButton.isEnabled = false
+                deviceTimeSyncView.text = "Hora do relógio: aguardando uma sessão BLE ativa."
+            }
+            BluetoothCurrentTimeCapabilityPolicy.Capability.SERVICE_MISSING -> {
+                clockSyncButton.isEnabled = false
+                deviceTimeSyncView.text =
+                    "Hora não sincronizada: CTS padrão (0x1805) ausente. Investigação passiva mantida; nenhum comando alternativo será enviado."
+                appendLog("CTS 0x1805 ausente nesta sessão. Sincronização manual indisponível; nenhum protocolo proprietário foi tentado.")
+            }
+            BluetoothCurrentTimeCapabilityPolicy.Capability.CHARACTERISTIC_MISSING -> {
+                clockSyncButton.isEnabled = false
+                deviceTimeSyncView.text =
+                    "CTS 0x1805 anunciado, mas Current Time (0x2A2B) ausente."
+                appendLog("CTS anunciado sem 0x2A2B; sincronização manual indisponível.")
+            }
+            BluetoothCurrentTimeCapabilityPolicy.Capability.WRITE_UNSUPPORTED -> {
+                clockSyncButton.isEnabled = false
+                deviceTimeSyncView.text =
+                    "CTS encontrado, mas 0x2A2B não anuncia WRITE. Sincronização manual indisponível."
+                appendLog("CTS 0x1805/0x2A2B identificado sem WRITE. Nenhuma escrita será tentada.")
+            }
+            BluetoothCurrentTimeCapabilityPolicy.Capability.READY -> {
+                clockSyncButton.isEnabled = !clockSyncAttemptedForSession
+                deviceTimeSyncView.text = if (clockSyncAttemptedForSession) {
+                    "CTS disponível; já houve uma tentativa nesta conexão. Reconecte para tentar novamente."
+                } else {
+                    "CTS disponível (0x1805/0x2A2B). Toque em “Sincronizar hora do relógio” para enviar a hora local do celular."
+                }
+                appendLog("CTS 0x1805/0x2A2B identificado com WRITE. Sincronização habilitada somente por ação manual.")
+            }
+        }
     }
 
     @SuppressLint("MissingPermission")
