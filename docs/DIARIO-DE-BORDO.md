@@ -768,3 +768,16 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Removidos a política de handoff externa e seus testes. Atualizados os testes de reconexão e redescoberta GATT.
 - O aplicativo não possui privilégio Android para desativar, encerrar ou revogar permissões de outro pacote. Se Wearfit Pro ainda estiver conectado ao GT3 MAX, a desconexão/força de parada deverá ser feita manualmente nas configurações do Android.
 - Testes Kotlin, Lint, build, CI e validação física no Galaxy A06 / Android 16 com GT3 MAX: **não validados**. Nenhuma CI foi disparada e nenhuma PR foi criada.
+
+## 04/11/2026 — Auditoria de obsolescência e conformidade dos decoders GATT
+
+- Revisão executada na branch `work/disable-wearfit-app-ownership-20261105`, HEAD de trabalho após as alterações desta rodada: os artefatos e políticas de handoff removidos não devem ser tratados como funcionalidade atual.
+- O documento `docs/COMPARTILHAMENTO-CONEXAO-WEARFIT-PRO.md` foi marcado como histórico/obsoleto. Seus passos de “Liberar conexão” e “Retomar conexão” não se aplicam ao app atual.
+- Os parsers `WearfitAbFrameParser` e `WearfitAbStreamDecoder` foram mantidos: eles tratam framing BLE/NUS candidato observado no relógio; não são integração operacional com o aplicativo Wearfit Pro nem justificam manter o handoff.
+- Defeito encontrado em `GattValueDecoder`: a característica Bluetooth SIG Pressure (0x2A6D) estava sendo interpretada como SFLOAT de 2 bytes, embora seja `uint32` de 4 bytes com resolução de 0,1 Pa. A característica Temperature (0x2A6E) estava sendo interpretada como SFLOAT; o contrato define `sint16` de 2 bytes, resolução de 0,01 °C, faixa de -273,15 °C a 327,67 °C e `0x8000` como “valor desconhecido”.
+- Corrigidos os decoders 0x2A6D/0x2A6E e substituídos os testes que reproduziam o formato incorreto. A decodificação de umidade 0x2A6F foi mantida (uint16 em centésimos de %).
+- Fonte técnica: Bluetooth SIG, *GATT Specification Supplement*, versão datada de 2026-02-05, tabelas das características Pressure e Temperature: https://btprodspecificationrefs.blob.core.windows.net/gatt-specification-supplement/GATT_Specification_Supplement.pdf
+- Ponto legado ainda pendente: `syncClockUsingCurrentTimeService()`, `BluetoothCurrentTimePayload` e o callback de escrita CTS permanecem como implementação preparada, mas a rotina não possui chamada no fluxo atual. O callback de descoberta registra que a sincronização está suspensa. Portanto, a sincronização de hora do GT3 MAX **não está implementada/validada operacionalmente**; nenhum sucesso foi presumido.
+- Dívida estrutural mantida: `MainActivity.kt` ainda concentra UI, permissões, scan, conexão, callbacks, fila, reconexão e exploração GATT. A extração deve ser incremental, sem reescrita ampla nem mudança de protocolo durante esta auditoria.
+- Não removidos os documentos de pesquisa Wearfit Pro, o catálogo de funções, o plano de substituição ou o perfil/parser AB: são referência histórica/técnica e não código de handoff ativo.
+- Testes Kotlin, Lint e builds **não executados**; CI **não disparada**; validação física no Galaxy A06 / GT3 MAX **não realizada**; PR e merge **não criados/executados** nesta rodada.
