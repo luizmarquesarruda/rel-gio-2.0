@@ -1,6 +1,6 @@
 # Relógio 2.0
 
-Aplicativo Android de Saúde e Fitness que se conecta diretamente ao GT3 MAX por BLE/GATT, consulta passos agregados no Health Connect e oferece captura consentida de notificações na variante companion. O Wearfit Pro permanece uma referência/companheiro externo; o app não depende de API ou nuvem privada dele.
+Aplicativo Android de Saúde e Fitness que se conecta diretamente ao GT3 MAX por BLE/GATT, consulta passos agregados no Health Connect e oferece captura consentida de notificações na variante companion. A conexão BLE/GATT é gerenciada diretamente pelo Relógio 2.0. O aplicativo não oferece handoff nem integração operacional com Wearfit Pro; a documentação histórica sobre ele serve apenas como referência de pesquisa de protocolo.
 
 ## Reconexão automática BLE
 
@@ -12,9 +12,11 @@ A recuperação nesta fase ocorre enquanto o app está em primeiro plano ou quan
 
 Se o Android sinalizar **Service Changed**, o aplicativo invalida a fila/operações e solicita uma nova descoberta dos serviços na mesma sessão GATT. Respostas de READ, WRITE e CCCD só alteram o estado quando correspondem à conexão atual e à operação efetivamente em andamento; callbacks atrasados, de outra conexão ou de operações invalidadas são descartados. Uma operação que expirou ou foi interrompida por Service Changed não é repetida na mesma conexão GATT; uma nova conexão permite tentar novamente. Um canal silencioso ou sem callback não é considerado sensor ausente.
 
-## Liberação temporária para Wearfit Pro
+## Controle direto da conexão BLE
 
-Quando o usuário libera o relógio para o Wearfit Pro, o Relógio 2.0 encerra sua sessão GATT, cancela tentativas pendentes e bloqueia novas buscas/conexões, inclusive pelo botão principal. Para retomar, use **Retomar conexão no Relógio 2.0**; a retomada é explícita e não depende de desparear o relógio nem desligar o Bluetooth. A sincronização física do relógio continua dependente do Wearfit Pro e não é declarada validada pelo handoff.
+O Relógio 2.0 é o único controlador BLE previsto pelo aplicativo. A opção de liberar a sessão para Wearfit Pro foi removida, e a preferência antiga de handoff é apagada na inicialização. Ao iniciar uma conexão, o app habilita recuperação automática com intervalos progressivos de 1, 2, 5, 10, 20 e até 30 segundos. A ação **Desconectar / Parar reconexão** continua sendo a decisão explícita para interromper o controle e as tentativas.
+
+O app não tem permissão para desativar ou encerrar outro aplicativo Android. Se Wearfit Pro ainda estiver conectado ao relógio, encerre a conexão ou force a parada dele manualmente nas configurações do Android antes de conectar pelo Relógio 2.0. O comportamento de reconexão contínua permanece limitado ao app em primeiro plano ou retomado; serviço BLE permanente em segundo plano ainda não está implementado.
 
 ## Finalidade do produto
 
