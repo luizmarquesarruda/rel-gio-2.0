@@ -21,6 +21,15 @@ class AccessPolicyTest {
     }
 
     @Test
+    fun hardBlocklistCannotBeMutatedAtRuntime() {
+        assertThrows(UnsupportedOperationException::class.java) {
+            @Suppress("UNCHECKED_CAST")
+            (AccessPolicy.HARD_FORBIDDEN as MutableSet<java.util.UUID>)
+                .add(java.util.UUID.randomUUID())
+        }
+    }
+
+    @Test
     fun onlyExplicitlyConfirmedSigCurrentTimeWriteIsPermitted() {
         val policy = AccessPolicy.DEFAULT
         assertFalse(policy.canWrite(
