@@ -10,7 +10,7 @@ Usar o Wearfit Pro como referência funcional para o Relógio 2.0, sem copiar pr
 |---|---|---|---|---|
 | Dispositivo | Pareamento, estado conectado e bateria/carga | Wearfit Pro ou BLE validado | P0 | Conexão/descoberta GATT implementadas; bateria AB/NUS é candidata, leitura automática por fingerprint adicionada e correlação com Wearfit Pro pendente |
 | Atividade | Passos diários | Health Connect ou driver BLE | P0 | Health Connect agregado lido na PR #5; origem GT3 não confirmada |
-| Atividade | Histórico de passos e tendências | Health Connect/local | P1 | Planejado |
+| Atividade | Histórico de passos e tendências | Health Connect/local | P1 | Histórico diário de 7 dias implementado via Health Connect; não atribuído ao relógio |
 | Saúde | Frequência cardíaca | Wearfit Pro/Health Connect/BLE | P1 | Sem parser GT3 validado |
 | Saúde | Sono e fases | Wearfit Pro/Health Connect/BLE | P1 | Não implementado |
 | Saúde | Exercícios e duração | Wearfit Pro/Health Connect/BLE | P1 | Não implementado |
@@ -20,16 +20,20 @@ Usar o Wearfit Pro como referência funcional para o Relógio 2.0, sem copiar pr
 | Alertas | SMS | Notificação Android / integração do fabricante | P1 | Pesquisa; não pedir READ_SMS nesta abordagem |
 | Alertas | WhatsApp e WhatsApp Business | NotificationListenerService | P0 | Captura local consentida na companion implementada; retransmissão física não validada |
 | Alertas | Outros apps | NotificationListenerService + filtros | P1 | Captura local por pacote na companion implementada; retransmissão física não validada |
-| Recursos | Lembrete sedentário, alarme, encontrar telefone/relógio | BLE/firmware específico | P2 | Sem protocolo comprovado |
+| Recursos | Lembrete sedentário, alarme, encontrar telefone/relógio | Android local/BLE | P2 | Lembrete local e handoff de alarme implementados; localizar relógio/telefone ainda sem protocolo |
 | Saúde | Respiração, stress/fadiga e temperatura | Wearfit Pro/BLE | P2 | Não implementado; estimativas exigem validação |
 | Saúde | Glicose, MET e ciclo menstrual | Wearfit Pro/app | P3 | Não priorizar; disponibilidade/dispositivo e significado precisam ser comprovados |
-| Atividade | Reconhecimento automático e metas | Wearfit Pro/driver | P1 | Planejado |
-| Bem-estar | Lembrete de saúde e treino respiratório | Wearfit Pro/driver | P2 | Planejado |
-| Controles | Música, câmera remota, cronômetro e timer | Android/BLE | P3 | Não implementado |
-| Dispositivo | Encontrar telefone, alarme e configurações de tela | Android/BLE | P2 | Não implementado |
+| Atividade | Reconhecimento automático e metas | Wearfit Pro/driver | P1 | Meta local de passos implementada; reconhecimento automático ainda não validado |
+| Bem-estar | Lembrete de saúde e treino respiratório | Android local/Wearfit Pro | P2 | Guia respiratório e lembrete local implementados no telefone; integração do relógio não validada |
+| Controles | Música, câmera remota, cronômetro e timer | Android/BLE | P3 | Cronômetro e timer locais implementados; música e câmera remota pendentes de protocolo/integração |
+| Dispositivo | Encontrar telefone, alarme e configurações de tela | Android/BLE | P2 | Handoff de alarme Android implementado; encontrar dispositivo e configurações do relógio não validados |
 | Ambiente | Clima e localização | Serviço online e localização Android | P3 | Fora do escopo atual; dados sensíveis e dependência de rede |
 | Configuração crítica | OTA, reset, restauração de fábrica e ajustes de firmware | BLE proprietário | Fora de escopo | Bloqueado por risco; não implementar |
 | Pagamento/identidade | Alipay, cartão de acesso e dados de contato | Firmware/serviço externo | Fora de escopo | Não implementar sem exigência explícita e avaliação de segurança |
+
+## Implementação local no Relógio 2.0 — 05/11/2026
+
+O catálogo do aplicativo agora abre uma tela de ferramentas Android para meta diária de passos, histórico de 7 dias via Health Connect, cronômetro, temporizador, treino respiratório guiado, criação de alarme pelo app Relógio do Android e lembrete diário local. Nenhuma dessas funções envia comandos ao GT3 MAX. O temporizador/cronômetro não garantem execução em segundo plano; o lembrete usa agendamento inexacto e precisa ser reativado após reboot.
 
 ## Priorização de engenharia
 
