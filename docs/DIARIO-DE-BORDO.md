@@ -767,3 +767,11 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - UI agora deixa explícito que o TX aguarda inscrição/notificação, sem prometer que seja um sensor validado.
 - Testes adicionados para garantir TX somente, RX bloqueado e CCCD obrigatório.
 - CI/testes/build e teste físico: **não validados**; CI não disparada.
+
+
+## 05/11/2026 — Correção do teste de exclusão NUS após CI #415
+
+- CI #415: 145 testes diagnosticados, com uma falha de expectativa no caso que ainda excluía integralmente o NUS. O Lint e a compilação Kotlin das duas variantes passaram.
+- Atualizada a asserção: agora exige um único plano NUS TX para recebimento passivo, e verifica que NUS RX, READ proprietário e qualquer WRITE permanecem ausentes.
+- APK e validação de manifesto não foram produzidos na #415 porque o teste unitário interrompeu a etapa combinada.
+- Nova execução pela atualização da PR #18; CI/teste físico ainda não validados.
