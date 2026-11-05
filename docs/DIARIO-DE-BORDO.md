@@ -732,3 +732,13 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - O catálogo de funções não apresenta mais o CTS como mecanismo que será automaticamente usado. A identificação 0x1805/0x2A2B é informativa; escrita física de hora permanece suspensa.
 - Desativar captura de notificações (inclusive em consequência de revogação de acesso) limpa imediatamente as prévias em memória; teste de limpeza adicionado.
 - README e tela de privacidade esclarecem retenção: HEX é capturado somente em sessão consentida, mas permanece no arquivo privado depois da sessão, limitado a 1.000 registros; não existe exclusão individual na UI. Remover os dados do app no Android apaga o arquivo.
+
+
+## Barreira contra callbacks GATT tardios e retenção local — 04/11/2026
+
+- As chaves de operações GATT que expiraram ou estavam em execução quando o Android notificou Service Changed passam a ser invalidadas até uma nova instância `BluetoothGatt`. A fila não repete aquela chave dentro da mesma conexão; evita que callback atrasado da operação antiga seja confundido com uma nova tentativa idêntica.
+- Callbacks de notificação agora exigem que a referência GATT seja atual, a sessão esteja conectada e não esteja em encerramento. Notificações tardias após o início da desconexão são ignoradas.
+- Quando a fila de persistência está cheia, o log informa separadamente que o READ ou valor decodificado foi recebido, mas não foi enfileirado no histórico. Isso evita sugerir gravação de HEX que não foi aceita.
+- A retenção do HEX local foi explicitada na tela da biblioteca, na tela de privacidade e no README: captura apenas durante sessão consentida, retenção posterior até o limite de 1.000 registros, sem exclusão individual disponível na UI.
+- Pausar a ponte de notificações limpa imediatamente os dados voláteis; novo teste cobre `NotificationCaptureStore.clear()`.
+- Relatório diagnóstico mascara MAC e não exporta texto das notificações Android; o fingerprint passivo guarda metadados e hash truncado, sem reter payload bruto.

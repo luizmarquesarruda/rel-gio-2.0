@@ -10,7 +10,7 @@ A recuperação nesta fase ocorre enquanto o app está em primeiro plano ou quan
 
 ## Recuperação da tabela GATT
 
-Se o Android sinalizar **Service Changed**, o aplicativo invalida a fila/operações e solicita uma nova descoberta dos serviços na mesma sessão GATT. Respostas de READ, WRITE e CCCD só alteram o estado quando correspondem à conexão atual e à operação efetivamente em andamento; callbacks atrasados ou de outra conexão são descartados. Um canal silencioso ou sem callback não é considerado sensor ausente.
+Se o Android sinalizar **Service Changed**, o aplicativo invalida a fila/operações e solicita uma nova descoberta dos serviços na mesma sessão GATT. Respostas de READ, WRITE e CCCD só alteram o estado quando correspondem à conexão atual e à operação efetivamente em andamento; callbacks atrasados, de outra conexão ou de operações invalidadas são descartados. Uma operação que expirou ou foi interrompida por Service Changed não é repetida na mesma conexão GATT; uma nova conexão permite tentar novamente. Um canal silencioso ou sem callback não é considerado sensor ausente.
 
 ## Liberação temporária para Wearfit Pro
 

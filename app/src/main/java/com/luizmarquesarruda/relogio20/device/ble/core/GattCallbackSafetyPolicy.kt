@@ -8,10 +8,12 @@ internal object GattCallbackSafetyPolicy {
     fun acceptsOperationCallback(
         connectionIsCurrent: Boolean,
         activeOperationKey: String?,
-        callbackOperationKey: String
+        callbackOperationKey: String,
+        invalidatedOperationKeys: Set<String> = emptySet()
     ): Boolean =
         connectionIsCurrent &&
             callbackOperationKey.isNotBlank() &&
+            callbackOperationKey !in invalidatedOperationKeys &&
             activeOperationKey == callbackOperationKey
 
     fun acceptsNotificationCallback(

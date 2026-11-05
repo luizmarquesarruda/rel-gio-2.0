@@ -45,6 +45,27 @@ class GattCallbackSafetyPolicyTest {
     }
 
     @Test
+    fun rejectsLateCallbackForOperationInvalidatedWithinSameGattConnection() {
+        val key = "180f/2a19/READ"
+        assertFalse(
+            GattCallbackSafetyPolicy.acceptsOperationCallback(
+                connectionIsCurrent = true,
+                activeOperationKey = key,
+                callbackOperationKey = key,
+                invalidatedOperationKeys = setOf(key)
+            )
+        )
+        assertTrue(
+            GattCallbackSafetyPolicy.acceptsOperationCallback(
+                connectionIsCurrent = true,
+                activeOperationKey = key,
+                callbackOperationKey = key,
+                invalidatedOperationKeys = emptySet()
+            )
+        )
+    }
+
+    @Test
     fun rejectsNotificationsFromStaleDisconnectedOrDisconnectingSession() {
         assertTrue(
             GattCallbackSafetyPolicy.acceptsNotificationCallback(

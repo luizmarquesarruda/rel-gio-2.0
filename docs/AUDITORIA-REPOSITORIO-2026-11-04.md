@@ -84,3 +84,13 @@ Leituras continuam limitadas ao plano GATT existente; inscrições usam NOTIFY/I
 A biblioteca BLE guarda até 1.000 registros no arquivo privado. O consentimento cronometrado controla **quando HEX pode ser capturado**; ele não configura expiração automática do HEX já salvo. A UI não oferece exclusão individual. Esta limitação foi documentada no README para que “capturado apenas durante sessão” não seja interpretado como “apagado ao fim da sessão”.
 
 A ponte de notificações opera com uma regra diferente: prévias são voláteis, limitadas a 30 e 15 minutos, e agora são eliminadas imediatamente quando a captura é desativada ou o acesso é revogado.
+
+
+## Terceira rodada — invalidação de callbacks, retenção e notificação
+
+- Chaves de operações READ/CCCD/WRITE com timeout ou interrompidas por Service Changed ficam invalidadas até uma nova instância GATT. A fila não repete essas mesmas chaves na sessão atual; a tentativa é liberada após reconectar.
+- Callbacks de notificação só são processados se a conexão ainda for atual, conectada e não estiver sendo encerrada.
+- A fila limitada registra avisos de overflow também para HEX de READ e valores decodificados, separando observação do recebimento da confirmação de que a gravação foi aceita.
+- O catálogo de funções e as telas de privacidade/biblioteca foram alinhados com a política real de CTS e retenção de HEX.
+- A captura de notificação é limpa quando desativada; limite 30/15 min mantido.
+- O exportador máscara endereços Bluetooth e omite texto de notificações Android; o fingerprint apenas processa metadados/hash curto.

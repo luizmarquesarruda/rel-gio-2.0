@@ -3,7 +3,7 @@
 ## Não lançado — retenção explícita de histórico BLE e limpeza de prévias — 04/11/2026
 
 - A tela de funções não promete sincronização CTS: a característica pode aparecer no inventário, mas a escrita de hora continua suspensa e não validada.
-- Pausar a captura de notificações ou desativá-la após revogação de acesso limpa imediatamente as prévias em memória. O limite de 30 eventos e a expiração de 15 minutos permanecem.
+- Pausar a captura de notificações ou desativá-la após revogação de acesso limpa imediatamente as prévias em memória. Callbacks de notificação recebidos após desconexão/início do encerramento são ignorados. O limite de 30 eventos e a expiração de 15 minutos permanecem.
 - A documentação agora distingue claramente captura consentida de retenção posterior do histórico BLE: registros HEX já capturados permanecem no armazenamento privado local, até o limite de 1.000 registros; não há exclusão individual na UI atual.
 - Teste do armazenamento volátil de notificações adicionado/atualizado.
 
