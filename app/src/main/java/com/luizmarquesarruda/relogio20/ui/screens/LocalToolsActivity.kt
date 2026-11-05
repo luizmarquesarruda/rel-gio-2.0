@@ -27,6 +27,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsRepository
+import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsHistoryResult
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsResult
 import com.luizmarquesarruda.relogio20.domain.activity.LocalFeaturePolicy
 import kotlinx.coroutines.CoroutineScope
@@ -48,6 +49,7 @@ class LocalToolsActivity : Activity() {
     private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private lateinit var body: LinearLayout
     private lateinit var stepsStatus: TextView
+    private lateinit var historyStatus: TextView
     private lateinit var goalInput: EditText
     private lateinit var stopwatchValue: TextView
     private lateinit var timerValue: TextView
@@ -89,11 +91,15 @@ class LocalToolsActivity : Activity() {
         buildUi()
         loadStepGoal()
         refreshSteps()
+        refreshStepsHistory()
     }
 
     override fun onResume() {
         super.onResume()
-        if (::body.isInitialized) refreshSteps()
+        if (::body.isInitialized) {
+            refreshSteps()
+            refreshStepsHistory()
+        }
     }
 
     override fun onDestroy() {
@@ -176,6 +182,8 @@ class LocalToolsActivity : Activity() {
                     .onFailure { toast(it.message ?: "Meta inválida.") }
             }
         }
+        section("Histórico de passos • últimos 7 dias")
+        historyStatus = addText("Consultando histórico…", 12f)
     }
 
     private fun refreshSteps() {
@@ -203,6 +211,37 @@ class LocalToolsActivity : Activity() {
                         stepsStatus.text = "Atualize o Health Connect para consultar passos."
                     is HealthConnectStepsResult.Failure ->
                         stepsStatus.text = "Falha ao consultar passos: " + result.reason
+                }
+            }
+        }
+    }
+
+    private fun refreshStepsHistory() {
+        if (!::historyStatus.isInitialized) return
+        ioScope.launch {
+            val result = runCatching {
+                val repository = HealthConnectStepsRepository(applicationContext)
+                if (!repository.hasReadPermission()) {
+                    HealthConnectStepsHistoryResult.PermissionRequired
+                } else {
+                    repository.readStepsHistory(days = 7)
+                }
+            }.getOrElse {
+                HealthConnectStepsHistoryResult.Failure(it.message ?: "Falha ao consultar histórico.")
+            }
+            runOnUiThread {
+                historyStatus.text = when (result) {
+                    HealthConnectStepsHistoryResult.PermissionRequired ->
+                        "Histórico indisponível: conceda READ_STEPS no painel principal."
+                    is HealthConnectStepsHistoryResult.Failure ->
+                        "Histórico indisponível: " + result.reason
+                    is HealthConnectStepsHistoryResult.Success -> result.days.joinToString("\\n") { day ->
+                        val count = day.totalSteps?.let {
+                            NumberFormat.getIntegerInstance(Locale.getDefault()).format(it)
+                        } ?: "Sem registro"
+                        day.date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM", Locale.getDefault())) +
+                            " • " + count + " passos"
+                    }
                 }
             }
         }
