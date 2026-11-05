@@ -7,7 +7,12 @@ android {
     namespace = "com.luizmarquesarruda.relogio20"
     compileSdk = 36
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
+        buildConfigField("boolean", "IS_TEST", "false")
         applicationId = "com.luizmarquesarruda.relogio20"
         minSdk = 26
         targetSdk = 36
