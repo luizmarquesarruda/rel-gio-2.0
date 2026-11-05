@@ -84,3 +84,11 @@ A primeira extração arquitetural deve retirar BLE e Health Connect de `MainAct
 - Publicação Health Connect validada com permissão concedida e revogada.
 - Funções de notificação e sincronização só anunciadas como prontas após teste físico.
 - Comparação funcional documentada com Wearfit Pro para cada recurso declarado suportado.
+
+## Serviços independentes do telefone — hora e clima
+
+- **Hora:** o relógio civil e o fuso do Android são a fonte local. O app mostra se data/hora automática e fuso automático estão ativos. O ajuste do wearable ocorre automaticamente uma vez por sessão apenas se existir CTS 0x1805/0x2A2B com WRITE. No inventário atual do GT3 MAXX, CTS não aparece; seu relógio físico continua sem sincronização comprovada.
+- **Clima:** Open-Meteo é consultado pelo telefone usando cidade selecionada manualmente. A implementação inclui geocodificação, previsão atual/horária/diária, cache privado e WorkManager periódico condicionado à rede. Não solicita GPS nem transmite identificadores ou dados de saúde.
+- **Limite BLE:** a previsão ainda não é encaminhada ao GT3 MAXX. Falta identificar contrato de clima, framing e campos do firmware desta unidade. Não experimentar NUS RX nem canais proprietários.
+- **Uso da fonte:** o endpoint gratuito da Open-Meteo é para fins não comerciais e os dados exigem atribuição CC BY 4.0. Rever termos/contrato antes de qualquer distribuição comercial.
+- **Referência detalhada:** [Integração de hora e clima pela rede do celular](INTEGRACAO-HORA-CLIMA-REDE.md).
