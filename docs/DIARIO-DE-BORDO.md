@@ -816,3 +816,18 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - README e arquitetura foram atualizados para refletir a nova fronteira de segurança e remover a afirmação antiga de que toda escrita de característica está suspensa.
 - Implementação no commit `8a4c397ca25122f966c7920015ec8d7952ebaef9`; documentação nos commits subsequentes da mesma branch.
 - Testes Kotlin, Lint, build Android e teste físico no Galaxy A06/Android 16 com GT3 MAX: **não executados/não validados nesta etapa**. CI não disparada; PR e merge não criados.
+
+
+## 05/11/2026 — Matriz de recursos e assinatura estrutural do GT3 MAX
+
+- Após revisar a captura GATT do GT3 MAX Call, foi mantida a conclusão de que não há firmware binário disponível para análise estática. As strings V1.07 e SH0050 são informações apresentadas pela interface, não evidência de leitura do serviço Device Information nem identificação do SoC.
+- Criado `GattCapabilityMatrix` para onze grupos Bluetooth SIG: bateria, Device Information, CTS, frequência cardíaca, pressão arterial, oximetria, termômetro, ambiente, composição corporal, corrida/cadência e ciclismo/cadência.
+- A matriz classifica presença de serviço/característica, READ, NOTIFY/INDICATE e CCCD. Notificação observada é separada de valor validado; serviço não anunciado não é rotulado como sensor fisicamente ausente.
+- Criado `GattProfileSignature`, SHA-256 estrutural determinístico de serviços/características/descritores/propriedades. A assinatura exclui MAC, serial, dados de fabricante e payloads. Não é hash do firmware e não autentica o relógio.
+- `FeatureDiscoveryEngine` registra baseline, assinatura inalterada ou alterada entre inventários e atualiza o estado da matriz quando ocorre notificação em canal SIG correspondente.
+- `FeatureDiscoveryActivity` exibe a matriz de recursos Bluetooth SIG separada de outras evidências. Corrigida mensagem antiga que dizia que a exclusão individual da Biblioteca ainda não existia.
+- Adicionados testes puros para ausência de perfil, serviço sem característica, CCCD ausente, tráfego histórico, ordem da assinatura, alteração de propriedades e integração do motor. Os testes foram **adicionados, mas não executados**.
+- Criado `docs/ESTUDO-FIRMWARE-GT3-MAXX.md`, registrando que FE59/DFU só foi observado e continua bloqueado, que NUS RX permanece sem escrita e que a interpretação AB de bateria permanece candidata.
+- Nenhum comando proprietário, escrita NUS RX, DFU/OTA, reset ou calibração foi enviado.
+- CI não disparada; build, Lint, testes Kotlin e validação física no Galaxy A06/GT3 MAX **não validados**. Nenhuma PR ou merge criado nesta rodada.
+
