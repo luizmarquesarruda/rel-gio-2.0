@@ -19,10 +19,15 @@ internal class BleReconnectPolicy(initiallyEnabled: Boolean = false) {
 
     private var retryIndex = 0
 
-    /** Called only after the Android GATT callback confirms STATE_CONNECTED. */
-    fun markConnected() {
+    /** Enables recovery as soon as the user explicitly asks this app to own the connection. */
+    fun markConnectionRequested() {
         isEnabled = true
         retryIndex = 0
+    }
+
+    /** Called only after the Android GATT callback confirms STATE_CONNECTED. */
+    fun markConnected() {
+        markConnectionRequested()
     }
 
     /** Explicit user intent always takes precedence over pending automatic retries. */
