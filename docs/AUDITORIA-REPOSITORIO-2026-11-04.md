@@ -121,3 +121,13 @@ A ponte de notificações opera com uma regra diferente: prévias são voláteis
 - Adicionados testes para TX exato, RX excluído e ausência de CCCD.
 - Fundamentação: Android executa discovery/read/notify de forma assíncrona e entrega os resultados em callbacks; a inscrição depende da propriedade anunciada e do CCCD. Referência: documentação oficial BluetoothGatt e Bluetooth GATT.
 - CI, testes Kotlin, build e validação física no GT3 MAX/Galaxy A06: **não validados**. Nenhum workflow foi disparado.
+
+## 05/11/2026 — Resultado da Android CI #415 e correção da regressão de teste
+
+- A execução #415 foi vinculada ao HEAD `9c89b3dcd1418ec33a17e6558f569a8e43a619ef`.
+- Testes de política Python do APK: aprovados. Lint diagnostic/companion: aprovado. Compilação Kotlin das duas variantes: concluída.
+- A suíte diagnostic executou 145 testes e falhou em uma única asserção: `SafeGattExplorationPlanTest.deepPlanExcludesDfuNusChannelsAndDeviceIdentifiers`.
+- A asserção antiga esperava inventário vazio ao encontrar NUS, o que deixou de ser verdadeiro após a inclusão explícita e restrita de NUS TX passivo.
+- Corrigido o contrato do teste: DFU e identificadores continuam excluídos; somente o UUID NUS TX exato pode ser inscrito quando anuncia NOTIFY/INDICATE + CCCD; NUS RX e READ/WRITE continuam proibidos.
+- A execução #415 não gerou APK, pois a tarefa combinada interrompeu antes dos guardrails e assemble; o artefato de relatórios Android foi publicado.
+- Nova CI será executada pelo evento synchronize da PR técnica #18 após a correção. Nenhum merge foi realizado; teste físico continua **não validado**.
