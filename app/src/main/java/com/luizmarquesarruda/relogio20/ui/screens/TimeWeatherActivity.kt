@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.Typeface
+import android.net.Uri
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.Handler
@@ -206,9 +207,19 @@ class TimeWeatherActivity : Activity() {
         weatherCard.addView(dailyForecastView)
         content.addView(weatherCard, cardParams().apply { topMargin = dp(12) })
 
+        val attribution = textView(11f, 0xFF176B5B.toInt()).apply {
+            text = "Fonte meteorológica: Open-Meteo.com • dados CC BY 4.0"
+            isClickable = true
+            setOnClickListener {
+                runCatching {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://open-meteo.com/")))
+                }
+            }
+        }
+        content.addView(attribution)
         addText(
             content,
-            "Fonte meteorológica: Open-Meteo. Dados de previsão, não medição de estação local.",
+            "São usados dados de previsão meteorológica, não medição de estação local. A busca envia o nome da cidade digitado e as coordenadas da cidade selecionada; não envia GPS atual nem dados de saúde.",
             11f,
             0xFF526574.toInt()
         )
