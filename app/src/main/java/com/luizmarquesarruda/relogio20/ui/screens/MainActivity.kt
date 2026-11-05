@@ -414,14 +414,7 @@ class MainActivity : ComponentActivity() {
             setPadding(0, 0, 0, dp(12))
         }
         connectionCard.addView(deviceTimeSyncView)
-        clockSyncButton = makeButton("Sincronização automática de hora") {
-            val activeGatt = bluetoothGatt
-            if (activeGatt == null || !isGattConnected || isGattDisconnecting) {
-                deviceTimeSyncView.text = "Sincronização indisponível: conecte o relógio primeiro."
-            } else {
-                syncClockUsingCurrentTimeService(activeGatt)
-            }
-        }.apply { isEnabled = false }
+        clockSyncButton = makeButton("Sincronização automática de hora") { }.apply { isEnabled = false }
         connectionCard.addView(clockSyncButton, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
         ).apply { bottomMargin = dp(10) })
