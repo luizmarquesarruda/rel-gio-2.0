@@ -11,6 +11,7 @@ import com.luizmarquesarruda.relogio20.notifications.NotificationCenterActivity
 import com.luizmarquesarruda.relogio20.device.ble.gatt.SerialGattOperationQueue
 import com.luizmarquesarruda.relogio20.device.ble.gatt.BluetoothCurrentTimePayload
 import com.luizmarquesarruda.relogio20.device.ble.core.BleReconnectPolicy
+import com.luizmarquesarruda.relogio20.device.ble.core.BleExternalHandoffPolicy
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbFrameParser
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitProtocolProfile
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.Gt3MaxCallDeviceProfile
