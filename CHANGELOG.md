@@ -1,3 +1,13 @@
+## Não lançado — controle BLE exclusivo pelo Relógio 2.0 — 05/11/2026
+
+- Removido da interface o botão de handoff/liberação para Wearfit Pro; o app não pausa mais sua conexão para entregar o relógio a outro aplicativo.
+- Removidos os bloqueios de busca, conexão, callbacks GATT, Service Changed e reconexão que dependiam do estado de handoff.
+- A preferência antiga `wearfit_handoff_active` é apagada na inicialização, evitando que instalações atualizadas permaneçam presas no estado de liberação.
+- Uma solicitação explícita de conexão habilita a política de reconexão progressiva antes mesmo da primeira conexão bem-sucedida; desconexão manual continua desabilitando as tentativas.
+- Excluídos `BleExternalHandoffPolicy` e seus testes obsoletos; atualizados testes da política de reconexão e do callback Service Changed.
+- O app não pode desativar/encerrar outro pacote Android. Se Wearfit Pro ainda mantiver GATT ativo, o usuário deverá encerrar essa conexão ou forçar a parada manualmente.
+- Testes Kotlin, Lint, build, CI e teste físico Galaxy A06 / GT3 MAX: **não validados nesta alteração**. Nenhuma CI foi disparada.
+
 ## Não lançado — exclusão individual do histórico BLE — 04/11/2026
 
 - A biblioteca agora permite excluir cada registro local individualmente, incluindo o HEX capturado, com confirmação explícita.
