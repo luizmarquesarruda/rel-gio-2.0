@@ -19,6 +19,7 @@ import com.luizmarquesarruda.relogio20.device.ble.gatt.GattInventoryLogger
 import com.luizmarquesarruda.relogio20.device.ble.gatt.GattDescriptorInventoryRow
 import com.luizmarquesarruda.relogio20.device.discovery.ExplorationPolicy
 import com.luizmarquesarruda.relogio20.device.discovery.PolicyLogger
+import com.luizmarquesarruda.relogio20.device.discovery.EmptyInventoryRetryPolicy
 import com.luizmarquesarruda.relogio20.domain.telemetry.TelemetryState
 import com.luizmarquesarruda.relogio20.domain.telemetry.TelemetryWatchdog
 import com.luizmarquesarruda.relogio20.domain.session.SessionManager
@@ -172,8 +173,10 @@ class MainActivity : ComponentActivity() {
     private var bluetoothGatt: BluetoothGatt? = null
     private val gattLifecycleMutex = Mutex()
     private var gattLifecycleGeneration = 0L
-    private var emptyInventoryRetryCount = 0
     private val gattReconnectPolicy = ReconnectPolicy.fromBuildConfig(BuildConfig.IS_TEST)
+    private val emptyInventoryRetryPolicy = EmptyInventoryRetryPolicy(
+        minOf(MAX_EMPTY_INVENTORY_RETRIES, gattReconnectPolicy.maxAttempts)
+    )
     private val droppedTelemetryCount = AtomicLong(0L)
     private val telemetryWatchdog = TelemetryWatchdog(TELEMETRY_STALL_AFTER_MS)
     private var telemetryState: TelemetryState = TelemetryState.Idle
@@ -1455,6 +1458,9 @@ class MainActivity : ComponentActivity() {
         resetGattOperationQueue()
         pendingNotifications.clear()
         activeNotifications.clear()
+        activeNotificationCharacteristics.clear()
+        telemetryState = TelemetryState.Idle
+        telemetryHandshakeAttempted = false
         pendingAutomaticNotifications.clear()
         automaticNotificationKeys.clear()
         pendingAutomaticUnsubscribeKeys.clear()
@@ -1467,7 +1473,7 @@ class MainActivity : ComponentActivity() {
         appendLog("Solicitada conexão BLE com " +
             (safeDeviceName(device) ?: "dispositivo sem nome") +
             " (" + (safeDeviceAddress(device)?.let(::maskAddress) ?: "endereço oculto") + ").")
-        emptyInventoryRetryCount = 0
+        emptyInventoryRetryPolicy.reset()
         val attemptGeneration = ++gattLifecycleGeneration
         healthScope.launch {
             val newGatt = try {
@@ -1886,10 +1892,11 @@ class MainActivity : ComponentActivity() {
                     updateGattProgressUi()
                 }
                 if (wasPending && status == BluetoothGatt.GATT_SUCCESS) {
+                    val wasAwaitingHandshake = telemetryState is TelemetryState.AwaitingHandshake
                     activeNotifications.add(key)
                     activeNotificationCharacteristics[key] = characteristic
                     telemetryState = TelemetryState.Subscribed(SystemClock.elapsedRealtime())
-                    telemetryHandshakeAttempted = false
+                    if (!wasAwaitingHandshake) telemetryHandshakeAttempted = false
                     startTelemetryWatchdog()
                     if (pendingAutomaticNotifications.remove(key)) {
                         automaticNotificationKeys.add(key)
@@ -3560,18 +3567,17 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("MissingPermission")
     private fun recoverEmptyGattInventory(gatt: BluetoothGatt) {
         if (bluetoothGatt !== gatt || isGattDisconnecting) return
-        val retryLimit = minOf(MAX_EMPTY_INVENTORY_RETRIES, gattReconnectPolicy.maxAttempts)
-        if (emptyInventoryRetryCount >= retryLimit) {
+        val retryLimit = emptyInventoryRetryPolicy.maxAttempts
+        val retryNumber = emptyInventoryRetryPolicy.nextRetry()
+        if (retryNumber == null) {
             failGattServiceDiscovery(
                 gatt,
                 "onServicesDiscovered retornou GATT_SUCCESS com zero serviços após " +
-                    emptyInventoryRetryCount + " tentativas limitadas."
+                    emptyInventoryRetryPolicy.attemptsUsed() + " tentativas limitadas."
             )
             return
         }
 
-        emptyInventoryRetryCount += 1
-        val retryNumber = emptyInventoryRetryCount
         val retryGeneration = ++gattLifecycleGeneration
         cancelGattServiceDiscoveryTimeout()
         cancelConnectionTimeout()
