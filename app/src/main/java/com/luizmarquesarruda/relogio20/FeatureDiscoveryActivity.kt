@@ -159,7 +159,7 @@ class FeatureDiscoveryActivity : Activity() {
         renderExperimentGuide()
         addSectionTitle("Segurança da exploração")
         addMessage(
-            "A captura cronometrada registra somente notificações e leituras recebidas durante a sessão. O HEX capturado permanece no histórico privado depois da sessão (máx. 1.000 registros); a exclusão individual ainda não está disponível. Nenhum comando proprietário, escrita NUS RX, DFU, OTA ou reset é enviado."
+            "A captura cronometrada registra somente notificações e leituras recebidas durante a sessão. O HEX capturado permanece no histórico privado (máx. 1.000 registros), com exclusão individual disponível na Biblioteca interna. Nenhum payload proprietário, escrita NUS RX, DFU, OTA, reset ou calibração é enviado."
         )
     }
 
@@ -406,27 +406,30 @@ class FeatureDiscoveryActivity : Activity() {
             13f,
             0xFF526574.toInt()
         )
-        if (snapshot.findings.isEmpty()) {
-            addMessage("Nenhuma funcionalidade candidata foi identificada neste inventário.")
-        } else {
-            snapshot.findings.forEach { finding ->
-                val card = LinearLayout(this).apply {
-                    orientation = LinearLayout.VERTICAL
-                    setPadding(dp(13), dp(10), dp(13), dp(10))
-                    background = roundedSurface()
-                }
-                addText(card, finding.category.uppercase(Locale.ROOT), 10f, 0xFF687786.toInt(), true)
-                addText(card, finding.title, 15f, 0xFF14212B.toInt(), true)
-                addText(card, finding.status, 10f, statusColor(finding.status), true)
-                addText(card, finding.detail, 12f, 0xFF526574.toInt())
-                addText(card, "Evidência: " + finding.evidence, 10f, 0xFF687786.toInt())
-                if (finding.observationCount > 0) {
-                    addText(card, "Observações: " + finding.observationCount, 10f, 0xFF687786.toInt())
-                }
-                body.addView(card, LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply { bottomMargin = dp(8) })
+        val capabilityFindings = snapshot.findings.filter { it.id.startsWith("capability:") }
+        if (capabilityFindings.isNotEmpty()) {
+            addSectionTitle("Matriz de recursos Bluetooth SIG")
+            val advertised = capabilityFindings.count {
+                it.status != GattCapabilityMatrix.State.NOT_ADVERTISED.label
             }
+            val observed = capabilityFindings.count {
+                it.status == GattCapabilityMatrix.State.HISTORICAL_TRAFFIC.label ||
+                    it.status == GattCapabilityMatrix.State.TRAFFIC_OBSERVED.label
+            }
+            addMessage(
+                advertised.toString() + " de " + capabilityFindings.size +
+                    " perfis/capacidades padronizados anunciados; " + observed +
+                    " com tráfego registrado. Um perfil ausente no GATT pode existir por protocolo proprietário."
+            )
+            capabilityFindings.forEach(::renderFindingCard)
+        }
+
+        addSectionTitle("Outras evidências GATT")
+        val otherFindings = snapshot.findings.filterNot { it.id.startsWith("capability:") }
+        if (otherFindings.isEmpty()) {
+            addMessage("Nenhuma evidência adicional foi registrada neste inventário.")
+        } else {
+            otherFindings.forEach(::renderFindingCard)
         }
 
         addSectionTitle("Canais com tráfego")
@@ -443,6 +446,25 @@ class FeatureDiscoveryActivity : Activity() {
                 )
             }
         }
+    }
+
+    private fun renderFindingCard(finding: com.luizmarquesarruda.relogio20.device.discovery.FeatureFinding) {
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(13), dp(10), dp(13), dp(10))
+            background = roundedSurface()
+        }
+        addText(card, finding.category.uppercase(Locale.ROOT), 10f, 0xFF687786.toInt(), true)
+        addText(card, finding.title, 15f, 0xFF14212B.toInt(), true)
+        addText(card, finding.status, 10f, statusColor(finding.status), true)
+        addText(card, finding.detail, 12f, 0xFF526574.toInt())
+        addText(card, "Evidência: " + finding.evidence, 10f, 0xFF687786.toInt())
+        if (finding.observationCount > 0) {
+            addText(card, "Observações: " + finding.observationCount, 10f, 0xFF687786.toInt())
+        }
+        body.addView(card, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply { bottomMargin = dp(8) })
     }
 
     private fun renderExperimentGuide() {
