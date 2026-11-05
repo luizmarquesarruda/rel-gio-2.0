@@ -3019,7 +3019,7 @@ class MainActivity : ComponentActivity() {
                 title = "Quadro AB " + commandHex + "/" + responseHex,
                 detail = if (candidateBattery != null) {
                     "Interpretação candidata de bateria: " + candidateBattery +
-                        "%. Comparação independente com Wearfit Pro ainda necessária."
+                        "%. Comparação independente do valor ainda necessária."
                 } else {
                     "Quadro de estrutura AB observado; sem semântica validada para este comando."
                 },
@@ -3032,11 +3032,11 @@ class MainActivity : ComponentActivity() {
                     val receivedAt = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
                     deviceBatteryView.text =
                         "Bateria BLE candidata: " + candidateBattery + "% • recebido " + receivedAt +
-                            " • aguardando confirmação com Wearfit Pro"
+                            " • aguardando confirmação independente"
                 }
                 appendLog(
                     "Interpretação candidata do quadro AB/0x91: bateria reportada pelo relógio = " +
-                        candidateBattery + "%. Não validada por comparação repetida com Wearfit Pro."
+                        candidateBattery + "%. Não validada por comparação independente repetida."
                 )
             } else {
                 appendLog(
