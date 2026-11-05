@@ -1,3 +1,10 @@
+## 04/11/2026 — Controle de privacidade do histórico BLE
+
+- A biblioteca interna ganhou a ação **Excluir registro** em cada item, com confirmação antes de remover metadados e, quando presente, HEX capturado.
+- A exclusão ocorre no executor serial de persistência e grava um novo snapshot via AtomicFile; a UI não faz I/O de arquivo no thread principal.
+- A remoção atinge somente o ID selecionado, preserva os demais registros e mantém o estado da sessão ativa.
+- Testes unitários foram adicionados para remoção exata, preservação da sessão e ID inexistente.
+- Execução dos testes, lint, build, auditoria de APK e teste físico: **não validados**. CI não disparada conforme solicitação.
 ## 04/11/2026 — Liberação da conexão BLE para Wearfit Pro
 
 - Adicionada ação explícita na tela principal para entregar o controle da sessão ao Wearfit Pro.
@@ -709,3 +716,44 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - A CI #253 no commit `cd82b8b3b1a62f826f6eef4091464887e7fcfa73` identificou erro Kotlin em `DiscoveryLibraryActivity.kt`: `EditText` não expõe a propriedade gravável `singleLine` usada no inicializador.
 - Corrigido para a chamada pública `setSingleLine(true)`. A causa foi sintática e não envolveu BLE, persistência ou layout.
 - A CI #253 foi cancelada pela concorrência após identificar a mesma falha nos dois variants. O HEAD final precisará ser recompilado integralmente.
+
+
+## Auditoria integral e endurecimento — 04/11/2026
+
+- Criada a branch `audit/full-repository-hardening-20261104` a partir do HEAD de trabalho `21e44dd5bace9801b7ced7183ff15b2ca730d588`. Nenhum PR foi criado e nenhum merge foi executado.
+- O inventário GATT via SharedPreferences passou a validar estrutura JSON completa e estrita, schema, tipos numéricos, timestamps, cardinalidades, IDs duplicados, UUIDs e faixas de valores. JSON inválido não é convertido em inventário vazio nem sobrescrito.
+- O inventário serializa operações entre instâncias e atualiza o SharedPreferences em memória com `apply()`; a gravação em disco é assíncrona e o retorno não confirma durabilidade imediata.
+- A biblioteca de descobertas conserva a escrita atômica, mas agora protege transações entre instâncias, verifica tamanho antes da leitura e valida registros e sessões antes de decodificar/gravar.
+- Prazos inconsistentes, timestamps negativos, IDs duplicados, tipos desconhecidos e HEX inválido passam a ser recusados.
+- O botão principal de busca fica desabilitado enquanto o usuário entregou a sessão ao Wearfit Pro; a retomada continua sendo uma ação explícita.
+- O modelo de passos exige `receivedAt >= intervalEnd`; origem permanece exclusivamente `HEALTH_CONNECT_AGGREGATE`.
+- Testes adicionados/estendidos: `FeatureDiscoverySnapshotPolicyTest`, `DiscoveryLibraryCodecTest`, `DiscoveryTestSessionTest`, `StepsSnapshotTest` e `BleExternalHandoffPolicyTest`.
+- A CI não foi disparada nem reexecutada. Nenhum teste Kotlin, Lint, build APK, auditoria dos APKs ou validação física foi declarado aprovado nesta revisão.
+- Pendências estruturais identificadas: `MainActivity.kt` permanece com responsabilidade excessiva (extração deverá ser incremental); o repositório ainda não inclui Gradle Wrapper; testes em aparelho/emulador e validação de aquisição BLE real continuam pendentes.
+- O relatório detalhado está em `docs/AUDITORIA-REPOSITORIO-2026-11-04.md`.
+
+
+
+## Ajuste de retenção e transparência de funções — 04/11/2026
+
+- O catálogo de funções não apresenta mais o CTS como mecanismo que será automaticamente usado. A identificação 0x1805/0x2A2B é informativa; escrita física de hora permanece suspensa.
+- Desativar captura de notificações (inclusive em consequência de revogação de acesso) limpa imediatamente as prévias em memória; teste de limpeza adicionado.
+- README e tela de privacidade esclarecem retenção: HEX é capturado somente em sessão consentida, mas permanece no arquivo privado depois da sessão, limitado a 1.000 registros; não existe exclusão individual na UI. Remover os dados do app no Android apaga o arquivo.
+
+
+## Barreira contra callbacks GATT tardios e retenção local — 04/11/2026
+
+- As chaves de operações GATT que expiraram ou estavam em execução quando o Android notificou Service Changed passam a ser invalidadas até uma nova instância `BluetoothGatt`. A fila não repete aquela chave dentro da mesma conexão; evita que callback atrasado da operação antiga seja confundido com uma nova tentativa idêntica.
+- Callbacks de notificação agora exigem que a referência GATT seja atual, a sessão esteja conectada e não esteja em encerramento. Notificações tardias após o início da desconexão são ignoradas.
+- Quando a fila de persistência está cheia, o log informa separadamente que o READ ou valor decodificado foi recebido, mas não foi enfileirado no histórico. Isso evita sugerir gravação de HEX que não foi aceita.
+- A retenção do HEX local foi explicitada na tela da biblioteca, na tela de privacidade e no README: captura apenas durante sessão consentida, retenção posterior até o limite de 1.000 registros, sem exclusão individual disponível na UI.
+- Pausar a ponte de notificações limpa imediatamente os dados voláteis; novo teste cobre `NotificationCaptureStore.clear()`.
+- Relatório diagnóstico mascara MAC e não exporta texto das notificações Android; o fingerprint passivo guarda metadados e hash truncado, sem reter payload bruto.
+
+
+## Serialização final do consentimento de notificações — 04/11/2026
+
+- A captura de prévias foi protegida contra uma corrida: callback onNotificationPosted podia checar consentimento, processar extras/label e só depois inserir; se o usuário pausasse nesse intervalo, uma prévia poderia reaparecer após o clear.
+- Agora a inserção executa uma verificação final de captura ativa e pacote permitido dentro do mesmo lock usado nas mudanças de configuração e na limpeza.
+- Alterar a allow-list remove também qualquer evento de pacote que não permaneça permitido.
+- Testes unitários cobrem a barreira final de admissão permitida/negada.

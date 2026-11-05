@@ -1,6 +1,7 @@
 package com.luizmarquesarruda.relogio20
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -13,6 +14,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import com.luizmarquesarruda.relogio20.data.discovery.DiscoveryLibraryKind
 import com.luizmarquesarruda.relogio20.data.discovery.DiscoveryLibraryReadResult
 import com.luizmarquesarruda.relogio20.data.discovery.DiscoveryLibraryRecord
@@ -65,7 +67,7 @@ class DiscoveryLibraryActivity : Activity() {
         })
         root.addView(header)
         root.addView(TextView(this).apply {
-            text = "Descobertas e leituras salvas somente neste aparelho. HEX é armazenado apenas durante uma sessão local autorizada, manual ou automática."
+            text = "Descobertas e leituras ficam somente neste aparelho. HEX só é capturado durante sessão autorizada. Você pode excluir registros individualmente; o limite permanece em 1.000 itens."
             textSize = 12f
             setTextColor(0xFF526574.toInt())
             setPadding(0, dp(8), 0, dp(8))
@@ -213,9 +215,51 @@ class DiscoveryLibraryActivity : Activity() {
         if (record.payloadHex != null) {
             addText(card, "HEX: " + record.payloadHex, 10f, 0xFF34495E.toInt())
         }
+        val actions = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.END
+        }
+        actions.addView(Button(this).apply {
+            text = "Excluir registro"
+            textSize = 12f
+            isAllCaps = false
+            setOnClickListener { confirmRecordDeletion(record) }
+        })
+        card.addView(actions)
         list.addView(card, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
         ).apply { bottomMargin = dp(8) })
+    }
+
+    private fun confirmRecordDeletion(record: DiscoveryLibraryRecord) {
+        val containsPayload = record.payloadHex != null
+        AlertDialog.Builder(this)
+            .setTitle(if (containsPayload) "Excluir leitura e HEX?" else "Excluir registro?")
+            .setMessage(
+                if (containsPayload) {
+                    "O HEX e os metadados deste registro serão removidos do histórico local deste aparelho. Esta ação não pode ser desfeita."
+                } else {
+                    "Este registro será removido do histórico local deste aparelho. Esta ação não pode ser desfeita."
+                }
+            )
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Excluir") { _, _ ->
+                val accepted = store.removeRecordAsync(record.id) { removed ->
+                    runOnUiThread {
+                        if (isFinishing || isDestroyed) return@runOnUiThread
+                        if (removed) {
+                            Toast.makeText(this, "Registro excluído do aparelho.", Toast.LENGTH_SHORT).show()
+                            render()
+                        } else {
+                            Toast.makeText(this, "Não foi possível excluir o registro.", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+                if (!accepted) {
+                    Toast.makeText(this, "Fila de gravação ocupada. Tente novamente.", Toast.LENGTH_LONG).show()
+                }
+            }
+            .show()
     }
 
     private fun addMessage(value: String) {

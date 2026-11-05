@@ -24,4 +24,10 @@ class BleExternalHandoffPolicyTest {
     fun initialDiscoveryStillRunsWhenNoHandoffWasRequested() {
         assertTrue(BleExternalHandoffPolicy.shouldStartInitialDiscovery(handoffActive = false, initialDiscoveryPending = true))
     }
+
+    @Test
+    fun handoffBlocksManualAndAutomaticScanEntryPoints() {
+        assertFalse(BleExternalHandoffPolicy.canStartBleScan(handoffActive = true))
+        assertTrue(BleExternalHandoffPolicy.canStartBleScan(handoffActive = false))
+    }
 }

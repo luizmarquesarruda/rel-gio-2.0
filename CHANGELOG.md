@@ -1,4 +1,38 @@
+## Não lançado — exclusão individual do histórico BLE — 04/11/2026
+
+- A biblioteca agora permite excluir cada registro local individualmente, incluindo o HEX capturado, com confirmação explícita.
+- A remoção é serializada na fila de escrita e persiste por substituição atômica do snapshot; outros registros e o estado da sessão ativa são preservados.
+- Testes unitários cobrem remoção exata, preservação da sessão e registro inexistente.
+- Testes, lint, build e validação física: **não executados/não validados**. CI não disparada por solicitação do usuário.
 # Changelog
+
+## Não lançado — serialização do consentimento de notificações — 04/11/2026
+
+- A gravação de prévias agora revalida consentimento e allow-list sob o mesmo lock usado para pausar captura ou alterar aplicativos permitidos.
+- Callbacks de notificação já iniciados não podem repopular a memória depois da pausa/revogação.
+- Remover um aplicativo da lista permitida também purga prévias já capturadas desse pacote.
+- Testes cobrem admissão negada e permitida pela barreira final.
+
+
+## Não lançado — retenção explícita de histórico BLE e limpeza de prévias — 04/11/2026
+
+- A tela de funções não promete sincronização CTS: a característica pode aparecer no inventário, mas a escrita de hora continua suspensa e não validada.
+- Pausar a captura de notificações ou desativá-la após revogação de acesso limpa imediatamente as prévias em memória. Callbacks de notificação recebidos após desconexão/início do encerramento são ignorados. O limite de 30 eventos e a expiração de 15 minutos permanecem.
+- A documentação agora distingue claramente captura consentida de retenção posterior do histórico BLE: registros HEX já capturados permanecem no armazenamento privado local, até o limite de 1.000 registros; não há exclusão individual na UI atual.
+- Teste do armazenamento volátil de notificações adicionado/atualizado.
+
+
+## Não lançado — integridade de armazenamento, sessões e handoff BLE — 04/11/2026
+
+- O inventário GATT agora rejeita campos ausentes, tipos incorretos, valores fora de faixa, arrays incompletos, duplicatas e JSON acima do limite; dados corrompidos ou de schema futuro permanecem preservados.
+- As operações de leitura-modificação-gravação do inventário usam bloqueio compartilhado entre instâncias; a atualização em memória usa `apply()` e a gravação em disco é assíncrona, sem confirmação imediata de durabilidade.
+- A biblioteca binária usa bloqueio compartilhado entre telas, limita leitura antes de alocar o arquivo, valida prazos de sessões, identificadores, tipos e HEX, e recusa timestamps inválidos.
+- A interface não oferece busca BLE enquanto o controle estiver liberado para Wearfit Pro.
+- O snapshot de passos exige que o recebimento ocorra após o fim do intervalo consultado.
+- Foram adicionados testes de regressão para integridade do snapshot, sessão, codec, intervalo de passos e bloqueio do handoff.
+- Nenhuma escrita proprietária, NUS RX, CTS write, OTA, reset, calibração ou publicação Health Connect foi habilitada.
+- CI, build local, lint e teste físico Galaxy A06 / GT3 MAX / Wearfit Pro: **não validados** (CI não disparada por solicitação do usuário).
+
 
 ## Não lançado — liberação BLE para Wearfit Pro — 04/11/2026
 
