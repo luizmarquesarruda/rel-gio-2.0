@@ -66,6 +66,9 @@
             android:name=".ui.screens.FeatureHubActivity"
             android:exported="false" />
         <activity
+            android:name=".ui.screens.TimeWeatherActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.screens.LocalToolsActivity"
             android:exported="false" />
         <receiver
