@@ -2762,7 +2762,7 @@ class MainActivity : ComponentActivity() {
             BluetoothCurrentTimeCapabilityPolicy.Capability.WRITE_UNSUPPORTED -> {
                 clockSyncButton.isEnabled = false
                 deviceTimeSyncView.text =
-                    "CTS encontrado, mas 0x2A2B não anuncia WRITE. Sincronização manual indisponível."
+                    "CTS encontrado, mas 0x2A2B não anuncia WRITE. Sincronização indisponível."
                 appendLog("CTS 0x1805/0x2A2B identificado sem WRITE. Nenhuma escrita será tentada.")
             }
             BluetoothCurrentTimeCapabilityPolicy.Capability.DEVICE_PROFILE_UNCONFIRMED -> {
