@@ -111,6 +111,7 @@ Consulte o [índice completo da documentação](docs/README.md).
 - [Pesquisa Wearfit Pro](docs/PESQUISA-WEARFIT-PRO.md)
 - [Identificação do relógio](docs/IDENTIFICACAO-DO-RELOGIO.md)
 - [Perfil do GT3 Maxx](docs/PERFIL-GT3-MAXX.md)
+- [Estudo técnico do firmware GT3 MAX Call](docs/ESTUDO-FIRMWARE-GT3-MAXX.md)
 - [Captura BLE de 03/11/2026](docs/CAPTURA-BLE-GT3-MAX-2026-11-03.md)
 - [Perfil BLE candidato NUS/AB](docs/PROTOCOLO-BLE-CANDIDATO.md)
 
