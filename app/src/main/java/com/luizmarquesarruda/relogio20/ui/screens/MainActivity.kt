@@ -2722,6 +2722,13 @@ class MainActivity : ComponentActivity() {
             return
         }
 
+        val observedServices = gatt.services.associate { service ->
+            service.uuid to service.characteristics.map { it.uuid }.toSet()
+        }
+        val deviceProfileConfirmed = Gt3MaxCallDeviceProfile.evaluate(
+            lastConnectedDeviceName,
+            observedServices
+        ) == Gt3MaxCallDeviceProfile.Match.CAPTURED_GATT_FINGERPRINT
         val service = gatt.getService(UUID.fromString(BluetoothCurrentTimePayload.SERVICE_UUID))
         val characteristic = service?.getCharacteristic(
             UUID.fromString(BluetoothCurrentTimePayload.CURRENT_TIME_UUID)
@@ -2732,7 +2739,8 @@ class MainActivity : ComponentActivity() {
             characteristicPresent = characteristic != null,
             supportsWrite = characteristic?.let {
                 it.properties and BluetoothGattCharacteristic.PROPERTY_WRITE != 0
-            } == true
+            } == true,
+            deviceProfileConfirmed = deviceProfileConfirmed
         )
         when (capability) {
             BluetoothCurrentTimeCapabilityPolicy.Capability.DISCONNECTED -> {
@@ -2756,6 +2764,11 @@ class MainActivity : ComponentActivity() {
                 deviceTimeSyncView.text =
                     "CTS encontrado, mas 0x2A2B não anuncia WRITE. Sincronização manual indisponível."
                 appendLog("CTS 0x1805/0x2A2B identificado sem WRITE. Nenhuma escrita será tentada.")
+            }
+            BluetoothCurrentTimeCapabilityPolicy.Capability.DEVICE_PROFILE_UNCONFIRMED -> {
+                clockSyncButton.isEnabled = false
+                deviceTimeSyncView.text = "CTS anunciado, mas o fingerprint GATT do GT3 MAX Call não foi confirmado. Nenhuma escrita será realizada."
+                appendLog("CTS bloqueado: o dispositivo conectado não corresponde ao fingerprint GATT completo do GT3 MAX Call.")
             }
             BluetoothCurrentTimeCapabilityPolicy.Capability.READY -> {
                 clockSyncButton.isEnabled = false
