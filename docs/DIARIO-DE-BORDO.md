@@ -849,3 +849,17 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - O teste agora confirma o aviso de exclusão e rejeita padrões concretos de endereço Bluetooth e valor serial. A implementação de assinatura permanece restrita a UUIDs, propriedades e descritores GATT.
 - Testes e builds serão reexecutados pela atualização da PR #19. APK não publicado no run anterior; nenhuma CI física ou validação do relógio é presumida.
 
+
+## 05/11/2026 — hora e clima independentes pela rede do telefone
+
+- Diretriz de produto: o Relógio 2.0 não dependerá operacionalmente do WearFit Pro. O Android será a fonte de horário e o canal de rede para obter previsão meteorológica.
+- Implementada TimeWeatherActivity: exibe hora/data do Android, informa se data/hora automática e fuso automático estão ativos, permite pesquisar e escolher cidade e apresenta condições atuais e previsão.
+- Implementado OpenMeteoWeatherRepository: geocodificação em português e consulta HTTPS a condições atuais, probabilidade de precipitação, vento/rajadas, mínima/máxima, nascer e pôr do sol.
+- Implementados modelos meteorológicos, cache de localidade/previsão em SharedPreferences privado, WeatherSyncWorker e WeatherSyncScheduler; agendamento periódico de seis horas condicionado à conectividade. A execução exata depende do Android/Doze e não é garantida.
+- A cidade é escolhida manualmente; nenhum GPS, localização em segundo plano, dado de saúde ou identificador do relógio é enviado. São enviados o texto de pesquisa e, após escolha, as coordenadas da cidade ao provedor meteorológico.
+- Manifesto adiciona INTERNET e ACCESS_NETWORK_STATE. Auditor de APK permite exatamente uma INTERNET e os scripts de guardrail mantêm os bloqueios das demais permissões sensíveis. A CI ainda precisa executar essa regra no APK compilado.
+- A tela mostra atribuição Open-Meteo. O uso gratuito é não comercial e os dados são CC BY 4.0; distribuição comercial exige nova avaliação dos termos.
+- Sincronização de hora GATT foi ajustada para iniciar automaticamente uma vez por sessão apenas quando o padrão Bluetooth SIG CTS 0x1805/0x2A2B anuncia WRITE. A captura física do GT3 MAXX não inclui CTS; não há confirmação de ajuste do mostrador/RTC.
+- Não foi implementado envio do clima ao relógio. O protocolo de clima da unidade não foi identificado; nenhum canal proprietário ou NUS RX foi escrito.
+- Versão alterada para 0.4.0-alpha.4 / versionCode 10.
+- Teste de rótulos WMO e cenários de auditoria INTERNET única/ausente/duplicada adicionados. Build, testes, Lint, guardrails, CI e teste físico Galaxy A06/GT3 MAXX: **não validados** nesta alteração.
