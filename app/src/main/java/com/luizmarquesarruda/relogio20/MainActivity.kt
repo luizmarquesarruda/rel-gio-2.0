@@ -2554,9 +2554,9 @@ class MainActivity : ComponentActivity() {
             connected = true,
             servicePresent = service != null,
             characteristicPresent = characteristic != null,
-            supportsWrite = characteristic?.properties?.and(
-                BluetoothGattCharacteristic.PROPERTY_WRITE
-            ) != 0
+            supportsWrite = characteristic?.let {
+                it.properties and BluetoothGattCharacteristic.PROPERTY_WRITE != 0
+            } == true
         )
         when (capability) {
             BluetoothCurrentTimeCapabilityPolicy.Capability.DISCONNECTED -> {
