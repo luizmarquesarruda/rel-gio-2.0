@@ -44,8 +44,7 @@ internal class SessionManager(private val stalledAfterMs: Long) {
         val current = (mutableState.value as? SessionState.Active)?.session
         if (current?.id == id) return
         if (current != null) finishInternal(current, SessionEndReason.ORPHANED, nowMs)
-        // Treat the session as having had no event since its start; the watchdog can orphan/stall it after process recreation.
-        mutableState.value = SessionState.Active(ManagedSession(id, startedAtMs, startedAtMs))
+        mutableState.value = SessionState.Active(ManagedSession(id, startedAtMs, nowMs))
     }
 
     @Synchronized
