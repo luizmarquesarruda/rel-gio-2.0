@@ -129,3 +129,87 @@ A versão de desenvolvimento canônica está no arquivo `VERSION`. Os metadados 
 ## Segurança e privacidade
 
 A descoberta BLE não deriva localização física. Não guardar endereço MAC em relatórios públicos. Não assumir que nome comercial identifica chipset ou protocolo. Pressão estimada, SpO2 e outras estimativas de smartwatch não são diagnósticos médicos.
+
+## Estrutura de pacotes aplicada
+
+A interface atual é Android nativo com Activities e Views. O projeto **não utiliza Jetpack Compose nesta versão**; por isso, não foram criados pacotes artificiais de composables ou tema Compose.
+
+A organização real do módulo é:
+
+```text
+app/src/main/java/com/luizmarquesarruda/relogio20/
+├── ui/
+│   └── screens/                 # Activities/telas nativas
+├── domain/
+│   ├── diagnostics/             # composição e sanitização de relatório
+│   └── health/                  # modelos e formatação de saúde
+├── data/
+│   ├── discovery/               # biblioteca local e inventário GATT
+│   └── healthconnect/           # adaptador Health Connect
+└── device/
+    ├── ble/
+    │   ├── core/                # identidade, política e segurança de BLE
+    │   └── gatt/                # fila serial e estruturas GATT
+    ├── discovery/               # exploração e decodificação de inventário
+    └── gt3max/
+        └── protocol/            # perfil e framing candidato do dispositivo
+```
+
+As classes de notificações permanecem em source sets específicos: `app/src/companion/java` e `app/src/diagnostic/java`. Isso mantém o Notification Listener fora da variante diagnostic.
+
+O código Kotlin permanece em `src/main/java`, `src/companion/java` e `src/diagnostic/java`. Esses são os source roots Android já configurados pelo projeto; a reorganização não altera o Gradle nem os source sets.
+
+### Limites da organização
+
+- BLE permanece em `device/ble`; não foi achatado em um `data/services` genérico.
+- Health Connect permanece em `data/healthconnect`.
+- Persistência BLE permanece em `data/discovery`, com `AtomicFile` e `SharedPreferences`.
+- O módulo atual não declara dependência Room/SQLite nem entidades ou migrações SQL.
+- `ui/components`, `ui/theme`, `data/config` e `utils` não foram criados sem classes com responsabilidade real para esses pacotes.
+- `MainActivity` foi realocada para `ui/screens`, mas sua extração interna do ciclo de vida GATT continua sendo dívida técnica separada.
+
+## Compilação local
+
+### Pré-requisitos identificados no projeto
+
+- JDK 17.
+- Android SDK Platform 36.
+- Gradle 9.5.0, conforme o workflow Android CI.
+- Android Gradle Plugin 8.13.2.
+- Kotlin Android plugin 2.4.21.
+
+O repositório nesta base não contém Gradle Wrapper (`gradlew`/`gradlew.bat`). Portanto, use uma instalação local do Gradle 9.5.0 até que o wrapper seja adicionado em uma alteração própria.
+
+### Validar ferramentas
+
+```bash
+java -version
+gradle --version
+```
+
+### Lint das duas variantes
+
+```bash
+gradle --no-daemon lintDiagnosticDebug lintCompanionDebug
+```
+
+### Testes unitários e APKs de depuração
+
+```bash
+gradle --no-daemon testDiagnosticDebugUnitTest testCompanionDebugUnitTest assembleDiagnosticDebug assembleCompanionDebug
+```
+
+### Instalar em dispositivo Android conectado
+
+```bash
+gradle --no-daemon installDiagnosticDebug
+# A variante companion exige as permissões especiais de notificações previstas para ela.
+gradle --no-daemon installCompanionDebug
+```
+
+### Saída esperada
+
+- Diagnostic: `app/build/outputs/apk/diagnostic/debug/app-diagnostic-debug.apk`
+- Companion: `app/build/outputs/apk/companion/debug/app-companion-debug.apk`
+
+Esses comandos documentam o fluxo local; não significam que testes ou builds foram executados durante esta reorganização.

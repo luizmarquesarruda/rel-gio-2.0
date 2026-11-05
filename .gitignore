@@ -1,0 +1,109 @@
+# Gradle
+.gradle/
+**/.gradle/
+**/build/
+.gradletasknamecache
+gradle-app.setting
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+.navigation/
+.idea_modules/
+
+# Android local machine configuration
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+**/.externalNativeBuild/
+**/.cxx/
+
+# Android generated artifacts
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.aar
+app/release/
+app/debug/
+
+# Signing material and private keys
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+*.mobileprovision
+keystore.properties
+signing.properties
+secrets.properties
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs, dumps and local diagnostics
+*.log
+*.trace
+*.dump
+*.stacktrace
+*.hprof
+hs_err_pid*
+replay_pid*
+logcat*.txt
+adb*.log
+logs/
+captures/
+diagnostics/
+screenshots/
+reports/local/
+
+# Android Lint and test outputs (generated under build/ as well)
+lint-results*.html
+lint-results*.xml
+lint-results*.txt
+lint-report*.html
+lint-report*.xml
+lint-report*.txt
+**/test-results/
+**/androidTest-results/
+**/reports/tests/
+**/reports/lint/
+
+# Coverage and profiling
+coverage/
+jacoco/
+*.exec
+*.ec
+*.gcda
+*.gcno
+
+# OS metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+._*
+
+# Editor backups and temporary files
+*.swp
+*.swo
+*~
+*.tmp
+*.temp
+*.bak
+*.old
+*.orig
+*.rej
+*.patch~
+*.lock.tmp
+
+# Local editor configuration
+.vscode/
+.history/

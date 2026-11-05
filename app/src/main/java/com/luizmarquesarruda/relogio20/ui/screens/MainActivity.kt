@@ -1,4 +1,4 @@
-package com.luizmarquesarruda.relogio20
+package com.luizmarquesarruda.relogio20.ui.screens
 
 import android.Manifest
 import android.app.AlertDialog
@@ -13,6 +13,11 @@ import com.luizmarquesarruda.relogio20.device.ble.gatt.BluetoothCurrentTimePaylo
 import com.luizmarquesarruda.relogio20.device.ble.core.BleReconnectPolicy
 import com.luizmarquesarruda.relogio20.device.ble.core.BleExternalHandoffPolicy
 import com.luizmarquesarruda.relogio20.device.ble.core.GattCallbackSafetyPolicy
+import com.luizmarquesarruda.relogio20.device.ble.core.BleDeviceIdentity
+import com.luizmarquesarruda.relogio20.device.ble.core.BleScanCandidatePolicy
+import com.luizmarquesarruda.relogio20.device.ble.core.BleValueFormatter
+import com.luizmarquesarruda.relogio20.domain.diagnostics.BleDiagnosticReport
+import com.luizmarquesarruda.relogio20.domain.health.StepsCountFormatter
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbFrameParser
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitProtocolProfile
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.Gt3MaxCallDeviceProfile
@@ -32,7 +37,6 @@ import com.luizmarquesarruda.relogio20.device.discovery.BlePacketFingerprintAnal
 import com.luizmarquesarruda.relogio20.device.discovery.PassiveBleObservationTracker
 import com.luizmarquesarruda.relogio20.device.discovery.GattDiscoveryRecoveryPolicy
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbStreamDecoder
-import com.luizmarquesarruda.relogio20.HealthPrivacyActivity
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectAvailability
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsRepository
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsResult

@@ -782,3 +782,16 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - #416 passou pelo Lint, mas falhou em dois testes de política NUS: contrato de exclusão total desatualizado e caso sem CCCD com expectativa incorreta.
 - Reposicionados os critérios: TX somente com NOTIFY/INDICATE + CCCD 0x2902; ausência de CCCD resulta em plano vazio; RX nunca entra no plano.
 - Nenhuma alteração de comportamento de escrita foi feita. Nova CI necessária para validar os contratos corrigidos.
+
+## Organização incremental de pacotes Android — 05/11/2026
+
+- Criada a branch `refactor/android-package-organization-20261105` a partir do HEAD da PR #18 (`e785b51e13264da1db0f9cb9f1cfac5d12eeaa40`), preservando a cadeia de trabalho existente; nenhuma PR foi aberta e nenhum merge foi executado.
+- Confirmado no repositório que o aplicativo é Kotlin nativo com Activities/Views, módulo único `:app`, Gradle Kotlin DSL, duas variantes (`diagnostic` e `companion`) e package base `com.luizmarquesarruda.relogio20`. Não há Jetpack Compose nesta versão.
+- Activities movidas para `ui/screens`; Manifesto, imports e testes de contrato atualizados para refletir os novos caminhos.
+- `BleDeviceIdentity`, `BleScanCandidatePolicy` e `BleValueFormatter` agrupados em `device/ble/core`; `BleDiagnosticReport` em `domain/diagnostics`; `StepsCountFormatter` em `domain/health`.
+- Os pacotes já especializados `device/ble`, `device/discovery`, `device/gt3max/protocol`, `data/discovery` e `data/healthconnect` foram preservados; não foram achatados em diretórios genéricos.
+- Confirmado que a configuração atual não declara Room/SQLite. Persistência existente permanece em `AtomicFile` e `SharedPreferences`; nenhum arquivo, limite, formato ou regra de retenção de dados foi alterado.
+- O source root permaneceu em `app/src/main/java` e nos source sets de flavor existentes. O Gradle e as variantes não foram reconfigurados.
+- Criados `.gitignore`, template de Pull Request, guia arquitetural de pacotes e instruções de build local no README.
+- Não foram alterados permissões Bluetooth, UUIDs, callbacks GATT, sequência de conexão, comportamento de sensores, Health Connect ou Notification Listener.
+- Testes, lint, builds APK e teste físico: **não validados**. Nenhum workflow foi disparado.

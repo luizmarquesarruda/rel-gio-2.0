@@ -1,5 +1,7 @@
 package com.luizmarquesarruda.relogio20
 
+import com.luizmarquesarruda.relogio20.domain.health.StepsCountFormatter
+
 import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Test

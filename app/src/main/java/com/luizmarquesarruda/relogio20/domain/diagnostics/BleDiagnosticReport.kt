@@ -1,4 +1,4 @@
-package com.luizmarquesarruda.relogio20
+package com.luizmarquesarruda.relogio20.domain.diagnostics
 
 internal object BleDiagnosticReport {
     private val macPattern = Regex("(?i)(?:[0-9a-f]{2}:){5}[0-9a-f]{2}")

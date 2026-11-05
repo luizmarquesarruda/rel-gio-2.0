@@ -17,6 +17,11 @@ A base é um aplicativo Android nativo Kotlin. O adaptador de consulta agregada 
 | device/ble/core/GattCallbackSafetyPolicy.kt | BLE lifecycle / callbacks | Aceita callback apenas da conexão atual e da chave de operação em andamento; política pura com testes. |
 | device/ble/gatt/BluetoothCurrentTimePayload.kt | BLE / Bluetooth SIG CTS | Codificar os 10 bytes da característica Current Time (0x2A2B); não executa conexão nem escrita. |
 | device/ble/core/BleReconnectPolicy.kt | BLE lifecycle | Política pura de backoff para retentativas; não executa scan nem conexão. |
+| device/ble/core/BleDeviceIdentity.kt | BLE identity | Normaliza e compara endereços observados sem assumir identidade do firmware. |
+| device/ble/core/BleScanCandidatePolicy.kt | BLE discovery policy | Classifica candidatos por pistas de endereço/nome/NUS; aceitação continua condicionada ao fingerprint GATT. |
+| device/ble/core/BleValueFormatter.kt | BLE diagnostics | Converte bytes recebidos para hexadecimal sem interpretação semântica. |
+| domain/diagnostics/BleDiagnosticReport.kt | Domain / Diagnostics | Compõe relatório local e mascara endereços Bluetooth nos registros exportados. |
+| domain/health/StepsCountFormatter.kt | Domain / Health | Formata agregado de passos, mantendo ausência distinta de zero.
 | device/gt3max/protocol/Gt3MaxCallDeviceProfile.kt | Perfil do dispositivo | Identificadores GT3 MAX Call informados e fingerprint GATT da captura; sem autenticação de hardware/firmware. |
 | device/gt3max/protocol/WearfitAbFrameParser.kt | Protocolo do dispositivo | Perfil NUS/AB candidato e parser restrito. Não controla conexão. |
 | device/discovery/FeatureDiscoveryEngine.kt | Descoberta de funcionalidades | Classifica inventário GATT e metadados de notificações sem inferir semântica de payload desconhecido. |
@@ -24,36 +29,35 @@ A base é um aplicativo Android nativo Kotlin. O adaptador de consulta agregada 
 | data/discovery/FeatureDiscoverySnapshotPolicy.kt | Validação do inventário GATT | Política Kotlin pura para limites, cardinalidade, IDs, timestamps e faixas de valores; possui testes unitários. |
 | data/discovery/DiscoveryLibraryStore.kt | Biblioteca interna de diagnóstico | Arquivo privado AtomicFile, bloqueio compartilhado, cache e fila serial limitada em thread dedicado; HEX apenas durante sessão explicitamente iniciada. |
 | data/discovery/DiscoveryLibraryCodec.kt | Formato da biblioteca | Codec binário versionado e testável sem Android; valida magic, schema, tamanho e contagem de registros. |
-| FeatureDiscoveryActivity.kt | UI / Laboratório BLE | Agrupa descobertas GATT, roteiro de testes, contador regressivo de captura e atalho à biblioteca. |
-| DiscoveryLibraryActivity.kt | UI / Biblioteca | Pesquisa e filtra descobertas, sessões, notificações e leituras locais. |
+| ui/screens/FeatureDiscoveryActivity.kt | UI / Laboratório BLE | Agrupa descobertas GATT, roteiro de testes, contador regressivo de captura e atalho à biblioteca. |
+| ui/screens/DiscoveryLibraryActivity.kt | UI / Biblioteca | Pesquisa e filtra descobertas, sessões, notificações e leituras locais. |
 | notifications/NotificationCaptureService.kt | Platform / Notifications | Captura consentida na variante companion. |
 | notifications/NotificationCaptureStore.kt | Data / Notifications | Cache volátil, filtros e preferências. |
 | notifications/NotificationCenterActivity.kt | UI / Notifications | Consentimento, seleção e prévias. |
-| HealthPrivacyActivity.kt | UI / Privacy | Transparência e controles de dados de saúde. |
-| MainActivity.kt | App / composição provisória | Mantém UI, permissões e ciclo GATT; trata Service Changed, descarta callbacks tardios e enfileira telemetria fora do callback. A extração de responsabilidades permanece pendente. |
+| ui/screens/FeatureHubActivity.kt | UI / Catálogo | Navegação do catálogo de funcionalidades do dispositivo. |
+| ui/screens/HealthPrivacyActivity.kt | UI / Privacy | Transparência e controles de dados de saúde. |
+| ui/screens/MainActivity.kt | App / composição provisória | Mantém UI, permissões e ciclo GATT; trata Service Changed, descarta callbacks tardios e enfileira telemetria fora do callback. A extração de responsabilidades permanece pendente. |
 
 Os testes unitários acompanham fila GATT, parser candidato, motor de autodescoberta, perfil GATT GT3 MAX Call, janela diária Health Connect, metadados do APK, formatadores e contratos Domain. A inscrição automática NUS TX exige nome reconhecido e fingerprint GATT completo da captura. A tela não disponibiliza leitura nem inscrição manual de características arbitrárias; NUS RX permanece sem escrita.
 
-## Estrutura-alvo
+## Estrutura aplicada nesta fase
 
 ```text
 com.luizmarquesarruda.relogio20/
-├── app/
-├── ui/
+├── ui/screens/                  # Activities nativas
 ├── domain/
-│   ├── health/                  # modelo inicial implementado
-│   ├── activity/
-│   ├── goals/
-│   └── device/
-├── device/
-│   ├── ble/{core,gatt}/
-│   └── gt3max/{protocol,metrics}/
-├── data/{healthconnect,local,notifications}/
-├── platform/
-└── common/
+│   ├── diagnostics/             # relatórios sanitizados
+│   └── health/                  # modelos e formatação de saúde
+├── data/
+│   ├── discovery/               # SharedPreferences + AtomicFile
+│   └── healthconnect/           # adaptador Health Connect
+└── device/
+    ├── ble/{core,gatt}/         # identidade, políticas, callbacks e fila
+    ├── discovery/               # exploração GATT
+    └── gt3max/protocol/         # perfil e parser candidato
 ```
 
-Diretórios ainda não criados são estrutura-alvo, não módulos implementados.
+As notificações permanecem em source sets próprios (`companion` e `diagnostic`). Os diretórios `ui/components`, `ui/theme`, `data/services`, `data/config` e `utils` não foram criados porque o código atual não possui componentes Compose, tema Compose nem classes genéricas que justifiquem esses pacotes. O source root Kotlin permanece nos diretórios Android `src/*/java`, sem alterar a configuração dos flavors.
 
 ## Contratos
 
