@@ -214,6 +214,7 @@ class FeatureHubActivity : Activity() {
             Feature("Câmera remota", "Exige fluxo explícito e integração Android segura; não implementado.", "NÃO IMPLEMENTADO")
         )
         "tools" -> listOf(
+            Feature("Hora e clima", "Hora fornecida pelo sistema Android e previsão meteorológica obtida pela internet do celular, com cache local. Envio ao GT3 MAXX depende de protocolo identificado.", "ANDROID IMPLEMENTADO • BLE PENDENTE", available = true, route = "time_weather"),
             Feature("Alarmes", "Cria um alarme no aplicativo Relógio do Android; não sincroniza com o smartwatch.", "IMPLEMENTADO NO ANDROID", available = true, route = "local_tools"),
             Feature("Cronômetro", "Cronômetro local com iniciar, pausar e zerar.", "IMPLEMENTADO NO ANDROID", available = true, route = "local_tools"),
             Feature("Temporizador", "Temporizador local de 1 a 180 minutos.", "IMPLEMENTADO NO ANDROID", available = true, route = "local_tools"),
