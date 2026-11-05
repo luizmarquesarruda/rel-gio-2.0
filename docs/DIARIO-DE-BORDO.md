@@ -783,3 +783,4 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Testes Kotlin, Lint e builds **não executados**; CI **não disparada**; validação física no Galaxy A06 / GT3 MAX **não realizada**; PR e merge **não criados/executados** nesta rodada.
 - Limpeza confirmada: removidas de `SafeGattExplorationPlan` duas constantes NUS RX/TX que não eram referenciadas; a constante NUS Service foi mantida porque exclui corretamente esse serviço da exploração genérica.
 - Simplificação: removida a variável redundante `displayed` no decoder de Temperature Measurement; o valor MEDFLOAT permanece inalterado e a unidade continua dependendo do flag Celsius/Fahrenheit.
+- O campo Pressure 0x2A6D não recebeu filtro arbitrário para zero: a tabela consultada define uint32/resolução, mas não declara sentinela de valor desconhecido; o valor zero é decodificado como 0,0 Pa. Teste correspondente foi incluído.
