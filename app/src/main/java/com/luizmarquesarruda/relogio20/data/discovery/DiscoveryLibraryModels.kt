@@ -56,6 +56,13 @@ internal data class DiscoveryLibrarySnapshot(
     val records: List<DiscoveryLibraryRecord> = emptyList()
 )
 
+/** Returns a copy without exactly one matching record, or null when no match exists. */
+internal fun DiscoveryLibrarySnapshot.withoutRecord(recordId: String): DiscoveryLibrarySnapshot? {
+    if (recordId.isBlank()) return null
+    val remaining = records.filterNot { it.id == recordId }
+    return if (remaining.size == records.size) null else copy(records = remaining)
+}
+
 internal sealed class DiscoveryLibraryReadResult {
     object Empty : DiscoveryLibraryReadResult()
     data class Available(val snapshot: DiscoveryLibrarySnapshot) : DiscoveryLibraryReadResult()
