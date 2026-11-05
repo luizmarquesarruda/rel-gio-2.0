@@ -6,6 +6,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.luizmarquesarruda.relogio20.domain.weather.WeatherRefreshPolicy
 import java.util.concurrent.TimeUnit
 
 internal object WeatherSyncScheduler {
@@ -16,7 +17,7 @@ internal object WeatherSyncScheduler {
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
         val request = PeriodicWorkRequestBuilder<WeatherSyncWorker>(
-            6L,
+            WeatherRefreshPolicy.PERIODIC_INTERVAL_HOURS,
             TimeUnit.HOURS,
             1L,
             TimeUnit.HOURS
