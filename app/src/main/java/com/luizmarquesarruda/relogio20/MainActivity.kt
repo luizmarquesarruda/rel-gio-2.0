@@ -11,6 +11,7 @@ import com.luizmarquesarruda.relogio20.notifications.NotificationCenterActivity
 import com.luizmarquesarruda.relogio20.device.ble.gatt.SerialGattOperationQueue
 import com.luizmarquesarruda.relogio20.device.ble.gatt.BluetoothCurrentTimePayload
 import com.luizmarquesarruda.relogio20.device.ble.core.BleReconnectPolicy
+import com.luizmarquesarruda.relogio20.device.ble.core.BleReconnectCoordinator
 import com.luizmarquesarruda.relogio20.device.ble.core.GattCallbackSafetyPolicy
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbFrameParser
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitProtocolProfile
@@ -189,6 +190,7 @@ class MainActivity : ComponentActivity() {
     private val reconnectPolicy by lazy {
         BleReconnectPolicy(connectionPrefs.getBoolean("auto_reconnect_enabled", false))
     }
+    private val reconnectCoordinator by lazy { BleReconnectCoordinator(reconnectPolicy) }
     private val diagnosticExportLauncher = registerForActivityResult(
         ActivityResultContracts.CreateDocument("text/plain")
     ) { uri ->
@@ -3317,34 +3319,50 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun scheduleAutoReconnect(reason: String, immediate: Boolean = false) {
-        if (!reconnectPolicy.isEnabled) return
-        if (expectedWatchAddress == null) {
+        if (expectedWatchAddress == null && reconnectPolicy.isEnabled) {
             appendLog("Reconexão automática fará busca BLE geral; a identidade será aprendida após validação do fingerprint GATT.")
         }
-        if (!isActivityResumed) {
-            appendLog("Reconexão automática aguardará o aplicativo voltar ao primeiro plano.")
-            return
-        }
-        if (bluetoothGatt != null || currentScanCallback != null) return
 
-        cancelReconnectTask()
-        val delayMillis = if (immediate) 0L else reconnectPolicy.nextRetryDelayMillis() ?: return
-        appendLog(reason + ". Próxima tentativa de reconexão em " + delayMillis + " ms.")
-        updateStatus(if (delayMillis == 0L) "Reconectando GT3 MAX..." else "Reconexão automática aguardando " + delayMillis + " ms")
-
-        val task = Runnable {
-            reconnectRunnable = null
-            if (!isActivityResumed) return@Runnable
-            if (!reconnectPolicy.isEnabled || bluetoothGatt != null || currentScanCallback != null) return@Runnable
-            if (!hasBlePermissions()) {
-                updateStatus("Permissão Bluetooth necessária para reconectar.")
-                appendLog("Reconexão pausada: restaure a permissão Bluetooth e retorne ao aplicativo.")
-                return@Runnable
+        when (val decision = reconnectCoordinator.planSchedule(
+            activityResumed = isActivityResumed,
+            gattSessionExists = bluetoothGatt != null,
+            scanInProgress = currentScanCallback != null,
+            immediate = immediate
+        )) {
+            BleReconnectCoordinator.ScheduleDecision.Disabled -> return
+            BleReconnectCoordinator.ScheduleDecision.DeferredToForeground -> {
+                appendLog("Reconexão automática aguardará o aplicativo voltar ao primeiro plano.")
+                return
             }
-            startBleScan(automatic = true)
+            BleReconnectCoordinator.ScheduleDecision.AlreadyActive -> return
+            is BleReconnectCoordinator.ScheduleDecision.Scheduled -> {
+                cancelReconnectTask()
+                val delayMillis = decision.delayMillis
+                appendLog(reason + ". Próxima tentativa de reconexão em " + delayMillis + " ms.")
+                updateStatus(if (delayMillis == 0L) "Reconectando GT3 MAX..." else "Reconexão automática aguardando " + delayMillis + " ms")
+
+                val task = Runnable {
+                    reconnectRunnable = null
+                    when (reconnectCoordinator.evaluateAttempt(
+                        activityResumed = isActivityResumed,
+                        gattSessionExists = bluetoothGatt != null,
+                        scanInProgress = currentScanCallback != null,
+                        hasBlePermissions = hasBlePermissions()
+                    )) {
+                        BleReconnectCoordinator.AttemptDecision.Skip -> return@Runnable
+                        BleReconnectCoordinator.AttemptDecision.PermissionRequired -> {
+                            updateStatus("Permissão Bluetooth necessária para reconectar.")
+                            appendLog("Reconexão pausada: restaure a permissão Bluetooth e retorne ao aplicativo.")
+                            return@Runnable
+                        }
+                        BleReconnectCoordinator.AttemptDecision.StartScan ->
+                            startBleScan(automatic = true)
+                    }
+                }
+                reconnectRunnable = task
+                if (delayMillis == 0L) handler.post(task) else handler.postDelayed(task, delayMillis)
+            }
         }
-        reconnectRunnable = task
-        if (delayMillis == 0L) handler.post(task) else handler.postDelayed(task, delayMillis)
     }
 
     @SuppressLint("MissingPermission")
