@@ -33,7 +33,7 @@ internal class WeatherPreferences(context: Context) {
 
             WeatherLocation(
                 name = value.optString("name", "").takeIf { it.isNotBlank() } ?: return@runCatching null,
-                admin1 = value.optString("admin1", "").takeIf { it.isNotBlank() },
+                admin1 = if (value.isNull("admin1")) null else value.optString("admin1").takeIf { it.isNotBlank() },
                 country = value.optString("country", ""),
                 latitude = latitude,
                 longitude = longitude
@@ -95,8 +95,8 @@ internal class WeatherPreferences(context: Context) {
                 todayMinimumC = value.nullableDouble("todayMinimumC"),
                 todayMaximumC = value.nullableDouble("todayMaximumC"),
                 todayPrecipitationProbabilityPercent = value.nullableInt("todayPrecipitationProbabilityPercent"),
-                sunrise = value.optString("sunrise", "").takeIf { it.isNotBlank() },
-                sunset = value.optString("sunset", "").takeIf { it.isNotBlank() }
+                sunrise = if (value.isNull("sunrise")) null else value.optString("sunrise").takeIf { it.isNotBlank() },
+                sunset = if (value.isNull("sunset")) null else value.optString("sunset").takeIf { it.isNotBlank() }
             )
         }.getOrNull()
     }
