@@ -533,20 +533,14 @@ class LocalHealthReminderReceiver : android.content.BroadcastReceiver() {
         if (!preferences.getBoolean("reminder_enabled", false)) return
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "local_health_reminders"
-        if (Build.VERSION.SDK_INT >= 26) {
-            manager.createNotificationChannel(
-                NotificationChannel(channelId, "Lembretes de bem-estar", NotificationManager.IMPORTANCE_DEFAULT)
-            )
-        }
+        manager.createNotificationChannel(
+            NotificationChannel(channelId, "Lembretes de bem-estar", NotificationManager.IMPORTANCE_DEFAULT)
+        )
         if (Build.VERSION.SDK_INT >= 33 &&
             context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) return
-        val notification = if (Build.VERSION.SDK_INT >= 26) {
-            android.app.Notification.Builder(context, channelId)
-        } else {
-            @Suppress("DEPRECATION")
-            android.app.Notification.Builder(context)
-        }.setSmallIcon(android.R.drawable.ic_dialog_info)
+        val notification = android.app.Notification.Builder(context, channelId)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle("Pausa de bem-estar")
             .setContentText("Faça uma pausa, alongue-se e hidrate-se.")
             .setAutoCancel(true)
