@@ -15,7 +15,7 @@ A base é um aplicativo Android nativo Kotlin. O adaptador de consulta agregada 
 | data/healthconnect/HealthConnectDayWindow.kt | Data / Health Connect | Calcula o início do dia local a partir de Instant + ZoneId com compatibilidade com minSdk 26. |
 | device/ble/gatt/SerialGattOperationQueue.kt | BLE transport / GATT | Serializar operações GATT assíncronas. Não interpreta payload. |
 | device/ble/core/GattCallbackSafetyPolicy.kt | BLE lifecycle / callbacks | Aceita callback apenas da conexão atual e da chave de operação em andamento; política pura com testes. |
-| device/ble/gatt/BluetoothCurrentTimePayload.kt | BLE / Bluetooth SIG CTS | Codificar os 10 bytes da característica Current Time (0x2A2B); não executa conexão nem escrita. |
+| device/ble/gatt/BluetoothCurrentTimePayload.kt | BLE / Bluetooth SIG CTS | Encoder de 10 bytes para Current Time (0x2A2B); permanece dormente e não é chamado pelo fluxo atual. A escrita/sincronização CTS segue suspensa e não foi validada no GT3 MAX. |
 | device/ble/core/BleReconnectPolicy.kt | BLE lifecycle | Política pura de backoff para retentativas; não executa scan nem conexão. |
 | device/gt3max/protocol/Gt3MaxCallDeviceProfile.kt | Perfil do dispositivo | Identificadores GT3 MAX Call informados e fingerprint GATT da captura; sem autenticação de hardware/firmware. |
 | device/gt3max/protocol/WearfitAbFrameParser.kt | Protocolo do dispositivo | Perfil NUS/AB candidato e parser restrito. Não controla conexão. |
