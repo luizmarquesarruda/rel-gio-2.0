@@ -22,10 +22,10 @@ class AccessPolicyTest {
 
     @Test
     fun hardBlocklistCannotBeMutatedAtRuntime() {
+        @Suppress("UNCHECKED_CAST")
+        val mutableView = AccessPolicy.HARD_FORBIDDEN as MutableSet<java.util.UUID>
         assertThrows(UnsupportedOperationException::class.java) {
-            @Suppress("UNCHECKED_CAST")
-            (AccessPolicy.HARD_FORBIDDEN as MutableSet<java.util.UUID>)
-                .add(java.util.UUID.randomUUID())
+            mutableView.add(java.util.UUID.randomUUID())
         }
     }
 
