@@ -11,7 +11,6 @@ import com.luizmarquesarruda.relogio20.notifications.NotificationCenterActivity
 import com.luizmarquesarruda.relogio20.device.ble.gatt.SerialGattOperationQueue
 import com.luizmarquesarruda.relogio20.device.ble.gatt.BluetoothCurrentTimePayload
 import com.luizmarquesarruda.relogio20.device.ble.core.BleReconnectPolicy
-import com.luizmarquesarruda.relogio20.device.ble.core.BleExternalHandoffPolicy
 import com.luizmarquesarruda.relogio20.device.ble.core.GattCallbackSafetyPolicy
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbFrameParser
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitProtocolProfile
@@ -90,7 +89,6 @@ class MainActivity : ComponentActivity() {
     private lateinit var deviceTimeSyncView: TextView
     private lateinit var scanButton: Button
     private lateinit var disconnectButton: Button
-    private lateinit var wearfitHandoffButton: Button
     private lateinit var deepScanButton: Button
     private lateinit var automaticGattDiscoveryButton: Button
     private lateinit var captureSessionView: TextView
@@ -191,8 +189,6 @@ class MainActivity : ComponentActivity() {
     private val reconnectPolicy by lazy {
         BleReconnectPolicy(connectionPrefs.getBoolean("auto_reconnect_enabled", false))
     }
-    private val wearfitHandoffActive: Boolean
-        get() = connectionPrefs.getBoolean("wearfit_handoff_active", false)
     private val diagnosticExportLauncher = registerForActivityResult(
         ActivityResultContracts.CreateDocument("text/plain")
     ) { uri ->
@@ -250,6 +246,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         bluetoothAdapter = getSystemService(BluetoothManager::class.java)?.adapter
+        // Migration: remove the legacy Wearfit handoff lock; this app now owns BLE sessions.
+        connectionPrefs.edit { remove("wearfit_handoff_active") }
         buildScreen()
         appendLog("Aplicativo iniciado. Diagnóstico BLE local.")
         appendLog(
@@ -357,7 +355,7 @@ class MainActivity : ComponentActivity() {
         scanButton = makeButton("Buscar e conectar automaticamente") { beginAutomaticConnection() }.apply {
             backgroundTintList = android.content.res.ColorStateList.valueOf(0xFF176B5B.toInt())
             setTextColor(0xFFFFFFFF.toInt())
-            isEnabled = BleExternalHandoffPolicy.canStartBleScan(wearfitHandoffActive)
+            isEnabled = true
         }
         disconnectButton = makeButton("Desconectar") { disconnectGatt() }.apply {
             isEnabled = false
@@ -367,12 +365,6 @@ class MainActivity : ComponentActivity() {
             marginStart = dp(8)
         })
         connectionCard.addView(actions)
-        wearfitHandoffButton = makeButton("Liberar conexão para Wearfit Pro") {
-            toggleWearfitHandoff()
-        }
-        connectionCard.addView(wearfitHandoffButton, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
-        ).apply { topMargin = dp(8) })
         root.addView(connectionCard, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
         ).apply {
@@ -572,7 +564,6 @@ class MainActivity : ComponentActivity() {
         setContentView(pageScroll)
         updateHealthConnectPermissionUi()
         updateGattProgressUi()
-        updateWearfitHandoffUi()
     }
 
     private fun updatePhoneClock() {
@@ -917,15 +908,14 @@ class MainActivity : ComponentActivity() {
             appendLog("Solicitação de exploração recebida; abrindo confirmação de segurança.")
             handler.post { requestDeepGattExploration() }
         }
-        if (wearfitHandoffActive) {
-            updateStatus("Liberado para Wearfit Pro. A reconexão automática do Relógio 2.0 está pausada.")
-            appendLog("Retomada do aplicativo: modo de liberação ativo; nenhuma conexão ou busca BLE será iniciada.")
-        } else if (BleExternalHandoffPolicy.canAutoReconnect(wearfitHandoffActive, reconnectPolicy.isEnabled) && bluetoothGatt == null && currentScanCallback == null) {
+        if (reconnectPolicy.isEnabled && bluetoothGatt == null && currentScanCallback == null) {
             initialDiscoveryPending = false
             scheduleAutoReconnect("Aplicativo retomado", immediate = true)
-        } else if (BleExternalHandoffPolicy.shouldStartInitialDiscovery(wearfitHandoffActive, initialDiscoveryPending) && bluetoothGatt == null && currentScanCallback == null) {
+        } else if (initialDiscoveryPending && bluetoothGatt == null && currentScanCallback == null) {
             initialDiscoveryPending = false
-            appendLog("Busca BLE geral iniciada automaticamente ao abrir o aplicativo; não é necessário digitar o endereço do relógio.")
+            reconnectPolicy.markConnectionRequested()
+            connectionPrefs.edit { putBoolean("auto_reconnect_enabled", true) }
+            appendLog("Busca BLE geral iniciada automaticamente ao abrir o aplicativo; o Relógio 2.0 mantém o controle da conexão.")
             startBleScan()
         }
     }
@@ -1047,43 +1037,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun beginAutomaticConnection() {
-        if (wearfitHandoffActive) {
-            connectionPrefs.edit { putBoolean("wearfit_handoff_active", false) }
-            appendLog("Usuário retomou a conexão no Relógio 2.0; liberação ao Wearfit Pro encerrada.")
-            updateWearfitHandoffUi()
-        }
+        reconnectPolicy.markConnectionRequested()
+        connectionPrefs.edit { putBoolean("auto_reconnect_enabled", true) }
+        appendLog("Controle BLE assumido pelo Relógio 2.0; reconexão automática habilitada após solicitação do usuário.")
         cancelReconnectTask()
         startBleScan()
-    }
-
-    private fun toggleWearfitHandoff() {
-        if (wearfitHandoffActive) {
-            connectionPrefs.edit { putBoolean("wearfit_handoff_active", false) }
-            appendLog("Liberação ao Wearfit Pro encerrada por ação explícita do usuário.")
-            updateWearfitHandoffUi()
-            beginAutomaticConnection()
-            return
-        }
-
-        connectionPrefs.edit {
-            putBoolean("wearfit_handoff_active", true)
-            putBoolean("auto_reconnect_enabled", false)
-        }
-        appendLog("Liberação solicitada: cancelando buscas e tentativas pendentes, encerrando a sessão GATT do Relógio 2.0 e bloqueando novas conexões para permitir conexão pelo Wearfit Pro.")
-        cancelReconnectTask()
-        stopBleScan()
-        disconnectGatt()
-        updateStatus("Liberado para Wearfit Pro. Abra o Wearfit Pro e conecte o GT3 MAX por ele.")
-        updateWearfitHandoffUi()
-    }
-
-    private fun updateWearfitHandoffUi() {
-        if (!::wearfitHandoffButton.isInitialized) return
-        wearfitHandoffButton.text = if (wearfitHandoffActive) {
-            "Retomar conexão no Relógio 2.0"
-        } else {
-            "Liberar conexão para Wearfit Pro"
-        }
     }
 
     private fun configureExpectedWatchAddress(afterSave: (() -> Unit)? = null) {
@@ -1121,10 +1079,6 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("MissingPermission")
     private fun startBleScan(automatic: Boolean = false) {
-        if (!BleExternalHandoffPolicy.canStartBleScan(wearfitHandoffActive)) {
-            appendLog("Busca BLE bloqueada: conexão liberada para o Wearfit Pro. Retome o controle antes de iniciar uma nova busca.")
-            return
-        }
         if (automatic && !isActivityResumed) {
             appendLog("Reconexão automática adiada: aplicativo fora do primeiro plano.")
             return
@@ -1385,11 +1339,6 @@ class MainActivity : ComponentActivity() {
         automaticAttempt: Boolean = false,
         discoveryCandidate: Boolean = false
     ) {
-        if (wearfitHandoffActive) {
-            appendLog("Conexão GATT bloqueada: o controle do GT3 MAX foi liberado ao Wearfit Pro.")
-            updateStatus("GT3 MAX liberado para Wearfit Pro. Retome a conexão neste app para conectar novamente.")
-            return
-        }
         val observedAddress = safeDeviceAddress(device)
         val savedIdentityMatches = BleDeviceIdentity.matches(expectedWatchAddress, observedAddress)
         if (!savedIdentityMatches && !discoveryCandidate) {
@@ -1469,7 +1418,6 @@ class MainActivity : ComponentActivity() {
         bluetoothGatt = newGatt
         val timeout = Runnable {
             if (bluetoothGatt === newGatt && !isGattConnected) {
-                val handoffOwnsConnection = wearfitHandoffActive
                 val connectionWasCancelled = isGattDisconnecting
                 bluetoothGatt = null
                 isGattDisconnecting = false
@@ -1485,14 +1433,14 @@ class MainActivity : ComponentActivity() {
                 runCatching { newGatt.disconnect() }
                 runCatching { newGatt.close() }
                 updateStatus(
-                    when {
-                        handoffOwnsConnection -> "Liberado para Wearfit Pro. Tentativa GATT anterior encerrada."
-                        connectionWasCancelled -> "Nenhuma conexão ativa."
-                        else -> "Falha na conexão GATT: tempo limite aguardando conexão."
+                    if (connectionWasCancelled) {
+                        "Nenhuma conexão ativa."
+                    } else {
+                        "Falha na conexão GATT: tempo limite aguardando conexão."
                     }
                 )
                 appendLog("Tempo limite de conexão GATT após ${GATT_CONNECT_TIMEOUT_MS} ms.")
-                if (!handoffOwnsConnection && !connectionWasCancelled &&
+                if (!connectionWasCancelled &&
                     (automaticAttempt || reconnectPolicy.isEnabled)
                 ) scheduleAutoReconnect("Tempo limite de conexão GATT")
             }
@@ -1513,12 +1461,6 @@ class MainActivity : ComponentActivity() {
                 return
             }
             appendLog("Estado GATT: status=" + status + ", estado=" + newState)
-            if (wearfitHandoffActive && newState == BluetoothProfile.STATE_CONNECTED) {
-                isGattDisconnecting = true
-                appendLog("Conexão GATT concluída durante a liberação ao Wearfit Pro; encerrando imediatamente sem descobrir serviços.")
-                runCatching { gatt.disconnect() }
-                return
-            }
             if (isGattDisconnecting && newState == BluetoothProfile.STATE_CONNECTED) {
                 appendLog("Conexão GATT concluída após cancelamento manual; encerrando sem reativar a reconexão automática.")
                 runCatching { gatt.disconnect() }
@@ -1586,11 +1528,7 @@ class MainActivity : ComponentActivity() {
                 pendingCurrentTimeWriteKey = null
                 clockSyncAttemptedForSession = false
                 deviceTimeSyncView.text = "Hora do relógio: sem sessão BLE ativa"
-                updateStatus(if (wearfitHandoffActive) {
-                    "Liberado para Wearfit Pro. A sessão GATT do Relógio 2.0 foi encerrada."
-                } else {
-                    "Relógio desconectado."
-                })
+                updateStatus("Relógio desconectado.")
                 appendLog("Conexão GATT encerrada.")
                 finishAutomaticCaptureSession("Conexão BLE encerrada")
                 automaticGattProbeStartedForConnection = false
@@ -1605,7 +1543,7 @@ class MainActivity : ComponentActivity() {
                     bluetoothGatt = null
                 }
                 runCatching { gatt.close() }
-                if (BleExternalHandoffPolicy.canAutoReconnect(wearfitHandoffActive, reconnectPolicy.isEnabled)) {
+                if (reconnectPolicy.isEnabled) {
                     scheduleAutoReconnect("Conexão GATT perdida")
                 }
             }
@@ -1617,12 +1555,8 @@ class MainActivity : ComponentActivity() {
                     connectionIsCurrent = bluetoothGatt === gatt,
                     connected = isGattConnected,
                     disconnecting = isGattDisconnecting,
-                    handoffActive = wearfitHandoffActive
                 )
             ) {
-                if (wearfitHandoffActive) {
-                    appendLog("Tabela GATT mudou durante liberação ao Wearfit Pro; o Relógio 2.0 não retomará a sessão.")
-                }
                 return
             }
             appendLog("Android informou Service Changed: tabela GATT desatualizada. Limpando operações e redescobrindo serviços.")
@@ -3147,11 +3081,6 @@ class MainActivity : ComponentActivity() {
             val detail: String
             val indicatorColor: Int
             when {
-                value.startsWith("Liberado para Wearfit Pro") -> {
-                    headline = "Conexão liberada para Wearfit Pro"
-                    detail = "O Relógio 2.0 encerrou sua sessão GATT e pausou a reconexão automática. Abra o Wearfit Pro para conectar o GT3 MAX."
-                    indicatorColor = 0xFF16845B.toInt()
-                }
                 value.startsWith("Reconexão automática aguardando") -> {
                     headline = "Reconexão automática"
                     detail = value + ". O aplicativo tentará localizar somente o GT3 MAX salvo neste aparelho."
@@ -3239,8 +3168,7 @@ class MainActivity : ComponentActivity() {
             val gattSessionExists = bluetoothGatt != null
             val scanInProgress = value.startsWith("Procurando") ||
                 value.startsWith("Busca em andamento")
-            scanButton.isEnabled = BleExternalHandoffPolicy.canStartBleScan(wearfitHandoffActive) &&
-                !gattSessionExists && !scanInProgress &&
+            scanButton.isEnabled = !gattSessionExists && !scanInProgress &&
                 !value.startsWith("Conectando") && !value.startsWith("Desconectando") &&
                 !value.startsWith("Reconectando")
             disconnectButton.text = if (gattSessionExists) "Desconectar" else "Parar reconexão"
@@ -3388,10 +3316,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun scheduleAutoReconnect(reason: String, immediate: Boolean = false) {
-        if (!BleExternalHandoffPolicy.canAutoReconnect(wearfitHandoffActive, reconnectPolicy.isEnabled)) {
-            appendLog("Reconexão automática bloqueada: o usuário liberou o relógio para o Wearfit Pro.")
-            return
-        }
+        if (!reconnectPolicy.isEnabled) return
         if (expectedWatchAddress == null) {
             appendLog("Reconexão automática fará busca BLE geral; a identidade será aprendida após validação do fingerprint GATT.")
         }
@@ -3409,7 +3334,7 @@ class MainActivity : ComponentActivity() {
         val task = Runnable {
             reconnectRunnable = null
             if (!isActivityResumed) return@Runnable
-            if (!BleExternalHandoffPolicy.canAutoReconnect(wearfitHandoffActive, reconnectPolicy.isEnabled) || bluetoothGatt != null || currentScanCallback != null) return@Runnable
+            if (!reconnectPolicy.isEnabled || bluetoothGatt != null || currentScanCallback != null) return@Runnable
             if (!hasBlePermissions()) {
                 updateStatus("Permissão Bluetooth necessária para reconectar.")
                 appendLog("Reconexão pausada: restaure a permissão Bluetooth e retorne ao aplicativo.")
