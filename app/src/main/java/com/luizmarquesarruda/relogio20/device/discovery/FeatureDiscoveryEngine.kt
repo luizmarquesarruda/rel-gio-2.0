@@ -145,10 +145,11 @@ internal object FeatureDiscoveryEngine {
                         status = if ((observed?.notificationCount ?: 0) > 0) {
                             "TRÁFEGO RECEBIDO • SEM SEMÂNTICA TOTALMENTE VALIDADA"
                         } else {
-                            "CANAL ENCONTRADO • AGUARDANDO NOTIFICAÇÃO"
+                            "CANAL ENCONTRADO • AGUARDANDO INSCRIÇÃO/NOTIFICAÇÃO"
                         },
-                        detail = "Característica Nordic UART TX localizada. O aplicativo só observa " +
-                            "notificações quando a inscrição permitida pelo perfil atual está ativa.",
+                        detail = "Característica Nordic UART TX localizada. A inscrição de recebimento é permitida " +
+                            "somente na exploração manual confirmada, com NOTIFY/INDICATE e CCCD padrão; " +
+                            "nenhum payload é enviado pelo NUS RX.",
                         evidence = "UUID NUS TX e propriedades GATT.",
                         observationCount = observed?.notificationCount ?: 0
                     )
