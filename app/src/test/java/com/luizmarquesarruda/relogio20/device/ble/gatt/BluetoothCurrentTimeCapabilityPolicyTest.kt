@@ -57,15 +57,30 @@ class BluetoothCurrentTimeCapabilityPolicyTest {
     }
 
     @Test
-    fun enablesManualSyncOnlyWhenEveryGatePasses() {
+    fun enablesAutomaticSyncOnlyForConfirmedProfileAndEveryGattGate() {
         assertEquals(
             BluetoothCurrentTimeCapabilityPolicy.Capability.READY,
             BluetoothCurrentTimeCapabilityPolicy.evaluate(
                 connected = true,
                 servicePresent = true,
                 characteristicPresent = true,
-                supportsWrite = true
+                supportsWrite = true,
+                deviceProfileConfirmed = true
             )
         )
     }
+    @Test
+    fun rejectsCtsWriteForUnconfirmedBleDevice() {
+        assertEquals(
+            BluetoothCurrentTimeCapabilityPolicy.Capability.DEVICE_PROFILE_UNCONFIRMED,
+            BluetoothCurrentTimeCapabilityPolicy.evaluate(
+                connected = true,
+                servicePresent = true,
+                characteristicPresent = true,
+                supportsWrite = true,
+                deviceProfileConfirmed = false
+            )
+        )
+    }
+
 }
