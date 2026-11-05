@@ -38,11 +38,13 @@ O relógio foi observado no nRF Connect como **GT3 MAX**. A conexão BLE e a des
 
 - Integração de leitura com Health Connect (Conexão Saúde) para total diário agregado de passos.
 - Preparação da integração de escrita para publicar no Health Connect apenas amostras reais do smartwatch, após validar o protocolo e solicitar a permissão específica. Ainda não há escrita de passos do GT3 Maxx nesta versão.
-- Exibição da hora e data local do Android.
+- Hora local do Android, com indicação das opções de data/hora automática e fuso automático do sistema.
+- Consulta de clima pela rede móvel ou Wi-Fi via Open-Meteo, com pesquisa manual de cidade, cache privado, previsão atual/diária e atualização periódica aproximada.
+- A sincronização física de horário é automática somente quando o GATT anuncia o serviço padrão CTS 0x1805/0x2A2B com WRITE. O GT3 MAXX capturado não anunciou CTS; seu RTC/visor ainda não foi sincronizado de forma comprovada.
+- A previsão meteorológica ainda não é transmitida ao GT3 MAXX: o protocolo de clima deste firmware não foi identificado. Nenhum comando proprietário é enviado.
 - O Google Fit legado não é integrado diretamente; os dados podem chegar pelo Health Connect se o aplicativo de origem os compartilhar.
-- Ajuste do horário do relógio físico e leitura BLE de passos seguem pendentes; a identificação parcial do quadro de bateria não comprova esses comandos.
 
-Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALTH-CONNECT-PASSOS-HORARIO.md).
+Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALTH-CONNECT-PASSOS-HORARIO.md) e [integração de hora e clima pela rede](docs/INTEGRACAO-HORA-CLIMA-REDE.md).
 
 ## O que a primeira versão faz
 
@@ -83,7 +85,7 @@ A CI publica **dois artefatos separados, com finalidades diferentes**:
 
 A variante `companionDebug` é compilada, testada e auditada, mas **não publicada para sideload**, pois declara Notification Listener. O encaminhamento real de notificações ao GT3 MAX ainda depende da validação do protocolo.
 
-**Atenção ao Play Protect:** a inspeção binária do artefato diagnostic anterior não encontrou INTERNET, SMS, Accessibility ou Notification Listener. Isso afasta a regra específica de bloqueio de sideload por essas capacidades para aquele APK, mas não comprova ausência de malware nem explica o aviso. O APK é debug, não release. Não desative o Play Protect. Consulte [Play Protect e distribuição segura](docs/ALINHAMENTO-PLAY-PROTECT-DISTRIBUICAO.md).
+**Atenção ao Play Protect:** a inspeção binária citada foi feita em um artefato diagnostic anterior à integração meteorológica. A nova versão declara INTERNET e ACCESS_NETWORK_STATE somente para geocodificação e previsão Open-Meteo; o manifesto e os guardrails foram atualizados, mas a nova compilação ainda precisa ser auditada. Isso não explica nem garante a remoção de alertas do Play Protect. O APK é debug, não release. Não desative o Play Protect. Consulte [Play Protect e distribuição segura](docs/ALINHAMENTO-PLAY-PROTECT-DISTRIBUICAO.md).
 
 CI verde não equivale a aprovação do Play Protect nem a teste físico no Galaxy A06. A variante de release e a assinatura própria ainda não foram criadas.
 
@@ -108,6 +110,7 @@ Consulte o [índice completo da documentação](docs/README.md).
 - [Matriz de compatibilidade GT3 MAX](docs/MATRIZ-COMPATIBILIDADE-GT3-MAXX.md)
 - [Integração Android, WhatsApp e notificações](docs/INTEGRACAO-NOTIFICACOES-ANDROID-WHATSAPP.md)
 - [Integração Health Connect, passos, rotas e horário](docs/INTEGRACAO-HEALTH-CONNECT-PASSOS-HORARIO.md)
+- [Integração de hora e clima pela rede do celular](docs/INTEGRACAO-HORA-CLIMA-REDE.md)
 - [Diário de bordo](docs/DIARIO-DE-BORDO.md)
 - [Changelog](CHANGELOG.md)
 - [Versão](VERSION)
