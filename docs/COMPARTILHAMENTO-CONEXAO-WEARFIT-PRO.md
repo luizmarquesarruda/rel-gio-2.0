@@ -1,3 +1,5 @@
+> **OBSOLETO — DOCUMENTO HISTÓRICO (04/11/2026).** O fluxo de handoff para Wearfit Pro foi removido do Relógio 2.0 na branch de trabalho `work/disable-wearfit-app-ownership-20261105`. O botão, a preferência operacional e as políticas de liberação/retomada não fazem mais parte do aplicativo. **Não siga os passos operacionais deste documento.** Ele foi mantido apenas como registro da implementação anterior. Para o estado atual, consulte o README da raiz e o diário de bordo.
+
 # Liberação da conexão BLE para o Wearfit Pro
 
 **Data:** 04/11/2026  
