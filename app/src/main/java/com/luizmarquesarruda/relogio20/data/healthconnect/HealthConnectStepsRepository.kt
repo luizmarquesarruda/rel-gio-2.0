@@ -54,7 +54,8 @@ internal class HealthConnectStepsRepository(context: Context) {
 
     suspend fun readTodaySteps(
         now: Instant = Instant.now(),
-        zoneId: ZoneId = ZoneId.systemDefault()
+        zoneId: ZoneId = ZoneId.systemDefault(),
+        originPolicy: HealthConnectOriginPolicy = HealthConnectOriginPolicy.APP_ONLY
     ): HealthConnectStepsResult {
         when (availability()) {
             HealthConnectAvailability.PROVIDER_UNAVAILABLE ->
@@ -75,7 +76,8 @@ internal class HealthConnectStepsRepository(context: Context) {
             val response = client.aggregate(
                 AggregateRequest(
                     metrics = setOf(StepsRecord.COUNT_TOTAL),
-                    timeRangeFilter = TimeRangeFilter.between(start, now)
+                    timeRangeFilter = TimeRangeFilter.between(start, now),
+                    dataOriginFilter = originPolicy.dataOriginFilter(appContext.packageName)
                 )
             )
 
