@@ -1388,6 +1388,11 @@ class MainActivity : ComponentActivity() {
         cancelGattServiceDiscoveryTimeout()
         lastConnectedDeviceName = safeDeviceName(device) ?: "Dispositivo sem nome"
         lastConnectedDeviceAddress = safeDeviceAddress(device)
+        // A new BluetoothGatt instance is a new CTS attempt scope, even if the old
+        // connection ended without delivering its final disconnect callback.
+        clockSyncAttemptedForSession = false
+        pendingCurrentTimeWriteKey = null
+        if (::clockSyncButton.isInitialized) clockSyncButton.isEnabled = false
         resetGattOperationQueue()
         pendingNotifications.clear()
         activeNotifications.clear()
