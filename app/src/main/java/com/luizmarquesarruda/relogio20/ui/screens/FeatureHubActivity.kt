@@ -167,6 +167,7 @@ class FeatureHubActivity : Activity() {
                 when (feature.route) {
                     "notifications" -> startActivity(Intent(this, NotificationCenterActivity::class.java))
                     "privacy" -> startActivity(Intent(this, HealthPrivacyActivity::class.java))
+                    "local_tools" -> startActivity(Intent(this, LocalToolsActivity::class.java))
                     else -> showFeatureInfo(feature)
                 }
             }
@@ -181,13 +182,14 @@ class FeatureHubActivity : Activity() {
             Feature("Sono", "Monitoramento descrito pelo fabricante; fases, horários e origem ainda precisam de validação no protocolo.", "INTEGRAÇÃO DIRETA PENDENTE"),
             Feature("Estresse / pressão", "Escala e significado exatos ainda precisam ser confirmados.", "SEMÂNTICA PENDENTE"),
             Feature("METT", "Equivalente metabólico (MET). Não converter automaticamente para calorias.", "UNIDADE DEFINIDA • SENSOR PENDENTE"),
-            Feature("Treinamento respiratório", "Orientação e execução no relógio dependem de suporte confirmado.", "NÃO IMPLEMENTADO"),
+            Feature("Treinamento respiratório", "Treino guiado executado localmente no telefone; não controla o relógio.", "IMPLEMENTADO NO ANDROID", available = true, route = "local_tools"),
+            Feature("Lembretes de saúde", "Lembrete diário local por notificação Android; não é enviado ao relógio.", "IMPLEMENTADO NO ANDROID", available = true, route = "local_tools"),
             Feature("Ciclo fisiológico", "Dados sensíveis. Exige consentimento específico e controles de privacidade antes de qualquer integração.", "NÃO IMPLEMENTADO")
         )
         "activity" -> listOf(
             Feature("Reconhecimento automático", "O fabricante lista reconhecimento automático de movimento; início, fim e tipos ainda não são recebidos pelo app.", "NÃO VALIDADO"),
             Feature("Caminhadas e corridas", "Histórico de atividade e percurso no mapa ainda não implementados.", "NÃO IMPLEMENTADO"),
-            Feature("Metas", "Metas locais de passos, distância e atividade ainda não implementadas.", "NÃO IMPLEMENTADO"),
+            Feature("Metas", "Meta diária local de passos com progresso baseado no agregado Health Connect, quando autorizado.", "IMPLEMENTADO NO ANDROID", available = true, route = "local_tools"),
             Feature("Histórico", "Não há histórico consolidado de sessões do GT3 MAX nesta versão.", "NÃO IMPLEMENTADO")
         )
         "device" -> listOf(
@@ -208,9 +210,9 @@ class FeatureHubActivity : Activity() {
             Feature("Câmera remota", "Exige fluxo explícito e integração Android segura; não implementado.", "NÃO IMPLEMENTADO")
         )
         "tools" -> listOf(
-            Feature("Alarmes", "Alarmes locais e sincronização com o relógio ainda não integrados.", "NÃO IMPLEMENTADO"),
-            Feature("Cronômetro", "Função descrita pelo fabricante; tela própria ainda não criada.", "NÃO IMPLEMENTADO"),
-            Feature("Temporizador", "Função descrita pelo fabricante; tela própria ainda não criada.", "NÃO IMPLEMENTADO"),
+            Feature("Alarmes", "Cria um alarme no aplicativo Relógio do Android; não sincroniza com o smartwatch.", "IMPLEMENTADO NO ANDROID", available = true, route = "local_tools"),
+            Feature("Cronômetro", "Cronômetro local com iniciar, pausar e zerar.", "IMPLEMENTADO NO ANDROID", available = true, route = "local_tools"),
+            Feature("Temporizador", "Temporizador local de 1 a 180 minutos.", "IMPLEMENTADO NO ANDROID", available = true, route = "local_tools"),
             Feature("Encontrar telefone", "Exige canal de comando validado e ação explícita.", "NÃO IMPLEMENTADO"),
             Feature("Cartão de visita", "Compartilhamento de dados pessoais não implementado.", "NÃO IMPLEMENTADO"),
             Feature("Quick collection", "Finalidade exata não confirmada; não atribuir semântica por tradução literal.", "SIGNIFICADO PENDENTE"),
