@@ -223,6 +223,7 @@ class MainActivity : ComponentActivity() {
     private var gattOperationTimeoutTask: Runnable? = null
     private val deepExplorationAttempted = mutableSetOf<String>()
     private val invalidatedGattOperationKeys = mutableSetOf<String>()
+    private val invalidatedCccdCharacteristicKeys = mutableSetOf<String>()
     private val nusFrameDecoder = WearfitAbStreamDecoder()
     private val passiveBleObservationTracker = PassiveBleObservationTracker()
     private var clockSyncAttemptedForSession = false
@@ -1412,6 +1413,7 @@ class MainActivity : ComponentActivity() {
         isGattDisconnecting = false
         isGattConnected = false
         invalidatedGattOperationKeys.clear()
+        invalidatedCccdCharacteristicKeys.clear()
         clockSyncAttemptedForSession = false
         pendingCurrentTimeWriteKey = null
         if (::deviceTimeSyncView.isInitialized) {
@@ -1624,7 +1626,13 @@ class MainActivity : ComponentActivity() {
                 return
             }
             appendLog("Android informou Service Changed: tabela GATT desatualizada. Limpando operações e redescobrindo serviços.")
-            activeGattOperationKey?.let(invalidatedGattOperationKeys::add)
+            activeGattOperationKey?.let { activeKey ->
+                invalidatedGattOperationKeys.add(activeKey)
+                val parts = activeKey.split("/", limit = 3)
+                if (parts.size == 3 && parts[2].startsWith("CCCD_")) {
+                    invalidatedCccdCharacteristicKeys.add(parts[0] + "/" + parts[1])
+                }
+            }
             cancelGattServiceDiscoveryTimeout()
             resetGattOperationQueue()
             gattExplorationProgress.markRemainingSkipped()
@@ -1785,11 +1793,23 @@ class MainActivity : ComponentActivity() {
             val characteristic = descriptor.characteristic
             val key = characteristic.service.uuid.toString() + "/" +
                 characteristic.uuid.toString()
-            val operationKey = gattOperationKey(
-                characteristic.service.uuid.toString(), characteristic.uuid.toString(), "CCCD"
+            val enableOperationKey = gattOperationKey(
+                characteristic.service.uuid.toString(), characteristic.uuid.toString(), "CCCD_ENABLE"
             )
+            val disableOperationKey = gattOperationKey(
+                characteristic.service.uuid.toString(), characteristic.uuid.toString(), "CCCD_DISABLE"
+            )
+            val operationKey = GattCallbackSafetyPolicy.descriptorWriteOperationKey(
+                activeOperationKey = activeGattOperationKey,
+                enableOperationKey = enableOperationKey,
+                disableOperationKey = disableOperationKey
+            ) ?: run {
+                appendLog("Callback CCCD sem operação de habilitar/desabilitar ativa: " + key)
+                return
+            }
             if (!acceptsGattOperationCallback(gatt, operationKey)) return
-            val wasDisablingAutomatic = pendingAutomaticUnsubscribeKeys.remove(key)
+            val wasDisablingAutomatic =
+                operationKey == disableOperationKey && pendingAutomaticUnsubscribeKeys.remove(key)
             if (wasDisablingAutomatic) {
                 pendingAutomaticNotifications.remove(key)
                 automaticNotificationKeys.remove(key)
@@ -2253,7 +2273,7 @@ class MainActivity : ComponentActivity() {
 
             queuedAutomaticUnsubscribeKeys.add(key)
             enqueueGattOperation(
-                gattOperationKey(parts[0], parts[1], "CCCD"),
+                gattOperationKey(parts[0], parts[1], "CCCD_DISABLE"),
                 onTimeout = {
                     pendingAutomaticUnsubscribeKeys.remove(key)
                     queuedAutomaticUnsubscribeKeys.remove(key)
@@ -2786,7 +2806,7 @@ class MainActivity : ComponentActivity() {
         pendingNotifications.add(key)
         if (automaticDiscovery) pendingAutomaticNotifications.add(key)
         enqueueGattOperation(
-            gattOperationKey(characteristic.service.uuid.toString(), characteristic.uuid.toString(), "CCCD"),
+            gattOperationKey(characteristic.service.uuid.toString(), characteristic.uuid.toString(), "CCCD_ENABLE"),
             onTimeout = {
                 gattExplorationProgress.markTimeout(
                     characteristic.service.uuid.toString(), characteristic.uuid.toString(),
@@ -2885,15 +2905,19 @@ class MainActivity : ComponentActivity() {
         operation: () -> Boolean
     ) {
         gattOperationQueue.enqueue {
-            if (key in invalidatedGattOperationKeys) {
-                val parts = key.split("/", limit = 3)
-                if (parts.size == 3) {
-                    when (parts[2]) {
-                        "READ" -> gattExplorationProgress.markSkipped(
-                            parts[0], parts[1], GattProgressOperation.READ
+            val keyParts = key.split("/", limit = 3)
+            val isCccdOperation = keyParts.size == 3 && keyParts[2].startsWith("CCCD_")
+            val characteristicKey = if (keyParts.size == 3) keyParts[0] + "/" + keyParts[1] else ""
+            if (key in invalidatedGattOperationKeys ||
+                (isCccdOperation && characteristicKey in invalidatedCccdCharacteristicKeys)
+            ) {
+                if (keyParts.size == 3) {
+                    when {
+                        keyParts[2] == "READ" -> gattExplorationProgress.markSkipped(
+                            keyParts[0], keyParts[1], GattProgressOperation.READ
                         )
-                        "CCCD" -> gattExplorationProgress.markSkipped(
-                            parts[0], parts[1], GattProgressOperation.SUBSCRIBE
+                        isCccdOperation -> gattExplorationProgress.markSkipped(
+                            keyParts[0], keyParts[1], GattProgressOperation.SUBSCRIBE
                         )
                     }
                     updateGattProgressUi()
@@ -2909,6 +2933,12 @@ class MainActivity : ComponentActivity() {
                     val timeout = Runnable {
                         if (activeGattOperationKey == key) {
                             invalidatedGattOperationKeys.add(key)
+                            val timedOutParts = key.split("/", limit = 3)
+                            if (timedOutParts.size == 3 && timedOutParts[2].startsWith("CCCD_")) {
+                                invalidatedCccdCharacteristicKeys.add(
+                                    timedOutParts[0] + "/" + timedOutParts[1]
+                                )
+                            }
                             activeGattOperationKey = null
                             gattOperationTimeoutTask = null
                             appendLog("Timeout GATT após " + GATT_OPERATION_TIMEOUT_MS + " ms: " + key)

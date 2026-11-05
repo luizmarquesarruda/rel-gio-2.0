@@ -16,6 +16,16 @@ internal object GattCallbackSafetyPolicy {
             callbackOperationKey !in invalidatedOperationKeys &&
             activeOperationKey == callbackOperationKey
 
+    fun descriptorWriteOperationKey(
+        activeOperationKey: String?,
+        enableOperationKey: String,
+        disableOperationKey: String
+    ): String? = when (activeOperationKey) {
+        enableOperationKey -> enableOperationKey
+        disableOperationKey -> disableOperationKey
+        else -> null
+    }
+
     fun acceptsNotificationCallback(
         connectionIsCurrent: Boolean,
         connected: Boolean,

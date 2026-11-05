@@ -1,6 +1,8 @@
 package com.luizmarquesarruda.relogio20.device.ble.core
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -62,6 +64,27 @@ class GattCallbackSafetyPolicyTest {
                 callbackOperationKey = key,
                 invalidatedOperationKeys = emptySet()
             )
+        )
+    }
+
+    @Test
+    fun descriptorWriteCallbackKeepsEnableAndDisableOperationsDistinct() {
+        val enable = "180d/2a37/CCCD_ENABLE"
+        val disable = "180d/2a37/CCCD_DISABLE"
+
+        assertEquals(
+            enable,
+            GattCallbackSafetyPolicy.descriptorWriteOperationKey(enable, enable, disable)
+        )
+        assertEquals(
+            disable,
+            GattCallbackSafetyPolicy.descriptorWriteOperationKey(disable, enable, disable)
+        )
+        assertNull(
+            GattCallbackSafetyPolicy.descriptorWriteOperationKey(null, enable, disable)
+        )
+        assertNull(
+            GattCallbackSafetyPolicy.descriptorWriteOperationKey("other", enable, disable)
         )
     }
 
