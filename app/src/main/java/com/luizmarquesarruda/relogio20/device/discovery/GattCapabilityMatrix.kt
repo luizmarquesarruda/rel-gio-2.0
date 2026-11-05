@@ -102,6 +102,16 @@ internal object GattCapabilityMatrix {
                 ) "; sem CCCD" else ""
                 shortUuid(characteristic.uuid) + " [" + propertyText + cccdText + "]"
             }
+            val notificationNote = if (notifyWithoutCccd > 0) {
+                " NOTIFY/INDICATE sem CCCD não é elegível para inscrição padrão."
+            } else {
+                ""
+            }
+            val trafficNote = if (trafficCount > 0) {
+                " Há " + trafficCount + " notificações no histórico; sem validação semântica."
+            } else {
+                " Presença/propriedade GATT não comprova que o sensor produza medições."
+            }
             val detail = when {
                 !servicePresent ->
                     "O serviço SIG " + definition.service + " não foi anunciado neste inventário. " +
@@ -111,16 +121,7 @@ internal object GattCapabilityMatrix {
                         "esperada para este recurso apareceu."
                 else ->
                     "Características: " + characteristicDetails.joinToString("; ") + "." +
-                        if (notifyWithoutCccd > 0) {
-                            " NOTIFY/INDICATE sem CCCD não é elegível para inscrição padrão."
-                        } else {
-                            ""
-                        } +
-                        if (trafficCount > 0) {
-                            " Há " + trafficCount + " notificações no histórico; sem validação semântica."
-                        } else {
-                            " Presença/propriedade GATT não comprova que o sensor produza medições."
-                        }
+                        notificationNote + trafficNote
             }
             val evidence = if (matchingCharacteristics.isEmpty()) {
                 "Inventário GATT da sessão; serviço=" + definition.service + "."
