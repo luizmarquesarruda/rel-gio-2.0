@@ -94,3 +94,11 @@ A ponte de notificações opera com uma regra diferente: prévias são voláteis
 - O catálogo de funções e as telas de privacidade/biblioteca foram alinhados com a política real de CTS e retenção de HEX.
 - A captura de notificação é limpa quando desativada; limite 30/15 min mantido.
 - O exportador máscara endereços Bluetooth e omite texto de notificações Android; o fingerprint apenas processa metadados/hash curto.
+
+
+## Quarta rodada — corrida entre callback e pausa da captura de notificações
+
+- Identificada a janela entre a checagem inicial no `NotificationListenerService` e a inserção em memória: pausar a captura poderia limpar a lista e, depois, uma callback já iniciada poderia inserir mais uma prévia.
+- `NotificationCaptureStore.addIfAllowed` revalida o estado e a allow-list sob o mesmo lock que serializa `setEnabled(false)` e alterações de aplicativos permitidos.
+- Remover um aplicativo da allow-list também purga prévias daquele pacote.
+- Testes adicionados para a barreira final quando consentimento está ativo/inativo.

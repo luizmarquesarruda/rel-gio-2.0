@@ -37,6 +37,30 @@ class NotificationCaptureStoreTest {
     }
 
     @Test
+    fun rejectsNotificationWhenConsentGateIsFalse() {
+        val accepted = NotificationCaptureStore.addIfAllowed(
+            event = preview("blocked", "com.whatsapp"),
+            isAllowed = { false },
+            nowElapsedRealtimeMillis = testElapsedRealtime
+        )
+
+        assertFalse(accepted)
+        assertTrue(NotificationCaptureStore.snapshot(testElapsedRealtime).isEmpty())
+    }
+
+    @Test
+    fun addsNotificationOnlyWhenConsentGateAllowsIt() {
+        val accepted = NotificationCaptureStore.addIfAllowed(
+            event = preview("allowed", "com.whatsapp"),
+            isAllowed = { true },
+            nowElapsedRealtimeMillis = testElapsedRealtime
+        )
+
+        assertTrue(accepted)
+        assertEquals("allowed", NotificationCaptureStore.snapshot(testElapsedRealtime).single().key)
+    }
+
+    @Test
     fun removesNotificationByAndroidKey() {
         NotificationCaptureStore.add(
             preview("android-key", "com.whatsapp"),

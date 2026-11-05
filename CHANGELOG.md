@@ -1,5 +1,13 @@
 # Changelog
 
+## Não lançado — serialização do consentimento de notificações — 04/11/2026
+
+- A gravação de prévias agora revalida consentimento e allow-list sob o mesmo lock usado para pausar captura ou alterar aplicativos permitidos.
+- Callbacks de notificação já iniciados não podem repopular a memória depois da pausa/revogação.
+- Remover um aplicativo da lista permitida também purga prévias já capturadas desse pacote.
+- Testes cobrem admissão negada e permitida pela barreira final.
+
+
 ## Não lançado — retenção explícita de histórico BLE e limpeza de prévias — 04/11/2026
 
 - A tela de funções não promete sincronização CTS: a característica pode aparecer no inventário, mas a escrita de hora continua suspensa e não validada.
