@@ -40,6 +40,7 @@ A lista original declara ainda coleta de diversos identificadores de dispositivo
 Na revisão de 03/11/2026, as dependências diretas declaradas em `app/build.gradle.kts` eram:
 - `androidx.activity:activity-ktx:1.10.1`
 - `androidx.health.connect:connect-client:1.1.0`
+- `androidx.work:work-runtime-ktx:2.12.0` — atualização meteorológica periódica condicionada à rede.
 - `org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2`
 - JUnit para testes.
 
