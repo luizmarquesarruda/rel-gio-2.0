@@ -21,6 +21,7 @@ import com.luizmarquesarruda.relogio20.data.discovery.FeatureDiscoveryReadResult
 import com.luizmarquesarruda.relogio20.data.discovery.FeatureDiscoveryStore
 import com.luizmarquesarruda.relogio20.data.discovery.DiscoveryLibraryStore
 import com.luizmarquesarruda.relogio20.data.discovery.DiscoveryTestDuration
+import com.luizmarquesarruda.relogio20.device.discovery.GattCapabilityMatrix
 import com.luizmarquesarruda.relogio20.device.discovery.DiscoverySnapshot
 import com.luizmarquesarruda.relogio20.device.discovery.WatchExperimentCatalog
 import java.text.SimpleDateFormat
