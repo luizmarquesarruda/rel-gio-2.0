@@ -193,9 +193,11 @@ class FeatureHubActivity : Activity() {
             Feature("Histórico de passos", "Histórico diário de 7 dias agregado pelo Health Connect, com origem filtrada; não é histórico direto do GT3 MAX.", "IMPLEMENTADO • HEALTH CONNECT", available = true, route = "local_tools")
         )
         "device" -> listOf(
+            Feature("Divisão de tela do dispositivo", "Rótulo de origem ambíguo; não equivale a multi-janela Android e não há função de firmware confirmada.", "SEM DEFINIÇÃO • NÃO IMPLEMENTADO"),
             Feature("Bateria do relógio", "Notificação NUS TX do GT3 MAX Call com interpretação AB 0x91/0x80. O valor só será confirmado após comparação com Wearfit Pro em diferentes níveis de carga.", "LEITURA CANDIDATA • NÃO VALIDADA"),
             Feature("Brilho da tela", "Ajuste remoto depende de comando proprietário identificado e validado.", "BLOQUEADO ATÉ VALIDAR"),
             Feature("Personalizar botão inferior", "Disponibilidade varia por modelo; mapeamento e comando não confirmados.", "SUPORTE INCERTO"),
+            Feature("Função motora / vibração", "Pode representar motor de vibração do relógio. Padrões e comandos não foram identificados; nenhuma escrita proprietária será enviada.", "PROTOCOLO NÃO VALIDADO"),
             Feature("Bloqueio / desbloqueio", "Controle remoto de bloqueio não está habilitado.", "BLOQUEADO POR SEGURANÇA", blocked = true),
             Feature("Sincronização automática de hora", "O app identifica o perfil CTS 0x1805/0x2A2B no inventário, mas não escreve a hora do relógio nesta versão. A sincronização física continua pendente de implementação e validação seguras; use o Wearfit Pro até lá.", "ESCRITA CTS SUSPENSA • NÃO VALIDADO"),
             Feature("Reiniciar / desligar", "Comandos de energia não serão enviados sem protocolo e confirmação explícita.", "BLOQUEADO POR SEGURANÇA", blocked = true),
@@ -205,7 +207,8 @@ class FeatureHubActivity : Activity() {
         "connectivity" -> listOf(
             Feature("Notificações", "Tela de consentimento e seleção de aplicativos já existente na variante companion.", "TELA EXISTENTE", available = true, route = "notifications"),
             Feature("Chamadas", "Perfil de áudio Bluetooth Classic e sinalização de chamadas ainda não integrados.", "NÃO IMPLEMENTADO"),
-            Feature("Áudio Bluetooth", "Perfis de áudio 1 e 2 listados pelo fabricante; roteamento ainda não implementado.", "NÃO IMPLEMENTADO"),
+            Feature("Configuração de áudio Bluetooth I", "Canal Classic separado do BLE; perfil e comportamento do primeiro item ainda não identificados.", "NÃO VALIDADO"),
+            Feature("Configuração de áudio Bluetooth II", "Canal Classic separado do BLE; perfil e comportamento do segundo item ainda não identificados.", "NÃO VALIDADO"),
             Feature("Controle de música", "Controles de mídia do telefone ainda não integrados.", "NÃO IMPLEMENTADO"),
             Feature("Câmera remota", "Exige fluxo explícito e integração Android segura; não implementado.", "NÃO IMPLEMENTADO")
         )
@@ -216,6 +219,7 @@ class FeatureHubActivity : Activity() {
             Feature("Encontrar telefone", "Exige canal de comando validado e ação explícita.", "NÃO IMPLEMENTADO"),
             Feature("Cartão de visita", "Compartilhamento de dados pessoais não implementado.", "NÃO IMPLEMENTADO"),
             Feature("Quick collection", "Finalidade exata não confirmada; não atribuir semântica por tradução literal.", "SIGNIFICADO PENDENTE"),
+            Feature("Orientação de uso do ChatGPT", "Apenas referência de ajuda; não representa integração oficial com ChatGPT nem comando para o relógio.", "DOCUMENTAÇÃO • SEM INTEGRAÇÃO"),
             Feature("Alipay", "Pagamentos e carteiras digitais não serão implementados sem integração oficial e requisitos de segurança.", "FORA DO ESCOPO ATUAL", blocked = true),
             Feature("Cartão de acesso", "Emulação de credenciais de acesso não implementada.", "BLOQUEADO POR SEGURANÇA", blocked = true)
         )
