@@ -1,3 +1,16 @@
+## 0.4.0-alpha.4 — 05/11/2026
+
+### Hora e clima independentes do WearFit Pro
+- Adicionada tela Hora e clima com hora civil do Android e indicação das opções de data/hora automática e fuso automático do sistema.
+- Adicionada geocodificação manual de cidades e previsão Open-Meteo (condição atual, sensação térmica, umidade, precipitação, probabilidade de chuva, vento, mín./máx. e nascer/pôr do sol).
+- Cache meteorológico local privado; atualização ao abrir quando o cache excede 30 minutos, atualização manual e agendamento periódico aproximado de seis horas por WorkManager com rede disponível.
+- Nenhuma permissão de GPS/localização foi adicionada. A consulta envia somente o nome digitado da cidade e as coordenadas da cidade selecionada; nenhum identificador, dado de saúde ou conteúdo de notificação é enviado.
+- Manifesto passa a declarar INTERNET e ACCESS_NETWORK_STATE para a função meteorológica. O auditor exige exatamente uma INTERNET nas duas variantes; os demais bloqueios de permissões sensíveis são preservados.
+- Sincronização da hora Android pelo CTS passa a ser automática uma vez por sessão, mas somente se 0x1805/0x2A2B e propriedade WRITE forem anunciados. O GT3 MAXX capturado não anuncia CTS, portanto a sincronização física permanece não validada.
+- Nenhum payload de clima foi enviado ao GT3 MAXX: o protocolo de clima do firmware ainda não foi identificado.
+- Open-Meteo: uso gratuito não comercial e dados CC BY 4.0; atribuição incluída na tela. Distribuição comercial exige revisão dos termos.
+- Teste unitário de rótulos meteorológicos adicionado; auditor de manifesto ganhou cenários de INTERNET única, ausente e duplicada.
+- Build, Lint, testes Kotlin, guardrails, APK e teste físico Galaxy A06/GT3 MAXX: **não validados** nesta alteração; CI não foi disparada.
 ## Não lançado — corrigir contrato do teste de assinatura GATT — 05/11/2026
 
 - O run #419 confirmou que os pacotes reorganizados compilam e o Lint passa nas variantes diagnostic/companion.
