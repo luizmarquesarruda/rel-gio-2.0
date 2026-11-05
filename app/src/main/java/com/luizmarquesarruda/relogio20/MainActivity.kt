@@ -348,6 +348,7 @@ class MainActivity : ComponentActivity() {
             setPadding(0, 0, 0, dp(12))
         }
         connectionCard.addView(deviceTimeSyncView)
+        addText(connectionCard, "Conexão BLE gerenciada diretamente pelo Relógio 2.0.", 12f, false)
 
         val actions = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
