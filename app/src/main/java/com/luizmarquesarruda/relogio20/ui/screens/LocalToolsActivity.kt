@@ -19,15 +19,16 @@ import android.os.Looper
 import android.os.SystemClock
 import android.provider.AlarmClock
 import android.view.Gravity
-import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsRepository
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsHistoryResult
+import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectOriginPolicy
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsResult
 import com.luizmarquesarruda.relogio20.domain.activity.LocalFeaturePolicy
 import kotlinx.coroutines.CoroutineScope
@@ -156,6 +157,19 @@ class LocalToolsActivity : Activity() {
     private fun addStepGoalSection() {
         section("Meta diária de passos")
         stepsStatus = addText("Consultando o agregado local do Health Connect…", 13f)
+        addText("Origem dos dados: somente o próprio Relógio 2.0 por padrão. Você pode incluir outros aplicativos explicitamente.", 11f)
+        val includeExternalSwitch = Switch(this).apply {
+            text = "Incluir registros de outros aplicativos"
+            isChecked = selectedOriginPolicy() == HealthConnectOriginPolicy.INCLUDE_EXTERNAL
+            setOnCheckedChangeListener { _, checked ->
+                getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                    .putBoolean(KEY_INCLUDE_EXTERNAL_ORIGINS, checked).apply()
+                currentSteps = null
+                refreshSteps()
+                refreshStepsHistory()
+            }
+        }
+        body.addView(includeExternalSwitch, matchWrap())
         goalInput = EditText(this).apply {
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
             singleLine = true
@@ -191,7 +205,7 @@ class LocalToolsActivity : Activity() {
                 if (!repository.hasReadPermission()) {
                     HealthConnectStepsResult.PermissionRequired
                 } else {
-                    repository.readTodaySteps()
+                    repository.readTodaySteps(originPolicy = selectedOriginPolicy())
                 }
             }.getOrElse { HealthConnectStepsResult.Failure(it.message ?: "Falha ao consultar passos.") }
             runOnUiThread {
@@ -221,7 +235,7 @@ class LocalToolsActivity : Activity() {
                 if (!repository.hasReadPermission()) {
                     HealthConnectStepsHistoryResult.PermissionRequired
                 } else {
-                    repository.readStepsHistory(days = 7)
+                    repository.readStepsHistory(days = 7, originPolicy = selectedOriginPolicy())
                 }
             }.getOrElse {
                 HealthConnectStepsHistoryResult.Failure(it.message ?: "Falha ao consultar histórico.")
@@ -432,6 +446,11 @@ class LocalToolsActivity : Activity() {
         )
     }
 
+    private fun selectedOriginPolicy(): HealthConnectOriginPolicy =
+        if (getSharedPreferences(PREFS, MODE_PRIVATE)
+                .getBoolean(KEY_INCLUDE_EXTERNAL_ORIGINS, false)
+        ) HealthConnectOriginPolicy.INCLUDE_EXTERNAL else HealthConnectOriginPolicy.APP_ONLY
+
     private fun loadStepGoal() {
         if (::goalInput.isInitialized) {
             goalInput.setText(getSharedPreferences(PREFS, MODE_PRIVATE)
@@ -494,6 +513,7 @@ class LocalToolsActivity : Activity() {
     companion object {
         private const val PREFS = "local_feature_tools"
         private const val KEY_STEP_GOAL = "step_goal"
+        private const val KEY_INCLUDE_EXTERNAL_ORIGINS = "include_external_health_origins"
         private const val KEY_REMINDER_HOUR = "reminder_hour"
         private const val KEY_REMINDER_MINUTE = "reminder_minute"
         private const val KEY_REMINDER_ENABLED = "reminder_enabled"
