@@ -8,6 +8,11 @@ A base é um aplicativo Android nativo Kotlin. O adaptador de consulta agregada 
 
 | Arquivo | Módulo | Responsabilidade |
 |---|---|---|
+| device/ble/core/BleDeviceIdentity.kt | BLE Core | Normaliza e compara endereços Bluetooth sem selecionar ou autenticar dispositivo por MAC isoladamente. |
+| device/ble/core/BleScanCandidatePolicy.kt | BLE Discovery | Classifica pistas do scan; novo dispositivo ainda exige fingerprint GATT completo. |
+| device/ble/core/BleValueFormatter.kt | BLE Diagnostics | Converte bytes observados para HEX, sem inferir semântica. |
+| domain/diagnostics/BleDiagnosticReport.kt | Domain / Diagnostics | Monta relatório local e mascara endereço Bluetooth antes da exportação. |
+| ui/formatters/StepsCountFormatter.kt | UI / Formatting | Formata o agregado de passos sem converter ausência em zero. |
 | domain/health/HealthMetricSample.kt | Domain / Health | Tipo, unidade, origem, timestamps e estado de validação sem dependência Android/BLE. |
 | domain/health/StepsSnapshot.kt | Domain / Activity | Snapshot do agregado de passos; diferencia zero de ausência e preserva intervalo, recebimento e origem Health Connect. |
 | data/healthconnect/HealthConnectStepsRepository.kt | Data / Health Connect | Disponibilidade do provider, permissão READ_STEPS e consulta agregada diária, sem atribuir a origem ao GT3 MAX. |

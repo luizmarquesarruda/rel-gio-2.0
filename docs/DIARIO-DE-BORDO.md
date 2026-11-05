@@ -831,3 +831,15 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Nenhum comando proprietário, escrita NUS RX, DFU/OTA, reset ou calibração foi enviado.
 - CI não disparada; build, Lint, testes Kotlin e validação física no Galaxy A06/GT3 MAX **não validados**. Nenhuma PR ou merge criado nesta rodada.
 
+## 05/11/2026 — Organização de pacotes e alinhamento do Manifesto
+
+- Criada a branch isolada `refactor/package-layer-boundaries-20261105` a partir da base de trabalho que já remove o handoff operacional ao Wearfit Pro.
+- Movidas as Activities de entrada, privacidade, laboratório e biblioteca para `ui.screens`; os utilitários de identidade/candidatura BLE e HEX para `device.ble.core`; o relatório para `domain.diagnostics`; e o formatador de passos para `ui.formatters`.
+- Atualizados imports e testes puros; o teste de contrato Python passou a localizar `MainActivity` no novo caminho.
+- Manifesto alinhado aos nomes completos das Activities e ao target do alias de justificativa Health Connect.
+- Adicionado `.gitignore` para arquivos locais e materiais sensíveis de configuração/assinatura. Isso protege novos arquivos não rastreados; **não remove segredos que já estejam no histórico Git**.
+- Atualizados README, arquitetura, mapa de módulos e índice de documentação. A organização é de pacotes no mesmo módulo Gradle `:app`; não foram criados submódulos nem feita migração para Compose.
+- Esta etapa não extraiu ainda a máquina de estados BLE, scan ou callbacks de `MainActivity`; essa separação continua sendo a próxima dívida de arquitetura e deverá ser feita incrementalmente, com testes de ciclo de vida e callbacks atrasados.
+- Nenhum comando GATT, escrita CTS, parser, decoder, coleta, política de reconexão ou persistência foi intencionalmente alterado.
+- Testes Kotlin/Python, Lint e build **não executados**. CI **não disparada**. Teste físico Galaxy A06 / Android 16 + GT3 MAX **não validado**.
+

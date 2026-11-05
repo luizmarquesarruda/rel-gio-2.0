@@ -1,5 +1,4 @@
-package com.luizmarquesarruda.relogio20
-
+package com.luizmarquesarruda.relogio20.device.ble.core
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.Gt3MaxCallDeviceProfile
 
 /** BLE discovery hints only; a new identity still requires the captured GATT fingerprint. */

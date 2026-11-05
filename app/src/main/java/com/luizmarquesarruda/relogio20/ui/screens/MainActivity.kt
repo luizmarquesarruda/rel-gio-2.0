@@ -1,4 +1,4 @@
-package com.luizmarquesarruda.relogio20
+package com.luizmarquesarruda.relogio20.ui.screens
 
 import android.Manifest
 import android.app.AlertDialog
@@ -8,6 +8,11 @@ import android.content.ActivityNotFoundException
 import android.net.Uri
 import android.provider.Settings
 import com.luizmarquesarruda.relogio20.notifications.NotificationCenterActivity
+import com.luizmarquesarruda.relogio20.device.ble.core.BleDeviceIdentity
+import com.luizmarquesarruda.relogio20.device.ble.core.BleScanCandidatePolicy
+import com.luizmarquesarruda.relogio20.device.ble.core.BleValueFormatter
+import com.luizmarquesarruda.relogio20.domain.diagnostics.BleDiagnosticReport
+import com.luizmarquesarruda.relogio20.ui.formatters.StepsCountFormatter
 import com.luizmarquesarruda.relogio20.device.ble.gatt.SerialGattOperationQueue
 import com.luizmarquesarruda.relogio20.device.ble.gatt.BluetoothCurrentTimePayload
 import com.luizmarquesarruda.relogio20.device.ble.gatt.BluetoothCurrentTimeCapabilityPolicy
@@ -33,7 +38,6 @@ import com.luizmarquesarruda.relogio20.device.discovery.BlePacketFingerprintAnal
 import com.luizmarquesarruda.relogio20.device.discovery.PassiveBleObservationTracker
 import com.luizmarquesarruda.relogio20.device.discovery.GattDiscoveryRecoveryPolicy
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbStreamDecoder
-import com.luizmarquesarruda.relogio20.HealthPrivacyActivity
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectAvailability
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsRepository
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsResult

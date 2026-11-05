@@ -1,3 +1,12 @@
+## Não lançado — organização de pacotes e fronteiras Android — 05/11/2026
+
+- Movidas as Activities para `ui/screens`, utilitários BLE puros para `device/ble/core`, relatório para `domain/diagnostics` e formatador de passos para `ui/formatters`.
+- Atualizados os nomes completos das Activities no Manifesto, os imports Kotlin, testes de helpers e o teste de contrato que inspeciona o caminho de `MainActivity`.
+- Adicionado `.gitignore` para artefatos Gradle/Android, configuração local, chaves de assinatura, arquivos de ambiente, logs e saídas de teste.
+- Documentadas as fronteiras reais de pacotes e a dívida restante: `MainActivity` ainda coordena grande parte do ciclo BLE/GATT.
+- Nenhuma alteração intencional no comportamento BLE, nos comandos CTS, nos decoders, na persistência ou no Health Connect.
+- Testes unitários/Kotlin, lint e build: **não executados** nesta etapa. CI: **não disparada**. Validação física no Galaxy A06 / GT3 MAX: **não validada**.
+
 ## Não lançado — matriz de recursos e assinatura estrutural do GT3 MAX — 05/11/2026
 
 - Adicionada matriz passiva de onze grupos Bluetooth SIG para bateria, identificação do dispositivo, hora CTS, frequência cardíaca, pressão, SpO₂, temperatura, ambiente, composição corporal e cadência.

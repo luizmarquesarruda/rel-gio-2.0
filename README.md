@@ -1,5 +1,9 @@
 # Relógio 2.0
 
+## Organização do código
+
+A implementação permanece em um único módulo Android nativo `:app`, em Kotlin e Views. As Activities ficam em `ui/screens`, utilitários de apresentação em `ui/formatters`, contratos puros em `domain`, BLE em `device/ble`, perfil/protocolo GT3 MAX em `device/gt3max/protocol`, persistência e integrações em `data`. A estrutura foi organizada sem alterar o comportamento GATT. A extração do ciclo BLE de `MainActivity` continua como etapa arquitetural pendente. Consulte [estrutura de pacotes](docs/architecture/ESTRUTURA-DE-PACOTES.md) e [mapa de módulos](docs/MAPA-DE-MODULOS.md).
+
 Aplicativo Android de Saúde e Fitness que se conecta diretamente ao GT3 MAX por BLE/GATT, consulta passos agregados no Health Connect e oferece captura consentida de notificações na variante companion. A conexão BLE/GATT é gerenciada diretamente pelo Relógio 2.0. O aplicativo não oferece handoff nem integração operacional com Wearfit Pro; a documentação histórica sobre ele serve apenas como referência de pesquisa de protocolo.
 
 ## Reconexão automática BLE

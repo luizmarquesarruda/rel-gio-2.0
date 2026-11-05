@@ -15,6 +15,12 @@ A implementação em andamento é um protótipo Android nativo em Kotlin. Não h
 7. **Platform** — APIs Android para Bluetooth Classic, mídia, chamadas, alarmes, notificações, câmera e permissões.
 8. **Privacy & diagnostics** — consentimento, minimização, retenção e logs sem conteúdo sensível.
 
+## Estrutura de pacotes aplicada nesta fase
+
+A organização física do código segue `ui/screens`, `ui/formatters`, `domain/diagnostics`, `domain/health`, `device/ble/core`, `device/ble/gatt`, `device/discovery`, `device/gt3max/protocol`, `data/discovery` e `data/healthconnect`. As classes de Activity foram movidas para `ui.screens`; a identidade/candidatura BLE e formatação HEX foram movidas para `device.ble.core`; relatório de diagnóstico para `domain.diagnostics`; e formatação de passos para `ui.formatters`. A mudança altera pacotes e caminhos, não o contrato de conexão, a sequência de operações ou a semântica dos dados.
+
+O projeto continua em um único módulo Gradle `:app`, com Kotlin nativo e Views Android. Não há migração para Jetpack Compose nem criação de submódulos Gradle nesta etapa. `MainActivity` permanece um ponto de composição volumoso; a extração posterior deve separar scan/GATT em componentes com ciclo de vida próprio, sem reescrita total.
+
 ## Estado real nesta PR
 
 - MainActivity.kt ainda concentra apresentação, permissões BLE e conexão/ciclo GATT. A consulta agregada de passos do Health Connect foi extraída para data/healthconnect.

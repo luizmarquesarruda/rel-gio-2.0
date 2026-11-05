@@ -1,5 +1,4 @@
-package com.luizmarquesarruda.relogio20
-
+package com.luizmarquesarruda.relogio20.device.ble.core
 internal object BleDeviceIdentity {
     private val pattern = Regex("(?i)^[0-9a-f]{2}(:[0-9a-f]{2}){5}$")
     fun normalize(address: String?): String? {
