@@ -400,24 +400,31 @@ internal object GattValueDecoder {
     }
 
     private fun decodeEnvironmentalPressure(value: ByteArray): List<DecodedGattValue> {
-        if (value.size != 2) return emptyList()
-        val pressure = readSFloat(value, 0) ?: return emptyList()
-        if (pressure <= 0.0) return emptyList()
+        // Bluetooth SIG Pressure (0x2A6D): uint32 little-endian, resolution 0.1 Pa.
+        if (value.size != 4) return emptyList()
+        val rawPressure = readUInt32(value, 0)
+        if (rawPressure == 0L) return emptyList()
+        val pressurePa = rawPressure / 10.0
         return listOf(
             DecodedGattValue(
                 "Pressão atmosférica",
-                String.format(Locale.US, "%.2f Pa", pressure)
+                String.format(Locale.US, "%.1f Pa", pressurePa)
             )
         )
     }
 
     private fun decodeEnvironmentalTemperature(value: ByteArray): List<DecodedGattValue> {
+        // Bluetooth SIG Temperature (0x2A6E): sint16 little-endian, 0.01 °C.
         if (value.size != 2) return emptyList()
-        val temperature = readSFloat(value, 0) ?: return emptyList()
+        val raw = readUInt16(value, 0)
+        if (raw == 0x8000) return emptyList() // Bluetooth SIG: value is not known.
+        val signedHundredths = if (raw and 0x8000 != 0) raw - 0x10000 else raw
+        val temperatureCelsius = signedHundredths / 100.0
+        if (temperatureCelsius !in -273.15..327.67) return emptyList()
         return listOf(
             DecodedGattValue(
                 "Temperatura ambiente",
-                String.format(Locale.US, "%.2f °C", temperature)
+                String.format(Locale.US, "%.2f °C", temperatureCelsius)
             )
         )
     }
