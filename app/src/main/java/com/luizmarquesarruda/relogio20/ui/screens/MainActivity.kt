@@ -2712,7 +2712,8 @@ class MainActivity : ComponentActivity() {
                         confidence = "FORMATO_PADRONIZADO_OBSERVADO"
                     )
                     if (!resultQueued) {
-                        appendLog("Valor decodificado recebido, mas não enfileirado no histórico: fila de gravação cheia.")
+                        val dropped = droppedTelemetryCount.incrementAndGet()
+                        appendLog("Valor decodificado recebido, mas descartado por fila cheia. droppedCount=" + dropped)
                     }
                 }
             }
