@@ -3,7 +3,7 @@
 ## Não lançado — integridade de armazenamento, sessões e handoff BLE — 04/11/2026
 
 - O inventário GATT agora rejeita campos ausentes, tipos incorretos, valores fora de faixa, arrays incompletos, duplicatas e JSON acima do limite; dados corrompidos ou de schema futuro permanecem preservados.
-- As operações de leitura-modificação-gravação do inventário usam bloqueio compartilhado entre instâncias e verificam o resultado síncrono do SharedPreferences.
+- As operações de leitura-modificação-gravação do inventário usam bloqueio compartilhado entre instâncias; a atualização em memória usa `apply()` e a gravação em disco é assíncrona, sem confirmação imediata de durabilidade.
 - A biblioteca binária usa bloqueio compartilhado entre telas, limita leitura antes de alocar o arquivo, valida prazos de sessões, identificadores, tipos e HEX, e recusa timestamps inválidos.
 - A interface não oferece busca BLE enquanto o controle estiver liberado para Wearfit Pro.
 - O snapshot de passos exige que o recebimento ocorra após o fim do intervalo consultado.

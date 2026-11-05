@@ -715,7 +715,7 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 
 - Criada a branch `audit/full-repository-hardening-20261104` a partir do HEAD de trabalho `21e44dd5bace9801b7ced7183ff15b2ca730d588`. Nenhum PR foi criado e nenhum merge foi executado.
 - O inventário GATT via SharedPreferences passou a validar estrutura JSON completa e estrita, schema, tipos numéricos, timestamps, cardinalidades, IDs duplicados, UUIDs e faixas de valores. JSON inválido não é convertido em inventário vazio nem sobrescrito.
-- O inventário agora serializa operações entre instâncias e utiliza `commit()` para retornar o resultado efetivo da persistência.
+- O inventário serializa operações entre instâncias e atualiza o SharedPreferences em memória com `apply()`; a gravação em disco é assíncrona e o retorno não confirma durabilidade imediata.
 - A biblioteca de descobertas conserva a escrita atômica, mas agora protege transações entre instâncias, verifica tamanho antes da leitura e valida registros e sessões antes de decodificar/gravar.
 - Prazos inconsistentes, timestamps negativos, IDs duplicados, tipos desconhecidos e HEX inválido passam a ser recusados.
 - O botão principal de busca fica desabilitado enquanto o usuário entregou a sessão ao Wearfit Pro; a retomada continua sendo uma ação explícita.

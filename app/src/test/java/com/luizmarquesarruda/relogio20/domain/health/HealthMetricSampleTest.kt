@@ -40,6 +40,20 @@ class HealthMetricSampleTest {
     }
 
     @Test
+    fun rejectsMeasurementTimestampAfterReceiptTimestamp() {
+        assertThrows(IllegalArgumentException::class.java) {
+            HealthMetricSample(
+                type = HealthMetricType.HEART_RATE,
+                value = 72.0,
+                unit = HealthMetricUnit.BEATS_PER_MINUTE,
+                origin = HealthDataOrigin.GT3_MAX,
+                receivedAtEpochMillis = 1_798_000_000_000L,
+                measuredAtEpochMillis = 1_798_000_000_001L
+            )
+        }
+    }
+
+    @Test
     fun rejectsIncompatibleUnits() {
         assertThrows(IllegalArgumentException::class.java) {
             HealthMetricSample(

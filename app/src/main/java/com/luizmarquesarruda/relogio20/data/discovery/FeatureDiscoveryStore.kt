@@ -116,8 +116,11 @@ internal class FeatureDiscoveryStore(context: Context) {
             FeatureDiscoveryReadResult.Corrupt,
             is FeatureDiscoveryReadResult.UnsupportedSchema -> return false
         }
+        // apply() updates the in-memory preference atomically and persists on the
+        // SharedPreferences writer thread, avoiding disk I/O on Bluetooth callbacks.
         return runCatching {
-            preferences.edit().putString(KEY_SNAPSHOT, encode(snapshot)).commit()
+            preferences.edit().putString(KEY_SNAPSHOT, encode(snapshot)).apply()
+            true
         }.getOrDefault(false)
     }
 

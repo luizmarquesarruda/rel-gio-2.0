@@ -437,7 +437,7 @@ internal object GattValueDecoder {
     private fun decodePulseOximeterSpotCheck(value: ByteArray): List<DecodedGattValue> {
         if (value.size < 5) return emptyList()
         val flags = value[0].toInt() and 0xff
-        if (flags and 0xf0 != 0) return emptyList()
+        if (flags and 0xe0 != 0) return emptyList()
         var offset = 1
         val spo2 = readSFloat(value, offset) ?: return emptyList()
         offset += 2
@@ -447,6 +447,9 @@ internal object GattValueDecoder {
             DecodedGattValue("SpO₂ spot-check", formatSFloat(spo2, "%")),
             DecodedGattValue("Pulso spot-check", formatSFloat(pulse, "bpm"))
         )
+        if (flags and 0x10 != 0) {
+            results += DecodedGattValue("Relógio do dispositivo", "não configurado para esta medição")
+        }
         if (flags and 0x01 != 0) {
             val timestamp = decodeDateTime(value, offset) ?: return emptyList()
             results += DecodedGattValue("Horário do SpO₂", timestamp)

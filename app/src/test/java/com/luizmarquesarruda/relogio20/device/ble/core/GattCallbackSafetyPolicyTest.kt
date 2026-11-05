@@ -1,0 +1,90 @@
+package com.luizmarquesarruda.relogio20.device.ble.core
+
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class GattCallbackSafetyPolicyTest {
+    @Test
+    fun acceptsOnlyCallbackForCurrentConnectionAndExactActiveOperation() {
+        assertTrue(
+            GattCallbackSafetyPolicy.acceptsOperationCallback(
+                connectionIsCurrent = true,
+                activeOperationKey = "180f/2a19/READ",
+                callbackOperationKey = "180f/2a19/READ"
+            )
+        )
+        assertFalse(
+            GattCallbackSafetyPolicy.acceptsOperationCallback(
+                connectionIsCurrent = false,
+                activeOperationKey = "180f/2a19/READ",
+                callbackOperationKey = "180f/2a19/READ"
+            )
+        )
+        assertFalse(
+            GattCallbackSafetyPolicy.acceptsOperationCallback(
+                connectionIsCurrent = true,
+                activeOperationKey = null,
+                callbackOperationKey = "180f/2a19/READ"
+            )
+        )
+        assertFalse(
+            GattCallbackSafetyPolicy.acceptsOperationCallback(
+                connectionIsCurrent = true,
+                activeOperationKey = "180f/2a19/READ",
+                callbackOperationKey = "180f/2a19/CCCD"
+            )
+        )
+        assertFalse(
+            GattCallbackSafetyPolicy.acceptsOperationCallback(
+                connectionIsCurrent = true,
+                activeOperationKey = "180f/2a19/READ",
+                callbackOperationKey = " "
+            )
+        )
+    }
+
+    @Test
+    fun rediscoversOnlyForCurrentConnectedNonHandoffSession() {
+        assertTrue(
+            GattCallbackSafetyPolicy.shouldRediscoverServices(
+                connectionIsCurrent = true,
+                connected = true,
+                disconnecting = false,
+                handoffActive = false
+            )
+        )
+        assertFalse(
+            GattCallbackSafetyPolicy.shouldRediscoverServices(
+                connectionIsCurrent = false,
+                connected = true,
+                disconnecting = false,
+                handoffActive = false
+            )
+        )
+        assertFalse(
+            GattCallbackSafetyPolicy.shouldRediscoverServices(
+                connectionIsCurrent = true,
+                connected = false,
+                disconnecting = false,
+                handoffActive = false
+            )
+        )
+        assertFalse(
+            GattCallbackSafetyPolicy.shouldRediscoverServices(
+                connectionIsCurrent = true,
+                connected = true,
+                disconnecting = true,
+                handoffActive = false
+            )
+        )
+        assertFalse(
+            GattCallbackSafetyPolicy.shouldRediscoverServices(
+                connectionIsCurrent = true,
+                connected = true,
+                disconnecting = false,
+                handoffActive = true
+            )
+        )
+    }
+}

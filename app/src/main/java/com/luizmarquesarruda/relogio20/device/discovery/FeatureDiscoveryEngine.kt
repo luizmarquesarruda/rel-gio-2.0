@@ -78,7 +78,7 @@ internal object FeatureDiscoveryEngine {
         StandardProfile("180a", null, "Dispositivo", "Serviço padrão de informações do dispositivo")
     )
 
-    private val standardServiceIds = standardProfiles.map { it.serviceUuid }.toSet()
+    private val standardServiceIds = standardProfiles.map { it.serviceUuid }.toSet() + setOf("1800", "1801")
     private const val NUS_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
     private const val NUS_RX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
     private const val NUS_TX = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
@@ -108,7 +108,7 @@ internal object FeatureDiscoveryEngine {
                 val props = matchingCharacteristics.flatMap { it.properties }.toSet()
                 val channel = when {
                     profile.serviceUuid == "1805" && "WRITE" in props ->
-                        "característica Current Time com WRITE anunciada; sincronização padrão habilitável"
+                        "característica Current Time com WRITE anunciada; escrita CTS suspensa pela política atual"
                     profile.serviceUuid == "1805" ->
                         "característica Current Time encontrada sem WRITE; ajuste não habilitável"
                     "NOTIFY" in props || "INDICATE" in props -> "canal de notificação anunciado"

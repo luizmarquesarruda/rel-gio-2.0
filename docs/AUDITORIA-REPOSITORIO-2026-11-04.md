@@ -17,7 +17,7 @@ Agora:
 - schema futuro permanece identificado como incompatível, sem migração destrutiva;
 - tamanho do JSON, cardinalidade, timestamps, contagens, UUIDs, IDs duplicados, HEX candidato e faixas de valores são validados;
 - chamadas concorrentes de instâncias distintas são serializadas por um lock compartilhado;
-- a gravação usa `commit()` e retorna o sucesso real informado pelo SharedPreferences;
+- a gravação usa `apply()` para evitar I/O síncrono no callback BLE; o método confirma somente a atualização em memória/agendamento, não a durabilidade em disco;
 - dados inválidos não são reinterpretados como biblioteca vazia.
 
 ### Biblioteca de descobertas
