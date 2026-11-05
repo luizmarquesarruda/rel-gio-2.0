@@ -121,45 +121,33 @@ class GattCallbackSafetyPolicyTest {
     }
 
     @Test
-    fun rediscoversOnlyForCurrentConnectedNonHandoffSession() {
+    fun rediscoversOnlyForCurrentConnectedNonDisconnectingSession() {
         assertTrue(
             GattCallbackSafetyPolicy.shouldRediscoverServices(
                 connectionIsCurrent = true,
                 connected = true,
-                disconnecting = false,
-                handoffActive = false
+                disconnecting = false
             )
         )
         assertFalse(
             GattCallbackSafetyPolicy.shouldRediscoverServices(
                 connectionIsCurrent = false,
                 connected = true,
-                disconnecting = false,
-                handoffActive = false
+                disconnecting = false
             )
         )
         assertFalse(
             GattCallbackSafetyPolicy.shouldRediscoverServices(
                 connectionIsCurrent = true,
                 connected = false,
-                disconnecting = false,
-                handoffActive = false
+                disconnecting = false
             )
         )
         assertFalse(
             GattCallbackSafetyPolicy.shouldRediscoverServices(
                 connectionIsCurrent = true,
                 connected = true,
-                disconnecting = true,
-                handoffActive = false
-            )
-        )
-        assertFalse(
-            GattCallbackSafetyPolicy.shouldRediscoverServices(
-                connectionIsCurrent = true,
-                connected = true,
-                disconnecting = false,
-                handoffActive = true
+                disconnecting = true
             )
         )
     }
