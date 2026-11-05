@@ -20,12 +20,12 @@ O telefone é a ponte de rede. O aplicativo não tenta obter hora de servidores 
 | \`WeatherSyncWorker\` | Atualização meteorológica em segundo plano, sem acessar BLE ou dados de saúde. |
 | \`WeatherSyncScheduler\` | Trabalho periódico único, com rede disponível, a cada seis horas e janela flexível de uma hora. |
 | \`WeatherModels\` | Modelos de localidade/previsão e descrições de códigos WMO. |
-| \`MainActivity\` | Ao descobrir GATT, sincroniza a hora automaticamente uma única vez por sessão somente se CTS padrão 0x1805/0x2A2B existir e a característica anunciar WRITE. |
+| \`MainActivity\` | Ao descobrir GATT, sincroniza a hora automaticamente uma única vez por sessão somente se o fingerprint GATT completo do GT3 MAX Call for confirmado e CTS padrão 0x1805/0x2A2B existir com propriedade WRITE. |
 
 ### Fronteiras de segurança
 
 - O horário de referência é \`System.currentTimeMillis()\` / \`LocalDateTime.now()\` do Android; o app não altera a hora do telefone.
-- A sincronização CTS usa somente o contrato Bluetooth SIG conhecido, depois de confirmar serviço, característica, conexão e propriedade WRITE.
+- A sincronização CTS usa somente o contrato Bluetooth SIG conhecido, depois de confirmar sessão ativa, fingerprint GATT completo do GT3 MAX Call, serviço, característica e propriedade WRITE.
 - A captura conhecida do GT3 MAXX não anunciou CTS 0x1805/0x2A2B. Neste exemplar, o horário continua sendo exibido no telefone e **não há evidência de que o app consiga ajustar o RTC/visor do relógio**.
 - Não foi implementado comando meteorológico para o GT3 MAXX. Nenhuma característica proprietária, NUS RX, Secure DFU/FE59, reset ou canal de escrita desconhecido recebe dados.
 - O serviço meteorológico não recebe MAC, serial, identificador do relógio, dados de saúde, conteúdo de notificações ou coordenadas GPS atuais do telefone.
@@ -34,7 +34,7 @@ O telefone é a ponte de rede. O aplicativo não tenta obter hora de servidores 
 
 O app lê o horário e fuso configurados no Android. A tela informa se as opções globais de data/hora automática e fuso automático estão ativas. A sincronização pelo operador depende da configuração e da disponibilidade da rede no sistema; o Relógio 2.0 não consegue obrigar a operadora a corrigir o relógio do Android.
 
-Quando CTS Bluetooth SIG compatível for detectado, o app envia o horário local automaticamente uma vez naquela sessão GATT. Callback GATT confirma o resultado da operação de transporte, não a atualização física do mostrador. A unidade GT3 MAX Call observada não anuncia CTS; a sincronização do relógio físico permanece **não validada**.
+Quando CTS Bluetooth SIG compatível for detectado em uma sessão cujo fingerprint GATT completo corresponda ao GT3 MAX Call, o app envia o horário local automaticamente uma vez naquela sessão GATT. Callback GATT confirma o resultado da operação de transporte, não a atualização física do mostrador. A unidade GT3 MAX Call observada não anuncia CTS; a sincronização do relógio físico permanece **não validada**.
 
 ## Fonte meteorológica
 
