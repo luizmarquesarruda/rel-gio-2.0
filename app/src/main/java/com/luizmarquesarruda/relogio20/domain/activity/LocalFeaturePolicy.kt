@@ -16,7 +16,8 @@ object LocalFeaturePolicy {
     fun progressPercent(currentSteps: Long?, goal: Int): Int {
         normalizeStepGoal(goal)
         if (currentSteps == null || currentSteps < 0L) return 0
-        return ((currentSteps * 100L) / goal.toLong()).coerceIn(0L, 100L).toInt()
+        val boundedSteps = currentSteps.coerceAtMost(goal.toLong())
+        return ((boundedSteps * 100L) / goal.toLong()).toInt()
     }
 
     fun remainingSteps(currentSteps: Long?, goal: Int): Long? {
