@@ -10,7 +10,7 @@ Definir uma linha de base verificável para o Relógio 2.0. O documento do Wearf
 - Não integrar SDKs de publicidade, marketing comportamental ou monetização.
 - Não coletar IMEI, IMSI, número de série do telefone, MAC do telefone, SSID/BSSID ou lista de aplicativos instalados para analytics.
 - Não usar identificadores publicitários nem criar identificadores persistentes de rastreamento.
-- Não enviar dados de saúde, localização, notificações ou identificadores a servidores externos por padrão.
+- Não enviar dados de saúde, localização precisa, notificações ou identificadores a servidores externos por padrão. Exceção explicitamente aprovada: a função de clima envia o nome de cidade digitado na geocodificação e as coordenadas da cidade escolhida ao Open-Meteo, sem localização GPS atual, dados de saúde ou identificadores.
 - Bluetooth, Health Connect, mapas e recursos de IA só podem comunicar com serviços externos quando a função exigir, com finalidade documentada e consentimento adequado.
 - Diagnósticos devem evitar conteúdo de notificações, dados de saúde e identificadores diretos. Logs devem ser locais, mínimos e removíveis.
 - Toda permissão Android precisa estar ligada a uma função implementada, explicada ao usuário e testável.
@@ -45,7 +45,7 @@ Na revisão de 03/11/2026, as dependências diretas declaradas em `app/build.gra
 
 Nenhum SDK de publicidade ou analytics comercial aparece nessa lista direta. Isso não basta para concluir que a árvore transitiva completa está livre de tais componentes; por isso o CI também verifica as dependências runtime das variantes.
 
-Permissões explícitas observadas no manifesto principal incluem Bluetooth/scan/connect, localização apenas até Android 11 e READ_STEPS do Health Connect. A variante companion adiciona Notification Listener. A verificação automatizada bloqueia um conjunto de permissões invasivas não justificadas para o escopo atual.
+Permissões explícitas no manifesto principal incluem Bluetooth/scan/connect, localização legada limitada ao Android 11, READ_STEPS do Health Connect, INTERNET e ACCESS_NETWORK_STATE. INTERNET é exceção de escopo restrito para geocodificação e previsão Open-Meteo; não habilita envio de saúde, notificações ou identificadores. A variante companion adiciona Notification Listener. A verificação automatizada exige exatamente uma declaração INTERNET e continua bloqueando o conjunto de permissões invasivas não justificadas.
 
 ## Verificação automatizada
 
@@ -69,3 +69,12 @@ A lista de namespaces é uma barreira inicial, não uma garantia universal: SDKs
 ## Processo para aprovar exceções
 
 Qualquer exceção deve incluir: funcionalidade necessária, dados acessados, permissões exigidas, destinos de rede, política de retenção, base de consentimento, avaliação de licença e segurança, alternativa sem SDK e aprovação documentada no diário de bordo. Não incluir SDK apenas por conveniência de analytics ou monetização.
+
+
+## Exceção de rede controlada — clima
+
+A versão 0.4.0-alpha.4 adiciona acesso HTTPS à Open-Meteo para pesquisa de cidades e previsão meteorológica. O usuário escolhe a cidade manualmente; a função não solicita GPS nem localização em segundo plano. O nome da cidade é enviado ao endpoint de geocodificação e as coordenadas da cidade escolhida são enviadas ao endpoint de previsão. Nenhum MAC, serial, ID, dado de saúde ou conteúdo de notificação é enviado.
+
+A previsão é armazenada em SharedPreferences no sandbox privado do aplicativo. O WorkManager executa atualização periódica com rede disponível, mas o horário não é exato e pode ser adiado por Doze/economia de bateria. A tela mostra a atribuição Open-Meteo e a documentação do projeto registra a licença dos dados CC BY 4.0 e a limitação de uso gratuito não comercial. Para uma finalidade comercial, é necessária nova avaliação contratual.
+
+O auditor de manifesto permite exatamente uma permissão INTERNET e bloqueia zero ou múltiplas declarações. O script de guardrails continua bloqueando permissões sensíveis; INTERNET foi removida apenas da lista de proibições gerais. A nova política ainda precisa passar na CI e ser confirmada no manifesto dos dois APKs.
