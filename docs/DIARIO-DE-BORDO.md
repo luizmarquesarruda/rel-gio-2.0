@@ -709,3 +709,19 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - A CI #253 no commit `cd82b8b3b1a62f826f6eef4091464887e7fcfa73` identificou erro Kotlin em `DiscoveryLibraryActivity.kt`: `EditText` não expõe a propriedade gravável `singleLine` usada no inicializador.
 - Corrigido para a chamada pública `setSingleLine(true)`. A causa foi sintática e não envolveu BLE, persistência ou layout.
 - A CI #253 foi cancelada pela concorrência após identificar a mesma falha nos dois variants. O HEAD final precisará ser recompilado integralmente.
+
+
+## Auditoria integral e endurecimento — 04/11/2026
+
+- Criada a branch `audit/full-repository-hardening-20261104` a partir do HEAD de trabalho `21e44dd5bace9801b7ced7183ff15b2ca730d588`. Nenhum PR foi criado e nenhum merge foi executado.
+- O inventário GATT via SharedPreferences passou a validar estrutura JSON completa e estrita, schema, tipos numéricos, timestamps, cardinalidades, IDs duplicados, UUIDs e faixas de valores. JSON inválido não é convertido em inventário vazio nem sobrescrito.
+- O inventário agora serializa operações entre instâncias e utiliza `commit()` para retornar o resultado efetivo da persistência.
+- A biblioteca de descobertas conserva a escrita atômica, mas agora protege transações entre instâncias, verifica tamanho antes da leitura e valida registros e sessões antes de decodificar/gravar.
+- Prazos inconsistentes, timestamps negativos, IDs duplicados, tipos desconhecidos e HEX inválido passam a ser recusados.
+- O botão principal de busca fica desabilitado enquanto o usuário entregou a sessão ao Wearfit Pro; a retomada continua sendo uma ação explícita.
+- O modelo de passos exige `receivedAt >= intervalEnd`; origem permanece exclusivamente `HEALTH_CONNECT_AGGREGATE`.
+- Testes adicionados/estendidos: `FeatureDiscoverySnapshotPolicyTest`, `DiscoveryLibraryCodecTest`, `DiscoveryTestSessionTest`, `StepsSnapshotTest` e `BleExternalHandoffPolicyTest`.
+- A CI não foi disparada nem reexecutada. Nenhum teste Kotlin, Lint, build APK, auditoria dos APKs ou validação física foi declarado aprovado nesta revisão.
+- Pendências estruturais identificadas: `MainActivity.kt` permanece com responsabilidade excessiva (extração deverá ser incremental); o repositório ainda não inclui Gradle Wrapper; testes em aparelho/emulador e validação de aquisição BLE real continuam pendentes.
+- O relatório detalhado está em `docs/AUDITORIA-REPOSITORIO-2026-11-04.md`.
+

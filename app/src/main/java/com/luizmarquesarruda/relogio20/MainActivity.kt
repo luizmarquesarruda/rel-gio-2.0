@@ -354,6 +354,7 @@ class MainActivity : ComponentActivity() {
         scanButton = makeButton("Buscar e conectar automaticamente") { beginAutomaticConnection() }.apply {
             backgroundTintList = android.content.res.ColorStateList.valueOf(0xFF176B5B.toInt())
             setTextColor(0xFFFFFFFF.toInt())
+            isEnabled = BleExternalHandoffPolicy.canStartBleScan(wearfitHandoffActive)
         }
         disconnectButton = makeButton("Desconectar") { disconnectGatt() }.apply {
             isEnabled = false
@@ -1113,7 +1114,7 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("MissingPermission")
     private fun startBleScan(automatic: Boolean = false) {
-        if (wearfitHandoffActive) {
+        if (!BleExternalHandoffPolicy.canStartBleScan(wearfitHandoffActive)) {
             appendLog("Busca BLE bloqueada: conexão liberada para o Wearfit Pro. Retome o controle antes de iniciar uma nova busca.")
             return
         }
@@ -1472,9 +1473,19 @@ class MainActivity : ComponentActivity() {
                 queuedAutomaticUnsubscribeKeys.clear()
                 runCatching { newGatt.disconnect() }
                 runCatching { newGatt.close() }
-                updateStatus("Falha na conexão GATT: tempo limite aguardando conexão.")
+                val handoffOwnsConnection = wearfitHandoffActive
+                val connectionWasCancelled = isGattDisconnecting
+                updateStatus(
+                    when {
+                        handoffOwnsConnection -> "Liberado para Wearfit Pro. Tentativa GATT anterior encerrada."
+                        connectionWasCancelled -> "Nenhuma conexão ativa."
+                        else -> "Falha na conexão GATT: tempo limite aguardando conexão."
+                    }
+                )
                 appendLog("Tempo limite de conexão GATT após ${GATT_CONNECT_TIMEOUT_MS} ms.")
-                if (automaticAttempt || reconnectPolicy.isEnabled) scheduleAutoReconnect("Tempo limite de conexão GATT")
+                if (!handoffOwnsConnection && !connectionWasCancelled &&
+                    (automaticAttempt || reconnectPolicy.isEnabled)
+                ) scheduleAutoReconnect("Tempo limite de conexão GATT")
             }
         }
         connectionTimeoutTask = timeout
@@ -3094,7 +3105,8 @@ class MainActivity : ComponentActivity() {
             val gattSessionExists = bluetoothGatt != null
             val scanInProgress = value.startsWith("Procurando") ||
                 value.startsWith("Busca em andamento")
-            scanButton.isEnabled = !gattSessionExists && !scanInProgress &&
+            scanButton.isEnabled = BleExternalHandoffPolicy.canStartBleScan(wearfitHandoffActive) &&
+                !gattSessionExists && !scanInProgress &&
                 !value.startsWith("Conectando") && !value.startsWith("Desconectando") &&
                 !value.startsWith("Reconectando")
             disconnectButton.text = if (gattSessionExists) "Desconectar" else "Parar reconexão"

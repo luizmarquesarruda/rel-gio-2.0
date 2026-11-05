@@ -19,7 +19,8 @@ A base é um aplicativo Android nativo Kotlin. O adaptador de consulta agregada 
 | device/gt3max/protocol/Gt3MaxCallDeviceProfile.kt | Perfil do dispositivo | Identificadores GT3 MAX Call informados e fingerprint GATT da captura; sem autenticação de hardware/firmware. |
 | device/gt3max/protocol/WearfitAbFrameParser.kt | Protocolo do dispositivo | Perfil NUS/AB candidato e parser restrito. Não controla conexão. |
 | device/discovery/FeatureDiscoveryEngine.kt | Descoberta de funcionalidades | Classifica inventário GATT e metadados de notificações sem inferir semântica de payload desconhecido. |
-| data/discovery/FeatureDiscoveryStore.kt | Persistência do inventário GATT | Persiste inventário, descobertas e contagens com schema versionado; não grava payload HEX bruto e preserva conteúdo inválido/futuro. |
+| data/discovery/FeatureDiscoveryStore.kt | Persistência do inventário GATT | Persiste metadados com schema estrito, bloqueio compartilhado e recusa de JSON inválido/futuro; não grava payload HEX bruto. |
+| data/discovery/FeatureDiscoverySnapshotPolicy.kt | Validação do inventário GATT | Política Kotlin pura para limites, cardinalidade, IDs, timestamps e faixas de valores; possui testes unitários. |
 | data/discovery/DiscoveryLibraryStore.kt | Biblioteca interna de diagnóstico | Guarda descobertas e leituras capturadas durante teste cronometrado em arquivo privado com escrita atômica, limite de registros e recusa de schema corrompido/futuro. HEX é salvo somente durante sessão explicitamente iniciada. |
 | data/discovery/DiscoveryLibraryCodec.kt | Formato da biblioteca | Codec binário versionado e testável sem Android; valida magic, schema, tamanho e contagem de registros. |
 | FeatureDiscoveryActivity.kt | UI / Laboratório BLE | Agrupa descobertas GATT, roteiro de testes, contador regressivo de captura e atalho à biblioteca. |

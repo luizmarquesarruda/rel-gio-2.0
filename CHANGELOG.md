@@ -1,5 +1,17 @@
 # Changelog
 
+## Não lançado — integridade de armazenamento, sessões e handoff BLE — 04/11/2026
+
+- O inventário GATT agora rejeita campos ausentes, tipos incorretos, valores fora de faixa, arrays incompletos, duplicatas e JSON acima do limite; dados corrompidos ou de schema futuro permanecem preservados.
+- As operações de leitura-modificação-gravação do inventário usam bloqueio compartilhado entre instâncias e verificam o resultado síncrono do SharedPreferences.
+- A biblioteca binária usa bloqueio compartilhado entre telas, limita leitura antes de alocar o arquivo, valida prazos de sessões, identificadores, tipos e HEX, e recusa timestamps inválidos.
+- A interface não oferece busca BLE enquanto o controle estiver liberado para Wearfit Pro.
+- O snapshot de passos exige que o recebimento ocorra após o fim do intervalo consultado.
+- Foram adicionados testes de regressão para integridade do snapshot, sessão, codec, intervalo de passos e bloqueio do handoff.
+- Nenhuma escrita proprietária, NUS RX, CTS write, OTA, reset, calibração ou publicação Health Connect foi habilitada.
+- CI, build local, lint e teste físico Galaxy A06 / GT3 MAX / Wearfit Pro: **não validados** (CI não disparada por solicitação do usuário).
+
+
 ## Não lançado — liberação BLE para Wearfit Pro — 04/11/2026
 
 - Adicionada ação explícita para liberar o GT3 MAX ao Wearfit Pro: encerra a sessão GATT própria, cancela scans/tentativas e persiste a pausa da reconexão automática.

@@ -76,4 +76,37 @@ class DiscoveryLibraryCodecTest {
         val decoded = DiscoveryLibraryCodec.decode(bytes)
         assertTrue(decoded is DiscoveryLibraryReadResult.UnsupportedSchema)
     }
+
+    @Test
+    fun rejectsSessionWithDeadlineThatDoesNotMatchItsDuration() {
+        val bytes = ByteArrayOutputStream().also { output ->
+            DataOutputStream(output).use { data ->
+                data.writeInt(DiscoveryLibraryCodec.MAGIC)
+                data.writeInt(DiscoveryLibraryCodec.SCHEMA_VERSION)
+                data.writeBoolean(true)
+                data.writeUTF("session-corrupt")
+                data.writeLong(1_000L)
+                data.writeLong(61_000L)
+                data.writeInt(120)
+                data.writeInt(0)
+            }
+        }.toByteArray()
+
+        assertTrue(DiscoveryLibraryCodec.decode(bytes) is DiscoveryLibraryReadResult.Corrupt)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun encoderRejectsDuplicateRecordIds() {
+        val record = DiscoveryLibraryRecord(
+            id = "duplicate",
+            occurredAtMillis = 1_000L,
+            sessionId = null,
+            kind = DiscoveryLibraryKind.DISCOVERY,
+            title = "Descoberta",
+            detail = "Detalhe",
+            source = "GATT",
+            confidence = "OBSERVADO"
+        )
+        DiscoveryLibraryCodec.encode(DiscoveryLibrarySnapshot(records = listOf(record, record)))
+    }
 }

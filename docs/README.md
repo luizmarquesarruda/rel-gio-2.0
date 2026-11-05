@@ -3,6 +3,7 @@
 Este índice separa decisões de arquitetura, integrações, evidências do dispositivo e governança.
 
 ## Visão geral e arquitetura
+- [Auditoria geral do repositório — 04/11/2026](AUDITORIA-REPOSITORIO-2026-11-04.md) — escopo, defeitos corrigidos e validações pendentes.
 - [Arquitetura](ARQUITETURA.md) — camadas, contratos e regras de integração.
 - [Mapa de módulos](MAPA-DE-MODULOS.md) — estado real, estrutura-alvo e dívida técnica.
 - [Navegação e layout](NAVEGACAO-E-LAYOUT.md) — áreas, telas secundárias, estados e limites visuais.

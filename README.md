@@ -8,6 +8,10 @@ Ao abrir o aplicativo, uma busca BLE geral começa automaticamente; não é nece
 
 A recuperação nesta fase ocorre enquanto o app está em primeiro plano ou quando ele é reaberto/retomado. O Android pode suspender o processo em segundo plano ou após encerramento forçado; recuperação contínua em segundo plano ainda não está implementada. A reconexão restaura o transporte GATT e reinscreve apenas a notificação NUS TX já permitida; não valida sensores e não envia payload ao relógio.
 
+## Liberação temporária para Wearfit Pro
+
+Quando o usuário libera o relógio para o Wearfit Pro, o Relógio 2.0 encerra sua sessão GATT, cancela tentativas pendentes e bloqueia novas buscas/conexões, inclusive pelo botão principal. Para retomar, use **Retomar conexão no Relógio 2.0**; a retomada é explícita e não depende de desparear o relógio nem desligar o Bluetooth. A sincronização física do relógio continua dependente do Wearfit Pro e não é declarada validada pelo handoff.
+
 ## Finalidade do produto
 
 O Relógio 2.0 é um companheiro de Saúde e Fitness. O fluxo de destino é: sensores do relógio → conexão com o app → dados validados no Conexão Saúde (Health Connect). No sentido inverso, o Android entrega notificações selecionadas ao app para a ponte com o relógio; o app lê os alertas e não responde nem modifica o aplicativo de origem.

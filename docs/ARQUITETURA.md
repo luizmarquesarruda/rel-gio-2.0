@@ -26,6 +26,9 @@ A implementação em andamento é um protótipo Android nativo em Kotlin. Não h
 - Os testes acompanham os pacotes correspondentes; os testes do contrato Domain verificam unidades, limites e preservação de origem.
 - Notification Listener permanece na variante companion; diagnostic não deve declarar essa capacidade.
 - Health Connect é acessado pelo HealthConnectStepsRepository em data/healthconnect; MainActivity consome resultado tipado e não monta consultas Health Connect.
+- `FeatureDiscoveryStore` aplica schema estrito e bloqueio compartilhado entre instâncias; corrompido/futuro é preservado sem substituição.
+- `DiscoveryLibraryStore` mantém `AtomicFile`, com bloqueio compartilhado no processo e validação do codec/sessões antes de aceitar registros.
+- A validação de origem e intervalo de Health Connect permanece separada de qualquer futura amostra BLE do GT3 MAX.
 - Não foram adicionados serviços, permissões ou escritas BLE proprietárias.
 
 ## Regras de dependência
@@ -52,11 +55,11 @@ O contrato implementado está em [CONTRATO-METRICAS-SAUDE.md](CONTRATO-METRICAS-
 ## Sequência de extração
 
 1. Isolar utilitários puros e testes sem mudar comportamento (concluído parcialmente).
-2. Extrair scan/máquina de estados GATT de MainActivity para device/ble/core, preservando fila e callbacks antigos.
-3. Criar armazenamento local versionado de amostras e sessões, com deduplicação e migrações testadas.
-3. Extrair Health Connect para data/healthconnect.
-4. Criar persistência local versionada e repositório para o modelo Domain.
+2. Extrair scan/máquina de estados GATT de `MainActivity` para `device/ble/core`, preservando fila e callbacks.
+3. Manter a consulta Health Connect isolada em `data/healthconnect` (já implementada).
+4. Evoluir armazenamento local versionado de amostras e sessões, com deduplicação e migrações testadas.
 5. Implementar parsers somente após evidência repetível por métrica.
 6. Extrair adaptadores Platform quando os recursos Android forem priorizados.
+7. Validar cada extração em teste, lint e aparelho antes de avançar.
 
 Cada extração deve ser pequena, testada e reversível. Não misturar refatoração com engenharia reversa de protocolo.

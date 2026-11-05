@@ -10,16 +10,24 @@ class DiscoveryTestSessionTest {
     fun countdownUsesDeadlineAndRoundsUpToWholeSeconds() {
         val session = DiscoveryTestSession("s", 1_000L, 61_000L, 60)
         assertEquals(60, session.remainingSeconds(1_000L))
+        assertEquals(60, session.remainingSeconds(0L))
         assertEquals(2, session.remainingSeconds(59_001L))
         assertEquals(1, session.remainingSeconds(60_001L))
         assertEquals(0, session.remainingSeconds(61_000L))
     }
 
     @Test
-    fun sessionIsInactiveAtItsDeadline() {
+    fun sessionIsInactiveBeforeItsStartAndAtItsDeadline() {
         val session = DiscoveryTestSession("s", 1_000L, 61_000L, 60)
+        assertFalse(session.isActive(999L))
+        assertTrue(session.isActive(1_000L))
         assertTrue(session.isActive(60_999L))
         assertFalse(session.isActive(61_000L))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsDeadlineThatDoesNotMatchAllowedDuration() {
+        DiscoveryTestSession("s", 1_000L, 61_000L, 120)
     }
 
     @Test

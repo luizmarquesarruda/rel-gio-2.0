@@ -18,42 +18,57 @@ internal sealed class FeatureDiscoveryReadResult {
 }
 
 /**
- * Stores only GATT inventory and notification metadata.
+ * Stores only bounded GATT inventory and notification metadata.
  * Raw BLE payloads and health measurements are deliberately not persisted.
- * Unknown or future schema data is never overwritten.
+ * Invalid, corrupt, or future-schema data is never replaced.
  */
 internal class FeatureDiscoveryStore(context: Context) {
     private val preferences: SharedPreferences =
         context.applicationContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
 
-    fun read(): FeatureDiscoveryReadResult {
-        val raw = preferences.getString(KEY_SNAPSHOT, null)
-            ?: return FeatureDiscoveryReadResult.Empty
-        return try {
+    fun read(): FeatureDiscoveryReadResult = synchronized(STORE_LOCK) {
+        val raw = try {
+            preferences.getString(KEY_SNAPSHOT, null)
+        } catch (_: Exception) {
+            return@synchronized FeatureDiscoveryReadResult.Corrupt
+        } ?: return@synchronized FeatureDiscoveryReadResult.Empty
+
+        if (raw.length > MAX_JSON_CHARS) return@synchronized FeatureDiscoveryReadResult.Corrupt
+        try {
             val root = JSONObject(raw)
-            val schema = root.optInt("schemaVersion", -1)
-            if (schema > SCHEMA_VERSION) {
-                return FeatureDiscoveryReadResult.UnsupportedSchema(schema)
+            val schema = requiredInt(root, "schemaVersion")
+            if (schema > FeatureDiscoverySnapshotPolicy.SCHEMA_VERSION) {
+                return@synchronized FeatureDiscoveryReadResult.UnsupportedSchema(schema)
             }
-            if (schema != SCHEMA_VERSION) {
-                return FeatureDiscoveryReadResult.Corrupt
+            if (schema != FeatureDiscoverySnapshotPolicy.SCHEMA_VERSION) {
+                return@synchronized FeatureDiscoveryReadResult.Corrupt
             }
-            FeatureDiscoveryReadResult.Available(decode(root))
+            val snapshot = decode(root)
+            if (!FeatureDiscoverySnapshotPolicy.isValid(snapshot)) {
+                return@synchronized FeatureDiscoveryReadResult.Corrupt
+            }
+            FeatureDiscoveryReadResult.Available(snapshot)
         } catch (_: Exception) {
             FeatureDiscoveryReadResult.Corrupt
         }
     }
 
-    fun recordInventory(services: List<GattServiceRecord>, nowMillis: Long): Boolean {
-        val previous = when (val state = read()) {
-            FeatureDiscoveryReadResult.Empty -> null
-            is FeatureDiscoveryReadResult.Available -> state.snapshot
-            FeatureDiscoveryReadResult.Corrupt,
-            is FeatureDiscoveryReadResult.UnsupportedSchema -> return false
+    fun recordInventory(services: List<GattServiceRecord>, nowMillis: Long): Boolean =
+        synchronized(STORE_LOCK) {
+            if (nowMillis < 0L ||
+                services.size > MAX_SERVICES ||
+                services.sumOf { it.characteristics.size.toLong() } > MAX_CHARACTERISTICS.toLong()
+            ) return@synchronized false
+
+            val previous = when (val state = read()) {
+                FeatureDiscoveryReadResult.Empty -> null
+                is FeatureDiscoveryReadResult.Available -> state.snapshot
+                FeatureDiscoveryReadResult.Corrupt,
+                is FeatureDiscoveryReadResult.UnsupportedSchema -> return@synchronized false
+            }
+            val snapshot = FeatureDiscoveryEngine.captureInventory(services, nowMillis, previous)
+            persist(snapshot)
         }
-        val snapshot = FeatureDiscoveryEngine.captureInventory(services, nowMillis, previous)
-        return persist(snapshot)
-    }
 
     fun recordNotification(
         serviceUuid: String,
@@ -63,12 +78,22 @@ internal class FeatureDiscoveryStore(context: Context) {
         frameCommand: Int? = null,
         frameResponse: Int? = null,
         batteryCandidatePercent: Int? = null
-    ): Boolean {
+    ): Boolean = synchronized(STORE_LOCK) {
+        if (nowMillis < 0L ||
+            !isValidUuidToken(serviceUuid) ||
+            !isValidUuidToken(characteristicUuid) ||
+            payloadBytes !in 0..MAX_PAYLOAD_BYTES ||
+            frameCommand?.let { it !in 0..255 } == true ||
+            frameResponse?.let { it !in 0..255 } == true ||
+            (frameCommand == null) != (frameResponse == null) ||
+            batteryCandidatePercent?.let { it !in 0..100 } == true
+        ) return@synchronized false
+
         val previous = when (val state = read()) {
             FeatureDiscoveryReadResult.Empty -> FeatureDiscoveryEngine.emptySnapshot(nowMillis)
             is FeatureDiscoveryReadResult.Available -> state.snapshot
-            FeatureDiscoveryReadResult.Corrupt,
-            is FeatureDiscoveryReadResult.UnsupportedSchema -> return false
+            is FeatureDiscoveryReadResult.Corrupt,
+            is FeatureDiscoveryReadResult.UnsupportedSchema -> return@synchronized false
         }
         val snapshot = FeatureDiscoveryEngine.observeNotification(
             previous = previous,
@@ -80,19 +105,19 @@ internal class FeatureDiscoveryStore(context: Context) {
             frameResponse = frameResponse,
             batteryCandidatePercent = batteryCandidatePercent
         )
-        return persist(snapshot)
+        persist(snapshot)
     }
 
     private fun persist(snapshot: DiscoverySnapshot): Boolean {
-        when (val state = read()) {
-            FeatureDiscoveryReadResult.Empty -> Unit
+        if (!FeatureDiscoverySnapshotPolicy.isValid(snapshot)) return false
+        when (read()) {
+            FeatureDiscoveryReadResult.Empty,
             is FeatureDiscoveryReadResult.Available -> Unit
             FeatureDiscoveryReadResult.Corrupt,
             is FeatureDiscoveryReadResult.UnsupportedSchema -> return false
         }
         return runCatching {
-            preferences.edit().putString(KEY_SNAPSHOT, encode(snapshot)).apply()
-            true
+            preferences.edit().putString(KEY_SNAPSHOT, encode(snapshot)).commit()
         }.getOrDefault(false)
     }
 
@@ -136,35 +161,41 @@ internal class FeatureDiscoveryStore(context: Context) {
     }
 
     private fun decode(root: JSONObject): DiscoverySnapshot {
-        val findingsJson = root.optJSONArray("findings") ?: JSONArray()
+        val findingsJson = root.get("findings") as? JSONArray
+            ?: error("Campo findings ausente ou inválido.")
+        val trafficJson = root.get("traffic") as? JSONArray
+            ?: error("Campo traffic ausente ou inválido.")
+        if (findingsJson.length() > FeatureDiscoverySnapshotPolicy.MAX_FINDINGS ||
+            trafficJson.length() > FeatureDiscoverySnapshotPolicy.MAX_TRAFFIC
+        ) error("Inventário excede os limites do schema.")
+
         val findings = buildList {
             for (index in 0 until findingsJson.length()) {
                 val item = findingsJson.getJSONObject(index)
                 add(
                     FeatureFinding(
-                        id = item.getString("id"),
-                        category = item.optString("category"),
-                        title = item.optString("title"),
-                        status = item.optString("status"),
-                        detail = item.optString("detail"),
-                        evidence = item.optString("evidence"),
-                        observationCount = item.optInt("observationCount", 0).coerceAtLeast(0)
+                        id = requiredString(item, "id"),
+                        category = requiredString(item, "category"),
+                        title = requiredString(item, "title"),
+                        status = requiredString(item, "status"),
+                        detail = requiredString(item, "detail"),
+                        evidence = requiredString(item, "evidence"),
+                        observationCount = requiredInt(item, "observationCount")
                     )
                 )
             }
         }
 
-        val trafficJson = root.optJSONArray("traffic") ?: JSONArray()
         val traffic = buildList {
             for (index in 0 until trafficJson.length()) {
                 val item = trafficJson.getJSONObject(index)
                 add(
                     CharacteristicTraffic(
-                        serviceUuid = item.getString("serviceUuid"),
-                        characteristicUuid = item.getString("characteristicUuid"),
-                        notificationCount = item.optInt("notificationCount", 0).coerceAtLeast(0),
-                        lastSeenAtMillis = item.optLong("lastSeenAtMillis", 0L).coerceAtLeast(0L),
-                        lastPayloadBytes = item.optInt("lastPayloadBytes", 0).coerceAtLeast(0),
+                        serviceUuid = requiredString(item, "serviceUuid"),
+                        characteristicUuid = requiredString(item, "characteristicUuid"),
+                        notificationCount = requiredInt(item, "notificationCount"),
+                        lastSeenAtMillis = requiredLong(item, "lastSeenAtMillis"),
+                        lastPayloadBytes = requiredInt(item, "lastPayloadBytes"),
                         lastFrameCommand = nullableInt(item, "lastFrameCommand"),
                         lastFrameResponse = nullableInt(item, "lastFrameResponse"),
                         batteryCandidatePercent = nullableInt(item, "batteryCandidatePercent")
@@ -174,27 +205,62 @@ internal class FeatureDiscoveryStore(context: Context) {
         }
 
         return DiscoverySnapshot(
-            schemaVersion = SCHEMA_VERSION,
-            updatedAtMillis = root.optLong("updatedAtMillis", 0L).coerceAtLeast(0L),
-            serviceCount = root.optInt("serviceCount", 0).coerceAtLeast(0),
-            characteristicCount = root.optInt("characteristicCount", 0).coerceAtLeast(0),
-            findings = findings.take(MAX_FINDINGS),
-            traffic = traffic.take(MAX_TRAFFIC)
+            schemaVersion = requiredInt(root, "schemaVersion"),
+            updatedAtMillis = requiredLong(root, "updatedAtMillis"),
+            serviceCount = requiredInt(root, "serviceCount"),
+            characteristicCount = requiredInt(root, "characteristicCount"),
+            findings = findings,
+            traffic = traffic
         )
+    }
+
+    private fun requiredString(json: JSONObject, key: String): String =
+        json.get(key) as? String ?: error("Campo $key ausente ou inválido.")
+
+    private fun requiredInt(json: JSONObject, key: String): Int {
+        val value = requiredLong(json, key)
+        if (value !in Int.MIN_VALUE.toLong()..Int.MAX_VALUE.toLong()) {
+            error("Campo $key excede Int.")
+        }
+        return value.toInt()
+    }
+
+    private fun requiredLong(json: JSONObject, key: String): Long {
+        val value = json.get(key) as? Number ?: error("Campo $key não é numérico.")
+        val numeric = value.toDouble()
+        if (!numeric.isFinite() || numeric % 1.0 != 0.0) error("Campo $key não é inteiro.")
+        if (value is Double || value is Float) {
+            if (numeric < Long.MIN_VALUE.toDouble() || numeric > MAX_TIMESTAMP.toDouble()) {
+                error("Campo $key está fora do limite.")
+            }
+        }
+        return value.toLong().also {
+            if (it < 0L || it > MAX_TIMESTAMP) error("Campo $key está fora do limite.")
+        }
     }
 
     private fun putNullableInt(json: JSONObject, key: String, value: Int?) {
         if (value == null) json.put(key, JSONObject.NULL) else json.put(key, value)
     }
 
-    private fun nullableInt(json: JSONObject, key: String): Int? =
-        if (!json.has(key) || json.isNull(key)) null else json.optInt(key)
+    private fun nullableInt(json: JSONObject, key: String): Int? {
+        if (!json.has(key)) error("Campo $key ausente.")
+        if (json.isNull(key)) return null
+        return requiredInt(json, key)
+    }
+
+    private fun isValidUuidToken(value: String): Boolean =
+        value.isNotBlank() && value.length <= 64 &&
+            value.none { it.isWhitespace() || Character.isISOControl(it) }
 
     companion object {
         private const val PREFERENCES_NAME = "feature_discovery_v1"
         private const val KEY_SNAPSHOT = "gatt_discovery_snapshot"
-        private const val SCHEMA_VERSION = 1
-        private const val MAX_FINDINGS = 160
-        private const val MAX_TRAFFIC = 128
+        private const val MAX_JSON_CHARS = 1_000_000
+        private const val MAX_SERVICES = 1_024
+        private const val MAX_CHARACTERISTICS = 8_192
+        private const val MAX_PAYLOAD_BYTES = 65_535
+        private const val MAX_TIMESTAMP = FeatureDiscoverySnapshotPolicy.MAX_TIMESTAMP
+        private val STORE_LOCK = Any()
     }
 }
