@@ -5,9 +5,12 @@ import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.request.AggregateRequest
+import androidx.health.connect.client.request.AggregateGroupByPeriodRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import com.luizmarquesarruda.relogio20.domain.health.StepsSnapshot
 import java.time.Instant
+import java.time.LocalDate
+import java.time.Period
 import java.time.ZoneId
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -23,6 +26,14 @@ internal sealed class HealthConnectStepsResult {
     object ProviderUnavailable : HealthConnectStepsResult()
     object ProviderUpdateRequired : HealthConnectStepsResult()
     data class Failure(val reason: String) : HealthConnectStepsResult()
+}
+
+internal data class StepsHistoryDay(val date: LocalDate, val totalSteps: Long?)
+
+internal sealed class HealthConnectStepsHistoryResult {
+    data class Success(val days: List<StepsHistoryDay>) : HealthConnectStepsHistoryResult()
+    object PermissionRequired : HealthConnectStepsHistoryResult()
+    data class Failure(val reason: String) : HealthConnectStepsHistoryResult()
 }
 
 /**
@@ -50,6 +61,61 @@ internal class HealthConnectStepsRepository(context: Context) {
         if (availability() != HealthConnectAvailability.AVAILABLE) return false
         val client = HealthConnectClient.getOrCreate(appContext)
         return client.permissionController.getGrantedPermissions().containsAll(readPermissions)
+    }
+
+    /**
+     * Returns daily Health Connect aggregates for a bounded period. Empty days stay null:
+     * no bucket is not silently converted to a zero-step measurement.
+     */
+    suspend fun readStepsHistory(
+        days: Int = 7,
+        now: java.time.LocalDateTime = java.time.LocalDateTime.now(),
+        zoneId: ZoneId = ZoneId.systemDefault(),
+        originPolicy: HealthConnectOriginPolicy = HealthConnectOriginPolicy.APP_ONLY
+    ): HealthConnectStepsHistoryResult {
+        require(days in 1..31) { "History window must be between 1 and 31 days." }
+        when (availability()) {
+            HealthConnectAvailability.PROVIDER_UNAVAILABLE ->
+                return HealthConnectStepsHistoryResult.Failure("Health Connect não disponível.")
+            HealthConnectAvailability.PROVIDER_UPDATE_REQUIRED ->
+                return HealthConnectStepsHistoryResult.Failure("Health Connect precisa ser atualizado.")
+            HealthConnectAvailability.AVAILABLE -> Unit
+        }
+        return try {
+            val client = HealthConnectClient.getOrCreate(appContext)
+            if (!client.permissionController.getGrantedPermissions().containsAll(readPermissions)) {
+                return HealthConnectStepsHistoryResult.PermissionRequired
+            }
+            val today = now.toLocalDate()
+            val firstDay = today.minusDays((days - 1).toLong())
+            val buckets = client.aggregateGroupByPeriod(
+                AggregateGroupByPeriodRequest(
+                    metrics = setOf(StepsRecord.COUNT_TOTAL),
+                    timeRangeFilter = TimeRangeFilter.between(
+                        firstDay.atStartOfDay(),
+                        now
+                    ),
+                    timeRangeSlicer = Period.ofDays(1),
+                    dataOriginFilter = originPolicy.dataOriginFilter(appContext.packageName)
+                )
+            ).associate { bucket ->
+                bucket.startTime.toLocalDate() to bucket.result[StepsRecord.COUNT_TOTAL]
+            }
+            HealthConnectStepsHistoryResult.Success(
+                (0 until days).map { offset ->
+                    val date = firstDay.plusDays(offset.toLong())
+                    StepsHistoryDay(date, buckets[date])
+                }
+            )
+        } catch (error: SecurityException) {
+            HealthConnectStepsHistoryResult.PermissionRequired
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            HealthConnectStepsHistoryResult.Failure(
+                error.message ?: "Falha ao consultar histórico de passos."
+            )
+        }
     }
 
     suspend fun readTodaySteps(
