@@ -781,3 +781,5 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Dívida estrutural mantida: `MainActivity.kt` ainda concentra UI, permissões, scan, conexão, callbacks, fila, reconexão e exploração GATT. A extração deve ser incremental, sem reescrita ampla nem mudança de protocolo durante esta auditoria.
 - Não removidos os documentos de pesquisa Wearfit Pro, o catálogo de funções, o plano de substituição ou o perfil/parser AB: são referência histórica/técnica e não código de handoff ativo.
 - Testes Kotlin, Lint e builds **não executados**; CI **não disparada**; validação física no Galaxy A06 / GT3 MAX **não realizada**; PR e merge **não criados/executados** nesta rodada.
+- Limpeza confirmada: removidas de `SafeGattExplorationPlan` duas constantes NUS RX/TX que não eram referenciadas; a constante NUS Service foi mantida porque exclui corretamente esse serviço da exploração genérica.
+- Simplificação: removida a variável redundante `displayed` no decoder de Temperature Measurement; o valor MEDFLOAT permanece inalterado e a unidade continua dependendo do flag Celsius/Fahrenheit.
