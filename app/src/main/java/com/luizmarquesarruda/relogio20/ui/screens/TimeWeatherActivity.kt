@@ -208,7 +208,7 @@ class TimeWeatherActivity : Activity() {
         content.addView(weatherCard, cardParams().apply { topMargin = dp(12) })
 
         val attribution = textView(11f, 0xFF176B5B.toInt()).apply {
-            text = "Fonte meteorológica: Open-Meteo.com • dados CC BY 4.0"
+            text = "Dados meteorológicos: Open-Meteo.com (CC BY 4.0)"
             isClickable = true
             setOnClickListener {
                 runCatching {
@@ -217,6 +217,16 @@ class TimeWeatherActivity : Activity() {
             }
         }
         content.addView(attribution)
+        val licenseAttribution = textView(11f, 0xFF176B5B.toInt()).apply {
+            text = "Ver licença CC BY 4.0 • descrições meteorológicas traduzidas para português"
+            isClickable = true
+            setOnClickListener {
+                runCatching {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://creativecommons.org/licenses/by/4.0/")))
+                }
+            }
+        }
+        content.addView(licenseAttribution)
         addText(
             content,
             "São usados dados de previsão meteorológica, não medição de estação local. A busca envia o nome da cidade digitado e as coordenadas da cidade selecionada; não envia GPS atual nem dados de saúde.",
