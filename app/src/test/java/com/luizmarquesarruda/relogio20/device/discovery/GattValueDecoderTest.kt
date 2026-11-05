@@ -126,7 +126,8 @@ class GattValueDecoderTest {
         assertEquals("101325.0 Pa", pressure.single().value)
 
         assertTrue(GattValueDecoder.decode("181a", "2a6d", byteArrayOf(0xc2.toByte(), 0x79, 0x0f)).isEmpty())
-        assertTrue(GattValueDecoder.decode("181a", "2a6d", byteArrayOf(0, 0, 0, 0)).isEmpty())
+        val zeroPressure = GattValueDecoder.decode("181a", "2a6d", byteArrayOf(0, 0, 0, 0))
+        assertEquals("0.0 Pa", zeroPressure.single().value)
 
         val location = GattValueDecoder.decode("180d", "2a38", byteArrayOf(0x02))
         assertEquals("Localização declarada do sensor", location.single().metric)
