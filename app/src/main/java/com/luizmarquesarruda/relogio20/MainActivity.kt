@@ -10,6 +10,7 @@ import android.provider.Settings
 import com.luizmarquesarruda.relogio20.notifications.NotificationCenterActivity
 import com.luizmarquesarruda.relogio20.device.ble.gatt.SerialGattOperationQueue
 import com.luizmarquesarruda.relogio20.device.ble.gatt.BluetoothCurrentTimePayload
+import com.luizmarquesarruda.relogio20.device.ble.gatt.BluetoothCurrentTimeCapabilityPolicy
 import com.luizmarquesarruda.relogio20.device.ble.core.BleReconnectPolicy
 import com.luizmarquesarruda.relogio20.device.ble.core.BleReconnectCoordinator
 import com.luizmarquesarruda.relogio20.device.ble.core.GattCallbackSafetyPolicy
@@ -254,8 +255,8 @@ class MainActivity : ComponentActivity() {
         buildScreen()
         appendLog("Aplicativo iniciado. Diagnóstico BLE local.")
         appendLog(
-            "Nenhuma escrita em característica será enviada nesta versão. O CTS 0x1805/0x2A2B " +
-                "pode ser identificado no inventário, mas a sincronização física da hora continua suspensa."
+            "Payloads proprietários permanecem bloqueados. A sincronização de hora só pode ser iniciada manualmente " +
+                "pelo CTS padrão 0x1805/0x2A2B quando a característica anunciar WRITE."
         )
         if (reconnectPolicy.isEnabled) {
             appendLog("Reconexão automática restaurada para a identidade GT3 MAX configurada localmente.")
