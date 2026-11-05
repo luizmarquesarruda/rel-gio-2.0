@@ -13,6 +13,9 @@ class WeatherSyncWorker(
     override suspend fun doWork(): Result {
         val preferences = WeatherPreferences(applicationContext)
         val location = preferences.readLocation() ?: return Result.success()
+        val cached = preferences.readSnapshot()
+        val cacheAge = cached?.let { System.currentTimeMillis() - it.fetchedAtEpochMillis }
+        if (cacheAge != null && cacheAge in 0 until MIN_REFRESH_AGE_MS) return Result.success()
         return try {
             val snapshot = OpenMeteoWeatherRepository().fetchForecast(location)
             preferences.saveSnapshot(snapshot)
@@ -24,5 +27,9 @@ class WeatherSyncWorker(
         } catch (error: Exception) {
             Result.failure()
         }
+    }
+
+    private companion object {
+        const val MIN_REFRESH_AGE_MS = 5L * 60L * 60L * 1_000L + 30L * 60L * 1_000L
     }
 }
