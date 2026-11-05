@@ -757,3 +757,14 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Agora a inserção executa uma verificação final de captura ativa e pacote permitido dentro do mesmo lock usado nas mudanças de configuração e na limpeza.
 - Alterar a allow-list remove também qualquer evento de pacote que não permaneça permitido.
 - Testes unitários cobrem a barreira final de admissão permitida/negada.
+
+
+## 05/11/2026 — Controle BLE exclusivo pelo Relógio 2.0
+
+- Decisão operacional: remover a entrega da sessão BLE ao Wearfit Pro. O Relógio 2.0 passa a manter o controle das buscas, conexões GATT, callbacks, recuperação e redescoberta de serviços.
+- Removido o botão de handoff e os estados/bloqueios associados na tela principal, nos caminhos de scan/conexão, no timeout GATT, no callback de conexão, no tratamento de Service Changed e na reconexão automática.
+- Na inicialização, a preferência antiga `wearfit_handoff_active` é apagada para que usuários que atualizaram a versão não permaneçam com o app bloqueado no modo de liberação.
+- A ação de conexão do usuário agora habilita a política de reconexão progressiva antes da primeira conexão bem-sucedida. Desconexão manual continua desligando a recuperação.
+- Removidos a política de handoff externa e seus testes. Atualizados os testes de reconexão e redescoberta GATT.
+- O aplicativo não possui privilégio Android para desativar, encerrar ou revogar permissões de outro pacote. Se Wearfit Pro ainda estiver conectado ao GT3 MAX, a desconexão/força de parada deverá ser feita manualmente nas configurações do Android.
+- Testes Kotlin, Lint, build, CI e validação física no Galaxy A06 / Android 16 com GT3 MAX: **não validados**. Nenhuma CI foi disparada e nenhuma PR foi criada.
