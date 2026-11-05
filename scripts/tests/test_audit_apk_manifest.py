@@ -33,7 +33,7 @@ def manifest(permissions="", services="", app_attrs='android:allowBackup="false"
           </intent-filter>
         </activity-alias>
         """
-    if include_internet and "android.permission.INTERNET" not in permissions:
+    if include_internet:
         permissions = '<uses-permission android:name="android.permission.INTERNET" />' + permissions
     return f'''<?xml version="1.0" encoding="utf-8"?>
     <manifest xmlns:android="{ANDROID}" package="{package_name}">
