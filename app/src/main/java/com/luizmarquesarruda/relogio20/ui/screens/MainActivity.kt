@@ -2765,13 +2765,14 @@ class MainActivity : ComponentActivity() {
                 appendLog("CTS 0x1805/0x2A2B identificado sem WRITE. Nenhuma escrita será tentada.")
             }
             BluetoothCurrentTimeCapabilityPolicy.Capability.READY -> {
-                clockSyncButton.isEnabled = !clockSyncAttemptedForSession
-                deviceTimeSyncView.text = if (clockSyncAttemptedForSession) {
-                    "CTS disponível; já houve uma tentativa nesta conexão. Reconecte para tentar novamente."
+                clockSyncButton.isEnabled = false
+                if (clockSyncAttemptedForSession) {
+                    deviceTimeSyncView.text = "CTS disponível; sincronização já tentada nesta conexão."
                 } else {
-                    "CTS disponível (0x1805/0x2A2B). Toque em “Sincronizar hora do relógio” para enviar a hora local do celular."
+                    deviceTimeSyncView.text = "CTS compatível encontrado. Enviando automaticamente a hora do Android."
+                    appendLog("CTS 0x1805/0x2A2B com WRITE confirmado. Iniciando sincronização automática única nesta sessão.")
+                    syncClockUsingCurrentTimeService(gatt)
                 }
-                appendLog("CTS 0x1805/0x2A2B identificado com WRITE. Sincronização habilitada somente por ação manual.")
             }
         }
     }
