@@ -43,10 +43,20 @@ class GattValueDecoderTest {
     }
 
     @Test
-    fun decodesEnvironmentalTemperatureAndHumidity() {
-        val temperature = GattValueDecoder.decode("181a", "2a6e", byteArrayOf(0x6d, 0xf1.toByte()))
-        assertEquals("Temperatura ambiente", temperature.single().metric)
-        assertEquals("36.50 °C", temperature.single().value)
+    fun decodesEnvironmentalTemperatureAsSignedHundredthsAndHumidity() {
+        val positiveTemperature = GattValueDecoder.decode(
+            "181a", "2a6e", byteArrayOf(0x42, 0x0e)
+        )
+        assertEquals("Temperatura ambiente", positiveTemperature.single().metric)
+        assertEquals("36.50 °C", positiveTemperature.single().value)
+
+        val negativeTemperature = GattValueDecoder.decode(
+            "181a", "2a6e", byteArrayOf(0xf3.toByte(), 0xfd.toByte())
+        )
+        assertEquals("-5.25 °C", negativeTemperature.single().value)
+
+        assertTrue(GattValueDecoder.decode("181a", "2a6e", byteArrayOf(0, 0x80.toByte())).isEmpty())
+        assertTrue(GattValueDecoder.decode("181a", "2a6e", byteArrayOf(0x42)).isEmpty())
 
         val humidity = GattValueDecoder.decode("181a", "2a6f", byteArrayOf(0x10, 0x27))
         assertEquals("100.00 %", humidity.single().value)
@@ -108,12 +118,15 @@ class GattValueDecoderTest {
     }
 
     @Test
-    fun decodesEnvironmentalPressureAndBodySensorLocation() {
+    fun decodesEnvironmentalPressureAsUint32InTenthsOfPascalAndBodySensorLocation() {
         val pressure = GattValueDecoder.decode(
-            "181a", "2a6d", byteArrayOf(0xe8.toByte(), 0x13)
+            "181a", "2a6d", byteArrayOf(0xc2.toByte(), 0x79, 0x0f, 0)
         )
         assertEquals("Pressão atmosférica", pressure.single().metric)
-        assertEquals("10000.00 Pa", pressure.single().value)
+        assertEquals("101325.0 Pa", pressure.single().value)
+
+        assertTrue(GattValueDecoder.decode("181a", "2a6d", byteArrayOf(0xc2.toByte(), 0x79, 0x0f)).isEmpty())
+        assertTrue(GattValueDecoder.decode("181a", "2a6d", byteArrayOf(0, 0, 0, 0)).isEmpty())
 
         val location = GattValueDecoder.decode("180d", "2a38", byteArrayOf(0x02))
         assertEquals("Localização declarada do sensor", location.single().metric)
