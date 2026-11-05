@@ -62,7 +62,7 @@ Os recursos abaixo passaram a ter fluxo funcional no aplicativo, sem depender do
 - **GOAL-01:** meta diária de passos configurável (100–100.000), com progresso baseado no agregado Health Connect quando a permissão existe. A política APP_ONLY pode retornar ausência enquanto o app não for produtor dos registros; ausência não é exibida como zero.
 - **BREATH-01:** guia respiratório local 4–2–6; não mede sinais fisiológicos e não substitui orientação clínica.
 - **HEALTH-REM-01:** lembrete diário local por notificação inexacta. Requer permissão de notificações e deve ser reativado após reinicialização do telefone.
-- **Histórico de passos:** consulta de 7 dias por agregação diária Health Connect, com filtro de origem e dias sem bucket representados como “Sem registro”.
+- **Histórico de passos:** consulta de 7 dias por agregação diária Health Connect, com filtro de origem e dias sem bucket representados como “Sem registro”. A tela permite incluir origens externas somente após escolha explícita.
 
 Essas implementações são **Android local**, não integração física com o relógio. Chamadas, áudio, música, câmera, localizar telefone, vibração remota, sincronização de hora, métricas biométricas e recursos proprietários continuam dependentes de evidência de protocolo. OTA/DFU, reset, pagamentos e cartões de acesso permanecem bloqueados.
 
