@@ -88,6 +88,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var deviceProfileView: TextView
     private lateinit var deviceBatteryView: TextView
     private lateinit var deviceTimeSyncView: TextView
+    private lateinit var clockSyncButton: Button
     private lateinit var scanButton: Button
     private lateinit var disconnectButton: Button
     private lateinit var deepScanButton: Button
@@ -350,7 +351,18 @@ class MainActivity : ComponentActivity() {
             setPadding(0, 0, 0, dp(12))
         }
         connectionCard.addView(deviceTimeSyncView)
-        addText(connectionCard, "Conexão BLE gerenciada diretamente pelo Relógio 2.0.", 12f, false)
+        clockSyncButton = makeButton("Sincronizar hora do relógio") {
+            val activeGatt = bluetoothGatt
+            if (activeGatt == null || !isGattConnected || isGattDisconnecting) {
+                deviceTimeSyncView.text = "Sincronização indisponível: conecte o relógio primeiro."
+            } else {
+                syncClockUsingCurrentTimeService(activeGatt)
+            }
+        }.apply { isEnabled = false }
+        connectionCard.addView(clockSyncButton, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
+        ).apply { bottomMargin = dp(10) })
+        addText(connectionCard, "A hora só é enviada após toque manual e somente pelo serviço Bluetooth SIG CTS, se anunciado pelo relógio.", 12f, false)
 
         val actions = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -1531,6 +1543,7 @@ class MainActivity : ComponentActivity() {
                 pendingCurrentTimeWriteKey = null
                 clockSyncAttemptedForSession = false
                 deviceTimeSyncView.text = "Hora do relógio: sem sessão BLE ativa"
+                if (::clockSyncButton.isInitialized) clockSyncButton.isEnabled = false
                 updateStatus("Relógio desconectado.")
                 appendLog("Conexão GATT encerrada.")
                 finishAutomaticCaptureSession("Conexão BLE encerrada")
@@ -1623,9 +1636,7 @@ class MainActivity : ComponentActivity() {
                 runSafeGattExploration(gatt)
                 inspectGt3MaxProfileAndSubscribe(gatt)
                 maybeStartAutomaticGattProbe(gatt)
-                deviceTimeSyncView.text =
-                    "Hora do relógio: sincronização suspensa pela política somente leitura/notificações."
-                appendLog("CTS 0x1805: sincronização suspensa pela política atual; nenhuma escrita de característica será enviada.")
+                updateClockSyncAvailability(gatt)
                 updateStatus("Conectado. Serviços encontrados: " + gatt.services.size)
                 if (pendingDeepExplorationRequest) {
                     pendingDeepExplorationRequest = false
@@ -2527,9 +2538,61 @@ class MainActivity : ComponentActivity() {
     }
 
     @SuppressLint("MissingPermission")
+    private fun updateClockSyncAvailability(gatt: BluetoothGatt) {
+        if (!::clockSyncButton.isInitialized || !::deviceTimeSyncView.isInitialized) return
+        if (bluetoothGatt !== gatt || !isGattConnected || isGattDisconnecting) {
+            clockSyncButton.isEnabled = false
+            deviceTimeSyncView.text = "Hora do relógio: aguardando uma sessão BLE ativa."
+            return
+        }
+
+        val service = gatt.getService(UUID.fromString(BluetoothCurrentTimePayload.SERVICE_UUID))
+        if (service == null) {
+            clockSyncButton.isEnabled = false
+            deviceTimeSyncView.text =
+                "Hora não sincronizada: CTS padrão (0x1805) ausente. Investigação passiva mantida; nenhum comando alternativo será enviado."
+            appendLog("CTS 0x1805 ausente nesta sessão. Sincronização manual indisponível; nenhum protocolo proprietário foi tentado.")
+            return
+        }
+
+        val characteristic = service.getCharacteristic(
+            UUID.fromString(BluetoothCurrentTimePayload.CURRENT_TIME_UUID)
+        )
+        if (characteristic == null) {
+            clockSyncButton.isEnabled = false
+            deviceTimeSyncView.text =
+                "CTS 0x1805 anunciado, mas Current Time (0x2A2B) ausente."
+            appendLog("CTS anunciado sem 0x2A2B; sincronização manual indisponível.")
+            return
+        }
+
+        val supportsWrite =
+            characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE != 0
+        clockSyncButton.isEnabled = supportsWrite && !clockSyncAttemptedForSession
+        deviceTimeSyncView.text = if (supportsWrite) {
+            if (clockSyncAttemptedForSession) {
+                "CTS disponível; já houve uma tentativa nesta conexão. Reconecte para tentar novamente."
+            } else {
+                "CTS disponível (0x1805/0x2A2B). Toque em “Sincronizar hora do relógio” para enviar a hora local do celular."
+            }
+        } else {
+            "CTS encontrado, mas 0x2A2B não anuncia WRITE. Sincronização manual indisponível."
+        }
+        appendLog(
+            if (supportsWrite) {
+                "CTS 0x1805/0x2A2B identificado com WRITE. Sincronização habilitada somente por ação manual."
+            } else {
+                "CTS 0x1805/0x2A2B identificado sem WRITE. Nenhuma escrita será tentada."
+            }
+        )
+    }
+
+    @SuppressLint("MissingPermission")
     private fun syncClockUsingCurrentTimeService(gatt: BluetoothGatt) {
-        if (clockSyncAttemptedForSession) return
-        clockSyncAttemptedForSession = true
+        if (clockSyncAttemptedForSession) {
+            deviceTimeSyncView.text = "Sincronização CTS já tentada nesta conexão. Reconecte para uma nova tentativa."
+            return
+        }
 
         val serviceUuid = UUID.fromString(BluetoothCurrentTimePayload.SERVICE_UUID)
         val characteristicUuid = UUID.fromString(BluetoothCurrentTimePayload.CURRENT_TIME_UUID)
@@ -2561,6 +2624,8 @@ class MainActivity : ComponentActivity() {
             return
         }
 
+        clockSyncAttemptedForSession = true
+        if (::clockSyncButton.isInitialized) clockSyncButton.isEnabled = false
         val localDateTime = LocalDateTime.now()
         val payload = BluetoothCurrentTimePayload.encode(localDateTime)
         val key = service.uuid.toString() + "/" + characteristic.uuid.toString()
