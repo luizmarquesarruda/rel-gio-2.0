@@ -16,6 +16,10 @@ A base é um aplicativo Android nativo Kotlin. O adaptador de consulta agregada 
 | domain/health/HealthMetricSample.kt | Domain / Health | Tipo, unidade, origem, timestamps e estado de validação sem dependência Android/BLE. |
 | domain/health/StepsSnapshot.kt | Domain / Activity | Snapshot do agregado de passos; diferencia zero de ausência e preserva intervalo, recebimento e origem Health Connect. |
 | data/healthconnect/HealthConnectStepsRepository.kt | Data / Health Connect | Disponibilidade do provider, permissão READ_STEPS e consulta agregada diária, sem atribuir a origem ao GT3 MAX. |
+| data/healthconnect/HealthConnectStepsRepository.kt | Data / Health Connect | Também oferece histórico agregado diário limitado a 31 dias, com filtro de origem e dias sem bucket preservados como ausência. |
+| domain/activity/LocalFeaturePolicy.kt | Domain / Activity | Valida meta local de passos e calcula progresso sem converter ausência em zero; possui testes unitários. |
+| ui/screens/LocalToolsActivity.kt | UI / Ferramentas locais | Cronômetro, temporizador em primeiro plano, meta/histórico Health Connect, guia respiratório, handoff de alarme Android e lembrete local por notificação; sem comandos ao relógio. |
+| ui/screens/LocalHealthReminderReceiver.kt | Platform / Notifications | Emite lembrete diário local agendado por AlarmManager inexact; não sincroniza com o wearable e requer reativação após reboot. |
 | data/healthconnect/HealthConnectPermissionState.kt | Data / Health Connect | Estado local de solicitação, recusa, concessão e revogação; política pura, testável e sem substituir a autorização real do provider. |
 | data/healthconnect/HealthConnectDayWindow.kt | Data / Health Connect | Calcula o início do dia local a partir de Instant + ZoneId com compatibilidade com minSdk 26. |
 | device/ble/gatt/SerialGattOperationQueue.kt | BLE transport / GATT | Serializar operações GATT assíncronas. Não interpreta payload. |
