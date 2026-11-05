@@ -47,7 +47,8 @@ A lista contém **33 entradas de menu/recurso** do catálogo Wearfit Pro. Isso n
 | BUTTON-01 | Down key customization | device/gt3max/protocol | Documentação diz que alguns dispositivos suportam; modelo não confirmado. | P3 | Não validado |
 | LOCK-01 | Lock screen or unlock | device/gt3max/protocol | Ação reversível, com confirmação; sem comando desconhecido. | P3 | Não validado |
 | OTA-01 | OTA upgrade equipment | device/firmware | Exige firmware assinado, autenticação, integridade e recuperação. | Bloqueado | OTA/DFU fora da fase |
-| TIME-01 | Set language and time | platform/clock + device adapter | Idioma e horário são operações diferentes; escrita BLE não validada. | P1 | Hora do celular exibida; relógio não validado |
+| TIME-01 | Set language and time | platform/clock + device adapter | Idioma e horário são operações diferentes; sincronização somente pelo Bluetooth SIG CTS padrão. | P1 | Hora Android implementada; envio CTS automático condicionado a 0x1805/0x2A2B + WRITE; CTS ausente na captura do GT3 MAXX |
+| WEATHER-01 | Weather / forecast | data/weather + platform/network + adapter GT3 | Open-Meteo fornece previsão; transporte ao relógio depende de protocolo proprietário comprovado. | P2 | Android implementado por cidade escolhida; cache local e WorkManager; transmissão BLE não implementada |
 | POWER-01 | Switch on/off, restart and restore factory settings | device administration | Desligar/reiniciar/restaurar são ações diferentes; factory reset apaga dados/configurações. | Bloqueado | Bloqueado por segurança |
 | AUDIO-01 | Audio Bluetooth settings (I) | platform/bluetooth-classic/audio | Significado desconhecido; não assumir HFP/A2DP. | P2 | Não validado |
 | AUDIO-02 | Audio Bluetooth settings (II) | platform/bluetooth-classic/audio | Canal não documentado; identificar por testes de perfis. | P2 | Não validado |
@@ -64,7 +65,7 @@ Os recursos abaixo passaram a ter fluxo funcional no aplicativo, sem depender do
 - **HEALTH-REM-01:** lembrete diário local por notificação inexacta. Requer permissão de notificações e deve ser reativado após reinicialização do telefone.
 - **Histórico de passos:** consulta de 7 dias por agregação diária Health Connect, com filtro de origem e dias sem bucket representados como “Sem registro”. A tela permite incluir origens externas somente após escolha explícita.
 
-Essas implementações são **Android local**, não integração física com o relógio. Chamadas, áudio, música, câmera, localizar telefone, vibração remota, sincronização de hora, métricas biométricas e recursos proprietários continuam dependentes de evidência de protocolo. OTA/DFU, reset, pagamentos e cartões de acesso permanecem bloqueados.
+Essas implementações são **Android local** (o clima consome internet e guarda cache privado), não integração física com o relógio. Chamadas, áudio, música, câmera, localizar telefone, vibração remota, sincronização de hora, métricas biométricas e recursos proprietários continuam dependentes de evidência de protocolo. OTA/DFU, reset, pagamentos e cartões de acesso permanecem bloqueados.
 
 ## Fronteiras entre módulos
 
