@@ -232,7 +232,7 @@ class LocalToolsActivity : Activity() {
                         "Histórico indisponível: conceda READ_STEPS no painel principal."
                     is HealthConnectStepsHistoryResult.Failure ->
                         "Histórico indisponível: " + result.reason
-                    is HealthConnectStepsHistoryResult.Success -> result.days.joinToString("\\n") { day ->
+                    is HealthConnectStepsHistoryResult.Success -> result.days.joinToString("\n") { day ->
                         val count = day.totalSteps?.let {
                             NumberFormat.getIntegerInstance(Locale.getDefault()).format(it)
                         } ?: "Sem registro"
