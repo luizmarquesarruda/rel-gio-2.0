@@ -131,3 +131,11 @@ A ponte de notificações opera com uma regra diferente: prévias são voláteis
 - Corrigido o contrato do teste: DFU e identificadores continuam excluídos; somente o UUID NUS TX exato pode ser inscrito quando anuncia NOTIFY/INDICATE + CCCD; NUS RX e READ/WRITE continuam proibidos.
 - A execução #415 não gerou APK, pois a tarefa combinada interrompeu antes dos guardrails e assemble; o artefato de relatórios Android foi publicado.
 - Nova CI será executada pelo evento synchronize da PR técnica #18 após a correção. Nenhum merge foi realizado; teste físico continua **não validado**.
+
+## 05/11/2026 — CI #416: alinhamento final dos contratos de teste NUS
+
+- A nova CI confirmou novamente os testes Python e o Lint das duas variantes.
+- A suíte diagnostic executou 145 testes e apontou duas expectativas inconsistentes: o teste de exclusão NUS ainda esperava plano vazio; o caso sem CCCD estava esperando inscrição.
+- Corrigidos os dois contratos: com UUID NUS completo e TX anunciando NOTIFY + CCCD, o plano deve conter somente a inscrição TX; sem CCCD, deve permanecer vazio. RX, READ/WRITE proprietários continuam excluídos.
+- A execução #416 não publicou APK, pois a etapa de testes interrompeu antes da montagem. Relatórios de validação foram publicados.
+- Nova execução pendente após correção. Nenhum merge; teste físico não validado.
