@@ -402,7 +402,6 @@ internal object GattValueDecoder {
         // Bluetooth SIG Pressure (0x2A6D): uint32 little-endian, resolution 0.1 Pa.
         if (value.size != 4) return emptyList()
         val rawPressure = readUInt32(value, 0)
-        if (rawPressure == 0L) return emptyList()
         val pressurePa = rawPressure / 10.0
         return listOf(
             DecodedGattValue(
