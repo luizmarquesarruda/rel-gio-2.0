@@ -69,8 +69,8 @@ internal class HealthConnectStepsRepository(context: Context) {
      */
     suspend fun readStepsHistory(
         days: Int = 7,
-        now: java.time.LocalDateTime = java.time.LocalDateTime.now(),
         zoneId: ZoneId = ZoneId.systemDefault(),
+        now: java.time.LocalDateTime = java.time.LocalDateTime.now(zoneId),
         originPolicy: HealthConnectOriginPolicy = HealthConnectOriginPolicy.APP_ONLY
     ): HealthConnectStepsHistoryResult {
         require(days in 1..31) { "History window must be between 1 and 31 days." }
