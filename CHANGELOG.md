@@ -1,3 +1,14 @@
+## Não lançado — matriz de recursos e assinatura estrutural do GT3 MAX — 05/11/2026
+
+- Adicionada matriz passiva de onze grupos Bluetooth SIG para bateria, identificação do dispositivo, hora CTS, frequência cardíaca, pressão, SpO₂, temperatura, ambiente, composição corporal e cadência.
+- A matriz diferencia serviço não anunciado, serviço sem característica esperada, READ, NOTIFY/INDICATE com CCCD e tráfego observado. A ausência de UUID padrão não é interpretada como ausência física do sensor.
+- Adicionada assinatura estrutural GATT SHA-256 com UUIDs de serviços/características/descritores e propriedades; não inclui MAC, serial, valores do fabricante ou payload de saúde.
+- O motor de descoberta compara inventários anteriores e registra baseline, estrutura inalterada ou estrutura alterada sem afirmar atualização de firmware.
+- A tela de descobertas exibe a matriz separadamente de outras evidências e mantém dados semânticos como não validados.
+- Adicionados testes unitários para a matriz, assinatura e integração ao motor; **não executados** nesta rodada.
+- Criado `docs/ESTUDO-FIRMWARE-GT3-MAXX.md` com evidências, prioridades, limitações e roteiro de validação física.
+- Build, Lint, testes Kotlin, CI e teste físico: **não validados**. Nenhuma CI foi disparada; nenhuma PR foi criada e nenhum merge foi realizado.
+
 ## Não lançado — controle BLE exclusivo pelo Relógio 2.0 — 05/11/2026
 
 - Removido da interface o botão de handoff/liberação para Wearfit Pro; o app não pausa mais sua conexão para entregar o relógio a outro aplicativo.
