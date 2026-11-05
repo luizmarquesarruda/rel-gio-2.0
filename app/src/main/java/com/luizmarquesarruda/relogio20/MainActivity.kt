@@ -1460,6 +1460,8 @@ class MainActivity : ComponentActivity() {
         bluetoothGatt = newGatt
         val timeout = Runnable {
             if (bluetoothGatt === newGatt && !isGattConnected) {
+                val handoffOwnsConnection = wearfitHandoffActive
+                val connectionWasCancelled = isGattDisconnecting
                 bluetoothGatt = null
                 isGattDisconnecting = false
                 gattExplorationProgress.markRemainingSkipped()
@@ -1473,8 +1475,6 @@ class MainActivity : ComponentActivity() {
                 queuedAutomaticUnsubscribeKeys.clear()
                 runCatching { newGatt.disconnect() }
                 runCatching { newGatt.close() }
-                val handoffOwnsConnection = wearfitHandoffActive
-                val connectionWasCancelled = isGattDisconnecting
                 updateStatus(
                     when {
                         handoffOwnsConnection -> "Liberado para Wearfit Pro. Tentativa GATT anterior encerrada."
