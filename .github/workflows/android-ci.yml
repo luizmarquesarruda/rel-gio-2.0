@@ -142,7 +142,7 @@ jobs:
           tested_commit=$GITHUB_SHA
           workflow_run=$GITHUB_RUN_ID
           notification_listener=absent
-          internet_permission=absent
+          internet_permission=present_weather_api_only
           release_ready=false
           EOF
 
