@@ -23,6 +23,7 @@ A implementação em andamento é um protótipo Android nativo em Kotlin. Não h
 - METT tem unidade MET e não é convertido automaticamente em calorias. Pressão arterial/SpO₂ não são tratados como medições clínicas.
 - SerialGattOperationQueue foi isolada em device/ble/gatt.
 - GattCallbackSafetyPolicy isola as regras de callbacks: só aceita a conexão atual e a operação ativa; Service Changed invalida a tabela anterior e solicita redescoberta quando permitido.
+- `BleReconnectCoordinator` isola as decisões puras de agendamento e execução da reconexão. `MainActivity` ainda mantém `Handler`, `Runnable`, estado Android e chamada de scan; a extração do scheduler/plataforma ainda não está concluída.
 - A biblioteca local usa cache e fila de escrita serial para não fazer I/O de arquivo dentro dos callbacks BLE; o conteúdo continua local e bounded.
 - WearfitProtocolProfile, WearfitAbFrame e WearfitAbFrameParser foram isolados em device/gt3max/protocol. O nome do pacote não confirma chipset nem identidade do dispositivo.
 - Os testes acompanham os pacotes correspondentes; os testes do contrato Domain verificam unidades, limites e preservação de origem.
@@ -59,7 +60,7 @@ O contrato implementado está em [CONTRATO-METRICAS-SAUDE.md](CONTRATO-METRICAS-
 ## Sequência de extração
 
 1. Isolar utilitários puros e testes sem mudar comportamento (concluído parcialmente).
-2. Extrair scan/máquina de estados GATT de `MainActivity` para `device/ble/core`, preservando fila e callbacks.
+2. Extrair scan/máquina de estados GATT de `MainActivity` para `device/ble/core`, preservando fila e callbacks (em andamento: decisões de reconexão já isoladas; timers, scan e conexão Android ainda na Activity).
 3. Manter a consulta Health Connect isolada em `data/healthconnect` (já implementada).
 4. Evoluir armazenamento local versionado de amostras e sessões, com deduplicação e migrações testadas.
 5. Implementar parsers somente após evidência repetível por métrica.
