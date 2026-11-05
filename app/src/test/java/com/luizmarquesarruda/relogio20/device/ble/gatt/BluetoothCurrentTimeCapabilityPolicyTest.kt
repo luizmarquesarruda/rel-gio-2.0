@@ -69,6 +69,7 @@ class BluetoothCurrentTimeCapabilityPolicyTest {
             )
         )
     }
+
     @Test
     fun rejectsCtsWriteForUnconfirmedBleDevice() {
         assertEquals(
