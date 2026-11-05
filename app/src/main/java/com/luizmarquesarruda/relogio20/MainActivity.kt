@@ -1061,7 +1061,9 @@ class MainActivity : ComponentActivity() {
             putBoolean("wearfit_handoff_active", true)
             putBoolean("auto_reconnect_enabled", false)
         }
-        appendLog("Liberação solicitada: encerrando a sessão GATT do Relógio 2.0 e bloqueando reconexão automática para permitir conexão pelo Wearfit Pro.")
+        appendLog("Liberação solicitada: cancelando buscas e tentativas pendentes, encerrando a sessão GATT do Relógio 2.0 e bloqueando novas conexões para permitir conexão pelo Wearfit Pro.")
+        cancelReconnectTask()
+        stopBleScan()
         disconnectGatt()
         updateStatus("Liberado para Wearfit Pro. Abra o Wearfit Pro e conecte o GT3 MAX por ele.")
         updateWearfitHandoffUi()
@@ -1111,8 +1113,8 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("MissingPermission")
     private fun startBleScan(automatic: Boolean = false) {
-        if (automatic && wearfitHandoffActive) {
-            appendLog("Busca automática bloqueada: conexão liberada para o Wearfit Pro.")
+        if (wearfitHandoffActive) {
+            appendLog("Busca BLE bloqueada: conexão liberada para o Wearfit Pro. Retome o controle antes de iniciar uma nova busca.")
             return
         }
         if (automatic && !isActivityResumed) {
@@ -1375,6 +1377,11 @@ class MainActivity : ComponentActivity() {
         automaticAttempt: Boolean = false,
         discoveryCandidate: Boolean = false
     ) {
+        if (wearfitHandoffActive) {
+            appendLog("Conexão GATT bloqueada: o controle do GT3 MAX foi liberado ao Wearfit Pro.")
+            updateStatus("GT3 MAX liberado para Wearfit Pro. Retome a conexão neste app para conectar novamente.")
+            return
+        }
         val observedAddress = safeDeviceAddress(device)
         val savedIdentityMatches = BleDeviceIdentity.matches(expectedWatchAddress, observedAddress)
         if (!savedIdentityMatches && !discoveryCandidate) {
@@ -1486,6 +1493,12 @@ class MainActivity : ComponentActivity() {
                 return
             }
             appendLog("Estado GATT: status=" + status + ", estado=" + newState)
+            if (wearfitHandoffActive && newState == BluetoothProfile.STATE_CONNECTED) {
+                isGattDisconnecting = true
+                appendLog("Conexão GATT concluída durante a liberação ao Wearfit Pro; encerrando imediatamente sem descobrir serviços.")
+                runCatching { gatt.disconnect() }
+                return
+            }
             if (isGattDisconnecting && newState == BluetoothProfile.STATE_CONNECTED) {
                 appendLog("Conexão GATT concluída após cancelamento manual; encerrando sem reativar a reconexão automática.")
                 runCatching { gatt.disconnect() }
