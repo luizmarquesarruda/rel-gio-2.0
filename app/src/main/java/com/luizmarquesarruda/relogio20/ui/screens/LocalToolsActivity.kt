@@ -199,6 +199,7 @@ class LocalToolsActivity : Activity() {
 
     private fun refreshSteps() {
         if (!::stepsStatus.isInitialized) return
+        currentSteps = null
         ioScope.launch {
             val result = runCatching {
                 val repository = HealthConnectStepsRepository(applicationContext)
