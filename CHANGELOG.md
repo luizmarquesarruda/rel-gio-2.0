@@ -1,3 +1,9 @@
+## Não lançado — exclusão individual do histórico BLE — 04/11/2026
+
+- A biblioteca agora permite excluir cada registro local individualmente, incluindo o HEX capturado, com confirmação explícita.
+- A remoção é serializada na fila de escrita e persiste por substituição atômica do snapshot; outros registros e o estado da sessão ativa são preservados.
+- Testes unitários cobrem remoção exata, preservação da sessão e registro inexistente.
+- Testes, lint, build e validação física: **não executados/não validados**. CI não disparada por solicitação do usuário.
 # Changelog
 
 ## Não lançado — serialização do consentimento de notificações — 04/11/2026
