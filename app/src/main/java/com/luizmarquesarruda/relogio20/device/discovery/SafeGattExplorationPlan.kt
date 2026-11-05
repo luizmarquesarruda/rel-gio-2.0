@@ -60,8 +60,6 @@ internal object SafeGattExplorationPlan {
     private val standardServiceIds = known.map { it.service }.toSet() + setOf("1800", "1801")
     private val automaticServiceIds = setOf("180a", "180f", "1805")
     private const val NUS_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
-    private const val NUS_RX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
-    private const val NUS_TX = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
 
     /** Automatic plan: basic device metadata and battery read only. */
     fun build(services: List<GattServiceRecord>): List<Operation> {
