@@ -76,6 +76,29 @@ class GattCapabilityMatrixTest {
     }
 
     @Test
+    fun readAndNotifyWithoutCccdIsNotReportedAsSubscribable() {
+        val assessment = GattCapabilityMatrix.evaluate(
+            listOf(
+                GattServiceRecord(
+                    "0000180d-0000-1000-8000-00805f9b34fb",
+                    listOf(
+                        GattCharacteristicRecord(
+                            "00002a37-0000-1000-8000-00805f9b34fb",
+                            setOf("READ", "NOTIFY")
+                        )
+                    )
+                )
+            )
+        ).single { it.id == "heart_rate" }
+
+        assertEquals(
+            GattCapabilityMatrix.State.READ_AND_NOTIFICATION_WITHOUT_CCCD,
+            assessment.state
+        )
+        assertTrue(assessment.detail.contains("sem CCCD"))
+    }
+
+    @Test
     fun notificationHistoryIsVisibleButRemainsUnvalidated() {
         val assessment = GattCapabilityMatrix.evaluate(
             listOf(
