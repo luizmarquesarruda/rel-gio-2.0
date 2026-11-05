@@ -27,6 +27,7 @@ Este índice separa decisões de arquitetura, integrações, evidências do disp
 - [Referências técnicas Android BLE e Bluetooth SIG](REFERENCIAS-TECNICAS-ANDROID-BLE-2026-11-04.md)
 - [Identificação do relógio](IDENTIFICACAO-DO-RELOGIO.md)
 - [Perfil GT3 Maxx](PERFIL-GT3-MAXX.md)
+- [Estudo técnico do firmware GT3 MAX Call](ESTUDO-FIRMWARE-GT3-MAXX.md) — evidências GATT, matriz de recursos, assinatura estrutural e limitações de análise estática.
 - [Perfil de acesso GT3 MAX Call](PERFIL-ACESSO-GT3-MAX-CALL.md) — identificação de software informada, fingerprint GATT e escopo de leitura segura.
 - [Integração de parceiro Wearfit Pro](INTEGRACAO-WEARFIT-PARTNER-SDK.md) — autorização de terceiros, limites da API e elegibilidade do GT3 MAX Call.
 - [Análise de firmware OTA do Wearfit Pro](ANALISE-FIRMWARE-OTA-WEARFIT-PRO.md) — identidade regulatória, serviço Nordic Secure DFU e procedimento seguro para obter o pacote.
