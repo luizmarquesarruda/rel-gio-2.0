@@ -801,3 +801,16 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Adicionado `BleReconnectCoordinatorTest.kt` com cenários de política desativada, pausa/retomada, GATT ativo, scan ativo, tentativa imediata, preservação do backoff e validação tardia das permissões.
 - Esta etapa preserva os intervalos existentes de 1, 2, 5, 10, 20 e 30 segundos e o cancelamento manual da reconexão.
 - Os testes foram adicionados, mas **não executados**. Lint/build e validação física **não validados**. CI não disparada; nenhuma PR criada; nenhum merge.
+
+
+## 04/11/2026 — Sincronização manual e segura do horário via CTS
+
+- A tela principal ganhou a ação **Sincronizar hora do relógio**, inicialmente desabilitada.
+- Após a descoberta GATT, o app verifica o serviço Bluetooth SIG Current Time Service (0x1805), a característica Current Time (0x2A2B) e a propriedade WRITE. O botão só é habilitado quando os três requisitos são atendidos na sessão GATT atual.
+- A escrita continua manual: nenhuma hora é enviada ao conectar ou ao redescobrir serviços. O usuário precisa tocar no botão.
+- A tentativa usa o payload CTS de 10 bytes já coberto por testes unitários e a fila GATT serializada. É permitida uma tentativa por sessão; reconectar libera uma nova tentativa.
+- Se CTS/Current Time estiver ausente ou sem WRITE, a UI informa o motivo e mantém a investigação passiva. Nenhum comando proprietário, NUS RX, OTA/DFU ou fallback desconhecido é enviado.
+- O callback GATT de sucesso é descrito como confirmação da escrita no transporte. Não é tratado como prova de que o firmware atualizou o RTC ou o mostrador.
+- README e arquitetura foram atualizados para refletir a nova fronteira de segurança e remover a afirmação antiga de que toda escrita de característica está suspensa.
+- Implementação no commit `8a4c397ca25122f966c7920015ec8d7952ebaef9`; documentação nos commits subsequentes da mesma branch.
+- Testes Kotlin, Lint, build Android e teste físico no Galaxy A06/Android 16 com GT3 MAX: **não executados/não validados nesta etapa**. CI não disparada; PR e merge não criados.
