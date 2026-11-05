@@ -1616,6 +1616,7 @@ class MainActivity : ComponentActivity() {
             } else if (status != BluetoothGatt.GATT_SUCCESS) {
                 isGattDisconnecting = false
                 isGattConnected = false
+                stopTelemetryWatchdog()
                 cancelGattServiceDiscoveryTimeout()
                 gattExplorationProgress.markRemainingSkipped()
                 updateGattProgressUi()
@@ -1623,6 +1624,7 @@ class MainActivity : ComponentActivity() {
                 resetGattOperationQueue()
                 pendingNotifications.clear()
                 activeNotifications.clear()
+                activeNotificationCharacteristics.clear()
                 pendingAutomaticNotifications.clear()
                 automaticNotificationKeys.clear()
                 pendingAutomaticUnsubscribeKeys.clear()
@@ -1640,6 +1642,7 @@ class MainActivity : ComponentActivity() {
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 isGattDisconnecting = false
                 isGattConnected = false
+                stopTelemetryWatchdog()
                 cancelGattServiceDiscoveryTimeout()
                 gattExplorationProgress.markRemainingSkipped()
                 updateGattProgressUi()
@@ -1657,6 +1660,7 @@ class MainActivity : ComponentActivity() {
                     resetGattOperationQueue()
                     pendingNotifications.clear()
                     activeNotifications.clear()
+                    activeNotificationCharacteristics.clear()
                     pendingAutomaticNotifications.clear()
                     automaticNotificationKeys.clear()
                     pendingAutomaticUnsubscribeKeys.clear()
@@ -2099,6 +2103,13 @@ class MainActivity : ComponentActivity() {
         }
         val policy = ExplorationPolicy.forObservedInventory(inventory)
         val plan = SafeGattExplorationPlan.build(inventory, policy)
+        discoveryLibraryStore.recordDiscoveryAsync(
+            title = "ExplorationPolicy GATT",
+            detail = PolicyLogger.serialize(policy),
+            nowMillis = System.currentTimeMillis(),
+            source = "EXPLORATION_POLICY",
+            confidence = policy.source.name
+        )
         appendLog("Exploração GATT segura: " + plan.size + " operações padronizadas elegíveis; canais proprietários, NUS RX e DFU excluídos.")
         plan.forEach { operation ->
             val service = gatt.getService(runCatching { UUID.fromString(operation.serviceUuid) }.getOrNull())
@@ -2183,6 +2194,7 @@ class MainActivity : ComponentActivity() {
         val active = discoveryLibraryStore.activeSession(now)
         if (active != null) {
             sessionManager.adopt(active.id, active.startedAtMillis, now)
+            startTelemetryWatchdog()
             automaticGattDiscoveryPrefs.edit {
                 putString(KEY_AUTOMATIC_SESSION_ID, active.id)
                 putBoolean(KEY_AUTOMATIC_SESSION_OWNED, false)
@@ -2210,6 +2222,7 @@ class MainActivity : ComponentActivity() {
         }
 
         sessionManager.start(created.id, now)
+        startTelemetryWatchdog()
         automaticGattDiscoveryPrefs.edit {
             putString(KEY_AUTOMATIC_SESSION_ID, created.id)
             putBoolean(KEY_AUTOMATIC_SESSION_OWNED, true)
@@ -2654,7 +2667,7 @@ class MainActivity : ComponentActivity() {
             payloadHex = payloadHex,
             nowMillis = nowMillis
         )
-        if (activeSession && !payloadQueued) {
+        if (!payloadQueued) {
             val dropped = droppedTelemetryCount.incrementAndGet()
             appendLog("Leitura GATT recebida, mas amostra descartada por fila cheia. droppedCount=" + dropped)
         }
@@ -3651,6 +3664,7 @@ class MainActivity : ComponentActivity() {
         if (bluetoothGatt !== gatt) return
         cancelGattServiceDiscoveryTimeout()
         isGattConnected = false
+        stopTelemetryWatchdog()
         gattExplorationProgress.markRemainingSkipped()
         updateGattProgressUi()
         resetGattOperationQueue()
