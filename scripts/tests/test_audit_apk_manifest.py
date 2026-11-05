@@ -15,7 +15,7 @@ audit_manifest = audit_module.audit_manifest
 ANDROID = "http://schemas.android.com/apk/res/android"
 
 
-def manifest(permissions="", services="", app_attrs='android:allowBackup="false" android:usesCleartextTraffic="false" android:icon="@drawable/ic_launcher" android:dataExtractionRules="@xml/data_extraction_rules" android:fullBackupContent="@xml/backup_rules"', package_name="com.luizmarquesarruda.relogio20.diagnostic", include_health_rationale=True):
+def manifest(permissions="", services="", app_attrs='android:allowBackup="false" android:usesCleartextTraffic="false" android:icon="@drawable/ic_launcher" android:dataExtractionRules="@xml/data_extraction_rules" android:fullBackupContent="@xml/backup_rules"', package_name="com.luizmarquesarruda.relogio20.diagnostic", include_health_rationale=True, include_internet=True):
     rationale = ""
     if include_health_rationale:
         rationale = """
@@ -33,6 +33,8 @@ def manifest(permissions="", services="", app_attrs='android:allowBackup="false"
           </intent-filter>
         </activity-alias>
         """
+    if include_internet and "android.permission.INTERNET" not in permissions:
+        permissions = '<uses-permission android:name="android.permission.INTERNET" />' + permissions
     return f'''<?xml version="1.0" encoding="utf-8"?>
     <manifest xmlns:android="{ANDROID}" package="{package_name}">
       {permissions}
@@ -125,12 +127,24 @@ class SharedSecurityPolicyTests(unittest.TestCase):
         xml = manifest(app_attrs='android:allowBackup="false" android:usesCleartextTraffic="false" android:icon="@drawable/ic_launcher" android:dataExtractionRules="@xml/data_extraction_rules" android:fullBackupContent="@xml/backup_rules" android:label="Saúde &amp; Fitness"')
         self.assertEqual([], audit_manifest(xml, "diagnostic"))
 
-    def test_both_variants_reject_internet_permission(self):
+    def test_both_variants_accept_exactly_one_weather_internet_permission(self):
+        for variant in ("diagnostic", "companion"):
+            with self.subTest(variant=variant):
+                self.assertEqual([], audit_manifest(manifest(), variant))
+
+    def test_both_variants_reject_missing_weather_internet_permission(self):
+        xml = manifest(include_internet=False)
+        for variant in ("diagnostic", "companion"):
+            with self.subTest(variant=variant):
+                codes = {issue.code for issue in audit_manifest(xml, variant)}
+                self.assertIn("internet_permission_missing_or_duplicate", codes)
+
+    def test_both_variants_reject_duplicate_weather_internet_permissions(self):
         xml = manifest(permissions='<uses-permission android:name="android.permission.INTERNET" />')
         for variant in ("diagnostic", "companion"):
             with self.subTest(variant=variant):
                 codes = {issue.code for issue in audit_manifest(xml, variant)}
-                self.assertIn("network_permission_not_approved", codes)
+                self.assertIn("internet_permission_missing_or_duplicate", codes)
 
     def test_both_variants_reject_sms_and_accessibility(self):
         xml = manifest(
