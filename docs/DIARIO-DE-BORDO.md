@@ -758,3 +758,12 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - A fila agora retém falhas até a barreira de flush; o lock de enfileiramento estabelece um limite consistente para o lote.
 - Criados testes para falha reportada uma única vez, falha preservada após gravação bem-sucedida posterior e ausência de falhas em lote válido.
 - CI e testes Android: **não validados**. Nenhum workflow foi disparado.
+
+
+## 05/11/2026 — Expansão de recebimento NUS TX sem comandos
+
+- A exploração manual passa a observar o NUS TX quando o UUID padrão e as propriedades NOTIFY/INDICATE + CCCD são confirmados no inventário.
+- NUS RX permanece excluído de qualquer operação; nenhuma escrita de payload ou comando foi liberada.
+- UI agora deixa explícito que o TX aguarda inscrição/notificação, sem prometer que seja um sensor validado.
+- Testes adicionados para garantir TX somente, RX bloqueado e CCCD obrigatório.
+- CI/testes/build e teste físico: **não validados**; CI não disparada.
