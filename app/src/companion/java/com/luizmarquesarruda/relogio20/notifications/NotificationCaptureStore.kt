@@ -24,6 +24,7 @@ internal object NotificationCaptureSettings {
 
     fun setEnabled(context: Context, enabled: Boolean) {
         preferences(context).edit().putBoolean(KEY_ENABLED, enabled).apply()
+        if (!enabled) NotificationCaptureStore.clear()
     }
 
     fun allowedPackages(context: Context): Set<String> =

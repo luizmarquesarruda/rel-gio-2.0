@@ -725,3 +725,10 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Pendências estruturais identificadas: `MainActivity.kt` permanece com responsabilidade excessiva (extração deverá ser incremental); o repositório ainda não inclui Gradle Wrapper; testes em aparelho/emulador e validação de aquisição BLE real continuam pendentes.
 - O relatório detalhado está em `docs/AUDITORIA-REPOSITORIO-2026-11-04.md`.
 
+
+
+## Ajuste de retenção e transparência de funções — 04/11/2026
+
+- O catálogo de funções não apresenta mais o CTS como mecanismo que será automaticamente usado. A identificação 0x1805/0x2A2B é informativa; escrita física de hora permanece suspensa.
+- Desativar captura de notificações (inclusive em consequência de revogação de acesso) limpa imediatamente as prévias em memória; teste de limpeza adicionado.
+- README e tela de privacidade esclarecem retenção: HEX é capturado somente em sessão consentida, mas permanece no arquivo privado depois da sessão, limitado a 1.000 registros; não existe exclusão individual na UI. Remover os dados do app no Android apaga o arquivo.

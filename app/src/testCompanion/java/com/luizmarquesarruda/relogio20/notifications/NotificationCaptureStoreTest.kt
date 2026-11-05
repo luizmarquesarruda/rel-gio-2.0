@@ -21,6 +21,22 @@ class NotificationCaptureStoreTest {
     }
 
     @Test
+    fun clearRemovesAllNotificationPreviews() {
+        NotificationCaptureStore.add(
+            preview("wa-1", "com.whatsapp"),
+            nowElapsedRealtimeMillis = testElapsedRealtime
+        )
+        NotificationCaptureStore.add(
+            preview("mail-1", "com.example.mail"),
+            nowElapsedRealtimeMillis = testElapsedRealtime
+        )
+
+        NotificationCaptureStore.clear()
+
+        assertTrue(NotificationCaptureStore.snapshot(testElapsedRealtime).isEmpty())
+    }
+
+    @Test
     fun removesNotificationByAndroidKey() {
         NotificationCaptureStore.add(
             preview("android-key", "com.whatsapp"),

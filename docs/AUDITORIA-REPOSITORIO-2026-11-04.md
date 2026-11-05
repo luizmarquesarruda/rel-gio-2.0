@@ -77,3 +77,10 @@ Leituras continuam limitadas ao plano GATT existente; inscrições usam NOTIFY/I
 - `BleExternalHandoffPolicy.kt` e `MainActivity.kt`;
 - testes do inventário, codec/sessão, timestamp Health Connect e handoff;
 - README, arquitetura, mapa de módulos, changelog e diário de bordo.
+
+
+## Retenção e consentimento — esclarecimento
+
+A biblioteca BLE guarda até 1.000 registros no arquivo privado. O consentimento cronometrado controla **quando HEX pode ser capturado**; ele não configura expiração automática do HEX já salvo. A UI não oferece exclusão individual. Esta limitação foi documentada no README para que “capturado apenas durante sessão” não seja interpretado como “apagado ao fim da sessão”.
+
+A ponte de notificações opera com uma regra diferente: prévias são voláteis, limitadas a 30 e 15 minutos, e agora são eliminadas imediatamente quando a captura é desativada ou o acesso é revogado.

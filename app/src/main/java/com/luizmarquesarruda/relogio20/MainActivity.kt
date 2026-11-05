@@ -1723,7 +1723,12 @@ class MainActivity : ComponentActivity() {
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic
         ) {
-            if (bluetoothGatt !== gatt) return
+            if (!GattCallbackSafetyPolicy.acceptsNotificationCallback(
+                    connectionIsCurrent = bluetoothGatt === gatt,
+                    connected = isGattConnected,
+                    disconnecting = isGattDisconnecting
+                )
+            ) return
             handleNotification(characteristic.service.uuid.toString(), characteristic.uuid.toString(), characteristic.value ?: byteArrayOf())
         }
 
@@ -1732,7 +1737,12 @@ class MainActivity : ComponentActivity() {
             characteristic: BluetoothGattCharacteristic,
             value: ByteArray
         ) {
-            if (bluetoothGatt !== gatt) return
+            if (!GattCallbackSafetyPolicy.acceptsNotificationCallback(
+                    connectionIsCurrent = bluetoothGatt === gatt,
+                    connected = isGattConnected,
+                    disconnecting = isGattDisconnecting
+                )
+            ) return
             handleNotification(characteristic.service.uuid.toString(), characteristic.uuid.toString(), value)
         }
 

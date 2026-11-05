@@ -14,6 +14,13 @@ internal object GattCallbackSafetyPolicy {
             callbackOperationKey.isNotBlank() &&
             activeOperationKey == callbackOperationKey
 
+    fun acceptsNotificationCallback(
+        connectionIsCurrent: Boolean,
+        connected: Boolean,
+        disconnecting: Boolean
+    ): Boolean =
+        connectionIsCurrent && connected && !disconnecting
+
     fun shouldRediscoverServices(
         connectionIsCurrent: Boolean,
         connected: Boolean,

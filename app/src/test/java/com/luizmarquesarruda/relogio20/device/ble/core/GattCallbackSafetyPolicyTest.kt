@@ -45,6 +45,38 @@ class GattCallbackSafetyPolicyTest {
     }
 
     @Test
+    fun rejectsNotificationsFromStaleDisconnectedOrDisconnectingSession() {
+        assertTrue(
+            GattCallbackSafetyPolicy.acceptsNotificationCallback(
+                connectionIsCurrent = true,
+                connected = true,
+                disconnecting = false
+            )
+        )
+        assertFalse(
+            GattCallbackSafetyPolicy.acceptsNotificationCallback(
+                connectionIsCurrent = false,
+                connected = true,
+                disconnecting = false
+            )
+        )
+        assertFalse(
+            GattCallbackSafetyPolicy.acceptsNotificationCallback(
+                connectionIsCurrent = true,
+                connected = false,
+                disconnecting = false
+            )
+        )
+        assertFalse(
+            GattCallbackSafetyPolicy.acceptsNotificationCallback(
+                connectionIsCurrent = true,
+                connected = true,
+                disconnecting = true
+            )
+        )
+    }
+
+    @Test
     fun rediscoversOnlyForCurrentConnectedNonHandoffSession() {
         assertTrue(
             GattCallbackSafetyPolicy.shouldRediscoverServices(

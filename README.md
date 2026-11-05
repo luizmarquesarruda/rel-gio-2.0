@@ -112,6 +112,10 @@ Consulte o [índice completo da documentação](docs/README.md).
 - [Captura BLE de 03/11/2026](docs/CAPTURA-BLE-GT3-MAX-2026-11-03.md)
 - [Perfil BLE candidato NUS/AB](docs/PROTOCOLO-BLE-CANDIDATO.md)
 
+## Retenção da biblioteca BLE
+
+Leituras e HEX bruto só são capturados após consentimento e durante uma sessão cronometrada. Depois de capturados, os registros permanecem no arquivo privado local até serem removidos pela política de limite (máximo de 1.000 registros) ou pela remoção dos dados do aplicativo no Android. Nesta versão não há botão de exclusão individual da biblioteca; portanto, não interprete “captura apenas durante sessão” como expiração automática dos registros já gravados.
+
 ## Notificações para o smartwatch
 
 A finalidade é retransmitir notificações selecionadas para o relógio por meio do aplicativo companheiro. O Google lista esse uso como permitido para apps de Saúde e Fitness, desde que seja realmente uma retransmissão para o wearable, com consentimento explícito. A variante companion preserva o NotificationListenerService; o acesso é somente de leitura em relação aos apps de origem. O envio ao GT3 Maxx continua bloqueado até a validação do protocolo de transporte.
