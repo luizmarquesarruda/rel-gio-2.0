@@ -110,6 +110,7 @@ internal class DiscoveryLibraryStore(context: Context) {
                 }
                 true
             } catch (_: RejectedExecutionException) {
+                writeFailureTracker.record(false)
                 false
             }
         }
