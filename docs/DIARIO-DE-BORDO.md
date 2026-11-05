@@ -784,3 +784,11 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Limpeza confirmada: removidas de `SafeGattExplorationPlan` duas constantes NUS RX/TX que não eram referenciadas; a constante NUS Service foi mantida porque exclui corretamente esse serviço da exploração genérica.
 - Simplificação: removida a variável redundante `displayed` no decoder de Temperature Measurement; o valor MEDFLOAT permanece inalterado e a unidade continua dependendo do flag Celsius/Fahrenheit.
 - O campo Pressure 0x2A6D não recebeu filtro arbitrário para zero: a tabela consultada define uint32/resolução, mas não declara sentinela de valor desconhecido; o valor zero é decodificado como 0,0 Pa. Teste correspondente foi incluído.
+
+## 04/11/2026 — Revisão complementar de persistência e variante companion
+
+- A persistência versionada do inventário GATT (`FeatureDiscoveryStore`) e a biblioteca local com `AtomicFile` (`DiscoveryLibraryStore`) continuam ativas e protegidas contra schema futuro/corrompido; não foram identificados arquivos de armazenamento obsoletos que devam ser removidos.
+- A biblioteca limita registros, tamanho do arquivo e HEX; a fila serial permite descarregar gravações pendentes. A revisão foi estática, sem testes de recuperação de processo ou falha de disco nesta rodada.
+- A variante `companion` mantém o serviço de captura de notificações com permissão `BIND_NOTIFICATION_LISTENER_SERVICE`, allow-list, limite de 30 prévias e retenção de 15 minutos; as prévias são limpas quando o listener é desconectado/destruído. A variante `diagnostic` usa uma tela substituta sem serviço de captura. As duas classes `NotificationCenterActivity` são específicas de flavors e não são duplicação removível.
+- O serviço de notificação permanece com `android:exported="false"` e a permissão de binding protegida, alinhado ao exemplo oficial do Android. Nenhuma alteração de manifesto foi necessária.
+- A estrutura BLE ainda concentra responsabilidades na `MainActivity`; essa dívida foi mantida como extração incremental, não tratada como código obsoleto. O helper CTS permanece dormente para não habilitar escrita de hora sem confirmação do GT3 MAX.
