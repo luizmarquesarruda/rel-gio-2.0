@@ -16,18 +16,19 @@ A interface atual usa Android Activities e Views. Não há Jetpack Compose nesta
 
 ```text
 app/src/main/java/com/luizmarquesarruda/relogio20/
-├── ui/screens/
-│   ├── MainActivity.kt
-│   ├── FeatureHubActivity.kt
-│   ├── FeatureDiscoveryActivity.kt
-│   ├── DiscoveryLibraryActivity.kt
-│   └── HealthPrivacyActivity.kt
+├── ui/
+│   ├── screens/
+│   │   ├── MainActivity.kt
+│   │   ├── FeatureHubActivity.kt
+│   │   ├── FeatureDiscoveryActivity.kt
+│   │   ├── DiscoveryLibraryActivity.kt
+│   │   └── HealthPrivacyActivity.kt
+│   └── formatters/StepsCountFormatter.kt
 ├── domain/
 │   ├── diagnostics/BleDiagnosticReport.kt
 │   └── health/
 │       ├── HealthMetricSample.kt
 │       └── StepsSnapshot.kt
-├── ui/formatters/StepsCountFormatter.kt
 ├── data/
 │   ├── discovery/
 │   └── healthconnect/

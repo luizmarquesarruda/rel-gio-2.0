@@ -140,6 +140,7 @@ A organização real do módulo é:
 app/src/main/java/com/luizmarquesarruda/relogio20/
 ├── ui/
 │   ├── screens/                 # Activities/telas nativas
+│   └── formatters/              # formatação localizada da interface
 ├── domain/
 │   ├── diagnostics/             # composição e sanitização de relatório
 │   └── health/                  # modelos de saúde

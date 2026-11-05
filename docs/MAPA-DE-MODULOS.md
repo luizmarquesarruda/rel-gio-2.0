@@ -21,7 +21,7 @@ A base é um aplicativo Android nativo Kotlin. O adaptador de consulta agregada 
 | device/ble/core/BleScanCandidatePolicy.kt | BLE discovery policy | Classifica candidatos por pistas de endereço/nome/NUS; aceitação continua condicionada ao fingerprint GATT. |
 | device/ble/core/BleValueFormatter.kt | BLE diagnostics | Converte bytes recebidos para hexadecimal sem interpretação semântica. |
 | domain/diagnostics/BleDiagnosticReport.kt | Domain / Diagnostics | Compõe relatório local e mascara endereços Bluetooth nos registros exportados. |
-| domain/health/StepsCountFormatter.kt | Domain / Health | Formata agregado de passos, mantendo ausência distinta de zero.
+| ui/formatters/StepsCountFormatter.kt | UI / Formatting | Formata o texto localizado do agregado de passos, mantendo ausência distinta de zero. |
 | device/gt3max/protocol/Gt3MaxCallDeviceProfile.kt | Perfil do dispositivo | Identificadores GT3 MAX Call informados e fingerprint GATT da captura; sem autenticação de hardware/firmware. |
 | device/gt3max/protocol/WearfitAbFrameParser.kt | Protocolo do dispositivo | Perfil NUS/AB candidato e parser restrito. Não controla conexão. |
 | device/discovery/FeatureDiscoveryEngine.kt | Descoberta de funcionalidades | Classifica inventário GATT e metadados de notificações sem inferir semântica de payload desconhecido. |
@@ -44,10 +44,12 @@ Os testes unitários acompanham fila GATT, parser candidato, motor de autodescob
 
 ```text
 com.luizmarquesarruda.relogio20/
-├── ui/screens/                  # Activities nativas
+├── ui/
+│   ├── screens/                 # Activities nativas
+│   └── formatters/              # texto localizado para apresentação
 ├── domain/
 │   ├── diagnostics/             # relatórios sanitizados
-│   └── health/                  # modelos e formatação de saúde
+│   └── health/                  # modelos de saúde
 ├── data/
 │   ├── discovery/               # SharedPreferences + AtomicFile
 │   └── healthconnect/           # adaptador Health Connect
