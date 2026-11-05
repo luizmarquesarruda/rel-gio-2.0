@@ -3347,7 +3347,7 @@ class MainActivity : ComponentActivity() {
                         activityResumed = isActivityResumed,
                         gattSessionExists = bluetoothGatt != null,
                         scanInProgress = currentScanCallback != null,
-                        hasBlePermissions = hasBlePermissions()
+                        hasBlePermissions = { hasBlePermissions() }
                     )) {
                         BleReconnectCoordinator.AttemptDecision.Skip -> return@Runnable
                         BleReconnectCoordinator.AttemptDecision.PermissionRequired -> {
