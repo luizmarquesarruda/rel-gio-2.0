@@ -23,17 +23,17 @@ A lista contém **33 entradas de menu/recurso** do catálogo Wearfit Pro. Isso n
 | MEDIA-01 | Music control | platform/media + adapter do relógio | MediaSession Android pode atuar localmente; controle pelo relógio exige protocolo. | P2 | Não validado |
 | CAM-01 | Remote control camera | platform/camera | Requer fluxo Android suportado; sem Accessibility. | P3 | Não validado |
 | PAY-01 | Alipay | Integração de pagamento | Serviço/certificação externos; fora do escopo inicial. | Bloqueado | Não implementar |
-| ALARM-01 | Use alarm clock | platform/alarms + adapter do relógio | Alarme local Android distinto de sincronização com firmware. | P2 | Não validado |
+| ALARM-01 | Use alarm clock | platform/alarms + adapter do relógio | Alarme local Android abre o app Relógio para confirmação; sincronização com firmware não implementada. | P2 | Android local implementado; relógio não validado |
 | NFC-01 | Analog access control card | platform/nfc / segurança | NFC, elemento seguro e credenciais não confirmados. | Bloqueado | Não implementar |
-| UTIL-01 | Stopwatch | domain/utilities + UI | Pode funcionar localmente sem protocolo do relógio. | P2 | Não implementado |
-| UTIL-02 | Timer | domain/utilities + platform/alarms | Temporizador local separado da sincronização do relógio. | P2 | Não implementado |
+| UTIL-01 | Stopwatch | domain/utilities + UI | Cronômetro local com iniciar/pausar/zerar; estado não persiste após fechar a tela. | P2 | Android local implementado |
+| UTIL-02 | Timer | domain/utilities + platform/alarms | Temporizador local de 1–180 min enquanto a tela permanece aberta; não sincroniza com o relógio. | P2 | Android local implementado |
 | FIND-01 | Find phone | platform/notifications + audio + adapter | Direção da ação precisa ser confirmada; BLE ainda não identificado. | P2 | Não validado |
 | CONTACT-01 | Bind business card | domain/profile / storage local | Semântica e dados envolvidos incertos; não pedir contatos por padrão. | P3 | Não validado |
 | NOTIF-01 | Message notification | platform/notifications + device transport | Captura local consentida existe na companion; retransmissão física pendente. | P1 | Captura local implementada; envio não validado |
-| HEALTH-REM-01 | Health reminder | domain/health + platform/notifications | Lembretes locais sem orientação clínica. | P2 | Não implementado |
+| HEALTH-REM-01 | Health reminder | domain/health + platform/notifications | Notificação diária local via AlarmManager inexact; exige POST_NOTIFICATIONS e reativação após reboot. | P2 | Android local implementado |
 | QUICK-01 | Quick collection | A definir | Rótulo ambíguo; não inferir pagamento, coleta de dados ou outra ação. | P3 | Sem definição |
 | MOTOR-01 | Motor function | device/gt3max/protocol + haptics | Pode significar vibração; comandos/padrões não documentados. | P3 | Não validado |
-| GOAL-01 | Target settings | domain/goals + UI | Metas locais independem de firmware; sincronização requer protocolo. | P1 | Não implementado |
+| GOAL-01 | Target settings | domain/activity + UI | Meta diária local de passos; progresso usa agregado Health Connect filtrado por origem APP_ONLY. | P1 | Android local implementado |
 | AI-01 | ChatGPT usage guidance | ui/help / integração externa opcional | Orientação não prova integração oficial com OpenAI nem compatibilidade do GT3 MAX. | P3 | Documentação; integração não validada |
 | ACT-01 | Automatic motion recognition | domain/activity + ingestão de sensores | Exige série temporal identificada e algoritmo testado. | P1 | Não validado |
 | SPO2-01 | Measurement of blood oxygen | domain/health + parser validado | Validar origem, unidade, timestamp e repetibilidade; não diagnóstico. | P2 | Não validado |
@@ -41,7 +41,7 @@ A lista contém **33 entradas de menu/recurso** do catálogo Wearfit Pro. Isso n
 | SLEEP-01 | Sleep monitoring | domain/health + parser validado | Validar início/fim, fuso e fases/estimativas. | P1 | Não validado |
 | STRESS-01 | Pressure monitoring | domain/wellness + parser | Provável estresse; confirmar rótulo e escala antes de modelar. | P2 | Não validado |
 | METT-01 | Mett monitoring / Test METT | domain/activity + health | METT informado como equivalente metabólico; preservar período/escala e não converter direto em calorias. | P2 | Sem parser validado |
-| BREATH-01 | Breathing training | domain/wellness + UI/timer | Pode ser guiado localmente sem BLE. | P2 | Não implementado |
+| BREATH-01 | Breathing training | domain/wellness + UI/timer | Guia local 4–2–6 no telefone; não mede respiração nem controla o relógio. | P2 | Android local implementado |
 | CYCLE-01 | Physiological cycle | domain/health-sensitive + storage | Opcional, consentimento separado e proteção reforçada; sem sincronização automática. | P3 | Não implementado |
 | BRIGHT-01 | Brightness adjustment | ui/settings + device adapter | Brilho Android não equivale ao brilho do relógio; comando não validado. | P3 | Não validado |
 | BUTTON-01 | Down key customization | device/gt3max/protocol | Documentação diz que alguns dispositivos suportam; modelo não confirmado. | P3 | Não validado |
@@ -51,6 +51,20 @@ A lista contém **33 entradas de menu/recurso** do catálogo Wearfit Pro. Isso n
 | POWER-01 | Switch on/off, restart and restore factory settings | device administration | Desligar/reiniciar/restaurar são ações diferentes; factory reset apaga dados/configurações. | Bloqueado | Bloqueado por segurança |
 | AUDIO-01 | Audio Bluetooth settings (I) | platform/bluetooth-classic/audio | Significado desconhecido; não assumir HFP/A2DP. | P2 | Não validado |
 | AUDIO-02 | Audio Bluetooth settings (II) | platform/bluetooth-classic/audio | Canal não documentado; identificar por testes de perfis. | P2 | Não validado |
+
+## Implementações Android locais — 05/11/2026
+
+Os recursos abaixo passaram a ter fluxo funcional no aplicativo, sem depender do firmware:
+
+- **UTIL-01:** cronômetro local com iniciar, pausar e zerar. O tempo não é persistido após fechar a tela.
+- **UTIL-02:** temporizador local de 1 a 180 minutos. A contagem depende da tela/Activity permanecer ativa; não é alarme em segundo plano.
+- **ALARM-01:** encaminha a criação do alarme ao aplicativo Relógio do Android, com confirmação do usuário. Não envia configuração ao GT3 MAX.
+- **GOAL-01:** meta diária de passos configurável (100–100.000), com progresso baseado no agregado Health Connect quando a permissão existe. A política APP_ONLY pode retornar ausência enquanto o app não for produtor dos registros; ausência não é exibida como zero.
+- **BREATH-01:** guia respiratório local 4–2–6; não mede sinais fisiológicos e não substitui orientação clínica.
+- **HEALTH-REM-01:** lembrete diário local por notificação inexacta. Requer permissão de notificações e deve ser reativado após reinicialização do telefone.
+- **Histórico de passos:** consulta de 7 dias por agregação diária Health Connect, com filtro de origem e dias sem bucket representados como “Sem registro”.
+
+Essas implementações são **Android local**, não integração física com o relógio. Chamadas, áudio, música, câmera, localizar telefone, vibração remota, sincronização de hora, métricas biométricas e recursos proprietários continuam dependentes de evidência de protocolo. OTA/DFU, reset, pagamentos e cartões de acesso permanecem bloqueados.
 
 ## Fronteiras entre módulos
 
