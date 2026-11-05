@@ -1,4 +1,4 @@
-package com.luizmarquesarruda.relogio20
+package com.luizmarquesarruda.relogio20.ui.screens
 
 import android.app.Activity
 import android.content.Intent
@@ -195,7 +195,7 @@ class FeatureHubActivity : Activity() {
             Feature("Brilho da tela", "Ajuste remoto depende de comando proprietário identificado e validado.", "BLOQUEADO ATÉ VALIDAR"),
             Feature("Personalizar botão inferior", "Disponibilidade varia por modelo; mapeamento e comando não confirmados.", "SUPORTE INCERTO"),
             Feature("Bloqueio / desbloqueio", "Controle remoto de bloqueio não está habilitado.", "BLOQUEADO POR SEGURANÇA", blocked = true),
-            Feature("Sincronização automática de hora", "O app usa Bluetooth CTS padrão quando encontra 0x1805/0x2A2B com WRITE. Nas capturas anteriores do GT3 MAX esse serviço não apareceu; o caminho proprietário permanece pendente de documentação.", "CTS CONDICIONAL • GT3 MAX PENDENTE"),
+            Feature("Sincronização automática de hora", "O app identifica o perfil CTS 0x1805/0x2A2B no inventário, mas não escreve a hora do relógio nesta versão. A sincronização física continua pendente de implementação e validação seguras; use o Wearfit Pro até lá.", "ESCRITA CTS SUSPENSA • NÃO VALIDADO"),
             Feature("Reiniciar / desligar", "Comandos de energia não serão enviados sem protocolo e confirmação explícita.", "BLOQUEADO POR SEGURANÇA", blocked = true),
             Feature("Restaurar fábrica", "Risco de perda de dados e pareamento. Sem ação disponível.", "BLOQUEADO", blocked = true),
             Feature("Atualização OTA", "Firmware e assinatura não foram identificados. Não executar atualização por engenharia reversa.", "BLOQUEADO", blocked = true)

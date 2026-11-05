@@ -67,8 +67,8 @@ class NotificationCaptureService : NotificationListenerService() {
             packageManager.getApplicationLabel(appInfo).toString()
         }.getOrDefault(sbn.packageName)
 
-        NotificationCaptureStore.add(
-            NotificationPreview(
+        val accepted = NotificationCaptureStore.addIfAllowed(
+            event = NotificationPreview(
                 key = sbn.key,
                 packageName = sbn.packageName,
                 appLabel = appLabel,
@@ -76,9 +76,14 @@ class NotificationCaptureService : NotificationListenerService() {
                 body = body,
                 receivedAtMillis = System.currentTimeMillis(),
                 capturedAtElapsedRealtimeMillis = SystemClock.elapsedRealtime()
-            )
+            ),
+            isAllowed = {
+                NotificationCaptureSettings.isEnabled(applicationContext) &&
+                    sbn.packageName in NotificationCaptureSettings.allowedPackages(applicationContext) &&
+                    sbn.packageName != packageName
+            }
         )
-        scheduleExpiryCleanup()
+        if (accepted) scheduleExpiryCleanup()
     }
 
     private fun scheduleExpiryCleanup() {

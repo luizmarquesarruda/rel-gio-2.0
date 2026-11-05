@@ -19,13 +19,13 @@ def manifest(permissions="", services="", app_attrs='android:allowBackup="false"
     rationale = ""
     if include_health_rationale:
         rationale = """
-        <activity android:name=".HealthPrivacyActivity" android:exported="true">
+        <activity android:name=".ui.screens.HealthPrivacyActivity" android:exported="true">
           <intent-filter>
             <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
           </intent-filter>
         </activity>
         <activity-alias android:name=".HealthPrivacyPermissionUsageActivity"
-          android:exported="true" android:targetActivity=".HealthPrivacyActivity"
+          android:exported="true" android:targetActivity=".ui.screens.HealthPrivacyActivity"
           android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
           <intent-filter>
             <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />

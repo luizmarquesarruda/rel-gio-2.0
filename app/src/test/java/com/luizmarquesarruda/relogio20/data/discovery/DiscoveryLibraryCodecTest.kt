@@ -60,6 +60,34 @@ class DiscoveryLibraryCodecTest {
     }
 
     @Test
+    fun removesOnlyRequestedRecordAndPreservesActiveSession() {
+        val session = DiscoveryTestSession("session-1", 1_000L, 61_000L, 60)
+        val first = DiscoveryLibraryRecord(
+            id = "record-1", occurredAtMillis = 2_000L, sessionId = "session-1",
+            kind = DiscoveryLibraryKind.NOTIFICATION, title = "Leitura", detail = "HEX capturado",
+            source = "BLE_NOTIFY", confidence = "OBSERVADO", payloadHex = "AABB"
+        )
+        val second = first.copy(id = "record-2", payloadHex = "CCDD")
+        val snapshot = DiscoveryLibrarySnapshot(
+            activeSession = session,
+            records = listOf(first, second)
+        )
+
+        val updated = snapshot.withoutRecord("record-1")
+
+        assertEquals(listOf("record-2"), updated?.records?.map { it.id })
+        assertEquals(session, updated?.activeSession)
+        assertEquals(listOf(first, second), snapshot.records)
+    }
+
+    @Test
+    fun missingRecordDoesNotProduceModifiedSnapshot() {
+        val snapshot = DiscoveryLibrarySnapshot()
+        assertEquals(null, snapshot.withoutRecord("missing"))
+        assertEquals(null, snapshot.withoutRecord(""))
+    }
+
+    @Test
     fun rejectsCorruptMagicWithoutProducingAnEmptyLibrary() {
         val decoded = DiscoveryLibraryCodec.decode(byteArrayOf(0, 1, 2, 3, 4, 5))
         assertTrue(decoded is DiscoveryLibraryReadResult.Corrupt)
@@ -75,5 +103,38 @@ class DiscoveryLibraryCodecTest {
         }.toByteArray()
         val decoded = DiscoveryLibraryCodec.decode(bytes)
         assertTrue(decoded is DiscoveryLibraryReadResult.UnsupportedSchema)
+    }
+
+    @Test
+    fun rejectsSessionWithDeadlineThatDoesNotMatchItsDuration() {
+        val bytes = ByteArrayOutputStream().also { output ->
+            DataOutputStream(output).use { data ->
+                data.writeInt(DiscoveryLibraryCodec.MAGIC)
+                data.writeInt(DiscoveryLibraryCodec.SCHEMA_VERSION)
+                data.writeBoolean(true)
+                data.writeUTF("session-corrupt")
+                data.writeLong(1_000L)
+                data.writeLong(61_000L)
+                data.writeInt(120)
+                data.writeInt(0)
+            }
+        }.toByteArray()
+
+        assertTrue(DiscoveryLibraryCodec.decode(bytes) is DiscoveryLibraryReadResult.Corrupt)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun encoderRejectsDuplicateRecordIds() {
+        val record = DiscoveryLibraryRecord(
+            id = "duplicate",
+            occurredAtMillis = 1_000L,
+            sessionId = null,
+            kind = DiscoveryLibraryKind.DISCOVERY,
+            title = "Descoberta",
+            detail = "Detalhe",
+            source = "GATT",
+            confidence = "OBSERVADO"
+        )
+        DiscoveryLibraryCodec.encode(DiscoveryLibrarySnapshot(records = listOf(record, record)))
     }
 }

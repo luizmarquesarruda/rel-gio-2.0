@@ -1,5 +1,4 @@
-package com.luizmarquesarruda.relogio20
-
+package com.luizmarquesarruda.relogio20.ui.formatters
 import java.util.Locale
 
 internal object StepsCountFormatter {

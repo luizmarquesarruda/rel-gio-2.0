@@ -1,4 +1,4 @@
-package com.luizmarquesarruda.relogio20
+package com.luizmarquesarruda.relogio20.ui.screens
 
 import android.app.Activity
 import android.os.Bundle
@@ -30,8 +30,11 @@ class HealthPrivacyActivity : Activity() {
             ARMAZENAMENTO E COMPARTILHAMENTO
             Health Connect mantém dados de forma centrada no dispositivo e controla quais aplicativos podem ler ou gravar cada tipo. Esta versão não envia dados de saúde para servidores do desenvolvedor nem faz upload automático para a nuvem da Conta Google. Outros aplicativos compatíveis podem acessar os dados no Health Connect conforme as permissões que o usuário conceder.
 
+            HISTÓRICO DE DIAGNÓSTICO BLE
+            Leituras e quadros HEX do relógio somente são capturados dentro de uma sessão local cronometrada, após ativação do usuário. Depois de salvos, permanecem no arquivo privado do aplicativo, limitados a 1.000 registros; não expiram automaticamente ao fim da sessão. Esta versão ainda não oferece exclusão individual dos registros. Remover os dados do aplicativo nas configurações do Android elimina esse histórico. O conteúdo não é enviado à rede nem ao Health Connect.
+
             NOTIFICAÇÕES DO CELULAR
-            Na variante companion, o usuário pode conceder acesso especial do Android, escolher aplicativos e ativar a leitura. O Relógio 2.0 não responde, apaga, arquiva ou altera notificações nos aplicativos de origem. As prévias ficam somente em memória, limitadas a 30 itens por até 15 minutos. O encaminhamento ao GT3 Maxx ainda aguarda validação do protocolo.
+            Na variante companion, o usuário pode conceder acesso especial do Android, escolher aplicativos e ativar a leitura. O Relógio 2.0 não responde, apaga, arquiva ou altera notificações nos aplicativos de origem. As prévias ficam somente em memória, limitadas a 30 itens por até 15 minutos; pausar a captura ou revogar o acesso apaga imediatamente as prévias em memória. O encaminhamento ao GT3 Maxx ainda aguarda validação do protocolo.
 
             CONTROLES
             O usuário pode negar ou revogar permissões no Android/Health Connect, desativar a leitura de notificações, remover aplicativos permitidos e limpar prévias. As funções que dependem de permissões negadas permanecem indisponíveis.

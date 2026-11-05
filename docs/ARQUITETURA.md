@@ -15,6 +15,12 @@ A implementação em andamento é um protótipo Android nativo em Kotlin. Não h
 7. **Platform** — APIs Android para Bluetooth Classic, mídia, chamadas, alarmes, notificações, câmera e permissões.
 8. **Privacy & diagnostics** — consentimento, minimização, retenção e logs sem conteúdo sensível.
 
+## Estrutura de pacotes aplicada nesta fase
+
+A organização física do código segue `ui/screens`, `ui/formatters`, `domain/diagnostics`, `domain/health`, `device/ble/core`, `device/ble/gatt`, `device/discovery`, `device/gt3max/protocol`, `data/discovery` e `data/healthconnect`. As classes de Activity foram movidas para `ui.screens`; a identidade/candidatura BLE e formatação HEX foram movidas para `device.ble.core`; relatório de diagnóstico para `domain.diagnostics`; e formatação de passos para `ui.formatters`. A mudança altera pacotes e caminhos, não o contrato de conexão, a sequência de operações ou a semântica dos dados.
+
+O projeto continua em um único módulo Gradle `:app`, com Kotlin nativo e Views Android. Não há migração para Jetpack Compose nem criação de submódulos Gradle nesta etapa. `MainActivity` permanece um ponto de composição volumoso; a extração posterior deve separar scan/GATT em componentes com ciclo de vida próprio, sem reescrita total.
+
 ## Estado real nesta PR
 
 - MainActivity.kt ainda concentra apresentação, permissões BLE e conexão/ciclo GATT. A consulta agregada de passos do Health Connect foi extraída para data/healthconnect.
@@ -22,10 +28,19 @@ A implementação em andamento é um protótipo Android nativo em Kotlin. Não h
 - O contrato exige unidade compatível, valores finitos/não negativos, timestamp de recebimento e origem explícita; passos são inteiros e SpO₂ fica no intervalo de 0 a 100.
 - METT tem unidade MET e não é convertido automaticamente em calorias. Pressão arterial/SpO₂ não são tratados como medições clínicas.
 - SerialGattOperationQueue foi isolada em device/ble/gatt.
+- GattCallbackSafetyPolicy isola as regras de callbacks: só aceita a conexão atual e a operação ativa; Service Changed invalida a tabela anterior e solicita redescoberta quando permitido.
+- `BleReconnectCoordinator` isola as decisões puras de agendamento e execução da reconexão. `MainActivity` ainda mantém `Handler`, `Runnable`, estado Android e chamada de scan; a extração do scheduler/plataforma ainda não está concluída.
+- A biblioteca local usa cache e fila de escrita serial para não fazer I/O de arquivo dentro dos callbacks BLE; o conteúdo continua local e bounded.
 - WearfitProtocolProfile, WearfitAbFrame e WearfitAbFrameParser foram isolados em device/gt3max/protocol. O nome do pacote não confirma chipset nem identidade do dispositivo.
 - Os testes acompanham os pacotes correspondentes; os testes do contrato Domain verificam unidades, limites e preservação de origem.
 - Notification Listener permanece na variante companion; diagnostic não deve declarar essa capacidade.
 - Health Connect é acessado pelo HealthConnectStepsRepository em data/healthconnect; MainActivity consome resultado tipado e não monta consultas Health Connect.
+- `FeatureDiscoveryStore` aplica schema estrito e bloqueio compartilhado entre instâncias; corrompido/futuro é preservado sem substituição. A atualização usa `SharedPreferences.apply()` no callback BLE para evitar I/O síncrono; sua confirmação é somente de atualização em memória/agendamento de disco.
+- `DiscoveryLibraryStore` mantém `AtomicFile`, bloqueio compartilhado e cache de leitura; gravações de telemetria são serializadas em fila limitada fora do thread de callbacks. Sessões e exportações fazem flush antes das transições.
+- `GattCallbackSafetyPolicy` aceita apenas callbacks da conexão atual e chave de operação ativa; `onServiceChanged` invalida a tabela antiga e pede redescoberta quando a sessão pertence ao Relógio 2.0.
+- A sincronização do relógio usa exclusivamente Bluetooth SIG Current Time Service (CTS 0x1805/Current Time 0x2A2B): a UI habilita uma tentativa manual por sessão somente quando o serviço/característica existem e a característica anuncia WRITE. Ausência de CTS mantém investigação passiva; nenhum canal proprietário é usado como fallback. Callback GATT bem-sucedido é registrado como confirmação de transporte, não como prova de atualização do RTC/mostrador.
+- `DiscoveryLibraryStore` mantém `AtomicFile`, com bloqueio compartilhado no processo e validação do codec/sessões antes de aceitar registros.
+- A validação de origem e intervalo de Health Connect permanece separada de qualquer futura amostra BLE do GT3 MAX.
 - Não foram adicionados serviços, permissões ou escritas BLE proprietárias.
 
 ## Regras de dependência
@@ -52,11 +67,11 @@ O contrato implementado está em [CONTRATO-METRICAS-SAUDE.md](CONTRATO-METRICAS-
 ## Sequência de extração
 
 1. Isolar utilitários puros e testes sem mudar comportamento (concluído parcialmente).
-2. Extrair scan/máquina de estados GATT de MainActivity para device/ble/core, preservando fila e callbacks antigos.
-3. Criar armazenamento local versionado de amostras e sessões, com deduplicação e migrações testadas.
-3. Extrair Health Connect para data/healthconnect.
-4. Criar persistência local versionada e repositório para o modelo Domain.
+2. Extrair scan/máquina de estados GATT de `MainActivity` para `device/ble/core`, preservando fila e callbacks (em andamento: decisões de reconexão já isoladas; timers, scan e conexão Android ainda na Activity).
+3. Manter a consulta Health Connect isolada em `data/healthconnect` (já implementada).
+4. Evoluir armazenamento local versionado de amostras e sessões, com deduplicação e migrações testadas.
 5. Implementar parsers somente após evidência repetível por métrica.
 6. Extrair adaptadores Platform quando os recursos Android forem priorizados.
+7. Validar cada extração em teste, lint e aparelho antes de avançar.
 
 Cada extração deve ser pequena, testada e reversível. Não misturar refatoração com engenharia reversa de protocolo.

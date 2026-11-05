@@ -1,12 +1,26 @@
 # Relógio 2.0
 
-Aplicativo Android de Saúde e Fitness que se conecta diretamente ao GT3 MAX por BLE/GATT, consulta passos agregados no Health Connect e oferece captura consentida de notificações na variante companion. O Wearfit Pro permanece uma referência/companheiro externo; o app não depende de API ou nuvem privada dele.
+## Organização do código
+
+A implementação permanece em um único módulo Android nativo `:app`, em Kotlin e Views. As Activities ficam em `ui/screens`, utilitários de apresentação em `ui/formatters`, contratos puros em `domain`, BLE em `device/ble`, perfil/protocolo GT3 MAX em `device/gt3max/protocol`, persistência e integrações em `data`. A estrutura foi organizada sem alterar o comportamento GATT. A extração do ciclo BLE de `MainActivity` continua como etapa arquitetural pendente. Consulte [estrutura de pacotes](docs/architecture/ESTRUTURA-DE-PACOTES.md) e [mapa de módulos](docs/MAPA-DE-MODULOS.md).
+
+Aplicativo Android de Saúde e Fitness que se conecta diretamente ao GT3 MAX por BLE/GATT, consulta passos agregados no Health Connect e oferece captura consentida de notificações na variante companion. A conexão BLE/GATT é gerenciada diretamente pelo Relógio 2.0. O aplicativo não oferece handoff nem integração operacional com Wearfit Pro; a documentação histórica sobre ele serve apenas como referência de pesquisa de protocolo.
 
 ## Reconexão automática BLE
 
 Ao abrir o aplicativo, uma busca BLE geral começa automaticamente; não é necessário digitar o endereço do relógio. O endereço salvo é uma pista, não um filtro exclusivo. O app também reconhece nomes GT3 MAX e anúncios NUS; quando nome/endereço não estão disponíveis, lista dispositivos próximos para validação GATT. Uma nova identidade só é salva automaticamente após o fingerprint GATT completo do GT3 MAX Call. Depois da primeira conexão validada, a reconexão automática usa varreduras de baixa potência e intervalos de 1, 2, 5, 10, 20 e até 30 segundos. A ação **Parar reconexão** cancela as tentativas e desativa a preferência local.
 
 A recuperação nesta fase ocorre enquanto o app está em primeiro plano ou quando ele é reaberto/retomado. O Android pode suspender o processo em segundo plano ou após encerramento forçado; recuperação contínua em segundo plano ainda não está implementada. A reconexão restaura o transporte GATT e reinscreve apenas a notificação NUS TX já permitida; não valida sensores e não envia payload ao relógio.
+
+## Recuperação da tabela GATT
+
+Se o Android sinalizar **Service Changed**, o aplicativo invalida a fila/operações e solicita uma nova descoberta dos serviços na mesma sessão GATT. Respostas de READ, WRITE e CCCD só alteram o estado quando correspondem à conexão atual e à operação efetivamente em andamento; callbacks atrasados, de outra conexão ou de operações invalidadas são descartados. Uma operação que expirou ou foi interrompida por Service Changed não é repetida na mesma conexão GATT; uma nova conexão permite tentar novamente. Um canal silencioso ou sem callback não é considerado sensor ausente.
+
+## Controle direto da conexão BLE
+
+O Relógio 2.0 é o único controlador BLE previsto pelo aplicativo. A opção de liberar a sessão para Wearfit Pro foi removida, e a preferência antiga de handoff é apagada na inicialização. Ao iniciar uma conexão, o app habilita recuperação automática com intervalos progressivos de 1, 2, 5, 10, 20 e até 30 segundos. A ação **Desconectar / Parar reconexão** continua sendo a decisão explícita para interromper o controle e as tentativas.
+
+O app não tem permissão para desativar ou encerrar outro aplicativo Android. Se Wearfit Pro ainda estiver conectado ao relógio, encerre a conexão ou force a parada dele manualmente nas configurações do Android antes de conectar pelo Relógio 2.0. O comportamento de reconexão contínua permanece limitado ao app em primeiro plano ou retomado; serviço BLE permanente em segundo plano ainda não está implementado.
 
 ## Finalidade do produto
 
@@ -50,7 +64,7 @@ Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALT
 
 - Não envia payloads a características proprietárias do relógio.
 - Não envia comandos pela Nordic UART RX.
-- Nenhuma escrita em característica é executada nesta fase. A única operação de escrita GATT é a configuração do descritor CCCD padrão para ativar uma notificação/indicação permitida; a sincronização CTS está suspensa.
+- Não são enviados payloads a características proprietárias. A única escrita em característica de dados permitida é a sincronização manual pelo Bluetooth SIG CTS (0x1805/0x2A2B), habilitada somente quando o relógio anuncia a característica com propriedade WRITE e após toque explícito do usuário. O callback GATT não comprova atualização do RTC/mostrador. A configuração do descritor CCCD padrão continua limitada à ativação de notificações/indicações permitidas.
 - Não toca no Secure DFU/OTA, reset, calibração ou configuração.
 - Não atribui semântica a canais proprietários desconhecidos. Há decoders somente para formatos Bluetooth SIG identificados; passos e sono proprietários continuam não interpretados. Body Composition Measurement 0x2A9C também permanece bruto até completar a leitura contextual de flags, unidades, resoluções e pacotes múltiplos.
 - Não acessa servidores ou dados privados do Wearfit Pro.
@@ -101,8 +115,13 @@ Consulte o [índice completo da documentação](docs/README.md).
 - [Pesquisa Wearfit Pro](docs/PESQUISA-WEARFIT-PRO.md)
 - [Identificação do relógio](docs/IDENTIFICACAO-DO-RELOGIO.md)
 - [Perfil do GT3 Maxx](docs/PERFIL-GT3-MAXX.md)
+- [Estudo técnico do firmware GT3 MAX Call](docs/ESTUDO-FIRMWARE-GT3-MAXX.md)
 - [Captura BLE de 03/11/2026](docs/CAPTURA-BLE-GT3-MAX-2026-11-03.md)
 - [Perfil BLE candidato NUS/AB](docs/PROTOCOLO-BLE-CANDIDATO.md)
+
+## Retenção da biblioteca BLE
+
+Leituras e HEX bruto só são capturados após consentimento e durante uma sessão cronometrada. Depois de capturados, os registros permanecem no arquivo privado local até exclusão individual pela Biblioteca interna, remoção pela política de limite (máximo de 1.000 registros) ou remoção dos dados do aplicativo no Android. A exclusão individual solicita confirmação e grava o novo snapshot de forma atômica.
 
 ## Notificações para o smartwatch
 

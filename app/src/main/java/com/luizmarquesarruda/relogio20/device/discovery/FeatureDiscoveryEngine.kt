@@ -78,7 +78,7 @@ internal object FeatureDiscoveryEngine {
         StandardProfile("180a", null, "Dispositivo", "Serviço padrão de informações do dispositivo")
     )
 
-    private val standardServiceIds = standardProfiles.map { it.serviceUuid }.toSet()
+    private val standardServiceIds = standardProfiles.map { it.serviceUuid }.toSet() + setOf("1800", "1801")
     private const val NUS_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
     private const val NUS_RX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
     private const val NUS_TX = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
@@ -95,6 +95,60 @@ internal object FeatureDiscoveryEngine {
         val serviceCount = services.size
         val characteristicCount = services.sumOf { it.characteristics.size }
 
+        // Structural signature contains only GATT identifiers and capabilities;
+        // it is not a firmware-binary hash or proof of device identity.
+        val signature = GattProfileSignature.calculate(services)
+        val previousSignatureHash = previous?.findings
+            ?.firstOrNull { it.id == "firmware:gatt-signature" }
+            ?.evidence
+            ?.substringAfter("sha256=", "")
+            ?.substringBefore(";")
+        val signatureChange = GattProfileSignature.compare(signature, previousSignatureHash)
+        val signatureStatus = when (signatureChange) {
+            GattProfileSignature.Change.FIRST_CAPTURE -> "BASELINE GATT REGISTRADO"
+            GattProfileSignature.Change.UNCHANGED -> "ASSINATURA GATT INALTERADA"
+            GattProfileSignature.Change.CHANGED -> "ASSINATURA GATT ALTERADA • REVISAR"
+        }
+        val signatureDetail = when (signatureChange) {
+            GattProfileSignature.Change.FIRST_CAPTURE ->
+                "Primeiro inventário estrutural registrado: " + serviceCount + " serviços e " +
+                    characteristicCount + " características. SHA-256=" + signature.sha256 + "."
+            GattProfileSignature.Change.UNCHANGED ->
+                "A estrutura GATT coincide com o último inventário salvo. " + serviceCount +
+                    " serviços e " + characteristicCount + " características. SHA-256=" +
+                    signature.sha256 + "."
+            GattProfileSignature.Change.CHANGED ->
+                "A estrutura GATT difere do último inventário salvo. Pode indicar revisão de " +
+                    "firmware, variação de serviços ou outra sessão/dispositivo; não prova atualização. " +
+                    "SHA-256 atual=" + signature.sha256 + "."
+        }
+        findings.add(
+            FeatureFinding(
+                id = "firmware:gatt-signature",
+                category = "Identidade estrutural",
+                title = "Assinatura estrutural GATT",
+                status = signatureStatus,
+                detail = signatureDetail,
+                evidence = "sha256=" + signature.sha256 +
+                    "; escopo=UUIDs de serviços/características/descritores e propriedades GATT; " +
+                    "sem MAC, serial, valores do fabricante ou payloads."
+            )
+        )
+
+        GattCapabilityMatrix.evaluate(services, traffic).forEach { assessment ->
+            findings.add(
+                FeatureFinding(
+                    id = "capability:" + assessment.id,
+                    category = "Matriz de recursos SIG",
+                    title = assessment.title,
+                    status = assessment.state.label,
+                    detail = assessment.detail,
+                    evidence = assessment.evidence,
+                    observationCount = assessment.observationCount
+                )
+            )
+        }
+
         standardProfiles.forEach { profile ->
             val service = normalizedServices[profile.serviceUuid] ?: return@forEach
             val matchingCharacteristics = if (profile.characteristicUuid == null) {
@@ -108,7 +162,7 @@ internal object FeatureDiscoveryEngine {
                 val props = matchingCharacteristics.flatMap { it.properties }.toSet()
                 val channel = when {
                     profile.serviceUuid == "1805" && "WRITE" in props ->
-                        "característica Current Time com WRITE anunciada; sincronização padrão habilitável"
+                        "característica Current Time com WRITE anunciada; escrita CTS suspensa pela política atual"
                     profile.serviceUuid == "1805" ->
                         "característica Current Time encontrada sem WRITE; ajuste não habilitável"
                     "NOTIFY" in props || "INDICATE" in props -> "canal de notificação anunciado"
@@ -332,6 +386,25 @@ internal object FeatureDiscoveryEngine {
                 )
             )
         }
+        GattCapabilityMatrix.featureIdFor(serviceUuid, characteristicUuid)?.let { capabilityId ->
+            val findingId = "capability:" + capabilityId
+            val existing = findings.firstOrNull { it.id == findingId }
+            if (existing != null) {
+                upsert(
+                    findings,
+                    existing.copy(
+                        status = GattCapabilityMatrix.State.TRAFFIC_OBSERVED.label,
+                        detail = "Callback de notificação recebido em " + serviceUuid + "/" +
+                            characteristicUuid + ". Total registrado no histórico: " +
+                            current.notificationCount + " notificações. O conteúdo continua sem " +
+                            "validação semântica.",
+                        evidence = "Notificação GATT observada; UUID e callback registrados.",
+                        observationCount = current.notificationCount
+                    )
+                )
+            }
+        }
+
         val standardService = shortUuid(serviceUuid)
         val standardCharacteristic = shortUuid(characteristicUuid)
         val standardProfile = standardProfiles.firstOrNull {

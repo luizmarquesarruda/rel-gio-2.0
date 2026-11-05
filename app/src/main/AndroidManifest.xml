@@ -44,7 +44,7 @@
             android:name=".notifications.NotificationCenterActivity"
             android:exported="false" />
         <activity
-            android:name=".HealthPrivacyActivity"
+            android:name=".ui.screens.HealthPrivacyActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
@@ -53,7 +53,7 @@
         <activity-alias
             android:name=".HealthPrivacyPermissionUsageActivity"
             android:exported="true"
-            android:targetActivity=".HealthPrivacyActivity"
+            android:targetActivity=".ui.screens.HealthPrivacyActivity"
             android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
@@ -61,16 +61,16 @@
             </intent-filter>
         </activity-alias>
         <activity
-            android:name=".FeatureHubActivity"
+            android:name=".ui.screens.FeatureHubActivity"
             android:exported="false" />
         <activity
-            android:name=".FeatureDiscoveryActivity"
+            android:name=".ui.screens.FeatureDiscoveryActivity"
             android:exported="false" />
         <activity
-            android:name=".DiscoveryLibraryActivity"
+            android:name=".ui.screens.DiscoveryLibraryActivity"
             android:exported="false" />
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.screens.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

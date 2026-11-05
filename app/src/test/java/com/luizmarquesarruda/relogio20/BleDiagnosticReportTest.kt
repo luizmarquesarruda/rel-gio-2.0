@@ -1,5 +1,7 @@
 package com.luizmarquesarruda.relogio20
 
+import com.luizmarquesarruda.relogio20.domain.diagnostics.BleDiagnosticReport
+
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test

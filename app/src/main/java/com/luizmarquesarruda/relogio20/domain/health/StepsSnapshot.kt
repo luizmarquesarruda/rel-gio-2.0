@@ -22,8 +22,8 @@ data class StepsSnapshot(
         require(!intervalStart.isAfter(intervalEnd)) {
             "Step interval start cannot be after its end."
         }
-        require(!receivedAt.isBefore(intervalStart)) {
-            "Receive timestamp cannot be before the interval start."
+        require(!receivedAt.isBefore(intervalEnd)) {
+            "Receive timestamp cannot be before the end of the queried interval."
         }
         require(origin == HealthDataOrigin.HEALTH_CONNECT_AGGREGATE) {
             "This snapshot type is reserved for Health Connect aggregates."

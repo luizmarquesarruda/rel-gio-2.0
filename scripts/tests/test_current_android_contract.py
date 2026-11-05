@@ -95,7 +95,7 @@ class CurrentAndroidContractTests(unittest.TestCase):
 
     def test_gatt_api33_helper_uses_requires_api_and_preferences_use_ktx(self):
         source = (
-            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/MainActivity.kt"
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
         ).read_text(encoding="utf-8")
         self.assertIn("@RequiresApi(Build.VERSION_CODES.TIRAMISU)", source)
         self.assertNotIn("@TargetApi", source)
@@ -188,7 +188,7 @@ class CurrentAndroidContractTests(unittest.TestCase):
 
     def test_gatt_read_callbacks_are_present_for_serialized_exploration(self):
         source = (
-            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/MainActivity.kt"
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
         ).read_text(encoding="utf-8")
         self.assertIn("override fun onCharacteristicRead(", source)
         self.assertIn("completeGattOperation(", source)
