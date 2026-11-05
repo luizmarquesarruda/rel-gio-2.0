@@ -120,7 +120,7 @@ class GattValueDecoderTest {
     @Test
     fun decodesEnvironmentalPressureAsUint32InTenthsOfPascalAndBodySensorLocation() {
         val pressure = GattValueDecoder.decode(
-            "181a", "2a6d", byteArrayOf(0xc2.toByte(), 0x79, 0x0f, 0)
+            "181a", "2a6d", byteArrayOf(0x02, 0x76, 0x0f, 0)
         )
         assertEquals("Pressão atmosférica", pressure.single().metric)
         assertEquals("101325.0 Pa", pressure.single().value)
