@@ -111,3 +111,13 @@ A ponte de notificações opera com uma regra diferente: prévias são voláteis
 - A inserção de tarefas e a barreira usam o mesmo lock de fila para delimitar lotes sem misturar falhas de operações posteriores.
 - Adicionados testes unitários para falha seguida de sucesso, consumo/reset da falha e lote sem falhas.
 - Execução de CI e testes Android: **não validados** nesta rodada; CI não foi disparada.
+
+## 05/11/2026 — Exploração passiva e segura do canal NUS TX
+
+- A exploração manual aprofundada agora inclui somente a característica NUS TX exata (UUID padrão 6e400003...) quando o relógio anuncia NOTIFY/INDICATE e o descritor CCCD 0x2902.
+- O canal NUS RX (6e400002...) continua fora do plano: não é lido, inscrito nem escrito. Propriedades WRITE anunciadas em TX também não geram operações de escrita.
+- O caminho automático existente continua condicionado ao fingerprint GATT completo; a inclusão no plano aprofundado não relaxa essa validação. A exploração manual exige confirmação explícita.
+- A tela de descobertas diferencia canal TX encontrado aguardando inscrição/notificação. A existência do UUID não é apresentada como sensor ou protocolo validado.
+- Adicionados testes para TX exato, RX excluído e ausência de CCCD.
+- Fundamentação: Android executa discovery/read/notify de forma assíncrona e entrega os resultados em callbacks; a inscrição depende da propriedade anunciada e do CCCD. Referência: documentação oficial BluetoothGatt e Bluetooth GATT.
+- CI, testes Kotlin, build e validação física no GT3 MAX/Galaxy A06: **não validados**. Nenhum workflow foi disparado.
