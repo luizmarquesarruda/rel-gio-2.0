@@ -102,3 +102,31 @@ A ponte de notificações opera com uma regra diferente: prévias são voláteis
 - `NotificationCaptureStore.addIfAllowed` revalida o estado e a allow-list sob o mesmo lock que serializa `setEnabled(false)` e alterações de aplicativos permitidos.
 - Remover um aplicativo da allow-list também purga prévias daquele pacote.
 - Testes adicionados para a barreira final quando consentimento está ativo/inativo.
+
+## Quinta rodada — revisão de retenção e remoção local
+
+A revisão da tela Biblioteca confirmou uma lacuna de privacidade: dados HEX capturados com consentimento permaneciam no histórico privado até a política de limite de registros, sem ação de exclusão individual. Consentimento de captura não deve ser interpretado como autorização de retenção indefinida.
+
+Correção implementada nesta branch:
+- ação individual **Excluir registro**, com confirmação; quando o item contém HEX, o diálogo informa explicitamente que o payload e os metadados serão removidos;
+- remoção executada na fila serial de persistência, fora do thread principal;
+- substituição atômica do snapshot, removendo somente o ID solicitado e preservando os demais registros e a sessão ativa;
+- testes unitários puros para remoção exata, ID inexistente e preservação da sessão.
+
+### Compatibilidade Android futura
+
+A documentação oficial atual do Android marca a sobrecarga BluetoothDevice.connectGatt(..., Handler) como depreciada a partir da API 37 e recomenda a variante baseada em BluetoothGattConnectionSettings e Executor. O projeto usa a sobrecarga com Handler para manter callbacks no thread principal e tem alvo/ambiente atual Android 16 (API 36); a migração deve ser feita em fase própria quando o SDK 37 estiver disponível no toolchain, com executor principal explícito e testes de regressão do ciclo GATT. Não foi alterado o transporte nesta rodada.
+
+Referências:
+- https://developer.android.com/reference/android/bluetooth/BluetoothDevice
+- https://developer.android.com/reference/android/bluetooth/BluetoothGattCallback
+- https://developer.android.com/reference/android/util/AtomicFile.html
+
+### Validação da quinta rodada
+
+- Alterações de código e testes foram gravadas na branch fix/repository-hardening-20261104.
+- Testes unitários: **não executados**.
+- Lint/build/APKs: **não executados**.
+- Galaxy A06 / GT3 MAX / Wearfit Pro: **não validado fisicamente**.
+- CI: **não disparada**, conforme solicitação.
+- Merge: **não realizado**.
