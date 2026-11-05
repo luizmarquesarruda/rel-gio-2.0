@@ -775,3 +775,10 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Atualizada a asserção: agora exige um único plano NUS TX para recebimento passivo, e verifica que NUS RX, READ proprietário e qualquer WRITE permanecem ausentes.
 - APK e validação de manifesto não foram produzidos na #415 porque o teste unitário interrompeu a etapa combinada.
 - Nova execução pela atualização da PR #18; CI/teste físico ainda não validados.
+
+
+## 05/11/2026 — Correção dos dois casos de teste NUS após CI #416
+
+- #416 passou pelo Lint, mas falhou em dois testes de política NUS: contrato de exclusão total desatualizado e caso sem CCCD com expectativa incorreta.
+- Reposicionados os critérios: TX somente com NOTIFY/INDICATE + CCCD 0x2902; ausência de CCCD resulta em plano vazio; RX nunca entra no plano.
+- Nenhuma alteração de comportamento de escrita foi feita. Nova CI necessária para validar os contratos corrigidos.
