@@ -132,6 +132,20 @@ class TimeWeatherActivity : Activity() {
         addText(clockCard, "HORÁRIO DO CELULAR", 11f, 0xFF526574.toInt(), true)
         clockCard.addView(phoneTimeView)
         clockCard.addView(automaticTimeView)
+        val timeSettingsButton = Button(this).apply {
+            text = "Configurar data e hora do Android"
+            isAllCaps = false
+            setOnClickListener {
+                runCatching {
+                    startActivity(Intent(Settings.ACTION_DATE_SETTINGS))
+                }.onFailure {
+                    Toast.makeText(this@TimeWeatherActivity, "Não foi possível abrir as configurações de data e hora.", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        clockCard.addView(timeSettingsButton, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
+        ))
         addText(
             clockCard,
             "A referência é a hora do Android. Quando a opção automática está ativa, o próprio sistema pode sincronizá-la pela rede móvel ou outra fonte configurada.",
