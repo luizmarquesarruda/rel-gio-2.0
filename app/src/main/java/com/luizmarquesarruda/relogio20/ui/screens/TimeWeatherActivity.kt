@@ -307,34 +307,34 @@ class TimeWeatherActivity : Activity() {
 
     private fun renderSnapshot(snapshot: WeatherSnapshot, keepStatus: Boolean = false) {
         selectedCityView.text = snapshot.locationName
-        val temperature = snapshot.temperatureC?.let { "\${it.oneDecimal()} °C" } ?: "—"
-        val apparent = snapshot.apparentTemperatureC?.let { "\${it.oneDecimal()} °C" } ?: "—"
-        currentWeatherView.text = "$temperature • \${WeatherCodeLabels.describe(snapshot.weatherCode)}"
+        val temperature = snapshot.temperatureC?.let { "${it.oneDecimal()} °C" } ?: "—"
+        val apparent = snapshot.apparentTemperatureC?.let { "${it.oneDecimal()} °C" } ?: "—"
+        currentWeatherView.text = "$temperature • ${WeatherCodeLabels.describe(snapshot.weatherCode)}"
         weatherDetailsView.text = buildString {
             append("Sensação: ").append(apparent)
             append("   Umidade: ").append(snapshot.humidityPercent?.let { "$it%" } ?: "—")
-            append("\\nChuva agora: ").append(snapshot.precipitationMm?.let { "\${it.oneDecimal()} mm" } ?: "—")
+            append("\nChuva agora: ").append(snapshot.precipitationMm?.let { "${it.oneDecimal()} mm" } ?: "—")
             append("   Chance próxima hora: ")
                 .append(snapshot.precipitationProbabilityNextHourPercent?.let { "$it%" } ?: "—")
-            append("\\nVento: ").append(snapshot.windSpeedKmh?.let { "\${it.oneDecimal()} km/h" } ?: "—")
-            append("   Rajadas: ").append(snapshot.windGustsKmh?.let { "\${it.oneDecimal()} km/h" } ?: "—")
-            append("\\nDireção do vento: ")
+            append("\nVento: ").append(snapshot.windSpeedKmh?.let { "${it.oneDecimal()} km/h" } ?: "—")
+            append("   Rajadas: ").append(snapshot.windGustsKmh?.let { "${it.oneDecimal()} km/h" } ?: "—")
+            append("\nDireção do vento: ")
                 .append(snapshot.windDirectionDegrees?.let { "$it°" } ?: "—")
         }
         dailyForecastView.text = buildString {
             append("Hoje: mínima ")
-                .append(snapshot.todayMinimumC?.let { "\${it.oneDecimal()} °C" } ?: "—")
+                .append(snapshot.todayMinimumC?.let { "${it.oneDecimal()} °C" } ?: "—")
             append(" • máxima ")
-                .append(snapshot.todayMaximumC?.let { "\${it.oneDecimal()} °C" } ?: "—")
-            append("\\nProbabilidade máxima de chuva hoje: ")
+                .append(snapshot.todayMaximumC?.let { "${it.oneDecimal()} °C" } ?: "—")
+            append("\nProbabilidade máxima de chuva hoje: ")
                 .append(snapshot.todayPrecipitationProbabilityPercent?.let { "$it%" } ?: "—")
-            append("\\nNascer do sol: ").append(snapshot.sunrise?.substringAfter('T') ?: "—")
+            append("\nNascer do sol: ").append(snapshot.sunrise?.substringAfter('T') ?: "—")
             append(" • Pôr do sol: ").append(snapshot.sunset?.substringAfter('T') ?: "—")
         }
         if (!keepStatus) {
             val fetched = SimpleDateFormat("dd/MM HH:mm", Locale.getDefault())
                 .format(Date(snapshot.fetchedAtEpochMillis))
-            weatherStatusView.text = "Atualizado no celular em $fetched • fuso da previsão: \${snapshot.timeZone}"
+            weatherStatusView.text = "Atualizado no celular em $fetched • fuso da previsão: ${snapshot.timeZone}"
         }
     }
 
@@ -344,7 +344,7 @@ class TimeWeatherActivity : Activity() {
         val date = SimpleDateFormat("EEEE, dd 'de' MMMM 'de' yyyy", Locale("pt", "BR")).format(now)
         val autoTime = Settings.Global.getInt(contentResolver, Settings.Global.AUTO_TIME, 0) == 1
         val autoZone = Settings.Global.getInt(contentResolver, Settings.Global.AUTO_TIME_ZONE, 0) == 1
-        automaticTimeView.text = "$date\\nHora automática do Android: \${if (autoTime) "ativada" else "desativada"} • fuso automático: \${if (autoZone) "ativado" else "desativado"}"
+        automaticTimeView.text = "$date\nHora automática do Android: ${if (autoTime) "ativada" else "desativada"} • fuso automático: ${if (autoZone) "ativado" else "desativado"}"
     }
 
     private fun setBusy(value: Boolean) {
