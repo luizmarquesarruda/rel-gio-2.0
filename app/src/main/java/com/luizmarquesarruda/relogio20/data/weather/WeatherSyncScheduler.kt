@@ -10,7 +10,6 @@ import java.util.concurrent.TimeUnit
 
 internal object WeatherSyncScheduler {
     private const val PERIODIC_WORK_NAME = "weather-refresh-periodic-v1"
-    private const val IMMEDIATE_WORK_NAME = "weather-refresh-now-v1"
 
     fun ensurePeriodic(context: Context) {
         val constraints = Constraints.Builder()
