@@ -87,6 +87,8 @@ internal object GattCapabilityMatrix {
                 matchingCharacteristics.isEmpty() -> State.SERVICE_WITHOUT_CHARACTERISTIC
                 trafficCount > 0 -> State.HISTORICAL_TRAFFIC
                 readable.isNotEmpty() && notifiable.isNotEmpty() -> State.READ_AND_NOTIFICATION_AVAILABLE
+                readable.isNotEmpty() && notifyProperties.isNotEmpty() ->
+                    State.READ_AND_NOTIFICATION_WITHOUT_CCCD
                 readable.isNotEmpty() -> State.READ_AVAILABLE
                 notifiable.isNotEmpty() -> State.NOTIFICATION_AVAILABLE
                 notifyProperties.isNotEmpty() -> State.NOTIFICATION_WITHOUT_CCCD
