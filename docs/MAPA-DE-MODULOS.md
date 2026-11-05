@@ -16,6 +16,10 @@ A base é um aplicativo Android nativo Kotlin. O adaptador de consulta agregada 
 | domain/health/HealthMetricSample.kt | Domain / Health | Tipo, unidade, origem, timestamps e estado de validação sem dependência Android/BLE. |
 | domain/health/StepsSnapshot.kt | Domain / Activity | Snapshot do agregado de passos; diferencia zero de ausência e preserva intervalo, recebimento e origem Health Connect. |
 | data/healthconnect/HealthConnectStepsRepository.kt | Data / Health Connect | Disponibilidade do provider, permissão READ_STEPS, agregado diário e histórico diário limitado a 31 dias; filtra origem e não atribui agregados ao GT3 MAX. |
+| data/weather/OpenMeteoWeatherRepository.kt | Data / Weather | Pesquisa manual de cidades e consulta HTTPS de condições atuais/previsão, com validação de coordenadas e timeout; envia somente cidade/coord. selecionadas, sem dados de saúde ou identificadores. |
+| data/weather/WeatherPreferences.kt | Data / Weather / Storage | Cache privado da localidade escolhida e da última previsão; JSON inválido resulta em ausência de cache, sem expor dados fora do sandbox. |
+| data/weather/WeatherSyncWorker.kt + WeatherSyncScheduler.kt | Platform / Background Work | Atualização meteorológica periódica condicionada à rede, em intervalo aproximado de seis horas; não chama BLE. |
+| ui/screens/TimeWeatherActivity.kt | UI / Time & Weather | Exibe relógio Android, sinaliza estado de data/hora automática, permite selecionar cidade e mostra previsão/cache; não solicita GPS. |
 | domain/activity/LocalFeaturePolicy.kt | Domain / Activity | Valida meta local de passos e calcula progresso sem converter ausência em zero; possui testes unitários. |
 | ui/screens/LocalToolsActivity.kt | UI / Ferramentas locais | Cronômetro, temporizador em primeiro plano, meta/histórico Health Connect, guia respiratório, handoff de alarme Android e lembrete local por notificação; sem comandos ao relógio. |
 | ui/screens/LocalHealthReminderReceiver.kt | Platform / Notifications | Emite lembrete diário local agendado por AlarmManager inexact; não sincroniza com o wearable e requer reativação após reboot. |
@@ -85,6 +89,10 @@ A [matriz de compatibilidade](MATRIZ-COMPATIBILIDADE-GT3-MAXX.md) registra 33 en
 ## Integração oficial Wearfit Pro — pendente de fornecedor
 
 A declaração de privacidade prevê acesso por aplicativos de terceiros autorizados a determinados dados e funções do wearable. Ela não documenta o SDK, o contrato Android nem a elegibilidade do GT3 MAX Call. O módulo futuro `data/wearfit` deverá ser implementado apenas após receber SDK/API e amostra oficial; o adapter não será simulado. Ver [INTEGRACAO-WEARFIT-PARTNER-SDK.md](INTEGRACAO-WEARFIT-PARTNER-SDK.md).
+
+## Hora e clima via rede do celular
+
+O módulo `data/weather` mantém a integração meteorológica fora da UI. O Relógio 2.0 usa a hora do Android como referência; o ajuste físico do GT3 MAXX é condicionado ao serviço CTS Bluetooth SIG, ausente na captura atual. Open-Meteo recebe somente a cidade escolhida e suas coordenadas; a previsão fica em cache privado e é atualizada em segundo plano por WorkManager. O transporte do clima ao relógio não está implementado porque ainda não há especificação de protocolo comprovada.
 
 ## Dívida técnica prioritária
 
