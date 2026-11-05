@@ -17,7 +17,7 @@ import com.luizmarquesarruda.relogio20.device.ble.core.BleDeviceIdentity
 import com.luizmarquesarruda.relogio20.device.ble.core.BleScanCandidatePolicy
 import com.luizmarquesarruda.relogio20.device.ble.core.BleValueFormatter
 import com.luizmarquesarruda.relogio20.domain.diagnostics.BleDiagnosticReport
-import com.luizmarquesarruda.relogio20.domain.health.StepsCountFormatter
+import com.luizmarquesarruda.relogio20.ui.formatters.StepsCountFormatter
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbFrameParser
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitProtocolProfile
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.Gt3MaxCallDeviceProfile

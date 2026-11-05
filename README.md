@@ -139,10 +139,10 @@ A organização real do módulo é:
 ```text
 app/src/main/java/com/luizmarquesarruda/relogio20/
 ├── ui/
-│   └── screens/                 # Activities/telas nativas
+│   ├── screens/                 # Activities/telas nativas
 ├── domain/
 │   ├── diagnostics/             # composição e sanitização de relatório
-│   └── health/                  # modelos e formatação de saúde
+│   └── health/                  # modelos de saúde
 ├── data/
 │   ├── discovery/               # biblioteca local e inventário GATT
 │   └── healthconnect/           # adaptador Health Connect

@@ -4,7 +4,7 @@
 
 - Activities nativas agrupadas em `ui/screens`; Manifesto e testes de contrato atualizados para os novos nomes qualificados.
 - Políticas de identidade e seleção BLE e formatador hexadecimal movidos para `device/ble/core`.
-- Relatório de diagnóstico movido para `domain/diagnostics`; formatador de passos movido para `domain/health`.
+- Relatório de diagnóstico movido para `domain/diagnostics`; formatador de passos movido para `ui/formatters`.
 - Adicionados `.gitignore` e template padrão de Pull Request; README atualizado com arquitetura real e comandos Gradle das variantes.
 - Contratos BLE, permissões, operações GATT, persistência `AtomicFile`/`SharedPreferences`, chaves de schema e source sets não foram alterados.
 - Room/SQLite não está presente no módulo atual; nenhum schema SQL ou migração foi criado ou modificado.

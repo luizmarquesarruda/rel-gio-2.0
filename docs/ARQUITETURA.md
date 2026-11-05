@@ -40,7 +40,7 @@ A implementação em andamento é um protótipo Android nativo em Kotlin. Não h
 - Activities de interface agrupadas em `ui/screens`; a UI segue nativa (Android Views/Activities), sem Jetpack Compose nesta versão.
 - Identidade, seleção de candidato e formatação hexadecimal BLE ficam em `device/ble/core`.
 - Composição e sanitização do relatório diagnóstico ficam em `domain/diagnostics`.
-- Formatação do agregado de passos fica em `domain/health`.
+- Formatação localizada do agregado de passos fica em `ui/formatters`; `domain/health` permanece com modelos e contratos.
 - Health Connect e persistência da biblioteca continuam em `data/healthconnect` e `data/discovery`.
 - Source root permanece `app/src/main/java` para manter os source sets atuais sem mudança de Gradle.
 - Não foram introduzidos Room, SQLite, migrações SQL, Compose, permissões ou operações GATT adicionais.

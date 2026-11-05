@@ -795,3 +795,10 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Criados `.gitignore`, template de Pull Request, guia arquitetural de pacotes e instruções de build local no README.
 - Não foram alterados permissões Bluetooth, UUIDs, callbacks GATT, sequência de conexão, comportamento de sensores, Health Connect ou Notification Listener.
 - Testes, lint, builds APK e teste físico: **não validados**. Nenhum workflow foi disparado.
+
+## Ajuste da fronteira de apresentação — 05/11/2026
+
+- `StepsCountFormatter` foi reposicionado de `domain/health` para `ui/formatters`, pois retorna texto localizado para exibição.
+- O import na tela principal, o teste e a documentação foram atualizados; modelos de domínio permanecem sem strings de UI.
+- Nenhuma lógica de contagem de passos ou consulta Health Connect foi modificada.
+- Testes e build continuam **não validados** nesta branch.

@@ -1,4 +1,4 @@
-package com.luizmarquesarruda.relogio20.domain.health
+package com.luizmarquesarruda.relogio20.ui.formatters
 
 import java.util.Locale
 

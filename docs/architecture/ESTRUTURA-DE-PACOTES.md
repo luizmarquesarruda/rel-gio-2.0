@@ -26,8 +26,8 @@ app/src/main/java/com/luizmarquesarruda/relogio20/
 │   ├── diagnostics/BleDiagnosticReport.kt
 │   └── health/
 │       ├── HealthMetricSample.kt
-│       ├── StepsSnapshot.kt
-│       └── StepsCountFormatter.kt
+│       └── StepsSnapshot.kt
+├── ui/formatters/StepsCountFormatter.kt
 ├── data/
 │   ├── discovery/
 │   └── healthconnect/
