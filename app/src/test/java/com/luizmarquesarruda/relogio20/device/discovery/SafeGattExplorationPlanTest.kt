@@ -109,7 +109,23 @@ class SafeGattExplorationPlanTest {
                 )
             )
         )
-        assertTrue(plan.isEmpty())
+        // The exact standard NUS TX receive channel is the only eligible NUS operation.
+        assertEquals(1, plan.size)
+        assertEquals(
+            "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
+            plan.single().characteristicUuid
+        )
+        assertEquals(
+            SafeGattExplorationPlan.Kind.SUBSCRIBE_PROPRIETARY_CHANNEL,
+            plan.single().kind
+        )
+        assertFalse(plan.any {
+            it.characteristicUuid == "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
+        })
+        assertFalse(plan.any {
+            it.kind == SafeGattExplorationPlan.Kind.READ_PROPRIETARY_VALUE ||
+                it.kind.name.contains("WRITE")
+        })
     }
 
     @Test
@@ -162,24 +178,7 @@ class SafeGattExplorationPlanTest {
                 )
             )
         )
-        // DFU and identifiers remain excluded; the exact standard NUS TX
-        // receive channel may be observed when NOTIFY + CCCD are advertised.
-        assertEquals(1, plan.size)
-        assertEquals(
-            "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
-            plan.single().characteristicUuid
-        )
-        assertEquals(
-            SafeGattExplorationPlan.Kind.SUBSCRIBE_PROPRIETARY_CHANNEL,
-            plan.single().kind
-        )
-        assertFalse(plan.any {
-            it.characteristicUuid == "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
-        })
-        assertFalse(plan.any {
-            it.kind == SafeGattExplorationPlan.Kind.READ_PROPRIETARY_VALUE ||
-                it.kind.name.contains("WRITE")
-        })
+        assertTrue(plan.isEmpty())
     }
 
     @Test
