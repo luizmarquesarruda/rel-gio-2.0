@@ -97,9 +97,28 @@ internal object SafeGattExplorationPlan {
         services.forEach { service ->
             val serviceShort = shortUuid(service.uuid)
             val normalizedService = service.uuid.trim().lowercase()
-            if (serviceShort == "fe59" || serviceShort in setOf("1800", "1801") ||
-                normalizedService == NUS_SERVICE
-            ) return@forEach
+            if (serviceShort == "fe59" || serviceShort in setOf("1800", "1801")) {
+                return@forEach
+            }
+
+            // Nordic UART is handled as a receive-only transport. Only the exact
+            // standard TX UUID may be subscribed, and only with NOTIFY/INDICATE + CCCD.
+            // RX is never read or written by the exploration planner.
+            if (normalizedService == NUS_SERVICE) {
+                val tx = service.characteristics.firstOrNull {
+                    it.uuid.trim().lowercase() == NUS_TX
+                }
+                if (tx != null &&
+                    ("NOTIFY" in tx.properties || "INDICATE" in tx.properties) &&
+                    tx.descriptorUuids.any { shortUuid(it) == "2902" }
+                ) {
+                    plan += Operation(
+                        service.uuid, tx.uuid, Kind.SUBSCRIBE_PROPRIETARY_CHANNEL,
+                        "Observação manual somente de recebimento NUS TX via CCCD padrão; NUS RX permanece bloqueado."
+                    )
+                }
+                return@forEach
+            }
 
             if (serviceShort in standardServiceIds) {
                 if (serviceShort in automaticServiceIds) {

@@ -148,6 +148,25 @@ class GattValueDecoderTest {
 
 
     @Test
+    fun acceptsSpotCheckDeviceClockNotSetFlagButRejectsReservedFlags() {
+        val clockNotSet = GattValueDecoder.decode(
+            "1822", "2a5e",
+            byteArrayOf(0x10, 0x62, 0x00, 0x48, 0x00)
+        )
+        assertTrue(clockNotSet.any {
+            it.metric == "Relógio do dispositivo" &&
+                it.value == "não configurado para esta medição"
+        })
+        assertTrue(clockNotSet.any { it.metric == "SpO₂ spot-check" && it.value == "98.00 %" })
+
+        val reservedBit = GattValueDecoder.decode(
+            "1822", "2a5e",
+            byteArrayOf(0x20, 0x62, 0x00, 0x48, 0x00)
+        )
+        assertTrue(reservedBit.isEmpty())
+    }
+
+    @Test
     fun decodesPulseOximeterFeaturesAndOptionalSupportBitfields() {
         val base = GattValueDecoder.decode("1822", "2a60", byteArrayOf(0xfc.toByte(), 0))
         assertEquals(8, base.size)

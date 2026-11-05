@@ -8,6 +8,14 @@ Ao abrir o aplicativo, uma busca BLE geral começa automaticamente; não é nece
 
 A recuperação nesta fase ocorre enquanto o app está em primeiro plano ou quando ele é reaberto/retomado. O Android pode suspender o processo em segundo plano ou após encerramento forçado; recuperação contínua em segundo plano ainda não está implementada. A reconexão restaura o transporte GATT e reinscreve apenas a notificação NUS TX já permitida; não valida sensores e não envia payload ao relógio.
 
+## Recuperação da tabela GATT
+
+Se o Android sinalizar **Service Changed**, o aplicativo invalida a fila/operações e solicita uma nova descoberta dos serviços na mesma sessão GATT. Respostas de READ, WRITE e CCCD só alteram o estado quando correspondem à conexão atual e à operação efetivamente em andamento; callbacks atrasados, de outra conexão ou de operações invalidadas são descartados. Uma operação que expirou ou foi interrompida por Service Changed não é repetida na mesma conexão GATT; uma nova conexão permite tentar novamente. Um canal silencioso ou sem callback não é considerado sensor ausente.
+
+## Liberação temporária para Wearfit Pro
+
+Quando o usuário libera o relógio para o Wearfit Pro, o Relógio 2.0 encerra sua sessão GATT, cancela tentativas pendentes e bloqueia novas buscas/conexões, inclusive pelo botão principal. Para retomar, use **Retomar conexão no Relógio 2.0**; a retomada é explícita e não depende de desparear o relógio nem desligar o Bluetooth. A sincronização física do relógio continua dependente do Wearfit Pro e não é declarada validada pelo handoff.
+
 ## Finalidade do produto
 
 O Relógio 2.0 é um companheiro de Saúde e Fitness. O fluxo de destino é: sensores do relógio → conexão com o app → dados validados no Conexão Saúde (Health Connect). No sentido inverso, o Android entrega notificações selecionadas ao app para a ponte com o relógio; o app lê os alertas e não responde nem modifica o aplicativo de origem.
@@ -103,6 +111,10 @@ Consulte o [índice completo da documentação](docs/README.md).
 - [Perfil do GT3 Maxx](docs/PERFIL-GT3-MAXX.md)
 - [Captura BLE de 03/11/2026](docs/CAPTURA-BLE-GT3-MAX-2026-11-03.md)
 - [Perfil BLE candidato NUS/AB](docs/PROTOCOLO-BLE-CANDIDATO.md)
+
+## Retenção da biblioteca BLE
+
+Leituras e HEX bruto só são capturados após consentimento e durante uma sessão cronometrada. Depois de capturados, os registros permanecem no arquivo privado local até serem removidos pela política de limite (máximo de 1.000 registros) ou pela remoção dos dados do aplicativo no Android. Nesta versão não há botão de exclusão individual da biblioteca; portanto, não interprete “captura apenas durante sessão” como expiração automática dos registros já gravados.
 
 ## Notificações para o smartwatch
 

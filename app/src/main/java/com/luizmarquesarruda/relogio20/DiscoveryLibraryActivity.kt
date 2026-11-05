@@ -65,7 +65,7 @@ class DiscoveryLibraryActivity : Activity() {
         })
         root.addView(header)
         root.addView(TextView(this).apply {
-            text = "Descobertas e leituras salvas somente neste aparelho. HEX é armazenado apenas durante uma sessão local autorizada, manual ou automática."
+            text = "Descobertas e leituras salvas somente neste aparelho. HEX só pode ser capturado durante uma sessão autorizada; depois fica no histórico privado (máx. 1.000 registros). Esta tela ainda não oferece exclusão individual."
             textSize = 12f
             setTextColor(0xFF526574.toInt())
             setPadding(0, dp(8), 0, dp(8))

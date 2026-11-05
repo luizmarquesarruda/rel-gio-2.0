@@ -709,3 +709,76 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - A CI #253 no commit `cd82b8b3b1a62f826f6eef4091464887e7fcfa73` identificou erro Kotlin em `DiscoveryLibraryActivity.kt`: `EditText` não expõe a propriedade gravável `singleLine` usada no inicializador.
 - Corrigido para a chamada pública `setSingleLine(true)`. A causa foi sintática e não envolveu BLE, persistência ou layout.
 - A CI #253 foi cancelada pela concorrência após identificar a mesma falha nos dois variants. O HEAD final precisará ser recompilado integralmente.
+
+
+## Auditoria integral e endurecimento — 04/11/2026
+
+- Criada a branch `audit/full-repository-hardening-20261104` a partir do HEAD de trabalho `21e44dd5bace9801b7ced7183ff15b2ca730d588`. Nenhum PR foi criado e nenhum merge foi executado.
+- O inventário GATT via SharedPreferences passou a validar estrutura JSON completa e estrita, schema, tipos numéricos, timestamps, cardinalidades, IDs duplicados, UUIDs e faixas de valores. JSON inválido não é convertido em inventário vazio nem sobrescrito.
+- O inventário serializa operações entre instâncias e atualiza o SharedPreferences em memória com `apply()`; a gravação em disco é assíncrona e o retorno não confirma durabilidade imediata.
+- A biblioteca de descobertas conserva a escrita atômica, mas agora protege transações entre instâncias, verifica tamanho antes da leitura e valida registros e sessões antes de decodificar/gravar.
+- Prazos inconsistentes, timestamps negativos, IDs duplicados, tipos desconhecidos e HEX inválido passam a ser recusados.
+- O botão principal de busca fica desabilitado enquanto o usuário entregou a sessão ao Wearfit Pro; a retomada continua sendo uma ação explícita.
+- O modelo de passos exige `receivedAt >= intervalEnd`; origem permanece exclusivamente `HEALTH_CONNECT_AGGREGATE`.
+- Testes adicionados/estendidos: `FeatureDiscoverySnapshotPolicyTest`, `DiscoveryLibraryCodecTest`, `DiscoveryTestSessionTest`, `StepsSnapshotTest` e `BleExternalHandoffPolicyTest`.
+- A CI não foi disparada nem reexecutada. Nenhum teste Kotlin, Lint, build APK, auditoria dos APKs ou validação física foi declarado aprovado nesta revisão.
+- Pendências estruturais identificadas: `MainActivity.kt` permanece com responsabilidade excessiva (extração deverá ser incremental); o repositório ainda não inclui Gradle Wrapper; testes em aparelho/emulador e validação de aquisição BLE real continuam pendentes.
+- O relatório detalhado está em `docs/AUDITORIA-REPOSITORIO-2026-11-04.md`.
+
+
+
+## Ajuste de retenção e transparência de funções — 04/11/2026
+
+- O catálogo de funções não apresenta mais o CTS como mecanismo que será automaticamente usado. A identificação 0x1805/0x2A2B é informativa; escrita física de hora permanece suspensa.
+- Desativar captura de notificações (inclusive em consequência de revogação de acesso) limpa imediatamente as prévias em memória; teste de limpeza adicionado.
+- README e tela de privacidade esclarecem retenção: HEX é capturado somente em sessão consentida, mas permanece no arquivo privado depois da sessão, limitado a 1.000 registros; não existe exclusão individual na UI. Remover os dados do app no Android apaga o arquivo.
+
+
+## Barreira contra callbacks GATT tardios e retenção local — 04/11/2026
+
+- As chaves de operações GATT que expiraram ou estavam em execução quando o Android notificou Service Changed passam a ser invalidadas até uma nova instância `BluetoothGatt`. A fila não repete aquela chave dentro da mesma conexão; evita que callback atrasado da operação antiga seja confundido com uma nova tentativa idêntica.
+- Callbacks de notificação agora exigem que a referência GATT seja atual, a sessão esteja conectada e não esteja em encerramento. Notificações tardias após o início da desconexão são ignoradas.
+- Quando a fila de persistência está cheia, o log informa separadamente que o READ ou valor decodificado foi recebido, mas não foi enfileirado no histórico. Isso evita sugerir gravação de HEX que não foi aceita.
+- A retenção do HEX local foi explicitada na tela da biblioteca, na tela de privacidade e no README: captura apenas durante sessão consentida, retenção posterior até o limite de 1.000 registros, sem exclusão individual disponível na UI.
+- Pausar a ponte de notificações limpa imediatamente os dados voláteis; novo teste cobre `NotificationCaptureStore.clear()`.
+- Relatório diagnóstico mascara MAC e não exporta texto das notificações Android; o fingerprint passivo guarda metadados e hash truncado, sem reter payload bruto.
+
+
+## Serialização final do consentimento de notificações — 04/11/2026
+
+- A captura de prévias foi protegida contra uma corrida: callback onNotificationPosted podia checar consentimento, processar extras/label e só depois inserir; se o usuário pausasse nesse intervalo, uma prévia poderia reaparecer após o clear.
+- Agora a inserção executa uma verificação final de captura ativa e pacote permitido dentro do mesmo lock usado nas mudanças de configuração e na limpeza.
+- Alterar a allow-list remove também qualquer evento de pacote que não permaneça permitido.
+- Testes unitários cobrem a barreira final de admissão permitida/negada.
+
+
+## 05/11/2026 — Integridade da fila assíncrona de persistência
+
+- Corrigido um falso positivo em flushPendingWrites(): o executor descartava o retorno booleano das gravações e podia informar flush concluído mesmo quando persist() falhava.
+- A fila agora retém falhas até a barreira de flush; o lock de enfileiramento estabelece um limite consistente para o lote.
+- Criados testes para falha reportada uma única vez, falha preservada após gravação bem-sucedida posterior e ausência de falhas em lote válido.
+- CI e testes Android: **não validados**. Nenhum workflow foi disparado.
+
+
+## 05/11/2026 — Expansão de recebimento NUS TX sem comandos
+
+- A exploração manual passa a observar o NUS TX quando o UUID padrão e as propriedades NOTIFY/INDICATE + CCCD são confirmados no inventário.
+- NUS RX permanece excluído de qualquer operação; nenhuma escrita de payload ou comando foi liberada.
+- UI agora deixa explícito que o TX aguarda inscrição/notificação, sem prometer que seja um sensor validado.
+- Testes adicionados para garantir TX somente, RX bloqueado e CCCD obrigatório.
+- CI/testes/build e teste físico: **não validados**; CI não disparada.
+
+
+## 05/11/2026 — Correção do teste de exclusão NUS após CI #415
+
+- CI #415: 145 testes diagnosticados, com uma falha de expectativa no caso que ainda excluía integralmente o NUS. O Lint e a compilação Kotlin das duas variantes passaram.
+- Atualizada a asserção: agora exige um único plano NUS TX para recebimento passivo, e verifica que NUS RX, READ proprietário e qualquer WRITE permanecem ausentes.
+- APK e validação de manifesto não foram produzidos na #415 porque o teste unitário interrompeu a etapa combinada.
+- Nova execução pela atualização da PR #18; CI/teste físico ainda não validados.
+
+
+## 05/11/2026 — Correção dos dois casos de teste NUS após CI #416
+
+- #416 passou pelo Lint, mas falhou em dois testes de política NUS: contrato de exclusão total desatualizado e caso sem CCCD com expectativa incorreta.
+- Reposicionados os critérios: TX somente com NOTIFY/INDICATE + CCCD 0x2902; ausência de CCCD resulta em plano vazio; RX nunca entra no plano.
+- Nenhuma alteração de comportamento de escrita foi feita. Nova CI necessária para validar os contratos corrigidos.

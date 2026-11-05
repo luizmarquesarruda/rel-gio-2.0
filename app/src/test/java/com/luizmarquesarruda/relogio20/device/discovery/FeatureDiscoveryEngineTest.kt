@@ -47,7 +47,7 @@ class FeatureDiscoveryEngineTest {
         )
         val finding = snapshot.findings.firstOrNull { it.id == "standard:1805" }
         assertNotNull(finding)
-        assertTrue(finding?.detail?.contains("sincronização padrão habilitável") == true)
+        assertTrue(finding?.detail?.contains("escrita CTS suspensa pela política atual") == true)
     }
 
     @Test

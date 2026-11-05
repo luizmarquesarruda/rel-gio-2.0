@@ -6,6 +6,10 @@ internal object DiscoveryLibraryKind {
     const val GATT_READ = "GATT_READ"
     const val SESSION_STARTED = "SESSION_STARTED"
     const val SESSION_FINISHED = "SESSION_FINISHED"
+
+    val all: Set<String> = setOf(
+        DISCOVERY, NOTIFICATION, GATT_READ, SESSION_STARTED, SESSION_FINISHED
+    )
 }
 
 internal data class DiscoveryTestSession(
@@ -14,10 +18,20 @@ internal data class DiscoveryTestSession(
     val endsAtMillis: Long,
     val durationSeconds: Int
 ) {
-    fun isActive(nowMillis: Long): Boolean = nowMillis < endsAtMillis
+    init {
+        require(id.isNotBlank() && id.length <= 128)
+        require(startedAtMillis >= 0L)
+        require(endsAtMillis > startedAtMillis)
+        require(DiscoveryTestDuration.isAllowed(durationSeconds))
+        require(endsAtMillis - startedAtMillis == durationSeconds.toLong() * 1_000L)
+    }
+
+    fun isActive(nowMillis: Long): Boolean =
+        nowMillis >= startedAtMillis && nowMillis < endsAtMillis
 
     fun remainingSeconds(nowMillis: Long): Int {
-        val remainingMillis = (endsAtMillis - nowMillis).coerceAtLeast(0L)
+        val effectiveNow = nowMillis.coerceAtLeast(startedAtMillis)
+        val remainingMillis = (endsAtMillis - effectiveNow).coerceAtLeast(0L)
         return ((remainingMillis + 999L) / 1_000L).toInt()
     }
 }

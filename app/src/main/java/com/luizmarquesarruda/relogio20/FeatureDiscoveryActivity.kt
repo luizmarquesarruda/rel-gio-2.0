@@ -159,7 +159,7 @@ class FeatureDiscoveryActivity : Activity() {
         renderExperimentGuide()
         addSectionTitle("Segurança da exploração")
         addMessage(
-            "A captura cronometrada registra somente notificações e leituras recebidas durante a sessão. O HEX fica no armazenamento privado deste aplicativo. Nenhum comando proprietário, escrita NUS RX, DFU, OTA ou reset é enviado."
+            "A captura cronometrada registra somente notificações e leituras recebidas durante a sessão. O HEX capturado permanece no histórico privado depois da sessão (máx. 1.000 registros); a exclusão individual ainda não está disponível. Nenhum comando proprietário, escrita NUS RX, DFU, OTA ou reset é enviado."
         )
     }
 

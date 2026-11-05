@@ -37,6 +37,9 @@ data class HealthMetricSample(
         require(measuredAtEpochMillis == null || measuredAtEpochMillis > 0L) {
             "Measurement timestamp must be positive when present."
         }
+        require(measuredAtEpochMillis == null || measuredAtEpochMillis <= receivedAtEpochMillis) {
+            "Measurement timestamp cannot be after its receive timestamp."
+        }
         require(unit == expectedUnit(type)) { "Unit $unit is incompatible with metric $type." }
         if (type == HealthMetricType.BLOOD_OXYGEN) {
             require(value in 0.0..100.0) { "Blood oxygen percentage must be between 0 and 100." }

@@ -10,4 +10,6 @@ internal object BleExternalHandoffPolicy {
 
     fun shouldStartInitialDiscovery(handoffActive: Boolean, initialDiscoveryPending: Boolean): Boolean =
         !handoffActive && initialDiscoveryPending
+
+    fun canStartBleScan(handoffActive: Boolean): Boolean = !handoffActive
 }
