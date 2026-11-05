@@ -27,7 +27,7 @@ Usar o Wearfit Pro como referência funcional para o Relógio 2.0, sem copiar pr
 | Bem-estar | Lembrete de saúde e treino respiratório | Android local/Wearfit Pro | P2 | Guia respiratório e lembrete local implementados no telefone; integração do relógio não validada |
 | Controles | Música, câmera remota, cronômetro e timer | Android/BLE | P3 | Cronômetro e timer locais implementados; música e câmera remota pendentes de protocolo/integração |
 | Dispositivo | Encontrar telefone, alarme e configurações de tela | Android/BLE | P2 | Handoff de alarme Android implementado; encontrar dispositivo e configurações do relógio não validados |
-| Ambiente | Clima e localização | Serviço online e localização Android | P3 | Fora do escopo atual; dados sensíveis e dependência de rede |
+| Ambiente | Clima e localização | Geocodificação manual + Open-Meteo via rede do telefone | P2 | Android implementado com cache e atualização periódica; sem GPS, sem dados enviados ao relógio e sem protocolo GT3 validado |
 | Configuração crítica | OTA, reset, restauração de fábrica e ajustes de firmware | BLE proprietário | Fora de escopo | Bloqueado por risco; não implementar |
 | Pagamento/identidade | Alipay, cartão de acesso e dados de contato | Firmware/serviço externo | Fora de escopo | Não implementar sem exigência explícita e avaliação de segurança |
 
