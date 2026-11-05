@@ -30,6 +30,6 @@ class WeatherSyncWorker(
     }
 
     private companion object {
-        const val MIN_REFRESH_AGE_MS = 5L * 60L * 60L * 1_000L + 30L * 60L * 1_000L
+        const val MIN_REFRESH_AGE_MS = 4L * 60L * 60L * 1_000L + 30L * 60L * 1_000L
     }
 }
