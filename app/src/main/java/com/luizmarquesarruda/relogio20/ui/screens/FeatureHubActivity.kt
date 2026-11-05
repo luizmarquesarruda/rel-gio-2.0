@@ -190,7 +190,7 @@ class FeatureHubActivity : Activity() {
             Feature("Reconhecimento automático", "O fabricante lista reconhecimento automático de movimento; início, fim e tipos ainda não são recebidos pelo app.", "NÃO VALIDADO"),
             Feature("Caminhadas e corridas", "Histórico de atividade e percurso no mapa ainda não implementados.", "NÃO IMPLEMENTADO"),
             Feature("Metas", "Meta diária local de passos com progresso baseado no agregado Health Connect, quando autorizado.", "IMPLEMENTADO NO ANDROID", available = true, route = "local_tools"),
-            Feature("Histórico", "Não há histórico consolidado de sessões do GT3 MAX nesta versão.", "NÃO IMPLEMENTADO")
+            Feature("Histórico de passos", "Histórico diário de 7 dias agregado pelo Health Connect, com origem filtrada; não é histórico direto do GT3 MAX.", "IMPLEMENTADO • HEALTH CONNECT", available = true, route = "local_tools")
         )
         "device" -> listOf(
             Feature("Bateria do relógio", "Notificação NUS TX do GT3 MAX Call com interpretação AB 0x91/0x80. O valor só será confirmado após comparação com Wearfit Pro em diferentes níveis de carga.", "LEITURA CANDIDATA • NÃO VALIDADA"),
