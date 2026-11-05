@@ -184,9 +184,14 @@ class FeatureDiscoveryEngineTest {
 
         assertNotNull(finding)
         assertEquals("BASELINE GATT REGISTRADO", finding?.status)
-        assertTrue(finding?.evidence?.contains("sha256=") == true)
-        assertFalse(finding?.evidence?.contains("MAC") == true)
-        assertFalse(finding?.evidence?.contains("serial") == true)
+        val evidence = finding?.evidence.orEmpty()
+        assertTrue(evidence.contains("sha256="))
+        assertTrue(evidence.contains("sem MAC, serial, valores do fabricante ou payloads."))
+
+        // The privacy note may name identifier categories; the evidence must never
+        // contain an actual address or a serial value.
+        assertFalse(Regex("(?i)(?:[0-9a-f]{2}:){5}[0-9a-f]{2}").containsMatchIn(evidence))
+        assertFalse(Regex("(?i)(?:serial|s/n)\\s*[:=]\\s*\\S+").containsMatchIn(evidence))
     }
 
     @Test

@@ -843,3 +843,9 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Nenhum comando GATT, escrita CTS, parser, decoder, coleta, política de reconexão ou persistência foi intencionalmente alterado.
 - Testes Kotlin/Python, Lint e build **não executados**. CI **não disparada**. Teste físico Galaxy A06 / Android 16 + GT3 MAX **não validado**.
 
+## 05/11/2026 — Correção da asserção de privacidade na assinatura GATT
+
+- O run #419 mostrou que a assinatura e o Lint passaram, mas uma asserção do teste de inventário falhou porque confundia a menção textual de “MAC/serial” (explicação da exclusão) com a presença de identificadores reais.
+- O teste agora confirma o aviso de exclusão e rejeita padrões concretos de endereço Bluetooth e valor serial. A implementação de assinatura permanece restrita a UUIDs, propriedades e descritores GATT.
+- Testes e builds serão reexecutados pela atualização da PR #19. APK não publicado no run anterior; nenhuma CI física ou validação do relógio é presumida.
+

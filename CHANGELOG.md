@@ -1,3 +1,12 @@
+## Não lançado — corrigir contrato do teste de assinatura GATT — 05/11/2026
+
+- O run #419 confirmou que os pacotes reorganizados compilam e o Lint passa nas variantes diagnostic/companion.
+- O teste `FeatureDiscoveryEngineTest.inventoryStoresStructuralGattSignatureWithoutDeviceIdentifiers` falhava porque procurava a palavra “MAC” e “serial” na evidência, embora a implementação use essas palavras para documentar explicitamente que os valores foram excluídos.
+- Ajustada a asserção para exigir o aviso de privacidade e rejeitar padrões concretos de endereço MAC e serial, em vez de rejeitar os nomes das categorias.
+- O teste mantém o contrato: a assinatura estrutural contém somente UUIDs, propriedades e descritores GATT; não recebe endereço, serial ou payload.
+- A CI do run #419 ficou vermelha por essa única falha unitária. Build APK e auditoria de manifestos/assinaturas foram ignorados; somente `android-validation-reports` foi publicado.
+- Nova CI será executada na atualização desta PR. Nenhum APK foi disponibilizado nesta execução.
+
 ## Não lançado — organização de pacotes e fronteiras Android — 05/11/2026
 
 - Movidas as Activities para `ui/screens`, utilitários BLE puros para `device/ble/core`, relatório para `domain/diagnostics` e formatador de passos para `ui/formatters`.
