@@ -60,7 +60,7 @@ Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALT
 
 - Não envia payloads a características proprietárias do relógio.
 - Não envia comandos pela Nordic UART RX.
-- Nenhuma escrita em característica é executada nesta fase. A única operação de escrita GATT é a configuração do descritor CCCD padrão para ativar uma notificação/indicação permitida; a sincronização CTS está suspensa.
+- Não são enviados payloads a características proprietárias. A única escrita em característica de dados permitida é a sincronização manual pelo Bluetooth SIG CTS (0x1805/0x2A2B), habilitada somente quando o relógio anuncia a característica com propriedade WRITE e após toque explícito do usuário. O callback GATT não comprova atualização do RTC/mostrador. A configuração do descritor CCCD padrão continua limitada à ativação de notificações/indicações permitidas.
 - Não toca no Secure DFU/OTA, reset, calibração ou configuração.
 - Não atribui semântica a canais proprietários desconhecidos. Há decoders somente para formatos Bluetooth SIG identificados; passos e sono proprietários continuam não interpretados. Body Composition Measurement 0x2A9C também permanece bruto até completar a leitura contextual de flags, unidades, resoluções e pacotes múltiplos.
 - Não acessa servidores ou dados privados do Wearfit Pro.
