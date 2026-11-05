@@ -186,6 +186,24 @@ internal class DiscoveryLibraryStore(context: Context) {
         if (!accepted) synchronized(STORE_LOCK) { expiringSessionIds.remove(session.id) }
     }
 
+    /**
+     * Removes one exact local record on the ordered writer thread. The callback reports
+     * whether the atomic snapshot replacement succeeded; no other records or session
+     * state are changed.
+     */
+    fun removeRecordAsync(recordId: String, onComplete: (Boolean) -> Unit = {}): Boolean {
+        if (recordId.isBlank() || recordId.length > 128) return false
+        return enqueueWrite {
+            val removed = synchronized(STORE_LOCK) {
+                val current = writableSnapshot() ?: return@synchronized false
+                val updated = current.withoutRecord(recordId) ?: return@synchronized false
+                persist(updated)
+            }
+            runCatching { onComplete(removed) }
+            removed
+        }
+    }
+
     fun recordsForSession(sessionId: String): Int = synchronized(STORE_LOCK) {
         val snapshot = (read() as? DiscoveryLibraryReadResult.Available)?.snapshot ?: return@synchronized 0
         snapshot.records.count {
