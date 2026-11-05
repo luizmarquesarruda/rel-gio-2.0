@@ -379,10 +379,9 @@ internal object GattValueDecoder {
         val raw = readUInt32(value, 1)
         val temperature = readFloat11073(raw) ?: return emptyList()
         val fahrenheit = flags and 0x01 != 0
-        val displayed = if (fahrenheit) temperature else temperature
         val unit = if (fahrenheit) "°F" else "°C"
         val results = mutableListOf(
-            DecodedGattValue(metric, String.format(Locale.US, "%.2f %s", displayed, unit))
+            DecodedGattValue(metric, String.format(Locale.US, "%.2f %s", temperature, unit))
         )
         var offset = 5
         if (flags and 0x02 != 0) {
