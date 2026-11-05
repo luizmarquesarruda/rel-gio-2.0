@@ -12,7 +12,7 @@ android {
     }
 
     defaultConfig {
-        buildConfigField("boolean", "IS_TEST", "false")
+        buildConfigField("boolean", "IS_TEST", providers.gradleProperty("IS_TEST").orElse("false").get())
         applicationId = "com.luizmarquesarruda.relogio20"
         minSdk = 26
         targetSdk = 36
