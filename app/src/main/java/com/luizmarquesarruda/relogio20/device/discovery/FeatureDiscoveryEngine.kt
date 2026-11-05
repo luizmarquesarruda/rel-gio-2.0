@@ -1,9 +1,18 @@
 package com.luizmarquesarruda.relogio20.device.discovery
 
+internal data class GattDescriptorRecord(
+    val uuid: String,
+    val instanceId: Int
+)
+
 internal data class GattCharacteristicRecord(
     val uuid: String,
     val properties: Set<String>,
-    val descriptorUuids: Set<String> = emptySet()
+    val descriptorUuids: Set<String> = emptySet(),
+    val descriptorInstances: List<GattDescriptorRecord> =
+        descriptorUuids.sorted().mapIndexed { index, descriptorUuid ->
+            GattDescriptorRecord(descriptorUuid, index)
+        }
 )
 
 internal data class GattServiceRecord(
