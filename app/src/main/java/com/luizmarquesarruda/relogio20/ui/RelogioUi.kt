@@ -185,7 +185,7 @@ object RelogioUi {
             isAllCaps = false
             textSize = 13f
             maxLines = 2
-            setTextColor(text)
+            setTextColor(RelogioUi.text)
             gravity = Gravity.CENTER
             setPadding(dp(context, 12), dp(context, 6), dp(context, 12), dp(context, 6))
             background = rounded(context, surfaceRaised, accent)

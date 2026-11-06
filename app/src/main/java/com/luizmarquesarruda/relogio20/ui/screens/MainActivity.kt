@@ -924,7 +924,7 @@ class MainActivity : ComponentActivity() {
             return
         }
         healthScope.launch {
-            val originPolicy = if (AppPreferences.includesExternalHealthSources(this)) {
+            val originPolicy = if (AppPreferences.includesExternalHealthSources(this@MainActivity)) {
                 HealthConnectOriginPolicy.INCLUDE_EXTERNAL
             } else {
                 HealthConnectOriginPolicy.APP_ONLY
