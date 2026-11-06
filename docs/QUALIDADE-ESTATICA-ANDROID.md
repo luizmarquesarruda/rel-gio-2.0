@@ -18,6 +18,14 @@ KtLint foi executado sem bloquear a CI e identificou 3.596 apontamentos de estil
 - StrictMode é ativado somente em builds debug: detecta leituras/escritas de disco, rede na thread principal e vazamentos de recursos/registro. Usa apenas `penaltyLog()`; não encerra o processo. Builds release não recebem essa política.
 - O `.editorconfig` estabelece UTF-8, LF, newline final, indentação de quatro espaços e limite de linha de 140 colunas para Kotlin.
 
+## Ferramentas de integridade e desempenho
+
+- Gradle Dependency Verification está em bootstrap SHA-256: a CI gera um artefato temporário com os metadados. Ele precisa ser revisado e versionado antes que a verificação passe a ser persistente no repositório. Bootstrap isolado é trust-on-first-use, não comprovação independente da origem dos downloads.
+- Renovate está configurado em `renovate.json` para Gradle, plugins e GitHub Actions. O merge automático está desabilitado, há aprovação obrigatória para majors e janela mínima de três dias quando há timestamp de publicação. A configuração não instala o Renovate App; o bot só atuará depois de habilitação no GitHub.
+- AndroidX Macrobenchmark 1.5.0 foi adicionado em `:macrobenchmark`. A CI compila o módulo; não executa medições instrumentadas sem hardware.
+- A variante `diagnosticBenchmark` deriva de release, não é depurável e é profileable somente via shell. O build de release atual ainda não tem R8/minificação; métricas iniciais são comparações internas, não desempenho final de produção.
+- ProfileInstaller 1.4.1 está incluído somente em `diagnosticBenchmark`. A execução do Macrobenchmark deve usar dispositivo físico Android 14+; Galaxy A06 e GT3 MAXX ainda não foram medidos.
+
 ## Dívida conhecida e decisões de segurança
 
 ### SetTextI18n
@@ -31,7 +39,7 @@ O projeto permanece em `compileSdk 36` / `targetSdk 36`. O aviso `OldTargetApi` 
 ### Ferramentas não adicionadas
 
 - Detekt 2.x não foi introduzido: a matriz de compatibilidade publicada para a linha alpha não coincide com a combinação atual AGP/Kotlin/Gradle. Não incorporar pré-lançamento como gate principal.
-- LeakCanary não foi adicionado. Heap dumps podem conter dados de saúde, payloads BLE e conteúdo de notificações. Exige política explícita de armazenamento, acesso e descarte.
+- LeakCanary 2.14 foi adicionado somente à variante `diagnosticDebug`. O guardrail exige a presença nessa variante e ausência em `companionDebug`, `diagnosticRelease`, `companionRelease` e `diagnosticBenchmark`. Heap dumps podem conter dados de saúde, payloads BLE e notificações; não devem ser enviados a PRs, issues ou artefatos públicos.
 - Testes instrumentados AndroidX e testes BLE de hardware continuam pendentes. Testes unitários/emulador não comprovam aquisição física de dados do GT3 MAXX.
 - Perfetto e Android Studio Profiler permanecem ferramentas de diagnóstico em sessões medidas; não são dependências de runtime nem substituem medição de bateria no aparelho.
 
@@ -49,4 +57,10 @@ O projeto permanece em `compileSdk 36` / `targetSdk 36`. O aviso `OldTargetApi` 
 - KtLint Gradle plugin: https://github.com/JLLeitschuh/ktlint-gradle
 - KtLint releases: https://github.com/ktlint/ktlint/releases
 - Android StrictMode: https://developer.android.com/reference/android/os/StrictMode
+- LeakCanary: https://github.com/square/leakcanary
+- Gradle Dependency Verification: https://docs.gradle.org/current/userguide/dependency_verification.html
+- Renovate Java/Gradle: https://docs.renovatebot.com/java/
+- AndroidX Macrobenchmark: https://developer.android.com/topic/performance/benchmarking/macrobenchmark-overview
+- AndroidX Benchmark: https://developer.android.com/jetpack/androidx/releases/benchmark
+
 - Requisitos de target API no Google Play: https://developer.android.com/google/play/requirements/target-sdk
