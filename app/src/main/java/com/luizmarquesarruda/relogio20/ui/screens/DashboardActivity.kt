@@ -33,20 +33,26 @@ class DashboardActivity : Activity() {
             showBack = false
         )
 
-        clockCard = RelogioUi.textView(this, "", 16f, RelogioUi.text, true)
-        RelogioUi.card(
-            body,
-            "VISÃO GERAL",
-            "Horário do telefone e indicadores principais. Dados sem fonte validada permanecem como N/D.",
-            "LOCAL"
-        )
-        body.addView(clockCard)
-        clockCard.setPadding(
-            RelogioUi.dp(this, 4),
-            RelogioUi.dp(this, 6),
-            RelogioUi.dp(this, 4),
-            RelogioUi.dp(this, 10)
-        )
+        val timePanel = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(
+                RelogioUi.dp(this@DashboardActivity, 16),
+                RelogioUi.dp(this@DashboardActivity, 14),
+                RelogioUi.dp(this@DashboardActivity, 16),
+                RelogioUi.dp(this@DashboardActivity, 14)
+            )
+            background = RelogioUi.rounded(this@DashboardActivity)
+        }
+        timePanel.addView(RelogioUi.textView(this, "HORÁRIO DO TELEFONE", 10f, RelogioUi.accent, true))
+        clockCard = RelogioUi.textView(this, "", 28f, RelogioUi.text, true).apply {
+            setPadding(0, RelogioUi.dp(this@DashboardActivity, 5), 0, 0)
+        }
+        timePanel.addView(clockCard)
+        timePanel.addView(RelogioUi.textView(this, "Fonte local • sistema Android", 10f, RelogioUi.textSubtle))
+        body.addView(timePanel, android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply { bottomMargin = RelogioUi.dp(this@DashboardActivity, 10) })
         renderClock()
 
         RelogioUi.section(body, "DISPOSITIVO")
