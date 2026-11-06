@@ -124,8 +124,8 @@ class CurrentAndroidContractTests(unittest.TestCase):
         workflow = (ROOT / ".github/workflows/android-ci.yml").read_text(encoding="utf-8")
         self.assertIn('id("com.android.application") version "8.13.2"', root_build)
         self.assertIn('id("org.jetbrains.kotlin.android") version "2.4.21"', root_build)
-        self.assertIn('gradle-version: "9.5.0"', workflow)
-        self.assertNotIn('gradle-version: "8.13"', workflow)
+        self.assertIn('gradle-version: "8.13"', workflow)
+        self.assertNotIn('gradle-version: "9.5.0"', workflow)
         app_build = (ROOT / "app/build.gradle.kts").read_text(encoding="utf-8")
         self.assertIn('androidx.work:work-runtime-ktx:2.12.0', app_build)
 
