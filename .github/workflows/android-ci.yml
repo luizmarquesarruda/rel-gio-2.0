@@ -163,7 +163,11 @@ jobs:
           name: android-validation-reports
           path: |
             app/build/reports/lint-results-diagnosticDebug.html
+            app/build/reports/lint-results-diagnosticDebug.xml
+            app/build/reports/lint-results-diagnosticDebug.sarif
             app/build/reports/lint-results-companionDebug.html
+            app/build/reports/lint-results-companionDebug.xml
+            app/build/reports/lint-results-companionDebug.sarif
             app/build/reports/security/**
           if-no-files-found: warn
           retention-days: 30

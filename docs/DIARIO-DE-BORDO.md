@@ -1,3 +1,13 @@
+## 05/11/2026 — Correções de compilação e configuração formal do Android Lint
+
+- Corrigido o uso de `singleLine = true` nas entradas de Ferramentas locais e Clima. As telas agora chamam explicitamente `setSingleLine(true)`, preservando a intenção visual sem depender de uma propriedade Kotlin inexistente.
+- Corrigido o reset do inventário GATT vazio: o callback de descoberta com serviços válidos agora chama `emptyInventoryRetryPolicy.reset()`. Isso reutiliza o contador encapsulado na política já existente e evita estado duplicado.
+- Configurado Android Lint no módulo `:app`: falha o build em erros, mantém a verificação de builds release, deixa alertas como warnings nesta primeira etapa e gera relatórios HTML, XML e SARIF.
+- A CI passa a anexar relatórios Lint HTML/XML/SARIF das variantes diagnosticDebug e companionDebug, além dos relatórios de segurança.
+- Não foi criado `lint-baseline.xml`: nenhuma ocorrência existente será ocultada sem triagem. Também não foi ativado `checkOnly`, para não restringir o conjunto de verificações.
+- As tarefas de Lint, testes unitários, builds dos dois sabores, guardrails e auditoria de APK precisam ser executadas novamente nesta nova revisão da PR. O resultado anterior continua sendo falha; esta alteração ainda não está validada até a conclusão da nova CI.
+- Teste físico Samsung Galaxy A06 / Android 16 + GT3 MAXX: **não validado**. Nenhuma alteração no protocolo BLE/GATT, permissões, comandos enviados ao relógio ou sincronização foi feita nesta correção.
+
 ## 05/11/2026 — Limpeza executada: independência total do aplicativo companheiro
 
 - Código ativo: removidas as referências de handoff e a preferência legada `wearfit_handoff_active`; o app não contém mais fluxo de liberação/compartilhamento de sessão.

@@ -165,7 +165,7 @@ class TimeWeatherActivity : Activity() {
 
         cityInput = EditText(this).apply {
             hint = "Digite uma cidade (ex.: Sorocaba)"
-            singleLine = true
+            setSingleLine(true)
             textSize = 15f
             setPadding(dp(12), dp(10), dp(12), dp(10))
             background = rounded(0xFFFFFFFF.toInt())

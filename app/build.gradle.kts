@@ -42,6 +42,16 @@ android {
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
+    lint {
+        // Lint is a blocking quality gate; keep warnings visible without hiding legacy debt.
+        abortOnError = true
+        checkReleaseBuilds = true
+        checkAllWarnings = false
+        warningsAsErrors = false
+        htmlReport = true
+        xmlReport = true
+        sarifReport = true
+    }
 }
 
 kotlin {

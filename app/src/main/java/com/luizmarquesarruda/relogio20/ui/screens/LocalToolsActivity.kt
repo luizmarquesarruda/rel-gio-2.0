@@ -172,7 +172,7 @@ class LocalToolsActivity : Activity() {
         body.addView(includeExternalSwitch, matchWrap())
         goalInput = EditText(this).apply {
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            singleLine = true
+            setSingleLine(true)
             hint = "Meta de passos (padrão 8000)"
         }
         goalInput.setText(getSharedPreferences(PREFS, MODE_PRIVATE)
@@ -308,7 +308,7 @@ class LocalToolsActivity : Activity() {
         addText("A contagem funciona enquanto esta tela permanecer aberta; não é um alarme persistente em segundo plano.", 11f)
         val minutes = EditText(this).apply {
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            singleLine = true
+            setSingleLine(true)
             hint = "Minutos (1 a 180)"
         }
         body.addView(minutes, matchWrap())

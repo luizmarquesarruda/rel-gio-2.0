@@ -1726,7 +1726,7 @@ class MainActivity : ComponentActivity() {
                     recoverEmptyGattInventory(gatt)
                     return
                 }
-                emptyInventoryRetryCount = 0
+                emptyInventoryRetryPolicy.reset()
                 telemetryState = TelemetryState.Idle
                 appendLog("Serviços descobertos: " + gatt.services.size)
                 discoveryLibraryStore.recordDiscoveryAsync(
