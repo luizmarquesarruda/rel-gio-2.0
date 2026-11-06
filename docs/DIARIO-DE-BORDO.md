@@ -1,3 +1,13 @@
+## 05/11/2026 — Limpeza executada: independência total do aplicativo companheiro
+
+- Código ativo: removidas as referências de handoff e a preferência legada `wearfit_handoff_active`; o app não contém mais fluxo de liberação/compartilhamento de sessão.
+- O parser e o decodificador NUS/AB foram renomeados para `Gt3MaxProtocolProfile`, `Gt3MaxAbFrame`, `Gt3MaxAbFrameParser` e `Gt3MaxAbStreamDecoder`. A mudança é de nomenclatura/isolamento do protocolo observado; não adiciona conexão com aplicativo externo nem altera a política BLE.
+- Testes correspondentes foram renomeados para refletir o protocolo candidato do GT3 MAX.
+- Removidos os documentos de pesquisa, inventário funcional, plano de substituição, handoff, SDK parceiro, investigação OTA vinculada ao app externo e matriz derivada desse catálogo.
+- README, índice da documentação, arquitetura, mapa de módulos, perfil do relógio, identificação e estudo do firmware foram atualizados para descrever a conexão direta.
+- O histórico anterior deste diário permanece como trilha de auditoria; entradas antigas descrevem funcionalidades históricas removidas e não representam o comportamento atual.
+- Testes Kotlin, Lint, builds diagnostic/companion, auditoria dos APKs e validação física no Galaxy A06 / Android 16 + GT3 MAXX: **aguardando CI e teste físico**. Nenhum merge realizado.
+
 ## 05/11/2026 — Decisão definitiva: remoção integral do WearFit Pro
 
 - Requisito obrigatório do produto: o Relógio 2.0 deve operar de forma independente e conectar-se diretamente ao GT3 MAXX.
