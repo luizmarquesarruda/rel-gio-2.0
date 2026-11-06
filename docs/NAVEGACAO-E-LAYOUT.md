@@ -8,7 +8,7 @@ A interface era construída diretamente em `MainActivity.kt` por meio de `Linear
 - ações de notificações e privacidade;
 - inventário técnico GATT e log de sessão.
 
-Isso tornava a tela inicial longa, misturava tarefas comuns e diagnóstico técnico e não oferecia uma organização para as funções do catálogo Wearfit Pro.
+Isso tornava a tela inicial longa, misturava tarefas comuns e diagnóstico técnico e não oferecia uma organização para as funções ainda não implementadas.
 
 ## Estrutura aplicada
 
@@ -43,7 +43,7 @@ A área de conexão foi reorganizada em um cartão de estado com hierarquia visu
 ## Semântica dos estados
 
 - **Tela existente**: existe uma tela no app para a função.
-- **Integração direta pendente / não validado**: Wearfit pode exibir/sincronizar, mas o parser e a origem direta no Relógio 2.0 não foram validados.
+- **Integração direta pendente / não validado**: o relógio pode exibir recursos que ainda não foram observados por BLE; parser e origem direta não foram validados.
 - **Não implementado**: não há ação funcional no app.
 - **Bloqueado por segurança**: sem comandos de OTA, factory reset, bloqueio remoto, pagamentos ou cartões de acesso.
 - **Semântica pendente**: o nome traduzido não basta para inferir o comportamento.
