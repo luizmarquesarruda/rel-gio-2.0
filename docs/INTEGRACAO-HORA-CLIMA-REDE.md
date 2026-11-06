@@ -6,7 +6,7 @@
 
 ## Objetivo
 
-O Relógio 2.0 passa a obter a hora do sistema Android e consultar condições meteorológicas pela conexão de dados móveis ou Wi-Fi do telefone, sem depender operacionalmente do WearFit Pro.
+O Relógio 2.0 passa a obter a hora do sistema Android e consultar condições meteorológicas pela conexão de dados móveis ou Wi-Fi do telefone, sem depender de aplicativos companheiros externos.
 
 O telefone é a ponte de rede. O aplicativo não tenta obter hora de servidores diretamente: usa o relógio civil do Android, que pode estar sincronizado pela rede quando "Data e hora automáticas" estiver habilitado nas configurações do sistema.
 
