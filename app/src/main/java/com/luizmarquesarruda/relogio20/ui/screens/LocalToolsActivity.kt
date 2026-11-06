@@ -25,13 +25,13 @@ import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.edit
-import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsRepository
-import com.luizmarquesarruda.relogio20.data.preferences.AppPreferences
-import com.luizmarquesarruda.relogio20.ui.RelogioUi
-import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsHistoryResult
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectOriginPolicy
+import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsHistoryResult
+import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsRepository
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsResult
+import com.luizmarquesarruda.relogio20.data.preferences.AppPreferences
 import com.luizmarquesarruda.relogio20.domain.activity.LocalFeaturePolicy
+import com.luizmarquesarruda.relogio20.ui.RelogioUi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -520,7 +520,6 @@ class LocalToolsActivity : Activity() {
 private object LocalHealthReminderAlarm {
     const val ACTION = "com.luizmarquesarruda.relogio20.LOCAL_HEALTH_REMINDER"
     private const val REQUEST_CODE = 4103
-    private const val PREFERENCES = "local_feature_tools"
     const val KEY_HOUR = "reminder_hour"
     const val KEY_MINUTE = "reminder_minute"
     const val KEY_ENABLED = "reminder_enabled"

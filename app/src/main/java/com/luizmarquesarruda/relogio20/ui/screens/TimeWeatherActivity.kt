@@ -22,8 +22,8 @@ import com.luizmarquesarruda.relogio20.data.weather.WeatherCodeLabels
 import com.luizmarquesarruda.relogio20.data.weather.WeatherLocation
 import com.luizmarquesarruda.relogio20.data.weather.WeatherPreferences
 import com.luizmarquesarruda.relogio20.data.weather.WeatherSnapshot
-import com.luizmarquesarruda.relogio20.ui.RelogioUi
 import com.luizmarquesarruda.relogio20.data.weather.WeatherSyncScheduler
+import com.luizmarquesarruda.relogio20.ui.RelogioUi
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

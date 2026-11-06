@@ -3,8 +3,8 @@ package com.luizmarquesarruda.relogio20.ui.screens
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import com.luizmarquesarruda.relogio20.ui.RelogioUi
 import com.luizmarquesarruda.relogio20.BuildConfig
+import com.luizmarquesarruda.relogio20.ui.RelogioUi
 import com.luizmarquesarruda.relogio20.notifications.NotificationCenterActivity
 
 /** Secondary resource screen; settings deliberately live elsewhere. */

@@ -1,7 +1,6 @@
 package com.luizmarquesarruda.relogio20.notifications
 
 import android.app.Activity
-import com.luizmarquesarruda.relogio20.ui.RelogioUi
 import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
@@ -16,6 +15,7 @@ import android.widget.ScrollView
 import android.widget.Switch
 import android.widget.TextView
 import android.graphics.Typeface
+import com.luizmarquesarruda.relogio20.ui.RelogioUi
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

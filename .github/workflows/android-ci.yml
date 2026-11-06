@@ -66,9 +66,22 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      - name: Run KtLint as advisory source review
+      - name: Bootstrap KtLint baseline for existing style debt
+        id: ktlint_baseline_bootstrap
+        if: ${{ !hashFiles('app/config/ktlint/baseline.xml') }}
+        run: gradle --no-daemon :app:ktlintGenerateBaseline
+
+      - name: Publish KtLint baseline for review
+        if: ${{ steps.ktlint_baseline_bootstrap.outcome == 'success' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ktlint-baseline-review
+          path: app/config/ktlint/baseline.xml
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Run KtLint as a blocking source gate
         id: ktlint
-        continue-on-error: true
         run: gradle --no-daemon :app:ktlintCheck
 
       - name: Run Android Lint for both variants

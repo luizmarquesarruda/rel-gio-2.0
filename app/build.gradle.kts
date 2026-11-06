@@ -10,7 +10,8 @@ ktlint {
     version.set("1.8.0")
     android.set(true)
     outputToConsole.set(true)
-    ignoreFailures.set(true)
+    ignoreFailures.set(false)
+    baseline.set(file("config/ktlint/baseline.xml"))
     reporters {
         reporter(ReporterType.PLAIN)
         reporter(ReporterType.CHECKSTYLE)
