@@ -75,7 +75,7 @@ class SettingsActivity : Activity() {
         body.addView(includeExternal)
         RelogioUi.message(
             body,
-            "Desativado: consulta somente registros cuja origem seja o próprio Relógio 2.0. Ativado: permite que os totais agregados incluam telefone e outros aplicativos autorizados no Health Connect. O resultado continua identificado como agregado e nunca como dado exclusivo do GT3 Maxx."
+            "Desativado: limita a consulta à origem do próprio aplicativo; como esta versão ainda não grava passos no Health Connect, pode não haver total disponível. Ativado: permite incluir telefone e outros aplicativos autorizados. O resultado continua identificado como agregado e nunca como dado exclusivo do GT3 Maxx."
         )
 
         RelogioUi.section(body, "ARMAZENAMENTO")

@@ -2,7 +2,6 @@ package com.luizmarquesarruda.relogio20.ui.screens
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.health.connect.client.PermissionController
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectAvailability
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsRepository

@@ -348,7 +348,7 @@ class MainActivity : ComponentActivity() {
 
         clockView = TextView(this).apply {
             textSize = 18f
-            setTextColor(0xFF17212B.toInt())
+            setTextColor(0xFFF8FAFC.toInt())
             setPadding(0, dp(12), 0, dp(4))
         }
         root.addView(clockView)
@@ -378,7 +378,7 @@ class MainActivity : ComponentActivity() {
             text = "Relógio não conectado"
             textSize = 17f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(0xFF17212B.toInt())
+            setTextColor(0xFFF8FAFC.toInt())
         }
         connectionHeading.addView(statusView)
         connectionCard.addView(connectionHeading)
@@ -386,7 +386,7 @@ class MainActivity : ComponentActivity() {
         statusDetailView = TextView(this).apply {
             text = "Ative o Bluetooth e toque em Buscar relógio para localizar o GT3 MAX."
             textSize = 13f
-            setTextColor(0xFF526170.toInt())
+            setTextColor(0xFF9FB4CF.toInt())
             setPadding(0, dp(8), 0, dp(14))
         }
         connectionCard.addView(statusDetailView)
@@ -394,7 +394,7 @@ class MainActivity : ComponentActivity() {
         deviceProfileView = TextView(this).apply {
             text = "Perfil informado: GT3 MAX Call • firmware V1.07 • build SH0050-1_1.1.3_1.23_1.18_1.1"
             textSize = 11f
-            setTextColor(0xFF526170.toInt())
+            setTextColor(0xFF9FB4CF.toInt())
             setPadding(0, dp(2), 0, dp(6))
         }
         connectionCard.addView(deviceProfileView)
@@ -410,7 +410,7 @@ class MainActivity : ComponentActivity() {
         deviceTimeSyncView = TextView(this).apply {
             text = "Hora do relógio: aguardando conexão BLE"
             textSize = 13f
-            setTextColor(0xFF526170.toInt())
+            setTextColor(0xFF9FB4CF.toInt())
             setPadding(0, 0, 0, dp(12))
         }
         connectionCard.addView(deviceTimeSyncView)
@@ -503,7 +503,7 @@ class MainActivity : ComponentActivity() {
             textSize = 12f
             setTextColor(0xFF9FB4CF.toInt())
             setPadding(dp(12), dp(10), dp(12), dp(10))
-            background = roundedSurface(0xFFFFFFFF.toInt(), 0xFFE1E7EF.toInt())
+            background = roundedSurface(0xFF0E1B2D.toInt(), 0xFF28415F.toInt())
         }
         root.addView(gattProgressView, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
@@ -519,7 +519,7 @@ class MainActivity : ComponentActivity() {
             text = "Passos hoje: aguardando dados da Conexão Saúde"
             textSize = 24f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(0xFF17212B.toInt())
+            setTextColor(0xFFF8FAFC.toInt())
             setPadding(0, dp(8), 0, dp(4))
         }
         root.addView(stepsView)
@@ -527,7 +527,7 @@ class MainActivity : ComponentActivity() {
         healthStatusView = TextView(this).apply {
             text = "Fonte: Conexão Saúde • total agregado de fontes autorizadas"
             textSize = 12f
-            setTextColor(0xFF526170.toInt())
+            setTextColor(0xFF9FB4CF.toInt())
             setPadding(0, 0, 0, dp(8))
         }
         root.addView(healthStatusView)
@@ -610,15 +610,15 @@ class MainActivity : ComponentActivity() {
         diagnosticPanel.addView(TextView(this).apply {
             text = "Registro técnico • últimos 250 eventos"
             textSize = 12f
-            setTextColor(0xFF526170.toInt())
+            setTextColor(0xFF9FB4CF.toInt())
             setPadding(0, dp(8), 0, dp(4))
         })
         logView = TextView(this).apply {
             textSize = 11f
             maxLines = 8
-            setTextColor(0xFF263746.toInt())
+            setTextColor(0xFFE5EDF7.toInt())
             setPadding(dp(8), dp(8), dp(8), dp(8))
-            background = roundedSurface(0xFFFFFFFF.toInt(), 0xFFE1E7EF.toInt())
+            background = roundedSurface(0xFF0E1B2D.toInt(), 0xFF28415F.toInt())
         }
         diagnosticPanel.addView(logView)
         root.addView(makeButton("Diagnóstico avançado • mostrar/ocultar") {
@@ -1030,7 +1030,7 @@ class MainActivity : ComponentActivity() {
         val view = TextView(this).apply {
             text = value
             textSize = size
-            setTextColor(0xFF263746.toInt())
+            setTextColor(0xFFE5EDF7.toInt())
             if (bold) setTypeface(typeface, android.graphics.Typeface.BOLD)
             setPadding(0, dp(6), 0, dp(4))
         }
@@ -1370,7 +1370,7 @@ class MainActivity : ComponentActivity() {
                 val deviceCard = LinearLayout(this).apply {
                     orientation = LinearLayout.VERTICAL
                     setPadding(dp(14), dp(12), dp(14), dp(12))
-                    background = roundedSurface(0xFFFFFFFF.toInt(), 0xFFE1E7EF.toInt())
+                    background = roundedSurface(0xFF0E1B2D.toInt(), 0xFF28415F.toInt())
                     isClickable = true
                     isFocusable = true
                     contentDescription = "Conectar a $name. Sinal ${result.rssi} dBm."
@@ -1384,12 +1384,12 @@ class MainActivity : ComponentActivity() {
                     text = name
                     textSize = 15f
                     setTypeface(typeface, android.graphics.Typeface.BOLD)
-                    setTextColor(0xFF17212B.toInt())
+                    setTextColor(0xFFF8FAFC.toInt())
                 }
                 val deviceMeta = TextView(this).apply {
                     text = "Sinal ${result.rssi} dBm  •  identificação protegida: " + maskAddress(address)
                     textSize = 12f
-                    setTextColor(0xFF526170.toInt())
+                    setTextColor(0xFF9FB4CF.toInt())
                     setPadding(0, dp(4), 0, 0)
                 }
                 deviceCard.addView(deviceName)
