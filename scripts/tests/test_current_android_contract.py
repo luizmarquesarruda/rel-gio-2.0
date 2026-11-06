@@ -90,6 +90,36 @@ class CurrentAndroidContractTests(unittest.TestCase):
                 self.assertIsNotNone(max_sdk)
                 self.assertLessEqual(int(max_sdk), 30)
 
+    def test_cts_clock_write_requires_confirmation_after_gatt_validation(self):
+        source = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
+        ).read_text(encoding="utf-8")
+        self.assertIn('makeButton("Sincronizar hora") { requestClockSync() }', source)
+        self.assertIn('setPositiveButton("Autorizar e sincronizar")', source)
+        self.assertIn("explicitUserConsent = explicitUserConsent", source)
+        self.assertNotIn("Enviando automaticamente a hora do Android", source)
+
+    def test_manual_screens_apply_shared_edge_to_edge_insets(self):
+        ui = (ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/RelogioUi.kt").read_text(encoding="utf-8")
+        self.assertIn("WindowCompat.setDecorFitsSystemWindows(activity.window, false)", ui)
+        self.assertIn("WindowInsetsCompat.Type.systemBars()", ui)
+        for relative_path in (
+            "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt",
+            "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/LocalToolsActivity.kt",
+            "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/TimeWeatherActivity.kt",
+            "app/src/companion/java/com/luizmarquesarruda/relogio20/notifications/NotificationCenterActivity.kt",
+        ):
+            self.assertIn("RelogioUi.applyEdgeToEdge", (ROOT / relative_path).read_text(encoding="utf-8"))
+
+    def test_local_health_reminder_is_restored_after_reboot(self):
+        manifest = (ROOT / "app/src/main/AndroidManifest.xml").read_text(encoding="utf-8")
+        source = (ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/LocalToolsActivity.kt").read_text(encoding="utf-8")
+        self.assertIn("android.permission.RECEIVE_BOOT_COMPLETED", manifest)
+        self.assertIn("android.intent.action.BOOT_COMPLETED", manifest)
+        self.assertIn("Intent.ACTION_BOOT_COMPLETED", source)
+        self.assertIn("Intent.ACTION_MY_PACKAGE_REPLACED", source)
+        self.assertIn("setInexactRepeating", source)
+
     def test_time_weather_screen_is_internal_and_reachable_from_feature_hub(self):
         manifest = ET.parse(ROOT / "app/src/main/AndroidManifest.xml").getroot()
         application = manifest.find("application")
@@ -235,7 +265,7 @@ class CurrentAndroidContractTests(unittest.TestCase):
 
 
 
-    def test_dashboard_is_launcher_with_seven_distinct_secondary_screens(self):
+    def test_dashboard_is_launcher_with_six_main_level_secondary_areas(self):
         manifest = ET.parse(ROOT / "app/src/main/AndroidManifest.xml").getroot()
         android = "{" + ANDROID_NS + "}"
         application = manifest.find("application")
@@ -251,9 +281,14 @@ class CurrentAndroidContractTests(unittest.TestCase):
             ".ui.screens.SleepOverviewActivity",
             ".ui.screens.HistoryActivity",
             ".ui.screens.MoreResourcesActivity",
-            ".ui.screens.SettingsActivity",
         }
         self.assertTrue(expected.issubset(set(activities)))
+        self.assertIn(".ui.screens.SettingsActivity", activities)
+        dashboard = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/DashboardActivity.kt"
+        ).read_text(encoding="utf-8")
+        self.assertEqual(6, dashboard.count('"TELA '))
+        self.assertNotIn("SettingsActivity::class.java", dashboard)
         self.assertEqual("false", activities[".ui.screens.MainActivity"].attrib.get(android + "exported"))
         launchers = []
         for name, node in activities.items():
@@ -264,12 +299,18 @@ class CurrentAndroidContractTests(unittest.TestCase):
                     launchers.append(name)
         self.assertEqual([".ui.screens.DashboardActivity"], launchers)
 
-    def test_settings_screen_is_separate_and_preferences_are_persisted_locally(self):
+    def test_settings_screen_is_nested_under_more_resources_and_preferences_are_shared(self):
         settings = (
             ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/SettingsActivity.kt"
         ).read_text(encoding="utf-8")
         preferences = (
             ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/data/preferences/AppPreferences.kt"
+        ).read_text(encoding="utf-8")
+        more_resources = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MoreResourcesActivity.kt"
+        ).read_text(encoding="utf-8")
+        local_tools = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/LocalToolsActivity.kt"
         ).read_text(encoding="utf-8")
         dashboard = (
             ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/DashboardActivity.kt"
@@ -278,7 +319,11 @@ class CurrentAndroidContractTests(unittest.TestCase):
         self.assertIn("AppPreferences.setKilometers", settings)
         self.assertIn("AppPreferences.setIncludeExternalHealthSources", settings)
         self.assertIn("Context.MODE_PRIVATE", preferences)
-        self.assertIn("SettingsActivity::class.java", dashboard)
+        self.assertIn("SettingsActivity::class.java", more_resources)
+        self.assertNotIn("SettingsActivity::class.java", dashboard)
+        self.assertIn("AppPreferences.setIncludeExternalHealthSources", local_tools)
+        self.assertIn("AppPreferences.includesExternalHealthSources", local_tools)
+        self.assertIn("LEGACY_KEY_INCLUDE_EXTERNAL", preferences)
         self.assertIn("HealthConnectOriginPolicy.INCLUDE_EXTERNAL", (
             ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/ActivityOverviewActivity.kt"
         ).read_text(encoding="utf-8"))
