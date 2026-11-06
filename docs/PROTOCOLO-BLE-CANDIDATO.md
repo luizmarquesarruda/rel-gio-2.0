@@ -2,7 +2,7 @@
 
 ## Resumo executivo
 
-A captura do GT3 MAX contém uma correspondência específica com um projeto público que emula um relógio DT78 para o aplicativo WearFit 2.0:
+A captura do GT3 MAX contém uma correspondência de UUIDs e framing com um projeto público de emulação BLE da família DT78:
 
 - Serviço NUS: `6e400001-b5a3-f393-e0a9-e50e24dcca9e`.
 - RX (app → relógio): `6e400002-b5a3-f393-e0a9-e50e24dcca9e`.
@@ -33,11 +33,11 @@ O parser rejeita cabeçalho incorreto, tamanho divergente, quadro incompleto e c
 ## Configuração aplicada no Relógio 2.0
 
 - Perfil candidato NUS_AB_FRAME_COMPATIBLE_CANDIDATE.
-- UUIDs de serviço, RX e TX centralizados em WearfitProtocolProfile.
-- Parser puro Kotlin WearfitAbFrameParser, sem dependência Android.
+- UUIDs de serviço, RX e TX centralizados em Gt3MaxProtocolProfile.
+- Parser puro Kotlin Gt3MaxAbFrameParser, sem dependência Android.
 - Testes offline para captura real, fixture pública, tamanho inválido, cabeçalho inválido, comando desconhecido e quadro incompleto.
 - O inventário GATT mostra o perfil como candidato quando encontra o serviço e a característica TX.
-- O parser só interpreta notificações recebidas na TX NUS; não inicia inscrição automaticamente.
+- O parser só interpreta quadros recebidos no canal TX NUS observado; não inicia inscrição automaticamente.
 
 ## Segurança
 
@@ -50,9 +50,9 @@ O parser rejeita cabeçalho incorreto, tamanho divergente, quadro incompleto e c
 ## Validação ainda necessária
 
 1. Capturar o mesmo tipo de quadro em pelo menos duas sessões.
-2. Observar o valor da bateria no Wearfit Pro no mesmo instante.
+2. Observar o indicador de bateria no próprio relógio no mesmo instante.
 3. Repetir em níveis diferentes de bateria, sem enviar comandos.
 4. Confirmar se 0x0C corresponde realmente a 12%.
-5. Obter versão de firmware/hardware no Wearfit Pro e comparar o inventário GATT.
+5. Registrar as versões de firmware/hardware diretamente no relógio e comparar inventários GATT.
 
-Até cumprir esses passos, a interface e os logs devem dizer candidato ou não validado, nunca bateria confirmada.
+Até cumprir esses passos, a interface e os logs devem dizer candidato ou não validado, nunca bateria confirmada. O Relógio 2.0 opera diretamente com o GT3 MAX e não depende de aplicativo companheiro.
