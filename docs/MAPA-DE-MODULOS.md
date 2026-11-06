@@ -32,7 +32,7 @@ A base é um aplicativo Android nativo Kotlin. O adaptador de consulta agregada 
 | device/ble/core/BleReconnectPolicy.kt | BLE lifecycle | Política pura de backoff para retentativas; não executa scan nem conexão. |
 | device/ble/core/BleReconnectCoordinator.kt | BLE lifecycle | Decide quando agendar e quando iniciar uma retentativa, considerando primeiro plano, conexão GATT, scan e permissões; não agenda timers nem chama APIs Android. |
 | device/gt3max/protocol/Gt3MaxCallDeviceProfile.kt | Perfil do dispositivo | Identificadores GT3 MAX Call informados e fingerprint GATT da captura; sem autenticação de hardware/firmware. |
-| device/gt3max/protocol/WearfitAbFrameParser.kt | Protocolo do dispositivo | Perfil NUS/AB candidato e parser restrito. Não controla conexão. |
+| device/gt3max/protocol/Gt3MaxAbFrameParser.kt | Protocolo do dispositivo | Perfil NUS/AB candidato observado no GT3 MAX; parser de framing isolado. Não controla conexão. |
 | device/discovery/FeatureDiscoveryEngine.kt | Descoberta de funcionalidades | Classifica inventário GATT e metadados de notificações sem inferir semântica de payload desconhecido. |
 | device/discovery/GattCapabilityMatrix.kt | Matriz GATT | Classifica onze grupos de perfis Bluetooth SIG pelos UUIDs, propriedades, CCCD e tráfego observado; ausência do perfil não prova ausência física do sensor. |
 | device/discovery/GattProfileSignature.kt | Assinatura estrutural GATT | Calcula SHA-256 de UUIDs/propriedades/descritores para comparar inventários; não identifica firmware binário nem autentica o dispositivo. |
