@@ -12,24 +12,36 @@ A separação atual já possui componentes úteis e testados: políticas BLE pur
 
 ## 2. CI / Gradle — investigação e correção aplicada
 
-### Evidências
+### Causa raiz confirmada
 
-- O workflow configurava Gradle **9.5.0**.
-- O build raiz declara Android Gradle Plugin **8.13.2**.
-- O diário já registrava falha anterior de configuração das dependências de variantes, com mensagem de configuração `diagnosticDebugImplementation` ausente.
-- O run #452 falhou durante o bootstrap de verificação de dependências; as etapas de Lint, build, auditoria de APK e publicação foram ignoradas.
-- O repositório ainda não continha `gradle/verification-metadata.xml`, portanto o bootstrap executava testes e builds para gerar os checksums iniciais.
+Os logs completos do run #452 confirmam a falha:
 
-A combinação Gradle 9.5.0 / AGP 8.13.2 não é a combinação suportada indicada para essa linha do Android Gradle Plugin. Isso é uma causa provável e tecnicamente consistente com as falhas de configuração observadas; o log detalhado do bootstrap não ficou disponível pela interface de leitura usada nesta auditoria. A próxima execução é necessária para confirmar a correção.
+```text
+Build file: app/build.gradle.kts, line 89
+Configuration with name 'diagnosticDebugImplementation' not found.
+```
 
-### Correções aplicadas no workflow
+A causa direta não era apenas a versão do Gradle: o script chamava `add("diagnosticDebugImplementation", ...)` durante a avaliação do build, antes de o Android Gradle Plugin criar as configurações específicas da variante. A mesma abordagem era usada para `diagnosticBenchmarkImplementation`.
 
-1. Gradle foi alinhado para **8.13**, compatível com a linha AGP 8.13.x.
-2. Quando o arquivo de verificação ainda não existe, o bootstrap já executa os testes unitários e os builds das duas variantes. A etapa normal de build agora só executa quando o bootstrap foi ignorado por já existir metadata; isso evita repetir o mesmo grafo Gradle no mesmo job.
-3. As etapas de guardrails e auditoria de APK aceitam como build válido o sucesso do bootstrap ou da etapa normal de build, sem permitir que uma falha no bootstrap seja mascarada.
-4. A geração inicial de metadata continua sendo trust-on-first-use. O artefato deve ser revisado antes de ser versionado; não se deve aceitar checksums sem revisão.
+A configuração do toolchain também foi corrigida: o workflow usava Gradle **9.5.0** com Android Gradle Plugin **8.13.2**. O workflow agora usa Gradle **8.13**, alinhado à linha AGP 8.13.x. Essa correção remove uma incompatibilidade adicional, mas não substitui a correção da ordem de criação das configurações.
 
-**Estado:** correção enviada à branch; CI posterior ainda precisa confirmar Gradle, dependências, testes, Lint, APK e guardrails.
+### Correções aplicadas
+
+1. O workflow foi alinhado para Gradle **8.13**.
+2. Em `app/build.gradle.kts`, as dependências LeakCanary e ProfileInstaller passaram a ser anexadas com `configurations.configureEach`, quando as configurações exatas `diagnosticDebugImplementation` e `diagnosticBenchmarkImplementation` forem criadas pelo AGP.
+3. LeakCanary permanece restrito a `diagnosticDebug`; ProfileInstaller permanece restrito a `diagnosticBenchmark`. Os guardrails existentes verificam a presença/ausência por classpath.
+4. O bootstrap ainda executa testes e builds para gerar os checksums iniciais. A etapa normal de build não repete as mesmas tarefas quando o bootstrap já concluiu com sucesso.
+5. O teste de contrato Python que exigia Gradle 9.5 foi atualizado para exigir Gradle 8.13. Foram adicionados testes para a configuração tardia das dependências e para os gates do bootstrap.
+6. O arquivo inicial de verificação SHA-256 continua sujeito a revisão humana antes de ser versionado; não aceitar checksums sem inspeção.
+
+### Histórico de validação
+
+- #452: falha confirmada em `diagnosticDebugImplementation` ausente.
+- #453: falha de teste Python porque o contrato existente ainda exigia Gradle 9.5; teste corrigido.
+- #455: repetiu a falha esperada do contrato antigo antes da atualização desse teste; não chegou ao Gradle.
+- A correção atual precisa ser confirmada por uma nova CI, incluindo Gradle, testes Kotlin, Lint, builds, guardrails e APK.
+
+**Estado:** causa raiz identificada e correção de configuração aplicada; validação Android ainda pendente.
 
 ## 3. Arquitetura encontrada
 
