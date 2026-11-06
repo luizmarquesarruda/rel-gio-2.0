@@ -144,3 +144,7 @@ Consulte [ferramentas de diagnóstico, integridade e desempenho](docs/FERRAMENTA
 ## Segurança e privacidade
 
 A descoberta BLE não deriva localização física. Não guardar endereço MAC em relatórios públicos. Não assumir que nome comercial identifica chipset ou protocolo. Pressão estimada, SpO2 e outras estimativas de smartwatch não são diagnósticos médicos.
+
+## Navegação do aplicativo
+
+O aplicativo abre no **Painel principal** e possui sete telas secundárias: **Conexão e dispositivo**, **Saúde**, **Atividade**, **Sono**, **Histórico**, **Mais recursos** e **Configurações**. A especificação de navegação, estados e limites das medições está em [docs/NAVEGACAO-E-LAYOUT.md](docs/NAVEGACAO-E-LAYOUT.md).

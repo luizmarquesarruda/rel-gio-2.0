@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <queries>
         <package android:name="com.google.android.apps.healthdata" />
@@ -76,20 +77,30 @@
         <receiver
             android:name=".ui.screens.LocalHealthReminderReceiver"
             android:enabled="true"
-            android:exported="false" />
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
         <activity
             android:name=".ui.screens.FeatureDiscoveryActivity"
             android:exported="false" />
         <activity
             android:name=".ui.screens.DiscoveryLibraryActivity"
             android:exported="false" />
-        <activity
-            android:name=".ui.screens.MainActivity"
-            android:exported="true">
+        <activity android:name=".ui.screens.MainActivity" android:exported="false" />
+        <activity android:name=".ui.screens.DashboardActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".ui.screens.HealthOverviewActivity" android:exported="false" />
+        <activity android:name=".ui.screens.ActivityOverviewActivity" android:exported="false" />
+        <activity android:name=".ui.screens.SleepOverviewActivity" android:exported="false" />
+        <activity android:name=".ui.screens.HistoryActivity" android:exported="false" />
+        <activity android:name=".ui.screens.MoreResourcesActivity" android:exported="false" />
+        <activity android:name=".ui.screens.SettingsActivity" android:exported="false" />
     </application>
 </manifest>

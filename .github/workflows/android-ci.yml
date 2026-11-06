@@ -12,6 +12,7 @@ on:
       - feat/ble-readonly-proof-of-concept
       - 'feat/**'
       - 'docs/**'
+      - 'work/**'
   workflow_dispatch:
 
 concurrency:
@@ -43,7 +44,9 @@ jobs:
         id: setup_gradle
         uses: gradle/actions/setup-gradle@v6
         with:
-          gradle-version: "9.5.0"
+          # AGP 8.13.2 is paired with Gradle 8.13. Gradle 9.x is not
+          # the supported toolchain for this Android Gradle Plugin line.
+          gradle-version: "8.13"
 
       - name: Bootstrap Gradle dependency verification metadata
         id: dependency_verification_bootstrap
@@ -52,7 +55,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "generated=true" >> "$GITHUB_OUTPUT"
-          gradle --no-daemon --write-verification-metadata sha256 testDiagnosticDebugUnitTest testCompanionDebugUnitTest assembleDiagnosticDebug assembleCompanionDebug :macrobenchmark:assemble
+          gradle --no-daemon --write-verification-metadata sha256 lintDiagnosticDebug lintCompanionDebug testDiagnosticDebugUnitTest testCompanionDebugUnitTest assembleDiagnosticDebug assembleCompanionDebug :macrobenchmark:assemble
 
       - name: Publish Gradle verification bootstrap for review
         if: ${{ steps.dependency_verification_bootstrap.outputs.generated == 'true' }}
@@ -63,9 +66,32 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      - name: Run KtLint as advisory source review
+      - name: Bootstrap KtLint baseline for existing style debt
+        id: ktlint_baseline_bootstrap
+        if: ${{ !hashFiles('app/config/ktlint/baseline.xml') }}
+        run: gradle --no-daemon :app:ktlintGenerateBaseline
+
+      - name: Publish KtLint baseline for review
+        if: ${{ steps.ktlint_baseline_bootstrap.outcome == 'success' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ktlint-baseline-review
+          path: app/config/ktlint/baseline.xml
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Require review and commit of the generated KtLint baseline
+        if: ${{ steps.ktlint_baseline_bootstrap.outcome == 'success' }}
+        shell: bash
+        run: |
+          echo "A baseline KtLint foi gerada e publicada para revisão." >&2
+          echo "Revise app/config/ktlint/baseline.xml, commit o arquivo e execute a CI novamente." >&2
+          echo "Nenhum APK será publicado enquanto a baseline não estiver versionada." >&2
+          exit 1
+
+      - name: Run KtLint as a blocking source gate
         id: ktlint
-        continue-on-error: true
+        if: ${{ !cancelled() && steps.ktlint_baseline_bootstrap.outcome == 'skipped' }}
         run: gradle --no-daemon :app:ktlintCheck
 
       - name: Run Android Lint for both variants
@@ -74,17 +100,19 @@ jobs:
 
       - name: Run unit tests and assemble both variants
         id: build
-        if: ${{ !cancelled() && steps.setup_gradle.outcome == 'success' && steps.manifest_policy_tests.outcome == 'success' }}
+        # When verification metadata is absent, the bootstrap already performs
+        # these exact tests/builds. Do not run the same failing Gradle graph twice.
+        if: ${{ !cancelled() && steps.setup_gradle.outcome == 'success' && steps.manifest_policy_tests.outcome == 'success' && steps.dependency_verification_bootstrap.outcome == 'skipped' }}
         run: gradle --no-daemon testDiagnosticDebugUnitTest testCompanionDebugUnitTest assembleDiagnosticDebug assembleCompanionDebug :macrobenchmark:assemble
 
       - name: Enforce privacy dependency and permission guardrails
         id: privacy_guardrails
-        if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.manifest_policy_tests.outcome == 'success' }}
+        if: ${{ !cancelled() && (steps.build.outcome == 'success' || steps.dependency_verification_bootstrap.outcome == 'success') && steps.manifest_policy_tests.outcome == 'success' }}
         run: bash scripts/check-privacy-guardrails.sh
 
       - name: Audit merged APK manifests, signatures and hashes
         id: audit_apks
-        if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.privacy_guardrails.outcome == 'success' }}
+        if: ${{ !cancelled() && (steps.build.outcome == 'success' || steps.dependency_verification_bootstrap.outcome == 'success') && steps.privacy_guardrails.outcome == 'success' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -135,7 +163,7 @@ jobs:
 
       - name: Prepare diagnostic APK metadata in the reports artifact
         id: prepare_diagnostic_package
-        if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.lint.outcome == 'success' && steps.privacy_guardrails.outcome == 'success' && steps.audit_apks.outcome == 'success' }}
+        if: ${{ !cancelled() && (steps.build.outcome == 'success' || steps.dependency_verification_bootstrap.outcome == 'success') && steps.lint.outcome == 'success' && steps.privacy_guardrails.outcome == 'success' && steps.audit_apks.outcome == 'success' }}
         env:
           SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
         shell: bash

@@ -1,72 +1,105 @@
-# Estrutura de pacotes — Relógio 2.0
+# Estrutura de pacotes e módulos — Relógio 2.0
 
 ## Estado implementado
 
-O aplicativo continua em um único módulo Gradle Android, `:app`, com Kotlin nativo e Activities/Views. Esta documentação registra a organização de pacotes aplicada na branch `refactor/package-layer-boundaries-20261105`.
+O repositório contém dois módulos Gradle:
+
+- `:app`: aplicativo Android nativo em Kotlin, Activities e Views.
+- `:macrobenchmark`: módulo de teste de macrobenchmark, direcionado à variante `diagnostic`.
+
+O módulo `:app` possui os flavors `diagnostic` e `companion`. A variante `companion` declara o serviço local de captura de notificações; a variante `diagnostic` substitui a tela por uma explicação e não declara `NotificationListenerService`.
+
+Não há Jetpack Compose, Hilt ou Room configurados. A persistência atual é baseada em `SharedPreferences` e arquivos privados com `AtomicFile`. Room permanece uma decisão futura, sujeita a medição no dispositivo e aprovação específica.
+
+## Organização de pacotes
 
 ```text
 com.luizmarquesarruda.relogio20/
+├── RelogioApplication.kt
 ├── ui/
-│   ├── screens/
-│   │   ├── MainActivity.kt
-│   │   ├── FeatureHubActivity.kt
-│   │   ├── FeatureDiscoveryActivity.kt
-│   │   ├── DiscoveryLibraryActivity.kt
-│   │   └── HealthPrivacyActivity.kt
-│   └── formatters/
-│       └── StepsCountFormatter.kt
+│   ├── RelogioUi.kt
+│   ├── formatters/
+│   └── screens/
+│       ├── DashboardActivity.kt
+│       ├── MainActivity.kt
+│       ├── HealthOverviewActivity.kt
+│       ├── ActivityOverviewActivity.kt
+│       ├── SleepOverviewActivity.kt
+│       ├── HistoryActivity.kt
+│       ├── MoreResourcesActivity.kt
+│       ├── SettingsActivity.kt
+│       ├── FeatureDiscoveryActivity.kt
+│       ├── DiscoveryLibraryActivity.kt
+│       ├── FeatureHubActivity.kt
+│       ├── LocalToolsActivity.kt
+│       ├── TimeWeatherActivity.kt
+│       └── HealthPrivacyActivity.kt
 ├── domain/
+│   ├── activity/
 │   ├── diagnostics/
-│   │   └── BleDiagnosticReport.kt
-│   └── health/
-│       ├── HealthMetricSample.kt
-│       └── StepsSnapshot.kt
+│   ├── health/
+│   ├── session/
+│   ├── telemetry/
+│   └── weather/
 ├── device/
 │   ├── ble/
 │   │   ├── core/
-│   │   │   ├── BleDeviceIdentity.kt
-│   │   │   ├── BleScanCandidatePolicy.kt
-│   │   │   ├── BleValueFormatter.kt
-│   │   │   ├── BleReconnectPolicy.kt
-│   │   │   ├── BleReconnectCoordinator.kt
-│   │   │   └── GattCallbackSafetyPolicy.kt
 │   │   └── gatt/
-│   │       ├── SerialGattOperationQueue.kt
-│   │       └── BluetoothCurrentTimePayload.kt
 │   ├── discovery/
 │   └── gt3max/protocol/
 ├── data/
 │   ├── discovery/
-│   └── healthconnect/
+│   ├── healthconnect/
+│   ├── preferences/
+│   └── weather/
 └── notifications/
-    # componentes específicos dos flavors companion/diagnostic
+    ├── app/src/companion/java/  (listener e captura local)
+    └── app/src/diagnostic/java/ (tela informativa sem listener)
 ```
 
-## Responsabilidades e dependências
+## Responsabilidades e limites
 
 | Pacote | Responsabilidade | Limite |
 |---|---|---|
-| `ui.screens` | Activities, navegação e apresentação | Não deve decodificar payloads nem decidir semântica de métricas. |
-| `ui.formatters` | Formatação localizada para exibição | Não contém regras de domínio nem acesso Android Bluetooth. |
-| `domain.health` | Modelos tipados, unidade, origem e qualidade | Kotlin puro; não conhece Android, GATT ou Health Connect. |
-| `domain.diagnostics` | Relatórios locais sanitizados | Não exporta texto de notificações nem endereço Bluetooth integral. |
-| `device.ble.core` | Identidade/pistas, política de reconexão e segurança de callbacks | Não interpreta métricas do relógio. |
-| `device.ble.gatt` | Fila serial e estruturas Bluetooth SIG | Operações permanecem condicionadas à capacidade anunciada e autorização explícita existente. |
-| `device.discovery` | Inventário, fingerprint e exploração GATT | Ausência de UUID/retorno não prova ausência física de sensor. |
-| `device.gt3max.protocol` | Perfil candidato e framing específico | Sem semântica proprietária inferida sem capturas repetíveis. |
-| `data.discovery` | Inventário e biblioteca local | Preservar integridade de schema, dados corrompidos e escrita atômica. |
-| `data.healthconnect` | Consulta agregada e permissões | Não atribuir agregado multiorigem ao GT3 MAX. |
-| `notifications` | Captura consentida na variante companion | Conteúdo restrito, volátil e não transmitido. |
+| `ui` | Navegação, componentes visuais, Activities e apresentação | Não deve decidir semântica de payloads nem atribuir métricas a uma fonte não validada. |
+| `domain.health` | Modelos tipados, unidades, origem e validação | Kotlin puro; não conhece Android, GATT ou Health Connect. |
+| `domain.session` / `domain.telemetry` | Estado de sessões, watchdog e telemetria | Não inicia operações Android diretamente. |
+| `device.ble.core` | Identidade/pistas, reconexão e segurança de callbacks | Não interpreta métricas proprietárias. |
+| `device.ble.gatt` | Fila serial, política de acesso e contratos Bluetooth SIG | Escritas dependem de capacidade anunciada e consentimento explícito. |
+| `device.discovery` | Inventário, fingerprint, plano e decodificação SIG | Ausência de UUID ou retorno não prova ausência física de sensor. |
+| `device.gt3max.protocol` | Perfil candidato e framing AB/NUS | Sem semântica proprietária inferida sem capturas repetíveis. NUS RX e DFU/OTA continuam bloqueados. |
+| `data.discovery` | Catálogo GATT e biblioteca de captura local | Preservar integridade de schema, conteúdo corrompido e escrita atômica; expor falhas do writer. |
+| `data.healthconnect` | Consulta agregada e permissões Health Connect | Não atribuir agregado multiorigem ao GT3 MAX. |
+| `data.preferences` | Preferências compartilhadas do aplicativo | Uma única fonte para o escopo de origem do Health Connect. |
+| `data.weather` | Geocodificação/consulta Open-Meteo e cache | Enviar somente localidade selecionada manualmente; não transmitir identificador do relógio ou dados de saúde. |
+| `notifications` | Captura consentida e volátil na variante companion | Conteúdo restrito, sem persistência em arquivo ou transmissão ao relógio nesta versão. |
 
-## Limite desta refatoração
+## Navegação
 
-Esta alteração é um reposicionamento de classes e imports, com alinhamento do Manifesto e dos testes de caminho. Não cria módulos Gradle, não introduz Jetpack Compose e não altera deliberadamente comportamento BLE, callbacks, reconexão, CTS, decoders, armazenamento ou Health Connect.
+O painel principal apresenta seis áreas secundárias:
 
-`MainActivity` continua sendo uma classe grande e mantém responsabilidades de UI, permissões, scan, conexão GATT, callbacks, exploração e integração com Health Connect. A próxima etapa correta é extrair o ciclo BLE em unidades com sessão/epoch explícita, fila serial e cancelamento seguro, preservando a Activity apenas como camada de apresentação/composição. Não executar essa extração sem testes de regressão de reconexão, callback atrasado, Service Changed, desconexão e retomada do app.
+1. Conexão e dispositivo.
+2. Saúde.
+3. Atividade.
+4. Sono.
+5. Histórico.
+6. Mais recursos.
+
+Configurações é acessada por Mais recursos, não como uma sétima área de primeiro nível. O laboratório BLE, a biblioteca, o catálogo, as ferramentas locais, clima, notificações (companion) e privacidade são recursos subordinados.
+
+## Limites arquiteturais conhecidos
+
+`MainActivity` ainda é uma classe grande e concentra UI, permissões, scan, conexão GATT, callbacks, exploração, reconexão, telemetria, captura e parte da integração com Health Connect. A próxima refatoração arquitetural deverá extrair o ciclo BLE em um orquestrador com sessão/epoch explícita, fila serial e cancelamento seguro, preservando a Activity apenas como composição/apresentação.
+
+As Activities de atividade e histórico ainda instanciam o adapter Health Connect diretamente. Uma etapa posterior deve introduzir um contrato de domínio e migrar a dependência para UI → domínio → data, sem alterar as consultas ou a atribuição de origem.
+
+Não iniciar extração ampla sem testes de regressão para callback atrasado, Service Changed, timeout, reconexão, desconexão, retomada do app e cancelamento.
 
 ## Validação
 
-- Alterações de pacote e imports: preparadas nesta branch.
-- Testes Kotlin/Python, Lint e build: **não executados** nesta etapa.
-- CI: **não disparada**.
+- Build/testes unitários das variantes debug e compilação de macrobenchmark: realizados na CI de referência `42230653007`, antes das correções atuais.
+- Android Lint e guardrail de permissões naquela execução: falharam; correções incluídas na branch e aguardam nova CI.
+- KtLint: baseline de legado em preparação; após aprovação e commit do baseline, verificações serão bloqueantes para novos desvios.
 - Galaxy A06 / Android 16 / GT3 MAX: **não validado fisicamente**.
+- Medição real do macrobenchmark: **não executada**.
+- Métricas fisiológicas do GT3 MAX: **não validadas semanticamente nem fisicamente**.

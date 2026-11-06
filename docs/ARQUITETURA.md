@@ -75,3 +75,12 @@ O contrato implementado está em [CONTRATO-METRICAS-SAUDE.md](CONTRATO-METRICAS-
 7. Validar cada extração em teste, lint e aparelho antes de avançar.
 
 Cada extração deve ser pequena, testada e reversível. Não misturar refatoração com engenharia reversa de protocolo.
+
+
+## Apresentação 1 + 7 — 06/11/2026
+
+A entrada do app é `DashboardActivity`; ela navega para sete destinos: Conexão e dispositivo, Saúde, Atividade, Sono, Histórico, Mais recursos e Configurações. A navegação é implementada em Activities Kotlin existentes no módulo `:app`, usando Views Android. `RelogioUi` concentra cores, cartões, botões e cabeçalhos; não importa domínio nem camada BLE.
+
+A tela Conexão e dispositivo reutiliza `MainActivity`, sem extrair ou reescrever a máquina de estados GATT nesta etapa. A tela Saúde e Sono não fabricam medições. Atividade e Histórico reutilizam `HealthConnectStepsRepository`; a política padrão restringe a consulta à origem do próprio aplicativo. A preferência local `include_external_health_sources` permite ao usuário optar por fontes adicionais do Health Connect. Quando habilitada, o resultado deve continuar identificado como agregado.
+
+`SettingsActivity` é a única tela que reúne opções: formato do relógio, unidade km/mi e escopo de fontes externas para Health Connect. `AppPreferences` persiste essas opções em SharedPreferences privado. Nenhuma preferência envia comandos BLE ou grava valores no relógio.

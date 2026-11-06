@@ -123,3 +123,40 @@ A biblioteca persiste inventários GATT como descobertas. Leituras GATT e notifi
 - Atalhos de laboratório e biblioteca foram posicionados logo após o cartão de conexão e a identificação local do GT3 MAX; o resumo do Health Connect passou para a seção própria “Saúde e integração”.
 
 - Enquanto a captura cronometrada estiver ativa, o painel principal mostra um indicador compacto com tempo restante e quantidade de registros, permitindo acompanhar o prazo ao voltar para a tela de conexão/exploração manual.
+
+
+## Navegação principal 1 + 7 — 06/11/2026
+
+A navegação de uso diário foi reorganizada em **uma tela principal e sete telas secundárias**. Esta seção substitui a distribuição anterior como estrutura de entrada do aplicativo; as telas de laboratório existentes continuam acessíveis dentro de Mais recursos.
+
+| Nível | Tela | Responsabilidade |
+|---|---|---|
+| Principal | Painel | Relógio do telefone, resumo e atalhos. Não presume conexão ativa nem transforma ausência em zero. |
+| Secundária 1 | Conexão e dispositivo | Reutiliza `MainActivity`, preservando scan BLE, ciclo GATT, reconexão, inventário e diagnóstico existentes. |
+| Secundária 2 | Saúde | Apresenta FC, SpO₂, pressão e temperatura como N/D até existir fonte e semântica validadas. |
+| Secundária 3 | Atividade | Consulta passos agregados do Health Connect; distância, calorias e exercícios permanecem N/D sem fonte validada. |
+| Secundária 4 | Sono | Duração e estágios permanecem N/D enquanto não houver integração comprovada. |
+| Secundária 5 | Histórico | Consulta agregados diários de passos dos últimos sete dias. A biblioteca BLE permanece identificada como histórico técnico, não como histórico de saúde. |
+| Secundária 6 | Mais recursos | Reúne descoberta GATT, biblioteca local, catálogo, ferramentas do telefone, hora/clima e privacidade. Notificações aparecem somente na variante companion. |
+| Secundária 7 | Configurações | Exclusiva para formato de hora, unidade de distância e inclusão opcional de fontes externas do Health Connect. |
+
+### Linguagem visual
+
+- Fundo `#07111F`, superfícies `#0E1B2D`, superfícies elevadas `#13243A`, bordas `#28415F`.
+- Texto principal `#F8FAFC`, secundário `#9FB4CF`, destaque `#7DB3FF`; sucesso `#4ADE80`, atenção `#FBBF24`, falha `#FB7185`.
+- Cartões arredondados, hierarquia tipográfica curta, alvos de toque amplos e conteúdo em rolagem vertical.
+- As novas telas compartilham o componente visual `ui/RelogioUi.kt`. A navegação é nativa Android/Kotlin; não foi introduzido React Native nem Jetpack Compose.
+
+### Contrato de dados e configurações
+
+- O painel indica “conexão não consultada”; somente a tela Conexão e dispositivo mostra o estado BLE real.
+- Saúde e Sono usam N/D enquanto não houver amostras confiáveis. Pressão e SpO₂ não são apresentadas como diagnóstico médico.
+- A consulta de passos e o histórico diário usam Health Connect. Por padrão, o filtro é restrito à origem do próprio Relógio 2.0; em Configurações, o usuário pode habilitar fontes externas, como telefone e outros aplicativos autorizados. Mesmo habilitado, o total é identificado como agregado, nunca como passos exclusivos do GT3 Maxx.
+- A unidade km/mi é uma preferência de apresentação para métricas futuras; não converte nem inventa dados que ainda não existem.
+- Preferências são persistidas em armazenamento privado do aplicativo e não enviam comandos BLE.
+
+### Preservação funcional e validação
+
+Nenhuma alteração intencional foi feita na máquina de estados BLE, scan, conexão GATT, callbacks, política de reconexão, fila de operações, captura, parser ou perfil de protocolo. `MainActivity` foi reposicionada conceitualmente como a tela secundária Conexão e dispositivo e recebeu ajustes visuais e leitura das preferências de fontes/horário.
+
+**Não validado nesta alteração:** compilação, testes Kotlin/Python, Lint, execução de CI, renderização em Galaxy A06, TalkBack, escalas de fonte, rotação e teste físico com GT3 Maxx. A tela de conexão mantém seu código de transporte; a mudança de layout não comprova que o relógio esteja conectando nem que sensores estejam transmitindo métricas válidas.

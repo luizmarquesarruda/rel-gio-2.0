@@ -13,7 +13,11 @@ class DeveloperToolingTests(unittest.TestCase):
         guardrails = (ROOT / "scripts/check-privacy-guardrails.sh").read_text(encoding="utf-8")
 
         self.assertIn(
-            'add("diagnosticDebugImplementation", "com.squareup.leakcanary:leakcanary-android:2.14")',
+            '"diagnosticDebugImplementation" ->',
+            gradle,
+        )
+        self.assertIn(
+            'dependencies.add(project.dependencies.create("com.squareup.leakcanary:leakcanary-android:2.14"))',
             gradle,
         )
         self.assertNotRegex(gradle, r'(?m)^\s*(?:implementation|debugImplementation)\('
@@ -38,8 +42,11 @@ class DeveloperToolingTests(unittest.TestCase):
 
         self.assertIn('include(":app", ":macrobenchmark")', settings)
         self.assertIn('create("benchmark")', app_gradle)
-        self.assertIn('add("diagnosticBenchmarkImplementation", '
-                      '"androidx.profileinstaller:profileinstaller:1.4.1")', app_gradle)
+        self.assertIn('"diagnosticBenchmarkImplementation" ->', app_gradle)
+        self.assertIn(
+            'dependencies.add(project.dependencies.create("androidx.profileinstaller:profileinstaller:1.4.1"))',
+            app_gradle,
+        )
         self.assertIn('missingDimensionStrategy("distribution", "diagnostic")', benchmark_gradle)
         self.assertIn('variantBuilder.buildType == "benchmark"', benchmark_gradle)
         self.assertIn('targetProjectPath = ":app"', benchmark_gradle)
