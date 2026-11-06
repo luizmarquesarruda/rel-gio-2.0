@@ -9,7 +9,12 @@ mkdir -p "$REPORT_DIR"
 
 BLOCKED_DEPENDENCY_PATTERN='com\.(bytedance|volcengine|sigmob|umeng|pangle|amap|baidu|alipay|wechat|qq\.e|tencent\.ads|adjust|appsflyer|mixpanel|amplitude|onesignal|facebook|braze|segment|customerio|google\.firebase\.(analytics|crashlytics))|cn\.jpush|io\.sentry|io\.branch'
 
-for configuration in diagnosticDebugRuntimeClasspath companionDebugRuntimeClasspath; do
+for configuration in \
+  diagnosticDebugRuntimeClasspath \
+  companionDebugRuntimeClasspath \
+  diagnosticReleaseRuntimeClasspath \
+  companionReleaseRuntimeClasspath \
+  diagnosticBenchmarkRuntimeClasspath; do
   report="$REPORT_DIR/${configuration}.txt"
   echo "Auditing Gradle configuration: $configuration"
   gradle --no-daemon --console=plain :app:dependencies --configuration "$configuration" > "$report"
@@ -17,6 +22,27 @@ for configuration in diagnosticDebugRuntimeClasspath companionDebugRuntimeClassp
   if grep -Eiq "$BLOCKED_DEPENDENCY_PATTERN" "$report"; then
     echo "Blocked advertising/marketing/analytics SDK namespace found in $configuration." >&2
     grep -Ein "$BLOCKED_DEPENDENCY_PATTERN" "$report" >&2 || true
+    exit 1
+  fi
+done
+
+# LeakCanary is permitted only in diagnosticDebug. It can retain heap dumps containing
+# local health, BLE, or notification data, so release and all other variants must exclude it.
+if ! grep -Fq 'com.squareup.leakcanary:leakcanary-android:2.14' \
+  "$REPORT_DIR/diagnosticDebugRuntimeClasspath.txt"; then
+  echo "LeakCanary 2.14 is missing from diagnosticDebugRuntimeClasspath." >&2
+  exit 1
+fi
+
+for configuration in \
+  companionDebugRuntimeClasspath \
+  diagnosticReleaseRuntimeClasspath \
+  companionReleaseRuntimeClasspath \
+  diagnosticBenchmarkRuntimeClasspath; do
+  report="$REPORT_DIR/${configuration}.txt"
+  if grep -Eiq 'com\.squareup\.leakcanary|leakcanary-android' "$report"; then
+    echo "LeakCanary must not be present in $configuration." >&2
+    grep -Ein 'leakcanary' "$report" >&2 || true
     exit 1
   fi
 done
