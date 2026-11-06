@@ -45,6 +45,24 @@ jobs:
         with:
           gradle-version: "9.5.0"
 
+      - name: Bootstrap Gradle dependency verification metadata
+        id: dependency_verification_bootstrap
+        if: ${{ !hashFiles('gradle/verification-metadata.xml') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "generated=true" >> "$GITHUB_OUTPUT"
+          gradle --no-daemon --write-verification-metadata sha256 help
+
+      - name: Publish Gradle verification bootstrap for review
+        if: ${{ steps.dependency_verification_bootstrap.outputs.generated == 'true' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: gradle-dependency-verification-bootstrap
+          path: gradle/verification-metadata.xml
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Run KtLint as advisory source review
         id: ktlint
         continue-on-error: true
@@ -57,7 +75,7 @@ jobs:
       - name: Run unit tests and assemble both variants
         id: build
         if: ${{ !cancelled() && steps.setup_gradle.outcome == 'success' && steps.manifest_policy_tests.outcome == 'success' }}
-        run: gradle --no-daemon testDiagnosticDebugUnitTest testCompanionDebugUnitTest assembleDiagnosticDebug assembleCompanionDebug
+        run: gradle --no-daemon testDiagnosticDebugUnitTest testCompanionDebugUnitTest assembleDiagnosticDebug assembleCompanionDebug :macrobenchmark:assemble
 
       - name: Enforce privacy dependency and permission guardrails
         id: privacy_guardrails
