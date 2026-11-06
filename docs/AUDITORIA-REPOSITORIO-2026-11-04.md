@@ -32,7 +32,7 @@ Agora:
 - prazos incompatíveis com a duração declarada e timestamps antes do início são recusados;
 - não se grava payload fora de uma sessão consentida ativa.
 
-### Handoff com Wearfit Pro
+### Fluxo legado de controle externo
 
 O código já bloqueava scan/conexão/reconexão enquanto o handoff estava ativo. A interface, entretanto, ainda deixava o botão de busca habilitado. Agora o botão reflete a mesma política e fica desabilitado enquanto a sessão estiver liberada. A retomada continua explícita pelo botão de handoff.
 
@@ -66,7 +66,7 @@ Leituras continuam limitadas ao plano GATT existente; inscrições usam NOTIFY/I
 - CI: **não disparada**, conforme orientação do usuário. Não houve rerun nem cancelamento.
 - Testes unitários: arquivos de regressão adicionados/atualizados, mas **não executados nesta revisão**.
 - Lint/build/APKs/auditoria de manifesto compilado: **não validados nesta revisão**.
-- Galaxy A06 / Android 16 / GT3 MAX Call / Wearfit Pro: **teste físico não validado**.
+- Galaxy A06 / Android 16 / GT3 MAX Call / aplicativo externo: **teste físico não validado**.
 - Merge: **não realizado**.
 
 ## Arquivos principais alterados
@@ -127,6 +127,6 @@ Referências:
 - Alterações de código e testes foram gravadas na branch fix/repository-hardening-20261104.
 - Testes unitários: **não executados**.
 - Lint/build/APKs: **não executados**.
-- Galaxy A06 / GT3 MAX / Wearfit Pro: **não validado fisicamente**.
+- Galaxy A06 / GT3 MAX / aplicativo externo: **não validado fisicamente**.
 - CI: **não disparada**, conforme solicitação.
 - Merge: **não realizado**.
