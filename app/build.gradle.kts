@@ -49,6 +49,15 @@ android {
         }
     }
 
+    buildTypes {
+        create("benchmark") {
+            initWith(getByName("release"))
+            signingConfig = signingConfigs.getByName("debug")
+            isDebuggable = false
+            matchingFallbacks += listOf("release")
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -76,6 +85,11 @@ kotlin {
 }
 
 dependencies {
+    // LeakCanary remains isolated to the diagnostic debug APK; it is absent from release/companion.
+    diagnosticDebugImplementation("com.squareup.leakcanary:leakcanary-android:2.14")
+    // Macrobenchmark requires ProfileInstaller in its non-debuggable target app variant.
+    diagnosticBenchmarkImplementation("androidx.profileinstaller:profileinstaller:1.4.1")
+
     implementation("androidx.activity:activity-ktx:1.13.0")
     implementation("androidx.health.connect:connect-client:1.1.0")
     implementation("androidx.work:work-runtime-ktx:2.12.0")
