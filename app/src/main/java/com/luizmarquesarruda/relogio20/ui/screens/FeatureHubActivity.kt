@@ -59,7 +59,7 @@ class FeatureHubActivity : Activity() {
     private fun buildShell() {
         root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(0xFFF4F6F8.toInt())
+            setBackgroundColor(0xFF07111F.toInt())
             setPadding(dp(18), dp(14), dp(18), dp(16))
         }
 
@@ -78,7 +78,7 @@ class FeatureHubActivity : Activity() {
         title = TextView(this).apply {
             text = "Funções do relógio"
             textSize = 22f
-            setTextColor(0xFF14212B.toInt())
+            setTextColor(0xFFF8FAFC.toInt())
             setTypeface(typeface, Typeface.BOLD)
             setPadding(dp(8), 0, 0, 0)
         }
@@ -152,7 +152,7 @@ class FeatureHubActivity : Activity() {
         addText(body, section.description, 14f, 0xFF526574.toInt())
         addText(
             body,
-            "Status informativo. A sincronização pelo Wearfit Pro não comprova que o Relógio 2.0 já decodifica e valida os mesmos dados diretamente.",
+            "Itens informativos. Um recurso listado pelo fabricante não significa que o Relógio 2.0 já o recebe, interpreta ou valida.",
             12f,
             0xFF526574.toInt()
         )
@@ -177,7 +177,7 @@ class FeatureHubActivity : Activity() {
 
     private fun featuresFor(id: String): List<Feature> = when (id) {
         "health" -> listOf(
-            Feature("Frequência cardíaca", "Wearfit Pro recebe e sincroniza dados segundo o material do fabricante. Integração BLE própria e escrita Health Connect ainda pendentes.", "INTEGRAÇÃO DIRETA PENDENTE"),
+            Feature("Frequência cardíaca", "O recurso é anunciado para a categoria do relógio, mas a leitura direta, a interpretação e a validação independente ainda não foram comprovadas.", "INTEGRAÇÃO DIRETA PENDENTE"),
             Feature("Oxigênio no sangue (SpO₂)", "Leitura óptica não diagnóstica. Parser próprio e validação independente pendentes.", "NÃO VALIDADO"),
             Feature("Pressão arterial", "O fabricante informa que o resultado é apenas referência. Não usar para diagnóstico ou tratamento.", "NÃO DIAGNÓSTICO • NÃO VALIDADO"),
             Feature("Sono", "Monitoramento descrito pelo fabricante; fases, horários e origem ainda precisam de validação no protocolo.", "INTEGRAÇÃO DIRETA PENDENTE"),
@@ -200,7 +200,7 @@ class FeatureHubActivity : Activity() {
             Feature("Personalizar botão inferior", "Disponibilidade varia por modelo; mapeamento e comando não confirmados.", "SUPORTE INCERTO"),
             Feature("Função motora / vibração", "Pode representar motor de vibração do relógio. Padrões e comandos não foram identificados; nenhuma escrita proprietária será enviada.", "PROTOCOLO NÃO VALIDADO"),
             Feature("Bloqueio / desbloqueio", "Controle remoto de bloqueio não está habilitado.", "BLOQUEADO POR SEGURANÇA", blocked = true),
-            Feature("Sincronização automática de hora", "O app identifica o perfil CTS 0x1805/0x2A2B no inventário, mas não escreve a hora do relógio nesta versão. A sincronização física continua pendente de implementação e validação seguras; use o Wearfit Pro até lá.", "ESCRITA CTS SUSPENSA • NÃO VALIDADO"),
+            Feature("Sincronização automática de hora", "O app identifica o perfil CTS 0x1805/0x2A2B no inventário, mas não escreve a hora do relógio nesta versão. A sincronização física continua pendente de implementação e validação seguras; a integração física permanece pendente; nenhum comando proprietário será usado como alternativa.", "ESCRITA CTS SUSPENSA • NÃO VALIDADO"),
             Feature("Reiniciar / desligar", "Comandos de energia não serão enviados sem protocolo e confirmação explícita.", "BLOQUEADO POR SEGURANÇA", blocked = true),
             Feature("Restaurar fábrica", "Risco de perda de dados e pareamento. Sem ação disponível.", "BLOQUEADO", blocked = true),
             Feature("Atualização OTA", "Firmware e assinatura não foram identificados. Não executar atualização por engenharia reversa.", "BLOQUEADO", blocked = true)
@@ -253,7 +253,7 @@ class FeatureHubActivity : Activity() {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(16), dp(14), dp(16), dp(14))
-            background = rounded(if (warning) 0xFFFFF4E5.toInt() else 0xFFFFFFFF.toInt())
+            background = rounded(if (warning) 0xFF302416.toInt() else 0xFF0E1B2D.toInt())
             isClickable = true
             isFocusable = true
             setOnClickListener { action() }
@@ -269,14 +269,14 @@ class FeatureHubActivity : Activity() {
         val descriptionView = TextView(this).apply {
             text = description
             textSize = 13f
-            setTextColor(0xFF526574.toInt())
+            setTextColor(0xFF9FB4CF.toInt())
             setPadding(0, dp(5), 0, dp(8))
         }
         card.addView(descriptionView)
         val statusView = TextView(this).apply {
             text = status
             textSize = 11f
-            setTextColor(if (warning) 0xFF8A4B08.toInt() else 0xFF176B55.toInt())
+            setTextColor(if (warning) 0xFFFBBF24.toInt() else 0xFF4ADE80.toInt())
             setTypeface(typeface, Typeface.BOLD)
         }
         card.addView(statusView)
@@ -305,7 +305,7 @@ class FeatureHubActivity : Activity() {
     private fun rounded(color: Int): GradientDrawable = GradientDrawable().apply {
         setColor(color)
         cornerRadius = dp(16).toFloat()
-        setStroke(dp(1), 0xFFE0E6EB.toInt())
+        setStroke(dp(1), 0xFF28415F.toInt())
     }
 
     private fun dp(value: Int): Int =

@@ -930,3 +930,17 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Não foi implementado envio do clima ao relógio. O protocolo de clima da unidade não foi identificado; nenhum canal proprietário ou NUS RX foi escrito.
 - Versão alterada para 0.4.0-alpha.4 / versionCode 10.
 - Teste de rótulos WMO e cenários de auditoria INTERNET única/ausente/duplicada adicionados. Build, testes, Lint, guardrails, CI e teste físico Galaxy A06/GT3 MAXX: **não validados** nesta alteração.
+
+
+## 06/11/2026 — Painel principal e navegação 1 + 7
+
+- Criado o branch `feat/ui-8-screen-layout-20261106` sobre a implementação técnica mais recente, sem alterar `main` nem mesclar PRs existentes.
+- Implementado um novo Painel principal como launcher e sete telas secundárias: Conexão e dispositivo (reutiliza MainActivity), Saúde, Atividade, Sono, Histórico, Mais recursos e Configurações.
+- Adicionado o componente visual nativo `ui/RelogioUi.kt`, com fundo escuro, cartões, cores de estado e cabeçalhos reutilizáveis. O projeto continua Android/Kotlin/Views; não foi introduzida migração de framework.
+- A tela de conexão existente foi identificada como rota secundária e recebeu ajustes visuais, de título e do formato do relógio. O ciclo BLE/GATT, a descoberta, as filas, os callbacks, a reconexão e a captura não foram intencionalmente alterados.
+- Saúde e Sono exibem N/D para métricas sem origem validada. Atividade e Histórico consultam passos agregados do Health Connect e mantêm N/D quando não há registros; zero permanece um valor numérico válido.
+- Configurações é uma tela dedicada e exclusiva para hora 12/24, preferência km/mi e escopo das fontes de Health Connect. A inclusão de fontes externas é opcional e vem desativada por padrão; quando habilitada, os totais são rotulados como agregados e não como dados exclusivos do GT3 Maxx.
+- Mais recursos concentra o laboratório BLE, biblioteca local, catálogo, ferramentas Android, hora/clima e privacidade. O atalho de notificações é exibido somente na variante companion.
+- Histórico de atividade e biblioteca técnica BLE permanecem separados; quadros HEX e inventários GATT não são apresentados como dados de saúde.
+- A documentação de navegação foi atualizada preservando o histórico anterior.
+- **Não validado:** build, Lint, testes Kotlin/Python, CI, APK, execução no Galaxy A06, acessibilidade, rotação e teste físico com GT3 Maxx. Não houve merge nem alteração do protocolo proprietário.

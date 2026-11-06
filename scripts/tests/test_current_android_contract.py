@@ -233,5 +233,56 @@ class CurrentAndroidContractTests(unittest.TestCase):
         self.assertIn("private fun runDeepGattExploration(", source)
 
 
+
+
+    def test_dashboard_is_launcher_with_seven_distinct_secondary_screens(self):
+        manifest = ET.parse(ROOT / "app/src/main/AndroidManifest.xml").getroot()
+        android = "{" + ANDROID_NS + "}"
+        application = manifest.find("application")
+        self.assertIsNotNone(application)
+        activities = {
+            node.attrib.get(android + "name"): node
+            for node in application.findall("activity")
+        }
+        expected = {
+            ".ui.screens.MainActivity",
+            ".ui.screens.HealthOverviewActivity",
+            ".ui.screens.ActivityOverviewActivity",
+            ".ui.screens.SleepOverviewActivity",
+            ".ui.screens.HistoryActivity",
+            ".ui.screens.MoreResourcesActivity",
+            ".ui.screens.SettingsActivity",
+        }
+        self.assertTrue(expected.issubset(set(activities)))
+        self.assertEqual("false", activities[".ui.screens.MainActivity"].attrib.get(android + "exported"))
+        launchers = []
+        for name, node in activities.items():
+            for intent in node.findall("intent-filter"):
+                actions = {item.attrib.get(android + "name") for item in intent.findall("action")}
+                categories = {item.attrib.get(android + "name") for item in intent.findall("category")}
+                if "android.intent.action.MAIN" in actions and "android.intent.category.LAUNCHER" in categories:
+                    launchers.append(name)
+        self.assertEqual([".ui.screens.DashboardActivity"], launchers)
+
+    def test_settings_screen_is_separate_and_preferences_are_persisted_locally(self):
+        settings = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/SettingsActivity.kt"
+        ).read_text(encoding="utf-8")
+        preferences = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/data/preferences/AppPreferences.kt"
+        ).read_text(encoding="utf-8")
+        dashboard = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/DashboardActivity.kt"
+        ).read_text(encoding="utf-8")
+        self.assertIn("AppPreferences.set24HourClock", settings)
+        self.assertIn("AppPreferences.setKilometers", settings)
+        self.assertIn("AppPreferences.setIncludeExternalHealthSources", settings)
+        self.assertIn("Context.MODE_PRIVATE", preferences)
+        self.assertIn("SettingsActivity::class.java", dashboard)
+        self.assertIn("HealthConnectOriginPolicy.INCLUDE_EXTERNAL", (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/ActivityOverviewActivity.kt"
+        ).read_text(encoding="utf-8"))
+
+
 if __name__ == "__main__":
     unittest.main()

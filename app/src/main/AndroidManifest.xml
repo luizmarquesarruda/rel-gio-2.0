@@ -83,13 +83,18 @@
         <activity
             android:name=".ui.screens.DiscoveryLibraryActivity"
             android:exported="false" />
-        <activity
-            android:name=".ui.screens.MainActivity"
-            android:exported="true">
+        <activity android:name=".ui.screens.MainActivity" android:exported="false" />
+        <activity android:name=".ui.screens.DashboardActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".ui.screens.HealthOverviewActivity" android:exported="false" />
+        <activity android:name=".ui.screens.ActivityOverviewActivity" android:exported="false" />
+        <activity android:name=".ui.screens.SleepOverviewActivity" android:exported="false" />
+        <activity android:name=".ui.screens.HistoryActivity" android:exported="false" />
+        <activity android:name=".ui.screens.MoreResourcesActivity" android:exported="false" />
+        <activity android:name=".ui.screens.SettingsActivity" android:exported="false" />
     </application>
 </manifest>

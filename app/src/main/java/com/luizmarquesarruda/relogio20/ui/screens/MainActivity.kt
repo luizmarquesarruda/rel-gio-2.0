@@ -12,6 +12,7 @@ import com.luizmarquesarruda.relogio20.device.ble.core.BleScanCandidatePolicy
 import com.luizmarquesarruda.relogio20.device.ble.core.BleValueFormatter
 import com.luizmarquesarruda.relogio20.domain.diagnostics.BleDiagnosticReport
 import com.luizmarquesarruda.relogio20.ui.formatters.StepsCountFormatter
+import com.luizmarquesarruda.relogio20.data.preferences.AppPreferences
 import com.luizmarquesarruda.relogio20.device.ble.gatt.SerialGattOperationQueue
 import com.luizmarquesarruda.relogio20.device.ble.gatt.AccessPolicy
 import com.luizmarquesarruda.relogio20.device.ble.gatt.GattInventoryLogger
@@ -55,6 +56,7 @@ import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsRepo
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsResult
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectPermissionState
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectPermissionStatePolicy
+import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectOriginPolicy
 import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import androidx.core.content.edit
@@ -327,20 +329,20 @@ class MainActivity : ComponentActivity() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(16), dp(12), dp(16), dp(8))
-            setBackgroundColor(0xFFF7F8FA.toInt())
+            setBackgroundColor(0xFF07111F.toInt())
         }
 
         val title = TextView(this).apply {
-            text = "Relógio 2.0"
+            text = "Conexão e dispositivo"
             textSize = 26f
-            setTextColor(0xFF17212B.toInt())
+            setTextColor(0xFFF8FAFC.toInt())
         }
         root.addView(title)
 
         val subtitle = TextView(this).apply {
-            text = "SAÚDE & FITNESS • smartwatch + Conexão Saúde"
+            text = "GT3 MAXX • BLUETOOTH LE • DIAGNÓSTICO"
             textSize = 14f
-            setTextColor(0xFF526170.toInt())
+            setTextColor(0xFF9FB4CF.toInt())
         }
         root.addView(subtitle)
 
@@ -357,7 +359,7 @@ class MainActivity : ComponentActivity() {
         val connectionCard = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(16), dp(16), dp(16), dp(16))
-            background = roundedSurface(0xFFFFFFFF.toInt(), 0xFFE1E7EF.toInt())
+            background = roundedSurface(0xFF0E1B2D.toInt(), 0xFF28415F.toInt())
             elevation = dp(2).toFloat()
         }
         val connectionHeading = LinearLayout(this).apply {
@@ -400,7 +402,7 @@ class MainActivity : ComponentActivity() {
         deviceBatteryView = TextView(this).apply {
             text = "Bateria do relógio: aguardando notificação BLE"
             textSize = 13f
-            setTextColor(0xFF263746.toInt())
+            setTextColor(0xFFE5EDF7.toInt())
             setPadding(0, 0, 0, dp(12))
         }
         connectionCard.addView(deviceBatteryView)
@@ -486,10 +488,10 @@ class MainActivity : ComponentActivity() {
         captureSessionView = TextView(this).apply {
             visibility = View.GONE
             textSize = 13f
-            setTextColor(0xFF174B3B.toInt())
+            setTextColor(0xFF4ADE80.toInt())
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             setPadding(dp(12), dp(10), dp(12), dp(10))
-            background = roundedSurface(0xFFE5F2EC.toInt(), 0xFFB7D6C7.toInt())
+            background = roundedSurface(0xFF10261B.toInt(), 0xFF3B8C5A.toInt())
             contentDescription = "Contador regressivo da captura BLE em andamento"
         }
         root.addView(captureSessionView, LinearLayout.LayoutParams(
@@ -499,7 +501,7 @@ class MainActivity : ComponentActivity() {
         gattProgressView = TextView(this).apply {
             text = "Exploração GATT: aguardando início."
             textSize = 12f
-            setTextColor(0xFF34495E.toInt())
+            setTextColor(0xFF9FB4CF.toInt())
             setPadding(dp(12), dp(10), dp(12), dp(10))
             background = roundedSurface(0xFFFFFFFF.toInt(), 0xFFE1E7EF.toInt())
         }
@@ -637,7 +639,7 @@ class MainActivity : ComponentActivity() {
 
     private fun updatePhoneClock() {
         clockView.text = "Hora do celular: " +
-            SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(Date())
+            SimpleDateFormat("dd/MM/yyyy " + if (AppPreferences.uses24HourClock(this)) "HH:mm:ss" else "hh:mm:ss a", Locale.getDefault()).format(Date())
 
         if (::captureSessionView.isInitialized) {
             val nowMillis = System.currentTimeMillis()
@@ -908,7 +910,12 @@ class MainActivity : ComponentActivity() {
             return
         }
         healthScope.launch {
-            when (val result = healthConnectRepository.readTodaySteps()) {
+            val originPolicy = if (AppPreferences.includesExternalHealthSources(this)) {
+                HealthConnectOriginPolicy.INCLUDE_EXTERNAL
+            } else {
+                HealthConnectOriginPolicy.APP_ONLY
+            }
+            when (val result = healthConnectRepository.readTodaySteps(originPolicy = originPolicy)) {
                 is HealthConnectStepsResult.Success -> {
                     val count = result.snapshot.totalSteps
                     stepsView.text = StepsCountFormatter.label(count)
@@ -1008,6 +1015,8 @@ class MainActivity : ComponentActivity() {
             maxLines = 2
             gravity = Gravity.CENTER
             setPadding(dp(8), dp(5), dp(8), dp(5))
+            setTextColor(0xFFF8FAFC.toInt())
+            backgroundTintList = android.content.res.ColorStateList.valueOf(0xFF172A43.toInt())
             setOnClickListener { action() }
         }
     }

@@ -12,6 +12,7 @@ on:
       - feat/ble-readonly-proof-of-concept
       - 'feat/**'
       - 'docs/**'
+      - 'work/**'
   workflow_dispatch:
 
 concurrency:

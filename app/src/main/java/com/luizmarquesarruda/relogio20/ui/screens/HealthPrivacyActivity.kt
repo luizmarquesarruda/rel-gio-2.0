@@ -47,19 +47,19 @@ class HealthPrivacyActivity : Activity() {
             text = "Dados de saúde e privacidade"
             textSize = 22f
             typeface = Typeface.DEFAULT_BOLD
-            setTextColor(0xFF17212B.toInt())
+            setTextColor(0xFFF8FAFC.toInt())
             setPadding(dp(18), dp(18), dp(18), dp(6))
         }
         val body = TextView(this).apply {
             text = content
             textSize = 15f
-            setTextColor(0xFF263746.toInt())
+            setTextColor(0xFF9FB4CF.toInt())
             setPadding(dp(18), dp(18), dp(18), dp(24))
             setLineSpacing(dp(4).toFloat(), 1.0f)
         }
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(0xFFF7F8FA.toInt())
+            setBackgroundColor(0xFF07111F.toInt())
             addView(title)
             addView(body)
         }
