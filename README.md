@@ -132,6 +132,15 @@ A captura local usa NotificationListenerService e acesso especial concedido manu
 
 A versão de desenvolvimento canônica está no arquivo `VERSION`. Os metadados do build ficam no artefato `android-validation-reports`, no arquivo `diagnostic-build-info.txt`; o artefato instalável contém somente o APK. Builds debug não são releases de produção.
 
+## Ferramentas de engenharia e desempenho
+
+- LeakCanary 2.14 é incluído somente em `diagnosticDebug`; heap dumps locais podem conter informações sensíveis e nunca devem ser publicados.
+- Gradle Dependency Verification usa SHA-256. A primeira CI produz metadados de bootstrap para revisão antes de serem versionados.
+- Renovate está configurado para propor atualizações de dependências Gradle e GitHub Actions sem merge automático. A atuação depende da habilitação do Renovate App no repositório.
+- Macrobenchmark mede inicialização fria em `diagnosticBenchmark`; a CI compila o módulo, mas a medição precisa ser executada em aparelho físico.
+
+Consulte [ferramentas de diagnóstico, integridade e desempenho](docs/FERRAMENTAS-DIAGNOSTICO-DESEMPENHO.md).
+
 ## Segurança e privacidade
 
 A descoberta BLE não deriva localização física. Não guardar endereço MAC em relatórios públicos. Não assumir que nome comercial identifica chipset ou protocolo. Pressão estimada, SpO2 e outras estimativas de smartwatch não são diagnósticos médicos.
