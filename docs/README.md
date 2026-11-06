@@ -33,6 +33,9 @@ O aplicativo opera de forma independente, com conexão BLE/GATT direta ao GT3 MA
 - [Automação de testes GATT e coleta local](AUTOMACAO-TESTES-GATT-GT3MAX.md) — consentimento, leituras, notificações, decoders e limites.
 - [Perfil BLE candidato NUS/AB](PROTOCOLO-BLE-CANDIDATO.md)
 
+## Qualidade, segurança e desempenho
+- [Ferramentas de diagnóstico, integridade e desempenho](FERRAMENTAS-DIAGNOSTICO-DESEMPENHO.md) — LeakCanary, SHA-256 Gradle, Renovate e Macrobenchmark.
+
 ## Governança e versões
 - [Diário de bordo](DIARIO-DE-BORDO.md)
 - [Changelog](../CHANGELOG.md)
