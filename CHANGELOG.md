@@ -1,6 +1,15 @@
+## Não lançado — remoção integral da dependência de aplicativo companheiro — 05/11/2026
+
+- Confirmado o fluxo exclusivo GT3 MAX → BLE/GATT → Relógio 2.0; nenhuma conexão, pareamento compartilhado, sincronização, handoff, SDK ou integração com aplicativo externo.
+- Renomeados os componentes de framing NUS/AB para `Gt3MaxProtocolProfile`, `Gt3MaxAbFrame`, `Gt3MaxAbFrameParser` e `Gt3MaxAbStreamDecoder`. O parser permanece restrito ao framing observado no GT3 MAX; a hipótese de bateria continua não validada.
+- Removida a limpeza/migração de estado legado de handoff do código de inicialização. Não há mais chave de preferência ou política de liberação no fluxo ativo.
+- Removidos do índice e do repositório os documentos específicos de pesquisa, catálogo, substituição, handoff e integração de terceiros do aplicativo externo.
+- Documentação ativa do README, arquitetura, perfil do relógio, identificação, protocolo e mapa de módulos alinhada à operação independente.
+- Testes, Lint, builds, auditoria de APK e validação física: **aguardando CI e teste no Galaxy A06 / Android 16 + GT3 MAXX**.
+
 ## 0.4.0-alpha.4 — 05/11/2026
 
-### Hora e clima independentes do WearFit Pro
+### Hora e clima independentes do aplicativo companheiro externo
 - Adicionada tela Hora e clima com hora civil do Android e indicação das opções de data/hora automática e fuso automático do sistema.
 - Adicionada geocodificação manual de cidades e previsão Open-Meteo (condição atual, sensação térmica, umidade, precipitação, probabilidade de chuva, vento, mín./máx. e nascer/pôr do sol).
 - Cache meteorológico local privado; atualização ao abrir quando o cache excede 30 minutos, atualização manual e agendamento periódico aproximado de seis horas por WorkManager com rede disponível.
@@ -42,12 +51,12 @@
 
 ## Não lançado — controle BLE exclusivo pelo Relógio 2.0 — 05/11/2026
 
-- Removido da interface o botão de handoff/liberação para Wearfit Pro; o app não pausa mais sua conexão para entregar o relógio a outro aplicativo.
+- Removido da interface o botão de handoff/liberação para aplicativo companheiro externo; o app não pausa mais sua conexão para entregar o relógio a outro aplicativo.
 - Removidos os bloqueios de busca, conexão, callbacks GATT, Service Changed e reconexão que dependiam do estado de handoff.
-- A preferência antiga `wearfit_handoff_active` é apagada na inicialização, evitando que instalações atualizadas permaneçam presas no estado de liberação.
+- A preferência antiga `estado legado de handoff` é apagada na inicialização, evitando que instalações atualizadas permaneçam presas no estado de liberação.
 - Uma solicitação explícita de conexão habilita a política de reconexão progressiva antes mesmo da primeira conexão bem-sucedida; desconexão manual continua desabilitando as tentativas.
 - Excluídos `BleExternalHandoffPolicy` e seus testes obsoletos; atualizados testes da política de reconexão e do callback Service Changed.
-- O app não pode desativar/encerrar outro pacote Android. Se Wearfit Pro ainda mantiver GATT ativo, o usuário deverá encerrar essa conexão ou forçar a parada manualmente.
+- O app não pode desativar/encerrar outro pacote Android. Se aplicativo companheiro externo ainda mantiver GATT ativo, o usuário deverá encerrar essa conexão ou forçar a parada manualmente.
 - Testes Kotlin, Lint, build, CI e teste físico Galaxy A06 / GT3 MAX: **não validados nesta alteração**. Nenhuma CI foi disparada.
 
 ## Não lançado — exclusão individual do histórico BLE — 04/11/2026
@@ -79,20 +88,20 @@
 - O inventário GATT agora rejeita campos ausentes, tipos incorretos, valores fora de faixa, arrays incompletos, duplicatas e JSON acima do limite; dados corrompidos ou de schema futuro permanecem preservados.
 - As operações de leitura-modificação-gravação do inventário usam bloqueio compartilhado entre instâncias; a atualização em memória usa `apply()` e a gravação em disco é assíncrona, sem confirmação imediata de durabilidade.
 - A biblioteca binária usa bloqueio compartilhado entre telas, limita leitura antes de alocar o arquivo, valida prazos de sessões, identificadores, tipos e HEX, e recusa timestamps inválidos.
-- A interface não oferece busca BLE enquanto o controle estiver liberado para Wearfit Pro.
+- A interface não oferece busca BLE enquanto o controle estiver liberado para aplicativo companheiro externo.
 - O snapshot de passos exige que o recebimento ocorra após o fim do intervalo consultado.
 - Foram adicionados testes de regressão para integridade do snapshot, sessão, codec, intervalo de passos e bloqueio do handoff.
 - Nenhuma escrita proprietária, NUS RX, CTS write, OTA, reset, calibração ou publicação Health Connect foi habilitada.
-- CI, build local, lint e teste físico Galaxy A06 / GT3 MAX / Wearfit Pro: **não validados** (CI não disparada por solicitação do usuário).
+- CI, build local, lint e teste físico Galaxy A06 / GT3 MAX / aplicativo companheiro externo: **não validados** (CI não disparada por solicitação do usuário).
 
 
-## Não lançado — liberação BLE para Wearfit Pro — 04/11/2026
+## Não lançado — liberação BLE para aplicativo companheiro externo — 04/11/2026
 
-- Adicionada ação explícita para liberar o GT3 MAX ao Wearfit Pro: encerra a sessão GATT própria, cancela scans/tentativas e persiste a pausa da reconexão automática.
+- Adicionada ação explícita para liberar o GT3 MAX ao aplicativo companheiro externo: encerra a sessão GATT própria, cancela scans/tentativas e persiste a pausa da reconexão automática.
 - A liberação sobrevive à reabertura do Relógio 2.0; a reconexão só é retomada por ação manual do usuário.
 - Adicionados testes unitários para impedir reconexão e descoberta inicial durante a liberação.
 - Nenhuma escrita GATT, comando proprietário, alteração de pareamento Android ou controle Bluetooth Classic foi introduzido.
-- CI desta branch e teste físico Galaxy A06 / GT3 MAX / Wearfit Pro: **não validados**.
+- CI desta branch e teste físico Galaxy A06 / GT3 MAX / aplicativo companheiro externo: **não validados**.
 
 ## Não lançado — watchdog e rastreabilidade da descoberta GATT — 04/11/2026
 
@@ -232,7 +241,7 @@
 - Catálogo identifica perfis Bluetooth SIG conhecidos (quando serviço e característica correspondem), canais proprietários, propriedades READ/NOTIFY/INDICATE/WRITE e tráfego efetivamente recebido.
 - O catálogo diferencia perfil encontrado, tráfego observado, hipótese de protocolo e dado ainda não validado; UUID ou propriedade GATT não são tratados como prova de função de usuário.
 - Notificações recebidas atualizam contadores e metadados. O conteúdo bruto HEX não é copiado para o histórico da autodescoberta.
-- A interpretação AB 0x91/0x80 permanece como candidata de bateria até correlação com Wearfit Pro; quadros desconhecidos não recebem semântica inventada.
+- A interpretação AB 0x91/0x80 permanece como candidata de bateria até correlação com aplicativo companheiro externo; quadros desconhecidos não recebem semântica inventada.
 - Nenhuma leitura arbitrária, nova inscrição de notificação, escrita proprietária, NUS RX, OTA/DFU ou reset foi habilitado.
 - O catálogo local usa schema versionado e recusa sobrescrever conteúdo inválido ou de versão mais nova.
 - Testes unitários do motor de descoberta adicionados. Build/CI e teste físico desta fase: **não validados**.
@@ -286,7 +295,7 @@
 - Adicionados testes Python de consistência dos metadados do build e atualização do mapa de módulos/diário.
 - Lint, CI no HEAD final e teste físico: **aguardando validação**.
 
-## Não lançado — investigação do canal de parceiros Wearfit Pro
+## Não lançado — investigação do canal de parceiros aplicativo companheiro externo
 
 - Analisada a declaração Weike atualizada em 04/08/2023: ela prevê acesso por aplicativos terceiros autorizados a identificador aleatório do dispositivo, estado, notificações e, mediante autorização expressa, dados de sensores, sono, exercício, uso, logs e localização.
 - Documentada a distinção entre a declaração de privacidade e uma API/SDK: o texto não fornece artefato Android, contratos, callbacks, exemplos ou esquema de dados.
@@ -299,7 +308,7 @@
 - Adicionado perfil de dispositivo com metadados informados pelo proprietário: GT3 MAX Call, firmware V1.07 e build SH0050-1_1.1.3_1.23_1.18_1.1. Esses campos não são apresentados como leitura autenticada do GATT.
 - Compara o nome anunciado e o fingerprint completo dos serviços/características já capturados para identificar compatibilidade com a unidade.
 - Após fingerprint completo, inscreve automaticamente somente a característica NUS TX em notificações, usando CCCD padrão; não envia payload à característica NUS RX.
-- Exibe a interpretação AB 0x91/0x80 como bateria candidata, sem apresentar o valor como validado até correlação com Wearfit Pro em diferentes níveis de carga.
+- Exibe a interpretação AB 0x91/0x80 como bateria candidata, sem apresentar o valor como validado até correlação com aplicativo companheiro externo em diferentes níveis de carga.
 - Adicionada referência de bateria candidata no catálogo de funções.
 - Serial, código de pareamento e MAC não foram incluídos no código/documentação pública; a identidade Bluetooth continua configurada localmente no aplicativo.
 - Nenhum sensor de saúde, comando proprietário, perfil Bluetooth Classic, OTA/DFU ou reset foi habilitado.
@@ -324,7 +333,7 @@
 
 ## Não lançado — matriz GT3 MAX e alinhamento de módulos
 
-- Catálogo de 33 funções fornecidas do Wearfit Pro organizado em matriz de compatibilidade, sem presumir suporte do GT3 MAX.
+- Catálogo de 33 funções fornecidas do aplicativo companheiro externo organizado em matriz de compatibilidade, sem presumir suporte do GT3 MAX.
 - Fila GATT e parser BLE candidato movidos para pacotes próprios, com testes correspondentes e sem alteração de comportamento/protocolo.
 - Arquitetura, mapa de módulos, índice documental e caminho do artefato diagnostic no README alinhados.
 - CI deste conjunto e teste físico: **aguardando validação**. A versão `0.4.0-alpha.1` não foi promovida por esta alteração.
@@ -371,7 +380,7 @@ As alterações relevantes do Relógio 2.0 são registradas aqui. Segue SemVer: 
 ### Protocolo BLE — análise de evidência
 - UUIDs NUS dcca9e e quadro recebido AB 00 05 FF 91 80 00 0C comparados com fixture pública do projeto fbiego/dt78.
 - Perfil NUS_AB_FRAME_COMPATIBLE_CANDIDATE e parser offline implementados.
-- Quadro 0x91/0x80 pode indicar bateria; 0x0C sugere 12%, ainda **não validado** por comparação simultânea com Wearfit Pro.
+- Quadro 0x91/0x80 pode indicar bateria; 0x0C sugere 12%, ainda **não validado** por comparação simultânea com aplicativo companheiro externo.
 - Nenhum payload foi escrito no relógio; RX, Secure DFU/OTA, reset e comandos de configuração continuam bloqueados.
 
 ### Testes adicionados
@@ -418,7 +427,7 @@ As alterações relevantes do Relógio 2.0 são registradas aqui. Segue SemVer: 
 
 ### Incluído
 - Documentação centralizada e mapa de módulos.
-- Inventário de funções do Wearfit Pro, com prioridade, origem e estado de validação.
+- Inventário de funções do aplicativo companheiro externo, com prioridade, origem e estado de validação.
 - Especificação da integração Android NotificationListenerService para WhatsApp e notificações de outros apps.
 - Diário de bordo e política de versionamento.
 
