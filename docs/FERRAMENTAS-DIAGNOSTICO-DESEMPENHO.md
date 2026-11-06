@@ -19,7 +19,7 @@ O arquivo `.gitignore` já ignora `*.hprof`, dumps e logs. Essa proteção não 
 
 O Gradle Dependency Verification usa `gradle/verification-metadata.xml` e SHA-256. Quando o arquivo é versionado, o Gradle verifica automaticamente artefatos e metadados baixados em todas as tarefas/builds compatíveis.
 
-A primeira CI gera um artefato temporário `gradle-dependency-verification-bootstrap` porque a branch ainda não contém metadados. Esse arquivo deve ser inspecionado, ter seus componentes e checksums revisados e somente então ser versionado em `gradle/verification-metadata.xml`. O bootstrap é trust-on-first-use: a geração, isoladamente, não prova autenticidade do primeiro download.
+A primeira CI executa os testes unitários e compila os APKs diagnostic/companion e o módulo Macrobenchmark usando `--write-verification-metadata sha256`, para resolver e registrar também as dependências de implementação/teste. O resultado é publicado como artefato temporário `gradle-dependency-verification-bootstrap` porque a branch ainda não contém metadados. Esse arquivo deve ser inspecionado, ter seus componentes e checksums revisados e somente então ser versionado em `gradle/verification-metadata.xml`. O bootstrap é trust-on-first-use: a geração, isoladamente, não prova autenticidade do primeiro download.
 
 Após o arquivo revisado entrar no repositório:
 1. A etapa de bootstrap deixa de executar.
