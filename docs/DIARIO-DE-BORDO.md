@@ -1,3 +1,11 @@
+## 06/11/2026 — Correção da configuração Kotlin DSL das dependências por variante
+
+- A CI #443 identificou que os acessores Kotlin DSL `diagnosticDebugImplementation` e `diagnosticBenchmarkImplementation` não estavam disponíveis para os flavors/build types criados dinamicamente.
+- As dependências foram alteradas para `add("<configuration>", "<coordinate>")`, preservando o isolamento entre variantes sem depender de acessores gerados.
+- O passo de bootstrap SHA-256 também foi interrompido pela falha de compilação do script Gradle; não houve geração de metadados e nenhum checksum foi aceito.
+- A CI deve ser reexecutada no novo HEAD para validar script Gradle, resolução de dependências, módulo Macrobenchmark e guardrails.
+- Nenhuma alteração no código BLE/GATT ou na política de independência do WearFit Pro.
+
 ## 06/11/2026 — Ferramentas de diagnóstico, integridade de dependências e Macrobenchmark
 
 - LeakCanary 2.14 incluído somente em `diagnosticDebug`. O guardrail da CI exige a dependência nessa variante e bloqueia LeakCanary em companionDebug, diagnosticRelease, companionRelease e diagnosticBenchmark. Heap dumps não devem ser publicados e podem conter dados pessoais, de saúde e BLE.
