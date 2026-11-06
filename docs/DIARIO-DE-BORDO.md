@@ -1,3 +1,14 @@
+## 05/11/2026 — Decisão definitiva: remoção integral do WearFit Pro
+
+- Requisito obrigatório do produto: o Relógio 2.0 deve operar de forma independente e conectar-se diretamente ao GT3 MAXX.
+- É proibido iniciar, solicitar, compartilhar ou dividir conexão/pareamento/sessão com WearFit Pro; também não pode haver sincronização, handoff, dependência operacional ou integração com esse aplicativo.
+- Escopo de remoção: auditar e eliminar código, serviços, receivers, intents, permissões, bibliotecas/dependências, configurações, estados persistidos, tarefas, telas, ações, testes e referências/documentação que mantenham integração ou dependência do WearFit Pro.
+- Preservar somente componentes BLE/GATT necessários à comunicação direta com o GT3 MAXX. Um parser de framing/payload do próprio relógio não deve ser confundido com integração ao aplicativo WearFit Pro; ainda assim, nomes e referências residuais devem ser revisados e renomeados quando não forem necessários.
+- Documentos estritamente históricos podem ser mantidos apenas quando claramente identificados como histórico, sem instruções operacionais conflitantes; a documentação ativa deve declarar a independência do aplicativo.
+- A preferência antiga de handoff/liberação, inclusive chaves persistidas como `wearfit_handoff_active`, deve ser removida com migração segura para que nenhuma instalação atualizada permaneça bloqueada ou tente acionar o fluxo antigo.
+- Esta entrada registra a decisão e o escopo obrigatório; **não comprova que toda a limpeza de código, dependências, permissões e documentação já foi concluída**. Cada remoção deverá ser registrada após inspeção e validação do diff.
+- CI, testes, Lint, builds e validação física no Samsung Galaxy A06 / Android 16 com GT3 MAXX: **não validados nesta atualização documental**. Nenhuma CI foi solicitada; não realizar merge.
+
 ## 04/11/2026 — Controle de privacidade do histórico BLE
 
 - A biblioteca interna ganhou a ação **Excluir registro** em cada item, com confirmação antes de remover metadados e, quando presente, HEX capturado.
