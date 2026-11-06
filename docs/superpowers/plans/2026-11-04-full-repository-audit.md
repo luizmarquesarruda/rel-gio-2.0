@@ -18,7 +18,7 @@
 - [x] Serializar o inventário entre instâncias e verificar resultado de gravação.
 - [x] Auditar biblioteca de descobertas e ampliar proteção concorrente/validação de registros.
 - [x] Endurecer invariantes de sessão e timestamps.
-- [x] Alinhar interface e política de scan ao handoff de Wearfit Pro.
+- [x] Alinhar interface e política de scan ao fluxo legado de liberação externa, posteriormente removido.
 - [x] Reforçar consistência temporal de snapshots Health Connect.
 - [x] Adicionar testes de regressão.
 - [x] Atualizar documentação, changelog e diário.
