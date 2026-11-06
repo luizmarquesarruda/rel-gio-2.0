@@ -80,8 +80,18 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Require review and commit of the generated KtLint baseline
+        if: ${{ steps.ktlint_baseline_bootstrap.outcome == 'success' }}
+        shell: bash
+        run: |
+          echo "A baseline KtLint foi gerada e publicada para revisão." >&2
+          echo "Revise app/config/ktlint/baseline.xml, commit o arquivo e execute a CI novamente." >&2
+          echo "Nenhum APK será publicado enquanto a baseline não estiver versionada." >&2
+          exit 1
+
       - name: Run KtLint as a blocking source gate
         id: ktlint
+        if: ${{ !cancelled() && steps.ktlint_baseline_bootstrap.outcome == 'skipped' }}
         run: gradle --no-daemon :app:ktlintCheck
 
       - name: Run Android Lint for both variants

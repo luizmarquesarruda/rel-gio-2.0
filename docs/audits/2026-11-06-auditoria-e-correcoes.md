@@ -29,7 +29,7 @@ Auditoria da PR #21, branch `feat/ui-8-screen-layout-20261106`, abrangendo `:app
 
 - CI anterior #462: testes unitários e compilação dos APKs debug/macrobenchmark passaram; Android Lint e o guardrail de permissões falharam. Essa execução é evidência histórica, não valida as correções desta revisão.
 - A CI desta revisão foi acionada pelos commits da branch; o resultado final deve ser conferido no SHA mais recente.
-- O KtLint baseline ainda requer revisão e inclusão no Git. Enquanto isso, a primeira geração no CI serve apenas para produzir o arquivo de revisão.
+- A primeira execução sem baseline gera e publica `ktlint-baseline-review`, mas falha deliberadamente e bloqueia a publicação do APK. Após revisar e commitar `app/config/ktlint/baseline.xml`, a CI executa KtLint como gate bloqueante para novos desvios.
 - Galaxy A06 / Android 16 / GT3 MAX: **não validado fisicamente**.
 - Macrobenchmark no dispositivo: **não executado**.
 - Não houve merge da PR #21.
