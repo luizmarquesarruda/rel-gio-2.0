@@ -1,3 +1,13 @@
+## 06/11/2026 — Ferramentas de diagnóstico, integridade de dependências e Macrobenchmark
+
+- LeakCanary 2.14 incluído somente em `diagnosticDebug`. O guardrail da CI exige a dependência nessa variante e bloqueia LeakCanary em companionDebug, diagnosticRelease, companionRelease e diagnosticBenchmark. Heap dumps não devem ser publicados e podem conter dados pessoais, de saúde e BLE.
+- Criada a variante `diagnosticBenchmark`, derivada de release, não depurável e profileable somente via shell. ProfileInstaller 1.4.1 é incluído somente nessa variante.
+- Criado o módulo `:macrobenchmark` com teste de inicialização fria e 10 iterações usando StartupTimingMetric. A CI compila o módulo; testes instrumentados não são executados sem dispositivo físico.
+- Renovate configurado para dependências/plugins Gradle, GitHub Actions e a versão Gradle declarada no workflow. Agrupa patch/minor, exige aprovação para major, aguarda três dias quando existe timestamp e mantém automerge desativado. Configuração ainda depende de habilitação do Renovate App ou serviço self-hosted.
+- Adicionada etapa de bootstrap SHA-256 para Gradle Dependency Verification. Como o repositório ainda não contém `gradle/verification-metadata.xml`, a primeira CI deve gerar o arquivo como artefato temporário. O conteúdo deve ser revisado antes de ser versionado; bootstrap é trust-on-first-use.
+- Nenhuma alteração no transporte, parser, callbacks, permissões ou comandos BLE/GATT. Nenhuma referência ou integração com WearFit Pro foi introduzida.
+- CI após as mudanças, verificação estrita persistente e benchmark em aparelho físico: **aguardando validação**.
+
 ## 05/11/2026 — Resultado final da qualidade estática (CI #430)
 
 - CI #430 concluída com sucesso no commit `7e959270612824b2af43bf64760e5fae0eb8d91c`: KtLint, Android Lint, testes unitários, builds diagnostic/companion, guardrails, auditoria de manifest, assinatura v2, hashes e publicação dos artefatos.
