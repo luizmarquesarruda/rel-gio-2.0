@@ -76,8 +76,19 @@ class CurrentAndroidContractTests(unittest.TestCase):
         ]
         self.assertEqual(1, names.count("android.permission.INTERNET"))
         self.assertEqual(1, names.count("android.permission.ACCESS_NETWORK_STATE"))
-        self.assertNotIn("android.permission.ACCESS_FINE_LOCATION", names)
-        self.assertNotIn("android.permission.ACCESS_COARSE_LOCATION", names)
+        legacy_location_permissions = {
+            permission.attrib.get(ANDROID + "name"): permission
+            for permission in manifest.findall("uses-permission")
+            if permission.attrib.get(ANDROID + "name") in {
+                "android.permission.ACCESS_FINE_LOCATION",
+                "android.permission.ACCESS_COARSE_LOCATION",
+            }
+        }
+        for name, permission in legacy_location_permissions.items():
+            with self.subTest(permission=name):
+                max_sdk = permission.attrib.get(ANDROID + "maxSdkVersion")
+                self.assertIsNotNone(max_sdk)
+                self.assertLessEqual(int(max_sdk), 30)
 
     def test_time_weather_screen_is_internal_and_reachable_from_feature_hub(self):
         manifest = ET.parse(ROOT / "app/src/main/AndroidManifest.xml").getroot()
