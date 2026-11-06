@@ -86,9 +86,9 @@ kotlin {
 
 dependencies {
     // LeakCanary remains isolated to the diagnostic debug APK; it is absent from release/companion.
-    diagnosticDebugImplementation("com.squareup.leakcanary:leakcanary-android:2.14")
+    add("diagnosticDebugImplementation", "com.squareup.leakcanary:leakcanary-android:2.14")
     // Macrobenchmark requires ProfileInstaller in its non-debuggable target app variant.
-    diagnosticBenchmarkImplementation("androidx.profileinstaller:profileinstaller:1.4.1")
+    add("diagnosticBenchmarkImplementation", "androidx.profileinstaller:profileinstaller:1.4.1")
 
     implementation("androidx.activity:activity-ktx:1.13.0")
     implementation("androidx.health.connect:connect-client:1.1.0")
