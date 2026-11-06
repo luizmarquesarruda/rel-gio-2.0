@@ -44,7 +44,9 @@ jobs:
         id: setup_gradle
         uses: gradle/actions/setup-gradle@v6
         with:
-          gradle-version: "9.5.0"
+          # AGP 8.13.2 is paired with Gradle 8.13. Gradle 9.x is not
+          # the supported toolchain for this Android Gradle Plugin line.
+          gradle-version: "8.13"
 
       - name: Bootstrap Gradle dependency verification metadata
         id: dependency_verification_bootstrap
@@ -75,17 +77,19 @@ jobs:
 
       - name: Run unit tests and assemble both variants
         id: build
-        if: ${{ !cancelled() && steps.setup_gradle.outcome == 'success' && steps.manifest_policy_tests.outcome == 'success' }}
+        # When verification metadata is absent, the bootstrap already performs
+        # these exact tests/builds. Do not run the same failing Gradle graph twice.
+        if: ${{ !cancelled() && steps.setup_gradle.outcome == 'success' && steps.manifest_policy_tests.outcome == 'success' && steps.dependency_verification_bootstrap.outcome == 'skipped' }}
         run: gradle --no-daemon testDiagnosticDebugUnitTest testCompanionDebugUnitTest assembleDiagnosticDebug assembleCompanionDebug :macrobenchmark:assemble
 
       - name: Enforce privacy dependency and permission guardrails
         id: privacy_guardrails
-        if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.manifest_policy_tests.outcome == 'success' }}
+        if: ${{ !cancelled() && (steps.build.outcome == 'success' || steps.dependency_verification_bootstrap.outcome == 'success') && steps.manifest_policy_tests.outcome == 'success' }}
         run: bash scripts/check-privacy-guardrails.sh
 
       - name: Audit merged APK manifests, signatures and hashes
         id: audit_apks
-        if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.privacy_guardrails.outcome == 'success' }}
+        if: ${{ !cancelled() && (steps.build.outcome == 'success' || steps.dependency_verification_bootstrap.outcome == 'success') && steps.privacy_guardrails.outcome == 'success' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -136,7 +140,7 @@ jobs:
 
       - name: Prepare diagnostic APK metadata in the reports artifact
         id: prepare_diagnostic_package
-        if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.lint.outcome == 'success' && steps.privacy_guardrails.outcome == 'success' && steps.audit_apks.outcome == 'success' }}
+        if: ${{ !cancelled() && (steps.build.outcome == 'success' || steps.dependency_verification_bootstrap.outcome == 'success') && steps.lint.outcome == 'success' && steps.privacy_guardrails.outcome == 'success' && steps.audit_apks.outcome == 'success' }}
         env:
           SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
         shell: bash
