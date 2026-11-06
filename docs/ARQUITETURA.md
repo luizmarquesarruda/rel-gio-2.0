@@ -7,7 +7,7 @@ A implementação em andamento é um protótipo Android nativo em Kotlin. Não h
 ## Camadas
 
 1. **UI / Presentation** — telas, estado visual, acessibilidade e ações do usuário. Não conhece UUIDs nem payloads proprietários.
-2. **Domain** — modelos de métricas/sessões, unidades, proveniência, qualidade, metas e casos de uso. Não depende de Android, BLE ou Wearfit Pro.
+2. **Domain** — modelos de métricas/sessões, unidades, proveniência, qualidade, metas e casos de uso. Não depende de Android, BLE ou aplicativos externos.
 3. **Device / BLE transport** — scan, conexão GATT, callbacks, fila serial, descoberta, reconexão e encerramento. Não interpreta métricas.
 4. **Device / GT3 MAX protocol** — perfil candidato, framing, parser e correlação de comandos/respostas. Só promove semântica após capturas repetíveis.
 5. **Data / Local storage** — histórico e preferências locais, esquema versionado, origem e timestamps.
@@ -31,7 +31,7 @@ O projeto continua em um único módulo Gradle `:app`, com Kotlin nativo e Views
 - GattCallbackSafetyPolicy isola as regras de callbacks: só aceita a conexão atual e a operação ativa; Service Changed invalida a tabela anterior e solicita redescoberta quando permitido.
 - `BleReconnectCoordinator` isola as decisões puras de agendamento e execução da reconexão. `MainActivity` ainda mantém `Handler`, `Runnable`, estado Android e chamada de scan; a extração do scheduler/plataforma ainda não está concluída.
 - A biblioteca local usa cache e fila de escrita serial para não fazer I/O de arquivo dentro dos callbacks BLE; o conteúdo continua local e bounded.
-- WearfitProtocolProfile, WearfitAbFrame e WearfitAbFrameParser foram isolados em device/gt3max/protocol. O nome do pacote não confirma chipset nem identidade do dispositivo.
+- Gt3MaxProtocolProfile, Gt3MaxAbFrame e Gt3MaxAbFrameParser foram isolados em device/gt3max/protocol. O nome do pacote não confirma chipset nem identidade do dispositivo.
 - Os testes acompanham os pacotes correspondentes; os testes do contrato Domain verificam unidades, limites e preservação de origem.
 - Notification Listener permanece na variante companion; diagnostic não deve declarar essa capacidade.
 - Health Connect é acessado pelo HealthConnectStepsRepository em data/healthconnect; MainActivity consome resultado tipado e não monta consultas Health Connect.
