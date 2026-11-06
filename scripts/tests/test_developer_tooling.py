@@ -20,6 +20,7 @@ class DeveloperToolingTests(unittest.TestCase):
                             r'"com\.squareup\.leakcanary:')
         self.assertIn("diagnosticReleaseRuntimeClasspath", guardrails)
         self.assertIn("companionDebugRuntimeClasspath", guardrails)
+        self.assertIn("companionBenchmarkRuntimeClasspath", guardrails)
         self.assertIn("LeakCanary must not be present", guardrails)
 
     def test_macrobenchmark_targets_only_diagnostic_flavor(self):
