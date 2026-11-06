@@ -10,7 +10,7 @@ Fonte: [BluetoothGattCallback.onServiceChanged](https://developer.android.com/re
 
 A callback informa que a tabela de atributos do dispositivo foi alterada e que a instância local não deve continuar usando a tabela antiga. Após o evento, o cliente deve redescobrir os serviços. Aplicação no repositório:
 - verificar que o callback pertence à conexão GATT atual;
-- não retomar a descoberta durante desconexão ou handoff ao Wearfit Pro;
+- não retomar a descoberta durante desconexão ou encerramento da sessão GATT;
 - limpar operações GATT pendentes e referências locais;
 - chamar `discoverServices()` novamente e manter watchdog;
 - não confundir o inventário anterior com dados da sessão atual.
