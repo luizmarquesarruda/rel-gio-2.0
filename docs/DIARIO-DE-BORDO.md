@@ -1,15 +1,12 @@
-## 06/11/2026 — Qualidade estática incremental e diagnóstico de thread
+## 05/11/2026 — Resultado final da qualidade estática (CI #430)
 
-- Relatório da CI #429: Lint sem erros, com 130 avisos diagnostic (118 SetTextI18n, 11 UseKtx, 1 OldTargetApi) e 137 companion (123 SetTextI18n, 13 UseKtx, 1 OldTargetApi).
-- Corrigidos os avisos UseKtx por extensões SharedPreferences.edit e String.toUri, preservando persistência assíncrona equivalente a apply().
-- Integrado KtLint Gradle 14.2.0 com engine 1.8.0 fixada, relatórios plain/Checkstyle/SARIF e execução consultiva na CI; sem formatter automático, baseline ou bloqueio de build nesta etapa.
-- Criado .editorconfig com UTF-8, LF, newline final, indentação de 4 espaços e limite de linha de 140 colunas.
-- Adicionado RelogioApplication com StrictMode somente em builds debug: disk reads/writes, network na thread principal, leaked closables/registrations, penaltyLog sem penaltyDeath. Release não recebe essa política.
-- O aviso SetTextI18n permanece para migração gradual a recursos string/plural; sem supressões nem baseline.
-- O aviso OldTargetApi permanece: targetSdk 36 atende o mínimo atual do Google Play desde 31/08/2026. API 37 exige migração de SDK/toolchain e testes Android 17.
-- Detekt 2 alpha, LeakCanary e testes instrumentados AndroidX não foram introduzidos: incompatibilidade de toolchain, risco de exposição de heap dumps e necessidade de infraestrutura/dispositivo estão registrados em docs/QUALIDADE-ESTATICA-ANDROID.md.
-- CI #429 no commit c7350ed: Lint, testes unitários, builds diagnostic/companion, guardrails, auditoria de manifest, assinatura v2 e hashes concluídos com sucesso. Estas novas alterações ainda dependem de nova CI.
-- Samsung Galaxy A06 / Android 16 + GT3 MAXX: teste físico **não validado**. Sem alterações de protocolo, permissões Bluetooth, comandos enviados ao relógio ou sincronização.
+- CI #430 concluída com sucesso no commit `7e959270612824b2af43bf64760e5fae0eb8d91c`: KtLint, Android Lint, testes unitários, builds diagnostic/companion, guardrails, auditoria de manifest, assinatura v2, hashes e publicação dos artefatos.
+- KtLint foi executado e gerou relatórios plain, Checkstyle e SARIF. Foram encontrados 3.596 apontamentos de estilo no legado: main 2.685; testes 749; companion 132; testCompanion 26; diagnostic 3; scripts Gradle 1. O passo permanece consultivo; nenhum arquivo foi formatado automaticamente.
+- Android Lint: diagnosticDebug 119 avisos (118 SetTextI18n, 1 OldTargetApi); companionDebug 124 (123 SetTextI18n, 1 OldTargetApi). Os avisos UseKtx caíram de 11/13 para zero após a migração para SharedPreferences.edit e String.toUri.
+- APK publicado: `diagnosticDebug`, pacote `com.luizmarquesarruda.relogio20.diagnostic`, versão `0.4.0-alpha.4-diagnostic`, SHA-256 `121e1b109dce6ba4fa7b3558748e001bf6695445491e24474603426ce71497a9`, assinatura v2 válida. Artefato: `relogio-2.0-diagnostic-debug-apk`; relatórios incluem APK companions de auditoria, manifests, permissões, hashes e relatórios de qualidade.
+- O APK é de depuração e os metadados marcam `release_ready=false`; não é build de produção nem comprova funcionamento físico do relógio.
+- PR #20 permanece aberta em rascunho, sem merge, base `fix/wearfit-handoff-20261104`. Nenhuma integração ou conexão WearFit Pro foi reintroduzida.
+- Samsung Galaxy A06 / Android 16 + GT3 MAXX: teste físico **não validado**. Os resultados são de CI e auditoria estática, não de comunicação BLE real.
 
 ## 05/11/2026 — Correção do contrato JUnit e do gate de telemetria
 

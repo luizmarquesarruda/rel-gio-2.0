@@ -2,13 +2,14 @@
 
 ## Estado validado
 
-A execução Android CI #429 foi concluída com sucesso no commit `c7350ed21dcb8c8e2c8c166b4747f4cc0fbf8a0e`. O pipeline executou Lint nas variantes `diagnosticDebug` e `companionDebug`, testes unitários das duas variantes, builds dos dois APKs, guardrails de dependências/permissões, auditoria dos manifests mesclados, verificação de assinatura v2 e SHA-256. O artefato publicado foi somente o APK diagnóstico de depuração.
+A execução Android CI #430 foi concluída com sucesso no commit `7e959270612824b2af43bf64760e5fae0eb8d91c`. KtLint, Android Lint nas variantes `diagnosticDebug` e `companionDebug`, testes unitários, builds dos dois sabores, guardrails de dependências/permissões, auditoria dos manifests mesclados, assinatura v2 e SHA-256 passaram. O artefato publicado foi somente o APK diagnóstico de depuração.
 
-O relatório Lint contém avisos, mas nenhum erro:
-- `diagnosticDebug`: 130 avisos — 118 `SetTextI18n`, 11 `UseKtx` e 1 `OldTargetApi`.
-- `companionDebug`: 137 avisos — 123 `SetTextI18n`, 13 `UseKtx` e 1 `OldTargetApi`.
+O relatório Lint da CI #430 não contém erros:
+- `diagnosticDebug`: 119 avisos — 118 `SetTextI18n` e 1 `OldTargetApi`.
+- `companionDebug`: 124 avisos — 123 `SetTextI18n` e 1 `OldTargetApi`.
+- Os avisos `UseKtx` caíram de 11/13 para zero após migrar para `SharedPreferences.edit { }` (persistência assíncrona equivalente a `apply()`) e `String.toUri()`.
 
-Os avisos `UseKtx` identificados foram tratados nesta atualização sem alterar a semântica de persistência: `SharedPreferences.edit { }` mantém persistência assíncrona equivalente ao `apply()` anterior; `Uri.parse` foi substituído por `String.toUri()`.
+KtLint foi executado sem bloquear a CI e identificou 3.596 apontamentos de estilo: main 2.685; testes 749; companion 132; testCompanion 26; diagnostic 3; scripts Gradle 1. Os principais grupos são vírgulas finais, wrapping de expressões/listas/chains e assinaturas multilinha. Os relatórios plain, Checkstyle e SARIF foram arquivados; a etapa segue consultiva enquanto a dívida é tratada por lotes.
 
 ## Gates e ferramentas
 
@@ -36,8 +37,8 @@ O projeto permanece em `compileSdk 36` / `targetSdk 36`. O aviso `OldTargetApi` 
 
 ## Próximas fases
 
-1. Triar os avisos KtLint e Android Lint pelos relatórios arquivados, corrigindo conjuntos pequenos sem baseline global.
-2. Migrar gradualmente os textos dinâmicos para `strings.xml`, com placeholders e plurais.
+1. Tratar os 3.596 apontamentos KtLint por grupos pequenos, começando pelos arquivos com maior densidade, sem formatter global nem baseline.
+2. Migrar gradualmente os 241 avisos `SetTextI18n` restantes para `strings.xml`, com placeholders e plurais.
 3. Adicionar testes instrumentados para inicialização, ciclo de vida, permissões e persistência; manter BLE real como validação em aparelho.
 4. Avaliar targetSdk 37 em branch dedicada, com teste em Android 16 e Android 17.
 5. Medir StrictMode, consumo de bateria e rastros Perfetto no Galaxy A06 sem habilitar logging sensível em builds distribuídas.
