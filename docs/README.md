@@ -6,10 +6,8 @@ Este índice separa decisões de arquitetura, integrações, evidências do disp
 - [Arquitetura](ARQUITETURA.md) — camadas, contratos e regras de integração.
 - [Mapa de módulos](MAPA-DE-MODULOS.md) — estado real, estrutura-alvo e dívida técnica.
 - [Navegação e layout](NAVEGACAO-E-LAYOUT.md) — áreas, telas secundárias, estados e limites visuais.
-- [Inventário de funções Wearfit Pro](INVENTARIO-FUNCOES-WEARFIT-PRO.md) — catálogo resumido.
 - [Matriz de compatibilidade GT3 MAX](MATRIZ-COMPATIBILIDADE-GT3-MAXX.md) — 33 entradas, módulos responsáveis, riscos e validação.
 - [Contrato de métricas de saúde](CONTRATO-METRICAS-SAUDE.md) — tipos, unidades, origem, timestamps e portão de validação.
-- [Plano de substituição progressiva Wearfit Pro](PLANO-SUBSTITUICAO-WEARFIT.md) — fases, evidências e critérios.
 
 ## Integrações Android
 - [Alinhamento Google Android/Wear OS](ALINHAMENTO-GOOGLE-ANDROID-WEAROS.md)
@@ -19,17 +17,13 @@ Este índice separa decisões de arquitetura, integrações, evidências do disp
 - [Passos e referência de horário](INTEGRACAO-HEALTH-CONNECT-PASSOS-HORARIO.md)
 - [Plano de mapas, rotas e sinais vitais](PLANO-MAPAS-E-ROTAS-HEALTH-CONNECT.md)
 - [Notificações, WhatsApp e Android](INTEGRACAO-NOTIFICACOES-ANDROID-WHATSAPP.md)
-- [Pesquisa Wearfit Pro](PESQUISA-WEARFIT-PRO.md)
 
 ## Dispositivo e evidências
 - [Identificação do relógio](IDENTIFICACAO-DO-RELOGIO.md)
 - [Perfil GT3 Maxx](PERFIL-GT3-MAXX.md)
 - [Perfil de acesso GT3 MAX Call](PERFIL-ACESSO-GT3-MAX-CALL.md) — identificação de software informada, fingerprint GATT e escopo de leitura segura.
-- [Integração de parceiro Wearfit Pro](INTEGRACAO-WEARFIT-PARTNER-SDK.md) — autorização de terceiros, limites da API e elegibilidade do GT3 MAX Call.
-- [Análise de firmware OTA do Wearfit Pro](ANALISE-FIRMWARE-OTA-WEARFIT-PRO.md) — identidade regulatória, serviço Nordic Secure DFU e procedimento seguro para obter o pacote.
 - [Captura BLE de 03/11/2026](CAPTURA-BLE-GT3-MAX-2026-11-03.md)
 - [Automação de testes GATT e coleta local](AUTOMACAO-TESTES-GATT-GT3MAX.md) — consentimento, leituras, notificações, decoders e limites.
-- [Perfil BLE candidato NUS/AB](PROTOCOLO-BLE-CANDIDATO.md)
 
 ## Governança e versões
 - [Diário de bordo](DIARIO-DE-BORDO.md)

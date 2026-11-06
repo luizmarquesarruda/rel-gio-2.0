@@ -1,3 +1,14 @@
+## 04/11/2026 — Watchdog e rastreabilidade do ciclo de descoberta GATT
+
+- A conexão GATT agora registra persistentemente quando `discoverServices()` foi aceito, quando `onServicesDiscovered` respondeu e quando a descoberta falhou.
+- Adicionado watchdog de 12 segundos para a ausência do callback. Se a API recusar o início, retornar erro ou não responder dentro do prazo, a sessão GATT é encerrada de forma controlada e a política de reconexão pode tentar novamente.
+- O inventário anterior permanece preservado, mas o TXT passa a registrar explicitamente que ele não representa a conexão atual enquanto o callback estiver pendente ou tiver falhado.
+- Operações pendentes são classificadas como não executadas; filas, inscrições pendentes e timeouts são limpos antes da reconexão.
+- Se o usuário desconectar ou o aplicativo for encerrado antes do callback, a biblioteca grava `INTERRUPTIDA`, evitando que a tentativa pareça uma descoberta concluída.
+- Teste unitário cobre a decisão de recuperação e impede que callback já recebido ou conexão obsoleta disparem recuperação.
+- Fases de exploração serializada, decodificação Bluetooth SIG, persistência atômica e painel de progresso permanecem integradas; nenhuma semântica proprietária foi presumida.
+- CI após esta alteração e validação física no Samsung Galaxy A06 / Android 16 com GT3 MAX: **não validados**.
+
 ## 04/11/2026 — Ocultação do prefixo HEX fora da captura consentida
 
 - Auditoria de privacidade identificou que o log do fingerprint BLE exibia os quatro primeiros bytes do payload mesmo sem sessão de captura ativa.
@@ -688,3 +699,15 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - A CI #253 no commit `cd82b8b3b1a62f826f6eef4091464887e7fcfa73` identificou erro Kotlin em `DiscoveryLibraryActivity.kt`: `EditText` não expõe a propriedade gravável `singleLine` usada no inicializador.
 - Corrigido para a chamada pública `setSingleLine(true)`. A causa foi sintática e não envolveu BLE, persistência ou layout.
 - A CI #253 foi cancelada pela concorrência após identificar a mesma falha nos dois variants. O HEAD final precisará ser recompilado integralmente.
+
+
+## 05/11/2026 — Decisão arquitetural: independência total do Wearfit Pro
+
+- Decisão explícita do proprietário: o Relógio 2.0 não deve conectar, parear, compartilhar sessão/conexão, sincronizar ou depender do aplicativo Wearfit Pro.
+- O aplicativo deve operar de forma autônoma, estabelecendo conexão BLE/GATT diretamente com o GT3 MAX/GT3 MAXX. O Wearfit Pro não pode ser exigido como intermediário, serviço auxiliar, fonte de dados, referência de validação em tempo de execução ou requisito de instalação.
+- Remover do produto, código, interface, permissões, dependências, fluxos, documentação ativa e testes toda integração, comparação operacional ou instrução que exija o Wearfit Pro. Não manter conexão simultânea nem divisão de responsabilidades entre os aplicativos.
+- Preservar exclusivamente operações BLE explicitamente permitidas: GATT READ e inscrições NOTIFY/INDICATE com CCCD padrão. Não enviar comandos proprietários, NUS RX, DFU/OTA, reset, calibração ou escritas de controle no relógio.
+- Dados de sensores e funções do GT3 MAX devem ser implementados e validados diretamente pelo Relógio 2.0; sem confirmação de transporte/formato/semântica, registrar como **não validado**. Testes físicos no Galaxy A06 com GT3 MAX permanecem **não validados** até confirmação real do usuário.
+- Esta decisão substitui e cancela orientações anteriores de comparar sessões com Wearfit Pro, usar o aplicativo como referência operacional ou manter plano de substituição progressiva.
+- MAC, identificadores do dispositivo e dados pessoais/de saúde devem permanecer mascarados em relatórios.
+- Estado da execução: decisão registrada; remoção integral do código, arquivos e referências ainda exige revisão/compilação/CI no HEAD resultante. Não declarar a remoção como concluída antes dessa verificação.
