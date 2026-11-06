@@ -1,6 +1,7 @@
 package com.luizmarquesarruda.relogio20.data.weather
 
 import android.content.Context
+import androidx.core.content.edit
 import org.json.JSONObject
 
 /**
@@ -18,7 +19,7 @@ internal class WeatherPreferences(context: Context) {
             .put("country", location.country)
             .put("latitude", location.latitude)
             .put("longitude", location.longitude)
-        preferences.edit().putString(KEY_LOCATION, value.toString()).apply()
+        preferences.edit { putString(KEY_LOCATION, value.toString()) }
     }
 
     fun readLocation(): WeatherLocation? {
@@ -63,7 +64,7 @@ internal class WeatherPreferences(context: Context) {
             .putNullable("todayPrecipitationProbabilityPercent", snapshot.todayPrecipitationProbabilityPercent)
             .put("sunrise", snapshot.sunrise ?: JSONObject.NULL)
             .put("sunset", snapshot.sunset ?: JSONObject.NULL)
-        preferences.edit().putString(KEY_SNAPSHOT, value.toString()).apply()
+        preferences.edit { putString(KEY_SNAPSHOT, value.toString()) }
     }
 
     fun readSnapshot(): WeatherSnapshot? {

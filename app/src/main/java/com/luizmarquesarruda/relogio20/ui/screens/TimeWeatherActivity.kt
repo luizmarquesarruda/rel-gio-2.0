@@ -4,7 +4,6 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.Typeface
-import android.net.Uri
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.Handler
@@ -17,6 +16,7 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.net.toUri
 import com.luizmarquesarruda.relogio20.data.weather.OpenMeteoWeatherRepository
 import com.luizmarquesarruda.relogio20.data.weather.WeatherCodeLabels
 import com.luizmarquesarruda.relogio20.data.weather.WeatherLocation
@@ -212,7 +212,7 @@ class TimeWeatherActivity : Activity() {
             isClickable = true
             setOnClickListener {
                 runCatching {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://open-meteo.com/")))
+                    startActivity(Intent(Intent.ACTION_VIEW, "https://open-meteo.com/".toUri()))
                 }
             }
         }
@@ -222,7 +222,7 @@ class TimeWeatherActivity : Activity() {
             isClickable = true
             setOnClickListener {
                 runCatching {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://creativecommons.org/licenses/by/4.0/")))
+                    startActivity(Intent(Intent.ACTION_VIEW, "https://creativecommons.org/licenses/by/4.0/".toUri()))
                 }
             }
         }

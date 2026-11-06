@@ -26,6 +26,7 @@ import android.widget.ScrollView
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.edit
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsRepository
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsHistoryResult
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectOriginPolicy
@@ -162,8 +163,9 @@ class LocalToolsActivity : Activity() {
             text = "Incluir registros de outros aplicativos"
             isChecked = selectedOriginPolicy() == HealthConnectOriginPolicy.INCLUDE_EXTERNAL
             setOnCheckedChangeListener { _, checked ->
-                getSharedPreferences(PREFS, MODE_PRIVATE).edit()
-                    .putBoolean(KEY_INCLUDE_EXTERNAL_ORIGINS, checked).apply()
+                getSharedPreferences(PREFS, MODE_PRIVATE).edit {
+                    putBoolean(KEY_INCLUDE_EXTERNAL_ORIGINS, checked)
+                }
                 currentSteps = null
                 refreshSteps()
                 refreshStepsHistory()
@@ -184,9 +186,10 @@ class LocalToolsActivity : Activity() {
                 toast("Informe uma meta numérica.")
             } else {
                 runCatching { LocalFeaturePolicy.normalizeStepGoal(goal) }
-                    .onSuccess {
-                        getSharedPreferences(PREFS, MODE_PRIVATE).edit()
-                            .putInt(KEY_STEP_GOAL, it).apply()
+                    .onSuccess { normalizedGoal ->
+                        getSharedPreferences(PREFS, MODE_PRIVATE).edit {
+                            putInt(KEY_STEP_GOAL, normalizedGoal)
+                        }
                         updateStepProgress()
                         toast("Meta diária salva.")
                     }
@@ -417,11 +420,11 @@ class LocalToolsActivity : Activity() {
             set(Calendar.MILLISECOND, 0)
             if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
         }
-        getSharedPreferences(PREFS, MODE_PRIVATE).edit()
-            .putInt(KEY_REMINDER_HOUR, hour)
-            .putInt(KEY_REMINDER_MINUTE, minute)
-            .putBoolean(KEY_REMINDER_ENABLED, true)
-            .apply()
+        getSharedPreferences(PREFS, MODE_PRIVATE).edit {
+            putInt(KEY_REMINDER_HOUR, hour)
+            putInt(KEY_REMINDER_MINUTE, minute)
+            putBoolean(KEY_REMINDER_ENABLED, true)
+        }
         manager.setInexactRepeating(
             AlarmManager.RTC_WAKEUP,
             calendar.timeInMillis,
@@ -434,8 +437,9 @@ class LocalToolsActivity : Activity() {
     private fun cancelHealthReminder() {
         val manager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
         manager.cancel(reminderPendingIntent())
-        getSharedPreferences(PREFS, MODE_PRIVATE).edit()
-            .putBoolean(KEY_REMINDER_ENABLED, false).apply()
+        getSharedPreferences(PREFS, MODE_PRIVATE).edit {
+            putBoolean(KEY_REMINDER_ENABLED, false)
+        }
     }
 
     private fun reminderPendingIntent(): PendingIntent {

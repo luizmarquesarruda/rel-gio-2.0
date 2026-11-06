@@ -1,6 +1,7 @@
 package com.luizmarquesarruda.relogio20.notifications
 
 import android.content.Context
+import androidx.core.content.edit
 import android.os.SystemClock
 import java.util.ArrayDeque
 
@@ -24,7 +25,7 @@ internal object NotificationCaptureSettings {
 
     fun setEnabled(context: Context, enabled: Boolean) {
         NotificationCaptureStore.updateSettings {
-            preferences(context).edit().putBoolean(KEY_ENABLED, enabled).apply()
+            preferences(context).edit { putBoolean(KEY_ENABLED, enabled) }
             if (!enabled) NotificationCaptureStore.clearLocked()
         }
     }
@@ -37,9 +38,7 @@ internal object NotificationCaptureSettings {
     fun setAllowedPackages(context: Context, packages: Set<String>) {
         val allowed = packages.toSet()
         NotificationCaptureStore.updateSettings {
-            preferences(context).edit()
-                .putStringSet(KEY_ALLOWED_PACKAGES, allowed)
-                .apply()
+            preferences(context).edit { putStringSet(KEY_ALLOWED_PACKAGES, allowed) }
             NotificationCaptureStore.removeDisallowedPackagesLocked(allowed)
         }
     }

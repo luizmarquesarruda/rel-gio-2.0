@@ -5,7 +5,6 @@ import android.app.AlertDialog
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.ActivityNotFoundException
-import android.net.Uri
 import android.provider.Settings
 import com.luizmarquesarruda.relogio20.notifications.NotificationCenterActivity
 import com.luizmarquesarruda.relogio20.device.ble.core.BleDeviceIdentity
@@ -59,6 +58,7 @@ import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectPermissio
 import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import androidx.core.content.edit
+import androidx.core.net.toUri
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
@@ -828,7 +828,7 @@ class MainActivity : ComponentActivity() {
         } catch (error: ActivityNotFoundException) {
             val providerSettingsIntent = Intent(
                 Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                Uri.parse("package:com.google.android.apps.healthdata")
+                "package:com.google.android.apps.healthdata".toUri()
             )
             try {
                 startActivity(providerSettingsIntent)

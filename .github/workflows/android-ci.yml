@@ -45,6 +45,11 @@ jobs:
         with:
           gradle-version: "9.5.0"
 
+      - name: Run KtLint as advisory source review
+        id: ktlint
+        continue-on-error: true
+        run: gradle --no-daemon :app:ktlintCheck
+
       - name: Run Android Lint for both variants
         id: lint
         run: gradle --no-daemon lintDiagnosticDebug lintCompanionDebug
@@ -169,5 +174,6 @@ jobs:
             app/build/reports/lint-results-companionDebug.xml
             app/build/reports/lint-results-companionDebug.sarif
             app/build/reports/security/**
+            app/build/reports/ktlint/**
           if-no-files-found: warn
           retention-days: 30

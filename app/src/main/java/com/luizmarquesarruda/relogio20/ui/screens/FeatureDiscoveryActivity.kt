@@ -15,6 +15,7 @@ import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
 import android.content.Intent
+import androidx.core.content.edit
 import com.luizmarquesarruda.relogio20.data.discovery.DiscoveryLibraryKind
 import com.luizmarquesarruda.relogio20.data.discovery.DiscoveryLibraryReadResult
 import com.luizmarquesarruda.relogio20.data.discovery.FeatureDiscoveryReadResult
@@ -188,10 +189,9 @@ class FeatureDiscoveryActivity : Activity() {
             isAllCaps = false
             textSize = 14f
             setOnClickListener {
-                getSharedPreferences("ble_exploration_requests", MODE_PRIVATE)
-                    .edit()
-                    .putBoolean("pending_deep_exploration", true)
-                    .apply()
+                getSharedPreferences("ble_exploration_requests", MODE_PRIVATE).edit {
+                    putBoolean("pending_deep_exploration", true)
+                }
                 finish()
             }
         }

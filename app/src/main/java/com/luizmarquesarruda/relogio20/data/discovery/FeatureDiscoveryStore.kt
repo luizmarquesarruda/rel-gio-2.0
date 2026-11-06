@@ -1,6 +1,7 @@
 package com.luizmarquesarruda.relogio20.data.discovery
 
 import android.content.Context
+import androidx.core.content.edit
 import android.content.SharedPreferences
 import com.luizmarquesarruda.relogio20.device.discovery.CharacteristicTraffic
 import com.luizmarquesarruda.relogio20.device.discovery.DiscoverySnapshot
@@ -119,7 +120,7 @@ internal class FeatureDiscoveryStore(context: Context) {
         // apply() updates the in-memory preference atomically and persists on the
         // SharedPreferences writer thread, avoiding disk I/O on Bluetooth callbacks.
         return runCatching {
-            preferences.edit().putString(KEY_SNAPSHOT, encode(snapshot)).apply()
+            preferences.edit { putString(KEY_SNAPSHOT, encode(snapshot)) }
             true
         }.getOrDefault(false)
     }

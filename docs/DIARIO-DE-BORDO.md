@@ -1,3 +1,16 @@
+## 06/11/2026 — Qualidade estática incremental e diagnóstico de thread
+
+- Relatório da CI #429: Lint sem erros, com 130 avisos diagnostic (118 SetTextI18n, 11 UseKtx, 1 OldTargetApi) e 137 companion (123 SetTextI18n, 13 UseKtx, 1 OldTargetApi).
+- Corrigidos os avisos UseKtx por extensões SharedPreferences.edit e String.toUri, preservando persistência assíncrona equivalente a apply().
+- Integrado KtLint Gradle 14.2.0 com engine 1.8.0 fixada, relatórios plain/Checkstyle/SARIF e execução consultiva na CI; sem formatter automático, baseline ou bloqueio de build nesta etapa.
+- Criado .editorconfig com UTF-8, LF, newline final, indentação de 4 espaços e limite de linha de 140 colunas.
+- Adicionado RelogioApplication com StrictMode somente em builds debug: disk reads/writes, network na thread principal, leaked closables/registrations, penaltyLog sem penaltyDeath. Release não recebe essa política.
+- O aviso SetTextI18n permanece para migração gradual a recursos string/plural; sem supressões nem baseline.
+- O aviso OldTargetApi permanece: targetSdk 36 atende o mínimo atual do Google Play desde 31/08/2026. API 37 exige migração de SDK/toolchain e testes Android 17.
+- Detekt 2 alpha, LeakCanary e testes instrumentados AndroidX não foram introduzidos: incompatibilidade de toolchain, risco de exposição de heap dumps e necessidade de infraestrutura/dispositivo estão registrados em docs/QUALIDADE-ESTATICA-ANDROID.md.
+- CI #429 no commit c7350ed: Lint, testes unitários, builds diagnostic/companion, guardrails, auditoria de manifest, assinatura v2 e hashes concluídos com sucesso. Estas novas alterações ainda dependem de nova CI.
+- Samsung Galaxy A06 / Android 16 + GT3 MAXX: teste físico **não validado**. Sem alterações de protocolo, permissões Bluetooth, comandos enviados ao relógio ou sincronização.
+
 ## 05/11/2026 — Correção do contrato JUnit e do gate de telemetria
 
 - A execução #428 confirmou Lint concluído para diagnosticDebug e companionDebug, mas falhou em `testDiagnosticDebugUnitTest`: 194 testes encontrados, com `HealthConnectTelemetryGateTest > initializationError`.
