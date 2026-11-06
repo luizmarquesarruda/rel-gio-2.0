@@ -70,6 +70,9 @@ class DeveloperToolingTests(unittest.TestCase):
         self.assertIn("StartupMode.COLD", source)
         self.assertIn("iterations = 10", source)
         self.assertIn(":macrobenchmark:assemble", workflow)
+        self.assertIn("--write-verification-metadata sha256", workflow)
+        self.assertIn("testDiagnosticDebugUnitTest", workflow)
+        self.assertNotIn("--write-verification-metadata sha256 help", workflow)
         self.assertNotIn(":macrobenchmark:connectedCheck", workflow)
 
     def test_dependency_verification_metadata_is_sha256_pinned_when_present(self):
