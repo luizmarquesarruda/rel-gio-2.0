@@ -65,6 +65,15 @@
 - A remoção é serializada na fila de escrita e persiste por substituição atômica do snapshot; outros registros e o estado da sessão ativa são preservados.
 - Testes unitários cobrem remoção exata, preservação da sessão e registro inexistente.
 - Testes, lint, build e validação física: **não executados/não validados**. CI não disparada por solicitação do usuário.
+## Não lançado — ferramentas de diagnóstico, integridade e desempenho — 06/11/2026
+
+- LeakCanary 2.14 adicionado exclusivamente à variante `diagnosticDebug`; guardrails impedem a presença em variantes companion, release e benchmark.
+- Criada a variante não depurável `diagnosticBenchmark`, com profiling via shell restrito ao manifesto dessa variante e ProfileInstaller 1.4.1.
+- Adicionado módulo `:macrobenchmark` com medição de inicialização fria (StartupTimingMetric, 10 iterações). A CI compila o módulo; a medição física continua pendente.
+- Configurado Renovate para atualizar dependências Gradle, plugins e GitHub Actions, com cooldown, Dependency Dashboard e automerge desativado. A ativação do bot depende de habilitação no GitHub.
+- Incluído bootstrap de Gradle Dependency Verification SHA-256: a CI gera um artefato temporário que precisa ser revisado antes de entrar no repositório. A verificação persistente ainda depende do versionamento desse arquivo.
+- Nenhuma alteração no protocolo BLE/GATT, permissões Bluetooth, coleta de saúde ou independência do WearFit Pro.
+
 # Changelog
 
 ## Não lançado — serialização do consentimento de notificações — 04/11/2026
