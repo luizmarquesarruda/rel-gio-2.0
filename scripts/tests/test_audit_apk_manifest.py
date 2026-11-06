@@ -128,9 +128,21 @@ class SharedSecurityPolicyTests(unittest.TestCase):
         self.assertEqual([], audit_manifest(xml, "diagnostic"))
 
     def test_both_variants_accept_exactly_one_weather_internet_permission(self):
-        for variant in ("diagnostic", "companion"):
+        diagnostic_xml = manifest()
+        companion_xml = manifest(
+            package_name="com.luizmarquesarruda.relogio20",
+            services='''<service android:name=".notifications.NotificationCaptureService"
+              android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+              android:exported="false"><intent-filter><action
+              android:name="android.service.notification.NotificationListenerService" />
+              </intent-filter></service>'''
+        )
+        for variant, xml in (
+            ("diagnostic", diagnostic_xml),
+            ("companion", companion_xml),
+        ):
             with self.subTest(variant=variant):
-                self.assertEqual([], audit_manifest(manifest(), variant))
+                self.assertEqual([], audit_manifest(xml, variant))
 
     def test_both_variants_reject_missing_weather_internet_permission(self):
         xml = manifest(include_internet=False)
