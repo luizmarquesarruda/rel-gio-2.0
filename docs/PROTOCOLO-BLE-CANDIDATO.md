@@ -16,7 +16,7 @@ Referência: https://github.com/fbiego/dt78/blob/master/dt78_ble_server/dt78_ble
 
 **Classificação atual: compatibilidade de protocolo candidata; identidade do chipset/modelo não confirmada.**
 
-A coincidência simultânea dos UUIDs e do formato/bytes da fixture é forte o bastante para justificar um parser isolado. Não prova que o GT3 Maxx seja um DT78, X8 Ultra ou use o mesmo firmware. O projeto upstream é um emulador de servidor BLE e declara como alvo WearFit 2.0; não é documentação oficial do fabricante do GT3 Maxx nem SDK Wearfit Pro.
+A coincidência simultânea dos UUIDs e do formato/bytes da fixture é forte o bastante para justificar um parser isolado. Não prova que o GT3 Maxx seja um DT78, X8 Ultra ou use o mesmo firmware. O projeto upstream é um emulador de servidor BLE e é apenas uma implementação de referência independente; não é documentação oficial do fabricante do GT3 Maxx nem integração de aplicativo.
 
 Outro projeto público documenta Bluetrum AB5610, mas usa UUID NUS terminado em dcca9f e quadros DF/FD. Essa família não deve ser misturada com a captura dcca9e / AB: https://github.com/victorbillyph/chinese-smartwatch-homeassistant.
 
