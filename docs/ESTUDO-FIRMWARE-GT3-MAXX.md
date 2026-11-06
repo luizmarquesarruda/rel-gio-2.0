@@ -74,7 +74,7 @@ A matriz também diferencia serviço sem característica esperada, característi
 | Recurso desejado | Situação | Próxima evidência necessária |
 |---|---|---|
 | Bateria | Quadro AB candidato; não confirmado | Comparação simultânea com o indicador do relógio em vários níveis de carga |
-| Passos e distância | Não observados diretamente | Captura antes/depois de caminhada e correlação com visor e Wearfit Pro |
+| Passos e distância | Não observados diretamente | Captura antes/depois de caminhada e correlação com o visor do próprio relógio |
 | Frequência cardíaca | Não validada | Captura sincronizada durante uma medição iniciada no relógio |
 | SpO₂ | Não validada | Captura durante medição sob demanda e correlação temporal |
 | Pressão arterial | Não validada | Captura controlada; não tratar estimativa como valor médico |
@@ -109,7 +109,7 @@ A assinatura **não** é hash do firmware, não autentica o relógio e não util
 
 ## 7. Próximo protocolo de investigação física
 
-1. Desconectar o Wearfit Pro manualmente e conectar somente pelo Relógio 2.0.
+1. Manter somente o Relógio 2.0 conectado ao GT3 MAX durante a captura.
 2. Exportar o relatório TXT com a captura do inventário GATT completo.
 3. Guardar a assinatura estrutural exibida e repetir a captura em outra sessão para confirmar estabilidade.
 4. Registrar uma ação de cada vez no relógio (por exemplo, abrir a tela de frequência cardíaca e iniciar a medição); usar o marcador temporal do laboratório para alinhar a ação e as notificações.
