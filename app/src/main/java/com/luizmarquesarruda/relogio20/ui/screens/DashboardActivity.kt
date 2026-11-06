@@ -71,7 +71,7 @@ class DashboardActivity : Activity() {
         RelogioUi.metric(body, "Frequência cardíaca", "N/D", "Sensor direto ainda não validado.")
         RelogioUi.metric(body, "Sono", "N/D", "Dados de sono ainda não disponíveis em fonte validada.")
 
-        RelogioUi.section(body, "NAVEGAÇÃO", "Uma tela principal e sete áreas secundárias independentes")
+        RelogioUi.section(body, "NAVEGAÇÃO", "Uma tela principal e seis áreas secundárias independentes")
         RelogioUi.card(body, "01 • Conexão e dispositivo", "Busca BLE, estado do GT3 Maxx, inventário e diagnóstico técnico.", "TELA 1", "ABRIR") {
             startActivity(Intent(this, MainActivity::class.java))
         }
@@ -90,10 +90,6 @@ class DashboardActivity : Activity() {
         RelogioUi.card(body, "06 • Mais recursos", "Laboratório BLE, biblioteca de descobertas, catálogo, ferramentas locais e privacidade.", "TELA 6", "ABRIR") {
             startActivity(Intent(this, MoreResourcesActivity::class.java))
         }
-        RelogioUi.card(body, "07 • Configurações", "Preferências de horário, unidades e escopo das fontes de saúde.", "TELA 7", "ABRIR") {
-            startActivity(Intent(this, SettingsActivity::class.java))
-        }
-
         RelogioUi.section(body, "QUALIDADE DOS DADOS")
         RelogioUi.message(body, "Conexão Bluetooth não significa leitura de sensor validada. Valores N/D indicam ausência de dado confiável, não zero. O aplicativo não é um dispositivo médico.")
     }

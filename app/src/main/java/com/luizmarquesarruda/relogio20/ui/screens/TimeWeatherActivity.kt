@@ -22,6 +22,7 @@ import com.luizmarquesarruda.relogio20.data.weather.WeatherCodeLabels
 import com.luizmarquesarruda.relogio20.data.weather.WeatherLocation
 import com.luizmarquesarruda.relogio20.data.weather.WeatherPreferences
 import com.luizmarquesarruda.relogio20.data.weather.WeatherSnapshot
+import com.luizmarquesarruda.relogio20.ui.RelogioUi
 import com.luizmarquesarruda.relogio20.data.weather.WeatherSyncScheduler
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -95,6 +96,15 @@ class TimeWeatherActivity : Activity() {
             setBackgroundColor(0xFFF4F6F8.toInt())
             setPadding(dp(18), dp(14), dp(18), dp(18))
         }
+        RelogioUi.applyEdgeToEdge(
+            activity = this,
+            root = root,
+            paddingLeftDp = 18,
+            paddingTopDp = 14,
+            paddingRightDp = 18,
+            paddingBottomDp = 18,
+            lightSystemBarIcons = true
+        )
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL

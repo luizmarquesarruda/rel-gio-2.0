@@ -2,10 +2,8 @@ package com.luizmarquesarruda.relogio20.ui.screens
 
 import android.Manifest
 import android.app.Activity
-import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
@@ -28,6 +26,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.edit
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsRepository
+import com.luizmarquesarruda.relogio20.data.preferences.AppPreferences
+import com.luizmarquesarruda.relogio20.ui.RelogioUi
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsHistoryResult
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectOriginPolicy
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsResult
@@ -116,6 +116,15 @@ class LocalToolsActivity : Activity() {
             setPadding(dp(18), dp(14), dp(18), dp(18))
             setBackgroundColor(0xFFF4F6F8.toInt())
         }
+        RelogioUi.applyEdgeToEdge(
+            activity = this,
+            root = root,
+            paddingLeftDp = 18,
+            paddingTopDp = 14,
+            paddingRightDp = 18,
+            paddingBottomDp = 18,
+            lightSystemBarIcons = true
+        )
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -163,9 +172,7 @@ class LocalToolsActivity : Activity() {
             text = "Incluir registros de outros aplicativos"
             isChecked = selectedOriginPolicy() == HealthConnectOriginPolicy.INCLUDE_EXTERNAL
             setOnCheckedChangeListener { _, checked ->
-                getSharedPreferences(PREFS, MODE_PRIVATE).edit {
-                    putBoolean(KEY_INCLUDE_EXTERNAL_ORIGINS, checked)
-                }
+                AppPreferences.setIncludeExternalHealthSources(this@LocalToolsActivity, checked)
                 currentSteps = null
                 refreshSteps()
                 refreshStepsHistory()
@@ -412,49 +419,28 @@ class LocalToolsActivity : Activity() {
     }
 
     private fun scheduleHealthReminder(hour: Int, minute: Int) {
-        val manager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, hour)
-            set(Calendar.MINUTE, minute)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-            if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
-        }
         getSharedPreferences(PREFS, MODE_PRIVATE).edit {
             putInt(KEY_REMINDER_HOUR, hour)
             putInt(KEY_REMINDER_MINUTE, minute)
             putBoolean(KEY_REMINDER_ENABLED, true)
         }
-        manager.setInexactRepeating(
-            AlarmManager.RTC_WAKEUP,
-            calendar.timeInMillis,
-            AlarmManager.INTERVAL_DAY,
-            reminderPendingIntent()
-        )
-        toast(String.format(Locale.getDefault(), "Lembrete diário definido para %02d:%02d.", hour, minute))
+        LocalHealthReminderAlarm.schedule(this, hour, minute)
+        toast(String.format(Locale.getDefault(), "Lembrete diário definido para %02d:%02d. O Android pode entregá-lo com atraso.", hour, minute))
     }
 
     private fun cancelHealthReminder() {
-        val manager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        manager.cancel(reminderPendingIntent())
+        LocalHealthReminderAlarm.cancel(this)
         getSharedPreferences(PREFS, MODE_PRIVATE).edit {
             putBoolean(KEY_REMINDER_ENABLED, false)
         }
     }
 
-    private fun reminderPendingIntent(): PendingIntent {
-        val intent = Intent(this, LocalHealthReminderReceiver::class.java)
-            .setAction(ACTION_HEALTH_REMINDER)
-        return PendingIntent.getBroadcast(
-            this, REQUEST_REMINDER, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-    }
-
     private fun selectedOriginPolicy(): HealthConnectOriginPolicy =
-        if (getSharedPreferences(PREFS, MODE_PRIVATE)
-                .getBoolean(KEY_INCLUDE_EXTERNAL_ORIGINS, false)
-        ) HealthConnectOriginPolicy.INCLUDE_EXTERNAL else HealthConnectOriginPolicy.APP_ONLY
+        if (AppPreferences.includesExternalHealthSources(this)) {
+            HealthConnectOriginPolicy.INCLUDE_EXTERNAL
+        } else {
+            HealthConnectOriginPolicy.APP_ONLY
+        }
 
     private fun loadStepGoal() {
         if (::goalInput.isInitialized) {
@@ -518,15 +504,61 @@ class LocalToolsActivity : Activity() {
     companion object {
         private const val PREFS = "local_feature_tools"
         private const val KEY_STEP_GOAL = "step_goal"
-        private const val KEY_INCLUDE_EXTERNAL_ORIGINS = "include_external_health_origins"
         private const val KEY_REMINDER_HOUR = "reminder_hour"
         private const val KEY_REMINDER_MINUTE = "reminder_minute"
         private const val KEY_REMINDER_ENABLED = "reminder_enabled"
         private const val REQUEST_NOTIFICATIONS = 4102
-        private const val REQUEST_REMINDER = 4103
-        private const val ACTION_HEALTH_REMINDER = "com.luizmarquesarruda.relogio20.LOCAL_HEALTH_REMINDER"
         private var pendingReminderHour = 9
         private var pendingReminderMinute = 0
+    }
+}
+
+/**
+ * Restores the inexact daily alarm after reboot or app replacement.
+ * Android may defer this alarm; no exact-alarm permission is requested.
+ */
+private object LocalHealthReminderAlarm {
+    const val ACTION = "com.luizmarquesarruda.relogio20.LOCAL_HEALTH_REMINDER"
+    private const val REQUEST_CODE = 4103
+    private const val PREFERENCES = "local_feature_tools"
+    const val KEY_HOUR = "reminder_hour"
+    const val KEY_MINUTE = "reminder_minute"
+    const val KEY_ENABLED = "reminder_enabled"
+
+    fun schedule(context: Context, hour: Int, minute: Int) {
+        require(hour in 0..23 && minute in 0..59)
+        val appContext = context.applicationContext
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
+        }
+        val pendingIntent = pendingIntent(appContext)
+        val manager = appContext.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+        manager.setInexactRepeating(
+            android.app.AlarmManager.RTC_WAKEUP,
+            calendar.timeInMillis,
+            android.app.AlarmManager.INTERVAL_DAY,
+            pendingIntent
+        )
+    }
+
+    fun cancel(context: Context) {
+        val appContext = context.applicationContext
+        val manager = appContext.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+        manager.cancel(pendingIntent(appContext))
+    }
+
+    private fun pendingIntent(context: Context): android.app.PendingIntent {
+        val intent = Intent(context, LocalHealthReminderReceiver::class.java).setAction(ACTION)
+        return android.app.PendingIntent.getBroadcast(
+            context,
+            REQUEST_CODE,
+            intent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
     }
 }
 
@@ -534,7 +566,20 @@ class LocalToolsActivity : Activity() {
 class LocalHealthReminderReceiver : android.content.BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         val preferences = context.getSharedPreferences("local_feature_tools", Context.MODE_PRIVATE)
-        if (!preferences.getBoolean("reminder_enabled", false)) return
+        if (intent?.action == Intent.ACTION_BOOT_COMPLETED ||
+            intent?.action == Intent.ACTION_MY_PACKAGE_REPLACED
+        ) {
+            if (preferences.getBoolean(LocalHealthReminderAlarm.KEY_ENABLED, false)) {
+                LocalHealthReminderAlarm.schedule(
+                    context,
+                    preferences.getInt(LocalHealthReminderAlarm.KEY_HOUR, 9),
+                    preferences.getInt(LocalHealthReminderAlarm.KEY_MINUTE, 0)
+                )
+            }
+            return
+        }
+        if (intent?.action != LocalHealthReminderAlarm.ACTION) return
+        if (!preferences.getBoolean(LocalHealthReminderAlarm.KEY_ENABLED, false)) return
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "local_health_reminders"
         manager.createNotificationChannel(

@@ -34,6 +34,16 @@ class MoreResourcesActivity : Activity() {
                 startActivity(Intent(this, NotificationCenterActivity::class.java))
             }
         }
+        RelogioUi.section(body, "PREFERÊNCIAS")
+        RelogioUi.card(
+            body,
+            "Configurações",
+            "Formato do horário, unidade de distância e escopo das fontes do Health Connect.",
+            "PREFERÊNCIAS",
+            "ABRIR"
+        ) {
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
         RelogioUi.section(body, "INFORMAÇÕES")
         RelogioUi.card(body, "Dados de saúde e privacidade", "Finalidade, permissões, fontes, armazenamento local e limites das medições.", "PRIVACIDADE", "ABRIR") {
             startActivity(Intent(this, HealthPrivacyActivity::class.java))

@@ -1,6 +1,7 @@
 package com.luizmarquesarruda.relogio20.notifications
 
 import android.app.Activity
+import com.luizmarquesarruda.relogio20.ui.RelogioUi
 import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
@@ -56,6 +57,15 @@ class NotificationCenterActivity : Activity() {
             setPadding(dp(16), dp(14), dp(16), dp(12))
             setBackgroundColor(0xFFF7F8FA.toInt())
         }
+        RelogioUi.applyEdgeToEdge(
+            activity = this,
+            root = root,
+            paddingLeftDp = 16,
+            paddingTopDp = 14,
+            paddingRightDp = 16,
+            paddingBottomDp = 12,
+            lightSystemBarIcons = true
+        )
 
         root.addView(TextView(this).apply {
             text = "Ponte de notificações para o relógio"
