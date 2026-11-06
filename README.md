@@ -1,6 +1,6 @@
 # Relógio 2.0
 
-Aplicativo Android de Saúde e Fitness que se conecta diretamente ao GT3 MAX por BLE/GATT, consulta passos agregados no Health Connect e oferece captura consentida de notificações na variante companion. O Wearfit Pro permanece uma referência/companheiro externo; o app não depende de API ou nuvem privada dele.
+Aplicativo Android de Saúde e Fitness que se conecta diretamente ao GT3 MAX por BLE/GATT, consulta passos agregados no Health Connect e oferece captura consentida de notificações na variante companion. O app opera diretamente com o relógio e não integra, conecta, sincroniza ou compartilha sessão com aplicativos de terceiros.
 
 ## Reconexão automática BLE
 
@@ -18,7 +18,7 @@ A categoria da ficha no Google Play deve ser **Saúde e fitness**, com o recurso
 
 A primeira fase de implementação é uma prova de conceito Android nativa (Kotlin) para BLE/GATT. Ela existe para validar a comunicação no Samsung Galaxy A06 antes de consolidar a arquitetura de produção.
 
-O relógio foi observado no nRF Connect como **GT3 MAX**. A conexão BLE e a descoberta GATT funcionaram. Uma notificação de 8 bytes foi recebida pelo Nordic UART TX. A comparação com uma referência pública DT78/X8 Ultra encontrou UUIDs e uma fixture AB semelhantes; o app agora registra o perfil NUS/AB como **candidato**, sem confirmar chipset ou interpretar outros sensores. A leitura de bateria do quadro `0x91/0x80` ainda é **não validada**.
+O relógio foi observado no nRF Connect como **GT3 MAX**. A conexão BLE e a descoberta GATT funcionaram. Uma notificação de 8 bytes foi recebida pelo Nordic UART TX. 
 
 ## Funcionalidades em desenvolvimento nesta fase
 
@@ -53,7 +53,7 @@ Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALT
 - Nenhuma escrita em característica é executada nesta fase. A única operação de escrita GATT é a configuração do descritor CCCD padrão para ativar uma notificação/indicação permitida; a sincronização CTS está suspensa.
 - Não toca no Secure DFU/OTA, reset, calibração ou configuração.
 - Não atribui semântica a canais proprietários desconhecidos. Há decoders somente para formatos Bluetooth SIG identificados; passos e sono proprietários continuam não interpretados. Body Composition Measurement 0x2A9C também permanece bruto até completar a leitura contextual de flags, unidades, resoluções e pacotes múltiplos.
-- Não acessa servidores ou dados privados do Wearfit Pro.
+- Não integra, conecta, pareia nem compartilha conexão com Wearfit Pro.
 - Não transmite dados de saúde à rede nem os publica no Health Connect. A captura local de leituras/notifications e HEX exige ativação explícita e permanece no armazenamento privado do app.
 
 A inscrição em notificações altera somente a assinatura padrão do descritor CCCD. Não é uma escrita de payload em uma característica proprietária.
@@ -90,7 +90,6 @@ CI verde não equivale a aprovação do Play Protect nem a teste físico no Gala
 Consulte o [índice completo da documentação](docs/README.md).
 
 - [Mapa de módulos](docs/MAPA-DE-MODULOS.md)
-- [Inventário de funções Wearfit Pro](docs/INVENTARIO-FUNCOES-WEARFIT-PRO.md)
 - [Matriz de compatibilidade GT3 MAX](docs/MATRIZ-COMPATIBILIDADE-GT3-MAXX.md)
 - [Integração Android, WhatsApp e notificações](docs/INTEGRACAO-NOTIFICACOES-ANDROID-WHATSAPP.md)
 - [Integração Health Connect, passos, rotas e horário](docs/INTEGRACAO-HEALTH-CONNECT-PASSOS-HORARIO.md)
@@ -98,11 +97,9 @@ Consulte o [índice completo da documentação](docs/README.md).
 - [Changelog](CHANGELOG.md)
 - [Versão](VERSION)
 - [Arquitetura](docs/ARQUITETURA.md)
-- [Pesquisa Wearfit Pro](docs/PESQUISA-WEARFIT-PRO.md)
 - [Identificação do relógio](docs/IDENTIFICACAO-DO-RELOGIO.md)
 - [Perfil do GT3 Maxx](docs/PERFIL-GT3-MAXX.md)
 - [Captura BLE de 03/11/2026](docs/CAPTURA-BLE-GT3-MAX-2026-11-03.md)
-- [Perfil BLE candidato NUS/AB](docs/PROTOCOLO-BLE-CANDIDATO.md)
 
 ## Notificações para o smartwatch
 
