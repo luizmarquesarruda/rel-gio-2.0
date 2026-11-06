@@ -1,3 +1,77 @@
+## 06/11/2026 — Correção da configuração Kotlin DSL das dependências por variante
+
+- A CI #443 identificou que os acessores Kotlin DSL `diagnosticDebugImplementation` e `diagnosticBenchmarkImplementation` não estavam disponíveis para os flavors/build types criados dinamicamente.
+- As dependências foram alteradas para `add("<configuration>", "<coordinate>")`, preservando o isolamento entre variantes sem depender de acessores gerados.
+- O passo de bootstrap SHA-256 também foi interrompido pela falha de compilação do script Gradle; não houve geração de metadados e nenhum checksum foi aceito.
+- A CI deve ser reexecutada no novo HEAD para validar script Gradle, resolução de dependências, módulo Macrobenchmark e guardrails.
+- Nenhuma alteração no código BLE/GATT ou na política de independência do WearFit Pro.
+
+## 06/11/2026 — Ferramentas de diagnóstico, integridade de dependências e Macrobenchmark
+
+- LeakCanary 2.14 incluído somente em `diagnosticDebug`. O guardrail da CI exige a dependência nessa variante e bloqueia LeakCanary em companionDebug, diagnosticRelease, companionRelease e diagnosticBenchmark. Heap dumps não devem ser publicados e podem conter dados pessoais, de saúde e BLE.
+- Criada a variante `diagnosticBenchmark`, derivada de release, não depurável e profileable somente via shell. ProfileInstaller 1.4.1 é incluído somente nessa variante.
+- Criado o módulo `:macrobenchmark` com teste de inicialização fria e 10 iterações usando StartupTimingMetric. A CI compila o módulo; testes instrumentados não são executados sem dispositivo físico.
+- Renovate configurado para dependências/plugins Gradle, GitHub Actions e a versão Gradle declarada no workflow. Agrupa patch/minor, exige aprovação para major, aguarda três dias quando existe timestamp e mantém automerge desativado. Configuração ainda depende de habilitação do Renovate App ou serviço self-hosted.
+- Adicionada etapa de bootstrap SHA-256 para Gradle Dependency Verification. Como o repositório ainda não contém `gradle/verification-metadata.xml`, a primeira CI deve gerar o arquivo como artefato temporário. O conteúdo deve ser revisado antes de ser versionado; bootstrap é trust-on-first-use.
+- Nenhuma alteração no transporte, parser, callbacks, permissões ou comandos BLE/GATT. Nenhuma referência ou integração com WearFit Pro foi introduzida.
+- CI após as mudanças, verificação estrita persistente e benchmark em aparelho físico: **aguardando validação**.
+
+## 05/11/2026 — Resultado final da qualidade estática (CI #430)
+
+- CI #430 concluída com sucesso no commit `7e959270612824b2af43bf64760e5fae0eb8d91c`: KtLint, Android Lint, testes unitários, builds diagnostic/companion, guardrails, auditoria de manifest, assinatura v2, hashes e publicação dos artefatos.
+- KtLint foi executado e gerou relatórios plain, Checkstyle e SARIF. Foram encontrados 3.596 apontamentos de estilo no legado: main 2.685; testes 749; companion 132; testCompanion 26; diagnostic 3; scripts Gradle 1. O passo permanece consultivo; nenhum arquivo foi formatado automaticamente.
+- Android Lint: diagnosticDebug 119 avisos (118 SetTextI18n, 1 OldTargetApi); companionDebug 124 (123 SetTextI18n, 1 OldTargetApi). Os avisos UseKtx caíram de 11/13 para zero após a migração para SharedPreferences.edit e String.toUri.
+- APK publicado: `diagnosticDebug`, pacote `com.luizmarquesarruda.relogio20.diagnostic`, versão `0.4.0-alpha.4-diagnostic`, SHA-256 `121e1b109dce6ba4fa7b3558748e001bf6695445491e24474603426ce71497a9`, assinatura v2 válida. Artefato: `relogio-2.0-diagnostic-debug-apk`; relatórios incluem APK companions de auditoria, manifests, permissões, hashes e relatórios de qualidade.
+- O APK é de depuração e os metadados marcam `release_ready=false`; não é build de produção nem comprova funcionamento físico do relógio.
+- PR #20 permanece aberta em rascunho, sem merge, base `fix/wearfit-handoff-20261104`. Nenhuma integração ou conexão WearFit Pro foi reintroduzida.
+- Samsung Galaxy A06 / Android 16 + GT3 MAXX: teste físico **não validado**. Os resultados são de CI e auditoria estática, não de comunicação BLE real.
+
+## 05/11/2026 — Correção do contrato JUnit e do gate de telemetria
+
+- A execução #428 confirmou Lint concluído para diagnosticDebug e companionDebug, mas falhou em `testDiagnosticDebugUnitTest`: 194 testes encontrados, com `HealthConnectTelemetryGateTest > initializationError`.
+- A causa é o retorno inferido diferente de `Unit` nos métodos `@Test` que usavam expressão `= runBlocking { ... }` e deixavam o retorno de `assertThrows` escapar. O JUnit 4 exige métodos de teste sem valor de retorno.
+- Os casos foram reescritos com corpo de função explícito e execução suspensa interna, preservando a verificação de bloqueio de amostras CANDIDATO/OBSERVADO.
+- Adicionado caso positivo para amostra VALIDADO, verificando encaminhamento e cópia defensiva do payload.
+- A correção ainda depende de nova execução das variantes, testes, builds, guardrails e auditoria de APK. Nenhum APK foi publicado no run #428. Teste físico Galaxy A06 / Android 16 + GT3 MAXX: **não validado**.
+
+## 05/11/2026 — Correções de compilação e configuração formal do Android Lint
+
+- Corrigido o uso de `singleLine = true` nas entradas de Ferramentas locais e Clima. As telas agora chamam explicitamente `setSingleLine(true)`, preservando a intenção visual sem depender de uma propriedade Kotlin inexistente.
+- Corrigido o reset do inventário GATT vazio: o callback de descoberta com serviços válidos agora chama `emptyInventoryRetryPolicy.reset()`. Isso reutiliza o contador encapsulado na política já existente e evita estado duplicado.
+- Configurado Android Lint no módulo `:app`: falha o build em erros, mantém a verificação de builds release, deixa alertas como warnings nesta primeira etapa e gera relatórios HTML, XML e SARIF.
+- A CI passa a anexar relatórios Lint HTML/XML/SARIF das variantes diagnosticDebug e companionDebug, além dos relatórios de segurança.
+- Não foi criado `lint-baseline.xml`: nenhuma ocorrência existente será ocultada sem triagem. Também não foi ativado `checkOnly`, para não restringir o conjunto de verificações.
+- As tarefas de Lint, testes unitários, builds dos dois sabores, guardrails e auditoria de APK precisam ser executadas novamente nesta nova revisão da PR. O resultado anterior continua sendo falha; esta alteração ainda não está validada até a conclusão da nova CI.
+- Teste físico Samsung Galaxy A06 / Android 16 + GT3 MAXX: **não validado**. Nenhuma alteração no protocolo BLE/GATT, permissões, comandos enviados ao relógio ou sincronização foi feita nesta correção.
+
+## 05/11/2026 — Limpeza executada: independência total do aplicativo companheiro
+
+- Código ativo: removidas as referências de handoff e a preferência legada `wearfit_handoff_active`; o app não contém mais fluxo de liberação/compartilhamento de sessão.
+- O parser e o decodificador NUS/AB foram renomeados para `Gt3MaxProtocolProfile`, `Gt3MaxAbFrame`, `Gt3MaxAbFrameParser` e `Gt3MaxAbStreamDecoder`. A mudança é de nomenclatura/isolamento do protocolo observado; não adiciona conexão com aplicativo externo nem altera a política BLE.
+- Testes correspondentes foram renomeados para refletir o protocolo candidato do GT3 MAX.
+- Removidos os documentos de pesquisa, inventário funcional, plano de substituição, handoff, SDK parceiro, investigação OTA vinculada ao app externo e matriz derivada desse catálogo.
+- README, índice da documentação, arquitetura, mapa de módulos, perfil do relógio, identificação e estudo do firmware foram atualizados para descrever a conexão direta.
+- O histórico anterior deste diário permanece como trilha de auditoria; entradas antigas descrevem funcionalidades históricas removidas e não representam o comportamento atual.
+- Testes Kotlin, Lint, builds diagnostic/companion, auditoria dos APKs e validação física no Galaxy A06 / Android 16 + GT3 MAXX: **aguardando CI e teste físico**. Nenhum merge realizado.
+
+## 05/11/2026 — Decisão definitiva: remoção integral do WearFit Pro
+
+- Requisito obrigatório do produto: o Relógio 2.0 deve operar de forma independente e conectar-se diretamente ao GT3 MAXX.
+- É proibido iniciar, solicitar, compartilhar ou dividir conexão/pareamento/sessão com WearFit Pro; também não pode haver sincronização, handoff, dependência operacional ou integração com esse aplicativo.
+- Escopo de remoção: auditar e eliminar código, serviços, receivers, intents, permissões, bibliotecas/dependências, configurações, estados persistidos, tarefas, telas, ações, testes e referências/documentação que mantenham integração ou dependência do WearFit Pro.
+- Preservar somente componentes BLE/GATT necessários à comunicação direta com o GT3 MAXX. Um parser de framing/payload do próprio relógio não deve ser confundido com integração ao aplicativo WearFit Pro; ainda assim, nomes e referências residuais devem ser revisados e renomeados quando não forem necessários.
+- Documentos estritamente históricos podem ser mantidos apenas quando claramente identificados como histórico, sem instruções operacionais conflitantes; a documentação ativa deve declarar a independência do aplicativo.
+- A preferência antiga de handoff/liberação, inclusive chaves persistidas como `wearfit_handoff_active`, deve ser removida com migração segura para que nenhuma instalação atualizada permaneça bloqueada ou tente acionar o fluxo antigo.
+- Esta entrada registra a decisão e o escopo obrigatório; **não comprova que toda a limpeza de código, dependências, permissões e documentação já foi concluída**. Cada remoção deverá ser registrada após inspeção e validação do diff.
+- CI, testes, Lint, builds e validação física no Samsung Galaxy A06 / Android 16 com GT3 MAXX: **não validados nesta atualização documental**. Nenhuma CI foi solicitada; não realizar merge.
+
+## 04/11/2026 — Controle de privacidade do histórico BLE
+
+- A biblioteca interna ganhou a ação **Excluir registro** em cada item, com confirmação antes de remover metadados e, quando presente, HEX capturado.
+- A exclusão ocorre no executor serial de persistência e grava um novo snapshot via AtomicFile; a UI não faz I/O de arquivo no thread principal.
+- A remoção atinge somente o ID selecionado, preserva os demais registros e mantém o estado da sessão ativa.
+- Testes unitários foram adicionados para remoção exata, preservação da sessão e ID inexistente.
+- Execução dos testes, lint, build, auditoria de APK e teste físico: **não validados**. CI não disparada conforme solicitação.
 ## 04/11/2026 — Liberação da conexão BLE para Wearfit Pro
 
 - Adicionada ação explícita na tela principal para entregar o controle da sessão ao Wearfit Pro.
@@ -110,7 +184,7 @@
 - Após fingerprint GATT completo, o endereço atual é salvo automaticamente. O fingerprint é compatibilidade observada, não autenticação criptográfica.
 - O TXT passou a incluir até 1.000 registros persistidos da biblioteca (inventários GATT, quadros AB e capturas consentidas), além dos 250 eventos mais recentes da sessão. MAC permanece mascarado.
 - Testes adicionados para política de candidatos BLE, fingerprint com nome ausente e inclusão/mascaramento das descobertas no TXT.
-- A sincronização CTS por escrita de característica foi suspensa nesta fase para preservar a política somente leitura/notificações. Apenas configuração do descritor CCCD padrão permanece necessária para inscrições.
+- Na fase registrada neste trecho histórico, a sincronização CTS por escrita de característica estava suspensa para preservar a política somente leitura/notificações. A decisão foi posteriormente substituída pela ação manual condicionada descrita na seção de 04/11/2026; ausência de CTS mantém a escrita desabilitada.
 - Nenhum comando proprietário, OTA/DFU, reset ou nova permissão foi adicionado.
 - CI, instalação e teste físico no Galaxy A06/Android 16 com GT3 MAX: **não validados**.
 
@@ -709,3 +783,150 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - A CI #253 no commit `cd82b8b3b1a62f826f6eef4091464887e7fcfa73` identificou erro Kotlin em `DiscoveryLibraryActivity.kt`: `EditText` não expõe a propriedade gravável `singleLine` usada no inicializador.
 - Corrigido para a chamada pública `setSingleLine(true)`. A causa foi sintática e não envolveu BLE, persistência ou layout.
 - A CI #253 foi cancelada pela concorrência após identificar a mesma falha nos dois variants. O HEAD final precisará ser recompilado integralmente.
+
+
+## Auditoria integral e endurecimento — 04/11/2026
+
+- Criada a branch `audit/full-repository-hardening-20261104` a partir do HEAD de trabalho `21e44dd5bace9801b7ced7183ff15b2ca730d588`. Nenhum PR foi criado e nenhum merge foi executado.
+- O inventário GATT via SharedPreferences passou a validar estrutura JSON completa e estrita, schema, tipos numéricos, timestamps, cardinalidades, IDs duplicados, UUIDs e faixas de valores. JSON inválido não é convertido em inventário vazio nem sobrescrito.
+- O inventário serializa operações entre instâncias e atualiza o SharedPreferences em memória com `apply()`; a gravação em disco é assíncrona e o retorno não confirma durabilidade imediata.
+- A biblioteca de descobertas conserva a escrita atômica, mas agora protege transações entre instâncias, verifica tamanho antes da leitura e valida registros e sessões antes de decodificar/gravar.
+- Prazos inconsistentes, timestamps negativos, IDs duplicados, tipos desconhecidos e HEX inválido passam a ser recusados.
+- O botão principal de busca fica desabilitado enquanto o usuário entregou a sessão ao Wearfit Pro; a retomada continua sendo uma ação explícita.
+- O modelo de passos exige `receivedAt >= intervalEnd`; origem permanece exclusivamente `HEALTH_CONNECT_AGGREGATE`.
+- Testes adicionados/estendidos: `FeatureDiscoverySnapshotPolicyTest`, `DiscoveryLibraryCodecTest`, `DiscoveryTestSessionTest`, `StepsSnapshotTest` e `BleExternalHandoffPolicyTest`.
+- A CI não foi disparada nem reexecutada. Nenhum teste Kotlin, Lint, build APK, auditoria dos APKs ou validação física foi declarado aprovado nesta revisão.
+- Pendências estruturais identificadas: `MainActivity.kt` permanece com responsabilidade excessiva (extração deverá ser incremental); o repositório ainda não inclui Gradle Wrapper; testes em aparelho/emulador e validação de aquisição BLE real continuam pendentes.
+- O relatório detalhado está em `docs/AUDITORIA-REPOSITORIO-2026-11-04.md`.
+
+
+
+## Ajuste de retenção e transparência de funções — 04/11/2026
+
+- O catálogo de funções não apresenta mais o CTS como mecanismo que será automaticamente usado. A identificação 0x1805/0x2A2B é informativa; escrita física de hora permanece suspensa.
+- Desativar captura de notificações (inclusive em consequência de revogação de acesso) limpa imediatamente as prévias em memória; teste de limpeza adicionado.
+- README e tela de privacidade esclarecem retenção: HEX é capturado somente em sessão consentida, mas permanece no arquivo privado depois da sessão, limitado a 1.000 registros; não existe exclusão individual na UI. Remover os dados do app no Android apaga o arquivo.
+
+
+## Barreira contra callbacks GATT tardios e retenção local — 04/11/2026
+
+- As chaves de operações GATT que expiraram ou estavam em execução quando o Android notificou Service Changed passam a ser invalidadas até uma nova instância `BluetoothGatt`. A fila não repete aquela chave dentro da mesma conexão; evita que callback atrasado da operação antiga seja confundido com uma nova tentativa idêntica.
+- Callbacks de notificação agora exigem que a referência GATT seja atual, a sessão esteja conectada e não esteja em encerramento. Notificações tardias após o início da desconexão são ignoradas.
+- Quando a fila de persistência está cheia, o log informa separadamente que o READ ou valor decodificado foi recebido, mas não foi enfileirado no histórico. Isso evita sugerir gravação de HEX que não foi aceita.
+- A retenção do HEX local foi explicitada na tela da biblioteca, na tela de privacidade e no README: captura apenas durante sessão consentida, retenção posterior até o limite de 1.000 registros, sem exclusão individual disponível na UI.
+- Pausar a ponte de notificações limpa imediatamente os dados voláteis; novo teste cobre `NotificationCaptureStore.clear()`.
+- Relatório diagnóstico mascara MAC e não exporta texto das notificações Android; o fingerprint passivo guarda metadados e hash truncado, sem reter payload bruto.
+
+
+## Serialização final do consentimento de notificações — 04/11/2026
+
+- A captura de prévias foi protegida contra uma corrida: callback onNotificationPosted podia checar consentimento, processar extras/label e só depois inserir; se o usuário pausasse nesse intervalo, uma prévia poderia reaparecer após o clear.
+- Agora a inserção executa uma verificação final de captura ativa e pacote permitido dentro do mesmo lock usado nas mudanças de configuração e na limpeza.
+- Alterar a allow-list remove também qualquer evento de pacote que não permaneça permitido.
+- Testes unitários cobrem a barreira final de admissão permitida/negada.
+
+
+## 05/11/2026 — Controle BLE exclusivo pelo Relógio 2.0
+
+- Decisão operacional: remover a entrega da sessão BLE ao Wearfit Pro. O Relógio 2.0 passa a manter o controle das buscas, conexões GATT, callbacks, recuperação e redescoberta de serviços.
+- Removido o botão de handoff e os estados/bloqueios associados na tela principal, nos caminhos de scan/conexão, no timeout GATT, no callback de conexão, no tratamento de Service Changed e na reconexão automática.
+- Na inicialização, a preferência antiga `wearfit_handoff_active` é apagada para que usuários que atualizaram a versão não permaneçam com o app bloqueado no modo de liberação.
+- A ação de conexão do usuário agora habilita a política de reconexão progressiva antes da primeira conexão bem-sucedida. Desconexão manual continua desligando a recuperação.
+- Removidos a política de handoff externa e seus testes. Atualizados os testes de reconexão e redescoberta GATT.
+- O aplicativo não possui privilégio Android para desativar, encerrar ou revogar permissões de outro pacote. Se Wearfit Pro ainda estiver conectado ao GT3 MAX, a desconexão/força de parada deverá ser feita manualmente nas configurações do Android.
+- Testes Kotlin, Lint, build, CI e validação física no Galaxy A06 / Android 16 com GT3 MAX: **não validados**. Nenhuma CI foi disparada e nenhuma PR foi criada.
+
+## 04/11/2026 — Auditoria de obsolescência e conformidade dos decoders GATT
+
+- Revisão executada na branch `work/disable-wearfit-app-ownership-20261105`, HEAD de trabalho após as alterações desta rodada: os artefatos e políticas de handoff removidos não devem ser tratados como funcionalidade atual.
+- O documento `docs/COMPARTILHAMENTO-CONEXAO-WEARFIT-PRO.md` foi marcado como histórico/obsoleto. Seus passos de “Liberar conexão” e “Retomar conexão” não se aplicam ao app atual.
+- Os parsers `WearfitAbFrameParser` e `WearfitAbStreamDecoder` foram mantidos: eles tratam framing BLE/NUS candidato observado no relógio; não são integração operacional com o aplicativo Wearfit Pro nem justificam manter o handoff.
+- Defeito encontrado em `GattValueDecoder`: a característica Bluetooth SIG Pressure (0x2A6D) estava sendo interpretada como SFLOAT de 2 bytes, embora seja `uint32` de 4 bytes com resolução de 0,1 Pa. A característica Temperature (0x2A6E) estava sendo interpretada como SFLOAT; o contrato define `sint16` de 2 bytes, resolução de 0,01 °C, faixa de -273,15 °C a 327,67 °C e `0x8000` como “valor desconhecido”.
+- Corrigidos os decoders 0x2A6D/0x2A6E e substituídos os testes que reproduziam o formato incorreto. A decodificação de umidade 0x2A6F foi mantida (uint16 em centésimos de %).
+- Fonte técnica: Bluetooth SIG, *GATT Specification Supplement*, versão datada de 2026-02-05, tabelas das características Pressure e Temperature: https://btprodspecificationrefs.blob.core.windows.net/gatt-specification-supplement/GATT_Specification_Supplement.pdf
+- Ponto legado ainda pendente: `syncClockUsingCurrentTimeService()`, `BluetoothCurrentTimePayload` e o callback de escrita CTS permanecem como implementação preparada, mas a rotina não possui chamada no fluxo atual. O callback de descoberta registra que a sincronização está suspensa. Portanto, a sincronização de hora do GT3 MAX **não está implementada/validada operacionalmente**; nenhum sucesso foi presumido.
+- Dívida estrutural mantida: `MainActivity.kt` ainda concentra UI, permissões, scan, conexão, callbacks, fila, reconexão e exploração GATT. A extração deve ser incremental, sem reescrita ampla nem mudança de protocolo durante esta auditoria.
+- Não removidos os documentos de pesquisa Wearfit Pro, o catálogo de funções, o plano de substituição ou o perfil/parser AB: são referência histórica/técnica e não código de handoff ativo.
+- Testes Kotlin, Lint e builds **não executados**; CI **não disparada**; validação física no Galaxy A06 / GT3 MAX **não realizada**; PR e merge **não criados/executados** nesta rodada.
+- Limpeza confirmada: removidas de `SafeGattExplorationPlan` duas constantes NUS RX/TX que não eram referenciadas; a constante NUS Service foi mantida porque exclui corretamente esse serviço da exploração genérica.
+- Simplificação: removida a variável redundante `displayed` no decoder de Temperature Measurement; o valor MEDFLOAT permanece inalterado e a unidade continua dependendo do flag Celsius/Fahrenheit.
+- O campo Pressure 0x2A6D não recebeu filtro arbitrário para zero: a tabela consultada define uint32/resolução, mas não declara sentinela de valor desconhecido; o valor zero é decodificado como 0,0 Pa. Teste correspondente foi incluído.
+
+## 04/11/2026 — Revisão complementar de persistência e variante companion
+
+- A persistência versionada do inventário GATT (`FeatureDiscoveryStore`) e a biblioteca local com `AtomicFile` (`DiscoveryLibraryStore`) continuam ativas e protegidas contra schema futuro/corrompido; não foram identificados arquivos de armazenamento obsoletos que devam ser removidos.
+- A biblioteca limita registros, tamanho do arquivo e HEX; a fila serial permite descarregar gravações pendentes. A revisão foi estática, sem testes de recuperação de processo ou falha de disco nesta rodada.
+- A variante `companion` mantém o serviço de captura de notificações com permissão `BIND_NOTIFICATION_LISTENER_SERVICE`, allow-list, limite de 30 prévias e retenção de 15 minutos; as prévias são limpas quando o listener é desconectado/destruído. A variante `diagnostic` usa uma tela substituta sem serviço de captura. As duas classes `NotificationCenterActivity` são específicas de flavors e não são duplicação removível.
+- O serviço de notificação permanece com `android:exported="false"` e a permissão de binding protegida, alinhado ao exemplo oficial do Android. Nenhuma alteração de manifesto foi necessária.
+- A estrutura BLE ainda concentra responsabilidades na `MainActivity`; essa dívida foi mantida como extração incremental, não tratada como código obsoleto. Naquele ponto da extração, o encoder CTS ainda estava dormente; a seção seguinte registra a ativação exclusivamente manual e condicionada à capacidade GATT anunciada.
+
+## Extração incremental do coordenador de reconexão BLE
+
+- Criado `device/ble/core/BleReconnectCoordinator.kt`, Kotlin puro, para decidir se a recuperação está desativada, deve aguardar o primeiro plano, está bloqueada por sessão GATT/scan ativo, deve agendar imediatamente/com backoff ou pode iniciar scan após validar permissões.
+- `MainActivity.scheduleAutoReconnect()` delega as decisões ao coordenador. A Activity ainda possui e controla `Handler`, `Runnable`, timers, estado de conexão e chamadas Android; o transporte BLE não foi movido nesta etapa.
+- A verificação de permissão é passada como lambda para não ser executada quando primeiro plano, conexão ou scan já bloqueiam a tentativa.
+- Adicionado `BleReconnectCoordinatorTest.kt` com cenários de política desativada, pausa/retomada, GATT ativo, scan ativo, tentativa imediata, preservação do backoff e validação tardia das permissões.
+- Esta etapa preserva os intervalos existentes de 1, 2, 5, 10, 20 e 30 segundos e o cancelamento manual da reconexão.
+- Os testes foram adicionados, mas **não executados**. Lint/build e validação física **não validados**. CI não disparada; nenhuma PR criada; nenhum merge.
+
+
+## 04/11/2026 — Sincronização manual e segura do horário via CTS
+
+- A tela principal ganhou a ação **Sincronizar hora do relógio**, inicialmente desabilitada.
+- Após a descoberta GATT, o app verifica o serviço Bluetooth SIG Current Time Service (0x1805), a característica Current Time (0x2A2B) e a propriedade WRITE. O botão só é habilitado quando os três requisitos são atendidos na sessão GATT atual.
+- A escrita continua manual: nenhuma hora é enviada ao conectar ou ao redescobrir serviços. O usuário precisa tocar no botão.
+- A tentativa usa o payload CTS de 10 bytes já coberto por testes unitários e a fila GATT serializada. É permitida uma tentativa por sessão; reconectar libera uma nova tentativa.
+- Se CTS/Current Time estiver ausente ou sem WRITE, a UI informa o motivo e mantém a investigação passiva. Nenhum comando proprietário, NUS RX, OTA/DFU ou fallback desconhecido é enviado.
+- O callback GATT de sucesso é descrito como confirmação da escrita no transporte. Não é tratado como prova de que o firmware atualizou o RTC ou o mostrador.
+- Extraída a política pura `BluetoothCurrentTimeCapabilityPolicy`, com cinco testes para sessão desconectada, CTS ausente, característica ausente, WRITE ausente e elegibilidade completa. A ação manual também revalida a identidade/estado da sessão GATT imediatamente antes de enfileirar a escrita. O estado de tentativa é reiniciado ao criar cada nova instância `BluetoothGatt`, inclusive quando a sessão anterior não entrega callback final de desconexão.
+- A captura GATT disponível de 03/11/2026 não confirmou CTS no GT3 MAX. Até uma nova captura física mostrar `0x1805/0x2A2B` com WRITE, espera-se que o botão permaneça desabilitado; a implementação não presume compatibilidade.
+- README e arquitetura foram atualizados para refletir a nova fronteira de segurança e remover a afirmação antiga de que toda escrita de característica está suspensa.
+- Implementação no commit `8a4c397ca25122f966c7920015ec8d7952ebaef9`; documentação nos commits subsequentes da mesma branch.
+- Testes Kotlin, Lint, build Android e teste físico no Galaxy A06/Android 16 com GT3 MAX: **não executados/não validados nesta etapa**. CI não disparada; PR e merge não criados.
+
+
+## 05/11/2026 — Matriz de recursos e assinatura estrutural do GT3 MAX
+
+- Após revisar a captura GATT do GT3 MAX Call, foi mantida a conclusão de que não há firmware binário disponível para análise estática. As strings V1.07 e SH0050 são informações apresentadas pela interface, não evidência de leitura do serviço Device Information nem identificação do SoC.
+- Criado `GattCapabilityMatrix` para onze grupos Bluetooth SIG: bateria, Device Information, CTS, frequência cardíaca, pressão arterial, oximetria, termômetro, ambiente, composição corporal, corrida/cadência e ciclismo/cadência.
+- A matriz classifica presença de serviço/característica, READ, NOTIFY/INDICATE e CCCD. Notificação observada é separada de valor validado; serviço não anunciado não é rotulado como sensor fisicamente ausente.
+- Criado `GattProfileSignature`, SHA-256 estrutural determinístico de serviços/características/descritores/propriedades. A assinatura exclui MAC, serial, dados de fabricante e payloads. Não é hash do firmware e não autentica o relógio.
+- `FeatureDiscoveryEngine` registra baseline, assinatura inalterada ou alterada entre inventários e atualiza o estado da matriz quando ocorre notificação em canal SIG correspondente.
+- `FeatureDiscoveryActivity` exibe a matriz de recursos Bluetooth SIG separada de outras evidências. Corrigida mensagem antiga que dizia que a exclusão individual da Biblioteca ainda não existia.
+- Adicionados testes puros para ausência de perfil, serviço sem característica, CCCD ausente, tráfego histórico, ordem da assinatura, alteração de propriedades e integração do motor. Os testes foram **adicionados, mas não executados**.
+- Criado `docs/ESTUDO-FIRMWARE-GT3-MAXX.md`, registrando que FE59/DFU só foi observado e continua bloqueado, que NUS RX permanece sem escrita e que a interpretação AB de bateria permanece candidata.
+- Nenhum comando proprietário, escrita NUS RX, DFU/OTA, reset ou calibração foi enviado.
+- CI não disparada; build, Lint, testes Kotlin e validação física no Galaxy A06/GT3 MAX **não validados**. Nenhuma PR ou merge criado nesta rodada.
+
+## 05/11/2026 — Organização de pacotes e alinhamento do Manifesto
+
+- Criada a branch isolada `refactor/package-layer-boundaries-20261105` a partir da base de trabalho que já remove o handoff operacional ao Wearfit Pro.
+- Movidas as Activities de entrada, privacidade, laboratório e biblioteca para `ui.screens`; os utilitários de identidade/candidatura BLE e HEX para `device.ble.core`; o relatório para `domain.diagnostics`; e o formatador de passos para `ui.formatters`.
+- Atualizados imports e testes puros; o teste de contrato Python passou a localizar `MainActivity` no novo caminho.
+- Manifesto alinhado aos nomes completos das Activities e ao target do alias de justificativa Health Connect.
+- Adicionado `.gitignore` para arquivos locais e materiais sensíveis de configuração/assinatura. Isso protege novos arquivos não rastreados; **não remove segredos que já estejam no histórico Git**.
+- Atualizados README, arquitetura, mapa de módulos e índice de documentação. A organização é de pacotes no mesmo módulo Gradle `:app`; não foram criados submódulos nem feita migração para Compose.
+- Esta etapa não extraiu ainda a máquina de estados BLE, scan ou callbacks de `MainActivity`; essa separação continua sendo a próxima dívida de arquitetura e deverá ser feita incrementalmente, com testes de ciclo de vida e callbacks atrasados.
+- Nenhum comando GATT, escrita CTS, parser, decoder, coleta, política de reconexão ou persistência foi intencionalmente alterado.
+- Testes Kotlin/Python, Lint e build **não executados**. CI **não disparada**. Teste físico Galaxy A06 / Android 16 + GT3 MAX **não validado**.
+
+## 05/11/2026 — Correção da asserção de privacidade na assinatura GATT
+
+- O run #419 mostrou que a assinatura e o Lint passaram, mas uma asserção do teste de inventário falhou porque confundia a menção textual de “MAC/serial” (explicação da exclusão) com a presença de identificadores reais.
+- O teste agora confirma o aviso de exclusão e rejeita padrões concretos de endereço Bluetooth e valor serial. A implementação de assinatura permanece restrita a UUIDs, propriedades e descritores GATT.
+- Testes e builds serão reexecutados pela atualização da PR #19. APK não publicado no run anterior; nenhuma CI física ou validação do relógio é presumida.
+
+
+## 05/11/2026 — hora e clima independentes pela rede do telefone
+
+- Diretriz de produto: o Relógio 2.0 não dependerá operacionalmente do WearFit Pro. O Android será a fonte de horário e o canal de rede para obter previsão meteorológica.
+- Implementada TimeWeatherActivity: exibe hora/data do Android, informa se data/hora automática e fuso automático estão ativos, permite pesquisar e escolher cidade e apresenta condições atuais e previsão.
+- Implementado OpenMeteoWeatherRepository: geocodificação em português e consulta HTTPS a condições atuais, probabilidade de precipitação, vento/rajadas, mínima/máxima, nascer e pôr do sol.
+- Implementados modelos meteorológicos, cache de localidade/previsão em SharedPreferences privado, WeatherSyncWorker e WeatherSyncScheduler; agendamento periódico de seis horas condicionado à conectividade. A execução exata depende do Android/Doze e não é garantida.
+- A cidade é escolhida manualmente; nenhum GPS, localização em segundo plano, dado de saúde ou identificador do relógio é enviado. São enviados o texto de pesquisa e, após escolha, as coordenadas da cidade ao provedor meteorológico.
+- Manifesto adiciona INTERNET e ACCESS_NETWORK_STATE. Auditor de APK permite exatamente uma INTERNET e os scripts de guardrail mantêm os bloqueios das demais permissões sensíveis. A CI ainda precisa executar essa regra no APK compilado.
+- A tela mostra atribuição Open-Meteo. O uso gratuito é não comercial e os dados são CC BY 4.0; distribuição comercial exige nova avaliação dos termos.
+- Sincronização de hora GATT foi ajustada para iniciar automaticamente uma vez por sessão apenas quando o padrão Bluetooth SIG CTS 0x1805/0x2A2B anuncia WRITE. A captura física do GT3 MAXX não inclui CTS; não há confirmação de ajuste do mostrador/RTC.
+- Não foi implementado envio do clima ao relógio. O protocolo de clima da unidade não foi identificado; nenhum canal proprietário ou NUS RX foi escrito.
+- Versão alterada para 0.4.0-alpha.4 / versionCode 10.
+- Teste de rótulos WMO e cenários de auditoria INTERNET única/ausente/duplicada adicionados. Build, testes, Lint, guardrails, CI e teste físico Galaxy A06/GT3 MAXX: **não validados** nesta alteração.

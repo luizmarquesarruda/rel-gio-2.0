@@ -1,5 +1,7 @@
 package com.luizmarquesarruda.relogio20
 
+import com.luizmarquesarruda.relogio20.device.ble.core.BleScanCandidatePolicy
+
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.Gt3MaxCallDeviceProfile
 import org.junit.Assert.assertEquals
 import org.junit.Test

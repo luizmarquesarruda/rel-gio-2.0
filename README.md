@@ -1,12 +1,26 @@
 # Relógio 2.0
 
-Aplicativo Android de Saúde e Fitness que se conecta diretamente ao GT3 MAX por BLE/GATT, consulta passos agregados no Health Connect e oferece captura consentida de notificações na variante companion. O Wearfit Pro permanece uma referência/companheiro externo; o app não depende de API ou nuvem privada dele.
+## Organização do código
+
+A implementação permanece em um único módulo Android nativo `:app`, em Kotlin e Views. As Activities ficam em `ui/screens`, utilitários de apresentação em `ui/formatters`, contratos puros em `domain`, BLE em `device/ble`, perfil/protocolo GT3 MAX em `device/gt3max/protocol`, persistência e integrações em `data`. A estrutura foi organizada sem alterar o comportamento GATT. A extração do ciclo BLE de `MainActivity` continua como etapa arquitetural pendente. Consulte [estrutura de pacotes](docs/architecture/ESTRUTURA-DE-PACOTES.md) e [mapa de módulos](docs/MAPA-DE-MODULOS.md).
+
+Aplicativo Android de Saúde e Fitness que opera de forma independente e se conecta diretamente ao GT3 MAX por BLE/GATT. Consulta passos agregados no Health Connect e oferece captura consentida de notificações na variante companion. Não possui integração, dependência, pareamento compartilhado ou sincronização com aplicativos companheiros de terceiros.
 
 ## Reconexão automática BLE
 
 Ao abrir o aplicativo, uma busca BLE geral começa automaticamente; não é necessário digitar o endereço do relógio. O endereço salvo é uma pista, não um filtro exclusivo. O app também reconhece nomes GT3 MAX e anúncios NUS; quando nome/endereço não estão disponíveis, lista dispositivos próximos para validação GATT. Uma nova identidade só é salva automaticamente após o fingerprint GATT completo do GT3 MAX Call. Depois da primeira conexão validada, a reconexão automática usa varreduras de baixa potência e intervalos de 1, 2, 5, 10, 20 e até 30 segundos. A ação **Parar reconexão** cancela as tentativas e desativa a preferência local.
 
 A recuperação nesta fase ocorre enquanto o app está em primeiro plano ou quando ele é reaberto/retomado. O Android pode suspender o processo em segundo plano ou após encerramento forçado; recuperação contínua em segundo plano ainda não está implementada. A reconexão restaura o transporte GATT e reinscreve apenas a notificação NUS TX já permitida; não valida sensores e não envia payload ao relógio.
+
+## Recuperação da tabela GATT
+
+Se o Android sinalizar **Service Changed**, o aplicativo invalida a fila/operações e solicita uma nova descoberta dos serviços na mesma sessão GATT. Respostas de READ, WRITE e CCCD só alteram o estado quando correspondem à conexão atual e à operação efetivamente em andamento; callbacks atrasados, de outra conexão ou de operações invalidadas são descartados. Uma operação que expirou ou foi interrompida por Service Changed não é repetida na mesma conexão GATT; uma nova conexão permite tentar novamente. Um canal silencioso ou sem callback não é considerado sensor ausente.
+
+## Controle direto da conexão BLE
+
+O Relógio 2.0 controla exclusivamente suas próprias buscas, conexões GATT, callbacks e reconexões. Ao iniciar uma conexão, habilita recuperação automática com intervalos progressivos de 1, 2, 5, 10, 20 e até 30 segundos. A ação **Desconectar / Parar reconexão** interrompe o controle e as tentativas.
+
+O comportamento de reconexão contínua permanece limitado ao app em primeiro plano ou retomado; serviço BLE permanente em segundo plano ainda não está implementado.
 
 ## Finalidade do produto
 
@@ -24,11 +38,13 @@ O relógio foi observado no nRF Connect como **GT3 MAX**. A conexão BLE e a des
 
 - Integração de leitura com Health Connect (Conexão Saúde) para total diário agregado de passos.
 - Preparação da integração de escrita para publicar no Health Connect apenas amostras reais do smartwatch, após validar o protocolo e solicitar a permissão específica. Ainda não há escrita de passos do GT3 Maxx nesta versão.
-- Exibição da hora e data local do Android.
+- Hora local do Android, com indicação das opções de data/hora automática e fuso automático do sistema.
+- Consulta de clima pela rede móvel ou Wi-Fi via Open-Meteo, com pesquisa manual de cidade, cache privado, previsão atual/diária e atualização periódica aproximada.
+- A sincronização física de horário é automática somente quando o GATT anuncia o serviço padrão CTS 0x1805/0x2A2B com WRITE. O GT3 MAXX capturado não anunciou CTS; seu RTC/visor ainda não foi sincronizado de forma comprovada.
+- A previsão meteorológica ainda não é transmitida ao GT3 MAXX: o protocolo de clima deste firmware não foi identificado. Nenhum comando proprietário é enviado.
 - O Google Fit legado não é integrado diretamente; os dados podem chegar pelo Health Connect se o aplicativo de origem os compartilhar.
-- Ajuste do horário do relógio físico e leitura BLE de passos seguem pendentes; a identificação parcial do quadro de bateria não comprova esses comandos.
 
-Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALTH-CONNECT-PASSOS-HORARIO.md).
+Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALTH-CONNECT-PASSOS-HORARIO.md) e [integração de hora e clima pela rede](docs/INTEGRACAO-HORA-CLIMA-REDE.md).
 
 ## O que a primeira versão faz
 
@@ -50,10 +66,9 @@ Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALT
 
 - Não envia payloads a características proprietárias do relógio.
 - Não envia comandos pela Nordic UART RX.
-- Nenhuma escrita em característica é executada nesta fase. A única operação de escrita GATT é a configuração do descritor CCCD padrão para ativar uma notificação/indicação permitida; a sincronização CTS está suspensa.
+- Não são enviados payloads a características proprietárias. A única escrita em característica de dados permitida é a sincronização automática, uma vez por sessão, pelo Bluetooth SIG CTS (0x1805/0x2A2B), somente quando o relógio anuncia a característica com propriedade WRITE. O callback GATT não comprova atualização do RTC/mostrador. A configuração do descritor CCCD padrão continua limitada à ativação de notificações/indicações permitidas.
 - Não toca no Secure DFU/OTA, reset, calibração ou configuração.
 - Não atribui semântica a canais proprietários desconhecidos. Há decoders somente para formatos Bluetooth SIG identificados; passos e sono proprietários continuam não interpretados. Body Composition Measurement 0x2A9C também permanece bruto até completar a leitura contextual de flags, unidades, resoluções e pacotes múltiplos.
-- Não acessa servidores ou dados privados do Wearfit Pro.
 - Não transmite dados de saúde à rede nem os publica no Health Connect. A captura local de leituras/notifications e HEX exige ativação explícita e permanece no armazenamento privado do app.
 
 A inscrição em notificações altera somente a assinatura padrão do descritor CCCD. Não é uma escrita de payload em uma característica proprietária.
@@ -69,7 +84,7 @@ A CI publica **dois artefatos separados, com finalidades diferentes**:
 
 A variante `companionDebug` é compilada, testada e auditada, mas **não publicada para sideload**, pois declara Notification Listener. O encaminhamento real de notificações ao GT3 MAX ainda depende da validação do protocolo.
 
-**Atenção ao Play Protect:** a inspeção binária do artefato diagnostic anterior não encontrou INTERNET, SMS, Accessibility ou Notification Listener. Isso afasta a regra específica de bloqueio de sideload por essas capacidades para aquele APK, mas não comprova ausência de malware nem explica o aviso. O APK é debug, não release. Não desative o Play Protect. Consulte [Play Protect e distribuição segura](docs/ALINHAMENTO-PLAY-PROTECT-DISTRIBUICAO.md).
+**Atenção ao Play Protect:** a inspeção binária citada foi feita em um artefato diagnostic anterior à integração meteorológica. A nova versão declara INTERNET e ACCESS_NETWORK_STATE somente para geocodificação e previsão Open-Meteo; o manifesto e os guardrails foram atualizados, mas a nova compilação ainda precisa ser auditada. Isso não explica nem garante a remoção de alertas do Play Protect. O APK é debug, não release. Não desative o Play Protect. Consulte [Play Protect e distribuição segura](docs/ALINHAMENTO-PLAY-PROTECT-DISTRIBUICAO.md).
 
 CI verde não equivale a aprovação do Play Protect nem a teste físico no Galaxy A06. A variante de release e a assinatura própria ainda não foram criadas.
 
@@ -90,19 +105,22 @@ CI verde não equivale a aprovação do Play Protect nem a teste físico no Gala
 Consulte o [índice completo da documentação](docs/README.md).
 
 - [Mapa de módulos](docs/MAPA-DE-MODULOS.md)
-- [Inventário de funções Wearfit Pro](docs/INVENTARIO-FUNCOES-WEARFIT-PRO.md)
-- [Matriz de compatibilidade GT3 MAX](docs/MATRIZ-COMPATIBILIDADE-GT3-MAXX.md)
 - [Integração Android, WhatsApp e notificações](docs/INTEGRACAO-NOTIFICACOES-ANDROID-WHATSAPP.md)
 - [Integração Health Connect, passos, rotas e horário](docs/INTEGRACAO-HEALTH-CONNECT-PASSOS-HORARIO.md)
+- [Integração de hora e clima pela rede do celular](docs/INTEGRACAO-HORA-CLIMA-REDE.md)
 - [Diário de bordo](docs/DIARIO-DE-BORDO.md)
 - [Changelog](CHANGELOG.md)
 - [Versão](VERSION)
 - [Arquitetura](docs/ARQUITETURA.md)
-- [Pesquisa Wearfit Pro](docs/PESQUISA-WEARFIT-PRO.md)
 - [Identificação do relógio](docs/IDENTIFICACAO-DO-RELOGIO.md)
 - [Perfil do GT3 Maxx](docs/PERFIL-GT3-MAXX.md)
+- [Estudo técnico do firmware GT3 MAX Call](docs/ESTUDO-FIRMWARE-GT3-MAXX.md)
 - [Captura BLE de 03/11/2026](docs/CAPTURA-BLE-GT3-MAX-2026-11-03.md)
-- [Perfil BLE candidato NUS/AB](docs/PROTOCOLO-BLE-CANDIDATO.md)
+- [Perfil BLE candidato NUS/AB do GT3 MAX](docs/PROTOCOLO-BLE-CANDIDATO.md)
+
+## Retenção da biblioteca BLE
+
+Leituras e HEX bruto só são capturados após consentimento e durante uma sessão cronometrada. Depois de capturados, os registros permanecem no arquivo privado local até exclusão individual pela Biblioteca interna, remoção pela política de limite (máximo de 1.000 registros) ou remoção dos dados do aplicativo no Android. A exclusão individual solicita confirmação e grava o novo snapshot de forma atômica.
 
 ## Notificações para o smartwatch
 
@@ -113,6 +131,15 @@ A captura local usa NotificationListenerService e acesso especial concedido manu
 ## Versão do aplicativo
 
 A versão de desenvolvimento canônica está no arquivo `VERSION`. Os metadados do build ficam no artefato `android-validation-reports`, no arquivo `diagnostic-build-info.txt`; o artefato instalável contém somente o APK. Builds debug não são releases de produção.
+
+## Ferramentas de engenharia e desempenho
+
+- LeakCanary 2.14 é incluído somente em `diagnosticDebug`; heap dumps locais podem conter informações sensíveis e nunca devem ser publicados.
+- Gradle Dependency Verification usa SHA-256. A primeira CI produz metadados de bootstrap para revisão antes de serem versionados.
+- Renovate está configurado para propor atualizações de dependências Gradle e GitHub Actions sem merge automático. A atuação depende da habilitação do Renovate App no repositório.
+- Macrobenchmark mede inicialização fria em `diagnosticBenchmark`; a CI compila o módulo, mas a medição precisa ser executada em aparelho físico.
+
+Consulte [ferramentas de diagnóstico, integridade e desempenho](docs/FERRAMENTAS-DIAGNOSTICO-DESEMPENHO.md).
 
 ## Segurança e privacidade
 

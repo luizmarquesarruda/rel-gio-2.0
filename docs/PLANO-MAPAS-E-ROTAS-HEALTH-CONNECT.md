@@ -1,13 +1,13 @@
 # Plano de evolução — mapas, caminhadas e sinais vitais
 
 **Produto:** Relógio 2.0  
-**Dispositivo-alvo:** GT3 MAX / GT3 Maxx, pareado atualmente pelo Wearfit Pro  
+**Dispositivo-alvo:** GT3 MAX / GT3 Maxx, conectado diretamente pelo Relógio 2.0  
 **Revisão:** 04/11/2026  
 **Estado:** especificação técnica; recursos deste documento ainda não estão implementados.
 
 ## 1. Objetivo
 
-Permitir que o usuário acompanhe caminhadas em mapa e consulte métricas de saúde com origem, unidade e horário confiáveis, aproveitando APIs Android/Health Connect e substituindo progressivamente o Wearfit Pro quando o protocolo do relógio estiver comprovado.
+Permitir que o usuário acompanhe caminhadas em mapa e consulte métricas de saúde com origem, unidade e horário confiáveis, aproveitando APIs Android/Health Connect e usando somente a conexão BLE direta quando o protocolo do relógio estiver comprovado.
 
 ## 2. Dois caminhos de rota — não misturar as fontes
 
@@ -19,7 +19,7 @@ Ao finalizar, a sessão e seus pontos podem ser gravados no Health Connect após
 
 ### Rota importada do GT3 MAX
 
-Só poderá ser exibida como rota do relógio se Wearfit Pro, SDK documentado ou protocolo BLE validado disponibilizar os pontos geográficos e timestamps. A captura GATT atual não contém evidência de coordenadas, sessão de exercício nem rota. Passos agregados não permitem reconstruir um trajeto.
+Só poderá ser exibida como rota do relógio se o protocolo BLE validado do próprio dispositivo disponibilizar os pontos geográficos e timestamps. A captura GATT atual não contém evidência de coordenadas, sessão de exercício nem rota. Passos agregados não permitem reconstruir um trajeto.
 
 ### Integração no Health Connect
 
@@ -37,7 +37,7 @@ O Health Connect oferece registros padronizados para frequência cardíaca, SpO�
 | Sono | SleepSessionRecord | Início/fim e, se disponíveis, fases com semântica confirmada |
 | Passos | StepsRecord | Amostras ou agregado claramente identificado como fonte Health Connect |
 
-A descrição comercial compartilhada cita sensor óptico central para frequência cardíaca e SpO₂. Isso não comprova que o firmware exponha leituras por BLE nem que o Wearfit Pro publique esses registros no Health Connect. O sensor, a precisão e o protocolo permanecem não validados.
+A descrição comercial compartilhada cita sensor óptico central para frequência cardíaca e SpO₂. Isso não comprova que o firmware exponha leituras por BLE nem que o relógio disponibilize essas medições por BLE. O sensor, a precisão e o protocolo permanecem não validados.
 
 ## 4. Contrato obrigatório de dados
 
@@ -45,7 +45,7 @@ Toda amostra deverá preservar:
 - Tipo, valor, unidade e semântica.
 - Timestamp de medição vindo da fonte, quando disponível.
 - Timestamp de recebimento pelo telefone.
-- Origem (GT3 MAX, Wearfit Pro, Health Connect agregado, telefone ou entrada manual).
+- Origem (GT3 MAX, Health Connect agregado, telefone ou entrada manual).
 - Identidade local do dispositivo e sessão, sem publicar MAC/serial.
 - Estado de validação e indicador de dado estimado.
 
@@ -72,7 +72,7 @@ A próxima extração de código deve retirar scan/GATT de MainActivity antes de
 
 1. **Health Connect adapter:** extração da leitura de passos — código iniciado nesta branch; CI pendente.
 2. **Histórico local:** persistência versionada, identificadores estáveis, prevenção de duplicação, exportação e testes de migração.
-3. **Verificação de fontes:** identificar quais dados o Wearfit Pro já publica no Health Connect, com origem e timestamp reais.
+3. **Verificação de fontes:** identificar quais dados o próprio relógio disponibiliza por BLE e quais amostras validadas podem ser publicadas no Health Connect, com origem e timestamp reais.
 4. **Rotas do telefone:** serviço em primeiro plano, permissões contextuais, GPS, gravação de sessão e tela de mapa.
 5. **Rotas do relógio:** apenas após capturar e validar coordenadas/sessões do GT3 MAX em múltiplas atividades.
 6. **Sinais vitais:** leitura de fontes existentes no Health Connect e depois driver BLE somente quando semântica e unidade forem comprovadas.

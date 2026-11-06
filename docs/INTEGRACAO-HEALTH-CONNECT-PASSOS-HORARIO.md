@@ -12,7 +12,7 @@ O aplicativo usa Health Connect (Conexão Saúde) como camada Android local para
 - A consulta está encapsulada em data/healthconnect/HealthConnectStepsRepository; domain/health/StepsSnapshot preserva intervalo, hora de recebimento e origem HEALTH_CONNECT_AGGREGATE.
 - null (sem agregado disponível) permanece distinto de 0 (agregado real igual a zero).
 - O total pode incluir dados do telefone e de aplicativos/dispositivos que publiquem passos no Health Connect.
-- A presença dos passos do GT3 MAX depende de o Wearfit Pro ou outro componente publicar esses dados no Health Connect. Isso ainda não foi confirmado neste aparelho.
+- A presença de passos do GT3 MAX no Health Connect depende de o próprio Relógio 2.0 produzir amostras validadas e publicá-las com permissão específica. Isso ainda não está implementado.
 
 ## Horário
 
@@ -31,7 +31,7 @@ A tela mostra a data e hora local fornecidas pelo Android. O ajuste do relógio 
 O fluxo do produto é:
 
 1. Os sensores físicos do smartwatch medem passos e, quando suportado, outras métricas.
-2. O Wearfit Pro ou a conexão direta BLE entrega as amostras ao Relógio 2.0.
+2. A conexão BLE direta entrega as amostras ao Relógio 2.0.
 3. O app valida tipo, unidade, timestamp, intervalo, origem e qualidade.
 4. Após consentimento explícito por tipo, o app grava somente amostras reais no Conexão Saúde usando as permissões WRITE correspondentes.
 5. Outros aplicativos compatíveis podem ler os registros conforme as permissões concedidas pelo usuário.
@@ -46,7 +46,7 @@ Health Connect é uma camada centrada no dispositivo, com controle local de perm
 
 ### Próxima validação
 
-- Confirmar no Wearfit Pro se passos e outras métricas são publicados no Health Connect.
+- Validar no próprio relógio e nas capturas BLE se passos e outras métricas são realmente disponibilizados.
 - Se não forem, identificar SDK oficial/exportação ou concluir engenharia reversa BLE com evidência repetível e somente após validação de segurança.
 - Implementar escrita por tipo somente depois de validar fonte e metadados.
 - Solicitar apenas as permissões WRITE dos tipos efetivamente publicados.
@@ -58,17 +58,17 @@ Health Connect é uma camada centrada no dispositivo, com controle local de perm
 
 Há dois fluxos distintos que não devem ser confundidos:
 1. **Registrar uma caminhada pelo telefone:** GPS do Android e serviço em primeiro plano durante a sessão, com consentimento de localização e controle claro de início/pausa/fim.
-2. **Importar uma rota que já veio do relógio:** requer que o Wearfit Pro, um SDK oficial ou o protocolo do GT3 MAX disponibilize uma sessão com pontos de rota e timestamps. A captura BLE disponível hoje não demonstra esse suporte.
+2. **Importar uma rota que já veio do relógio:** requer que o protocolo BLE do GT3 MAX disponibilize uma sessão com pontos de rota e timestamps. A captura BLE disponível hoje não demonstra esse suporte.
 
 O Health Connect possui registros de sessão de exercício e rotas, mas o acesso à rota exige permissões próprias de rota além das permissões da sessão. A integração deve armazenar pontos, altitude e tempo de forma coerente, evitar amostrar localização fora de uma sessão ativa e permitir revogação/exclusão. Uma visualização no mapa só será ligada a dados de rota reais; não inferir caminhos a partir de contagem de passos ou localizações isoladas.
 
 ### Frequência cardíaca, SpO₂ e pressão
 
-Health Connect oferece tipos de registro para frequência cardíaca, saturação de oxigênio e pressão arterial, cada um com permissões próprias. Isso não significa que o GT3 MAX exporte esses tipos, nem que Health Connect os tenha recebido do Wearfit Pro.
+Health Connect oferece tipos de registro para frequência cardíaca, saturação de oxigênio e pressão arterial, cada um com permissões próprias. Isso não significa que o GT3 MAX exporte esses tipos, nem que Health Connect os tenha recebido do relógio.
 
 - Primeiro verificar, no Health Connect, quais tipos têm registros e qual aplicativo/dispositivo os originou.
 - Só então avaliar leitura pelo Relógio 2.0 com permissões específicas e proveniência preservada.
-- Para dados BLE diretos, exigir payloads correlacionados em várias sessões com a tela do relógio e Wearfit Pro, unidades e timestamps confirmados.
+- Para dados BLE diretos, exigir payloads correlacionados em várias sessões com a tela do próprio relógio, unidades e timestamps confirmados.
 - Nunca transformar a alegação de sensor óptico em medição recebida. Não apresentar pressão estimada como diagnóstico.
 
 ### Estado do adaptador de passos nesta fase

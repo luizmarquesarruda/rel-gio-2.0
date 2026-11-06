@@ -1,6 +1,7 @@
 package com.luizmarquesarruda.relogio20.notifications
 
 import android.content.Context
+import androidx.core.content.edit
 import android.os.SystemClock
 import java.util.ArrayDeque
 
@@ -23,7 +24,10 @@ internal object NotificationCaptureSettings {
         preferences(context).getBoolean(KEY_ENABLED, false)
 
     fun setEnabled(context: Context, enabled: Boolean) {
-        preferences(context).edit().putBoolean(KEY_ENABLED, enabled).apply()
+        NotificationCaptureStore.updateSettings {
+            preferences(context).edit { putBoolean(KEY_ENABLED, enabled) }
+            if (!enabled) NotificationCaptureStore.clearLocked()
+        }
     }
 
     fun allowedPackages(context: Context): Set<String> =
@@ -32,9 +36,11 @@ internal object NotificationCaptureSettings {
             ?: emptySet()
 
     fun setAllowedPackages(context: Context, packages: Set<String>) {
-        preferences(context).edit()
-            .putStringSet(KEY_ALLOWED_PACKAGES, packages.toSet())
-            .apply()
+        val allowed = packages.toSet()
+        NotificationCaptureStore.updateSettings {
+            preferences(context).edit { putStringSet(KEY_ALLOWED_PACKAGES, allowed) }
+            NotificationCaptureStore.removeDisallowedPackagesLocked(allowed)
+        }
     }
 
     private fun preferences(context: Context) =
@@ -51,12 +57,41 @@ internal object NotificationCaptureStore {
         event: NotificationPreview,
         nowElapsedRealtimeMillis: Long = SystemClock.elapsedRealtime()
     ) {
-        synchronized(lock) {
-            removeExpired(nowElapsedRealtimeMillis)
-            events.removeAll { it.key == event.key }
-            events.addFirst(event)
-            while (events.size > MAX_EVENTS) events.removeLast()
-        }
+        synchronized(lock) { addLocked(event, nowElapsedRealtimeMillis) }
+    }
+
+    /**
+     * Validates consent and package allow-list while holding the same lock used by
+     * pause/revoke/settings updates. A callback already in progress cannot repopulate
+     * previews after the user disables capture.
+     */
+    fun addIfAllowed(
+        event: NotificationPreview,
+        isAllowed: () -> Boolean,
+        nowElapsedRealtimeMillis: Long = SystemClock.elapsedRealtime()
+    ): Boolean = synchronized(lock) {
+        if (!runCatching(isAllowed).getOrDefault(false)) return@synchronized false
+        addLocked(event, nowElapsedRealtimeMillis)
+        true
+    }
+
+    internal fun updateSettings(update: () -> Unit) {
+        synchronized(lock) { update() }
+    }
+
+    internal fun clearLocked() {
+        events.clear()
+    }
+
+    internal fun removeDisallowedPackagesLocked(allowedPackages: Set<String>) {
+        events.removeAll { it.packageName !in allowedPackages }
+    }
+
+    private fun addLocked(event: NotificationPreview, nowElapsedRealtimeMillis: Long) {
+        removeExpired(nowElapsedRealtimeMillis)
+        events.removeAll { it.key == event.key }
+        events.addFirst(event)
+        while (events.size > MAX_EVENTS) events.removeLast()
     }
 
     fun snapshot(
@@ -85,7 +120,7 @@ internal object NotificationCaptureStore {
     }
 
     fun clear() {
-        synchronized(lock) { events.clear() }
+        synchronized(lock) { clearLocked() }
     }
 
     private fun removeExpired(nowElapsedRealtimeMillis: Long) {

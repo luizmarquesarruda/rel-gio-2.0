@@ -1,5 +1,7 @@
 package com.luizmarquesarruda.relogio20
 
+import com.luizmarquesarruda.relogio20.device.ble.core.BleValueFormatter
+
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

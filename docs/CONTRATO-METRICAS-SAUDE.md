@@ -2,13 +2,13 @@
 
 ## Objetivo
 
-Definir uma fronteira independente de Android, BLE e Wearfit Pro para normalizar futuras amostras. O contrato não interpreta payloads nem habilita ingestão de sensores.
+Definir uma fronteira independente de Android, BLE e aplicativos companheiros para normalizar futuras amostras. O contrato não interpreta payloads nem habilita ingestão de sensores.
 
 ## Campos obrigatórios
 
 - Tipo de métrica e unidade explícitos.
 - Valor finito e não negativo.
-- Origem preservada: GT3 MAX, telefone, agregado Health Connect, Wearfit Pro ou entrada manual.
+- Origem preservada: GT3 MAX, telefone, agregado Health Connect ou entrada manual.
 - Timestamp de recebimento obrigatório.
 - Timestamp de medição opcional, nunca substituído silenciosamente pelo horário de recebimento.
 - Estado de validação explícito.
@@ -27,7 +27,7 @@ Definir uma fronteira independente de Android, BLE e Wearfit Pro para normalizar
 
 Uma amostra só é marcada como fisicamente validada quando:
 1. A origem GT3 MAX foi identificada sem depender exclusivamente do endereço MAC.
-2. Tipo, unidade e semântica foram confirmados por comparação controlada com o relógio e Wearfit Pro.
+2. Tipo, unidade e semântica foram confirmados por comparação controlada com o relógio em sessões independentes.
 3. Foram obtidas pelo menos duas sessões independentes e repetíveis.
 4. Timestamp, duplicidade, reconexão e qualidade foram avaliados.
 

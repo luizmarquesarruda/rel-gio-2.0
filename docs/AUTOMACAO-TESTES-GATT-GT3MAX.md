@@ -120,7 +120,7 @@ NUS RX, escritas de payload em características customizadas, controles de medi�
 
 ## Por que não iniciar medições por comandos ainda
 
-A documentação pública localizada para o Wearfit Pro descreve uma rota de integração de parceiros, mas não fornece nesta evidência o contrato Android, comandos, payloads e elegibilidade específica do GT3 MAX Call. Ver `INTEGRACAO-WEARFIT-PARTNER-SDK.md`.
+O Relógio 2.0 não utiliza SDK, API, intents, serviços ou sessão de aplicativos companheiros. A exploração permanece restrita à conexão BLE/GATT direta com o GT3 MAX.
 
 Até obter SDK oficial, protocolo documentado ou captura comparativa reproduzível do app oficial, não serão inventados comandos para solicitar pressão, SpO₂, temperatura, passos, sono, horário, reset ou configuração. O modo automático percorre as operações GATT de leitura/recepção seguras e registra o que o firmware realmente entrega.
 
@@ -141,7 +141,7 @@ Até obter SDK oficial, protocolo documentado ou captura comparativa reproduzív
 - Teste de exploração no CI: pendente até execução da nova branch.
 - Compilação Android diagnostic/companion após as mudanças: pendente.
 - Comunicação física BLE com o GT3 MAX no Galaxy A06: **não validada**.
-- Correlação dos valores recebidos com a tela do relógio/Wearfit Pro em sessões repetidas: **não validada**.
+- Correlação dos valores recebidos com o visor do próprio relógio em sessões repetidas: **não validada**.
 - Escrita no Health Connect: permanece bloqueada até fonte, semântica, unidade e origem serem validadas.
 
 

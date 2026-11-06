@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Relogio20"
-include(":app")
+include(":app", ":macrobenchmark")
