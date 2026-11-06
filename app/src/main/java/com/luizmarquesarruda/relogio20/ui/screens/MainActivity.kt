@@ -443,16 +443,22 @@ class MainActivity : ComponentActivity() {
             bottomMargin = dp(8)
         })
 
-        root.addView(makeButton("Configurar endereço manualmente (opcional)") { configureExpectedWatchAddress() }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(44)).apply { bottomMargin = dp(6) })
+        val advancedPanel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            visibility = View.GONE
+            setPadding(0, dp(8), 0, dp(8))
+        }
 
-        addText(root, "Laboratório e registros", 17f, true)
-        root.addView(makeButton("Testes e descobertas BLE") {
+        advancedPanel.addView(makeButton("Configurar endereço manualmente (opcional)") { configureExpectedWatchAddress() }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(44)).apply { bottomMargin = dp(6) })
+
+        addText(advancedPanel, "Laboratório e registros", 17f, true)
+        advancedPanel.addView(makeButton("Testes e descobertas BLE") {
             startActivity(Intent(this, FeatureDiscoveryActivity::class.java))
         }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(52)
         ).apply { bottomMargin = dp(5) })
 
-        root.addView(makeButton("Biblioteca interna de descobertas") {
+        advancedPanel.addView(makeButton("Biblioteca interna de descobertas") {
             startActivity(Intent(this, DiscoveryLibraryActivity::class.java))
         }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(52)
@@ -463,7 +469,7 @@ class MainActivity : ComponentActivity() {
         }.apply {
             isEnabled = false
         }
-        root.addView(deepScanButton, LinearLayout.LayoutParams(
+        advancedPanel.addView(deepScanButton, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(52)
         ).apply { bottomMargin = dp(5) })
 
@@ -476,7 +482,7 @@ class MainActivity : ComponentActivity() {
         ) {
             toggleAutomaticGattDiscovery()
         }
-        root.addView(automaticGattDiscoveryButton, LinearLayout.LayoutParams(
+        advancedPanel.addView(automaticGattDiscoveryButton, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(50)
         ).apply { bottomMargin = dp(4) })
         addText(
@@ -494,7 +500,7 @@ class MainActivity : ComponentActivity() {
             background = roundedSurface(0xFF10261B.toInt(), 0xFF3B8C5A.toInt())
             contentDescription = "Contador regressivo da captura BLE em andamento"
         }
-        root.addView(captureSessionView, LinearLayout.LayoutParams(
+        advancedPanel.addView(captureSessionView, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
         ).apply { bottomMargin = dp(10) })
 
@@ -505,16 +511,16 @@ class MainActivity : ComponentActivity() {
             setPadding(dp(12), dp(10), dp(12), dp(10))
             background = roundedSurface(0xFF0E1B2D.toInt(), 0xFF28415F.toInt())
         }
-        root.addView(gattProgressView, LinearLayout.LayoutParams(
+        advancedPanel.addView(gattProgressView, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
         ).apply { bottomMargin = dp(5) })
-        root.addView(makeButton("Registrar ação realizada no relógio") {
+        advancedPanel.addView(makeButton("Registrar ação realizada no relógio") {
             registerWearableActionMarker()
         }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
         ).apply { bottomMargin = dp(8) })
 
-        addText(root, "Saúde e integração", 17f, true)
+        addText(advancedPanel, "Saúde e integração", 17f, true)
         stepsView = TextView(this).apply {
             text = "Passos hoje: aguardando dados da Conexão Saúde"
             textSize = 24f
@@ -522,7 +528,7 @@ class MainActivity : ComponentActivity() {
             setTextColor(0xFFF8FAFC.toInt())
             setPadding(0, dp(8), 0, dp(4))
         }
-        root.addView(stepsView)
+        advancedPanel.addView(stepsView)
 
         healthStatusView = TextView(this).apply {
             text = "Fonte: Conexão Saúde • total agregado de fontes autorizadas"
@@ -530,7 +536,7 @@ class MainActivity : ComponentActivity() {
             setTextColor(0xFF9FB4CF.toInt())
             setPadding(0, 0, 0, dp(8))
         }
-        root.addView(healthStatusView)
+        advancedPanel.addView(healthStatusView)
 
         val healthActions = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -543,36 +549,36 @@ class MainActivity : ComponentActivity() {
         }, LinearLayout.LayoutParams(0, dp(56), 1f).apply {
             marginStart = dp(8)
         })
-        root.addView(healthActions)
+        advancedPanel.addView(healthActions)
 
         healthSettingsButton = makeButton("Abrir configurações de acesso") {
             openHealthConnectSettings()
         }.apply {
             visibility = View.GONE
         }
-        root.addView(healthSettingsButton, LinearLayout.LayoutParams(
+        advancedPanel.addView(healthSettingsButton, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
         ).apply { topMargin = dp(4) })
 
-        addText(root, "Mais recursos", 17f, true)
-        root.addView(makeButton("Notificações do telefone") {
+        addText(advancedPanel, "Mais recursos", 17f, true)
+        advancedPanel.addView(makeButton("Notificações do telefone") {
             startActivity(Intent(this, NotificationCenterActivity::class.java))
         }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
         ))
-        root.addView(makeButton("Catálogo de funções do relógio") {
+        advancedPanel.addView(makeButton("Catálogo de funções do relógio") {
             startActivity(Intent(this, FeatureHubActivity::class.java))
         }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
         ))
 
-        addText(root, "Fluxo de saúde: sensores do relógio → aplicativo → Conexão Saúde. " +
+        addText(advancedPanel, "Fluxo de saúde: sensores do relógio → aplicativo → Conexão Saúde. " +
             "A gravação de amostras do GT3 Maxx será ativada somente após validar os dados e sua origem.", 12f)
 
-        addText(root, "Frequência cardíaca, sono e SpO₂: aguardando integração e validação dos sensores. " +
+        addText(advancedPanel, "Frequência cardíaca, sono e SpO₂: aguardando integração e validação dos sensores. " +
             "Não exibir estimativas como medições confirmadas.", 12f)
 
-        root.addView(makeButton("Dados de saúde e privacidade") {
+        advancedPanel.addView(makeButton("Dados de saúde e privacidade") {
             startActivity(Intent(this, HealthPrivacyActivity::class.java))
         }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
@@ -590,12 +596,12 @@ class MainActivity : ComponentActivity() {
         inventoryPanel.addView(content, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
         ))
-        root.addView(makeButton("Inventário GATT • mostrar/ocultar") {
+        advancedPanel.addView(makeButton("Inventário GATT • mostrar/ocultar") {
             inventoryPanel.visibility = if (inventoryPanel.visibility == View.VISIBLE) View.GONE else View.VISIBLE
         }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
         ))
-        root.addView(inventoryPanel)
+        advancedPanel.addView(inventoryPanel)
 
         val diagnosticPanel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -621,12 +627,20 @@ class MainActivity : ComponentActivity() {
             background = roundedSurface(0xFF0E1B2D.toInt(), 0xFF28415F.toInt())
         }
         diagnosticPanel.addView(logView)
-        root.addView(makeButton("Diagnóstico avançado • mostrar/ocultar") {
+        advancedPanel.addView(makeButton("Diagnóstico avançado • mostrar/ocultar") {
             diagnosticPanel.visibility = if (diagnosticPanel.visibility == View.VISIBLE) View.GONE else View.VISIBLE
         }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
         ))
-        root.addView(diagnosticPanel)
+        advancedPanel.addView(diagnosticPanel)
+
+        root.addView(makeButton("Ferramentas técnicas e integração • mostrar/ocultar") {
+            advancedPanel.visibility = if (advancedPanel.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+        }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            dp(48)
+        ).apply { topMargin = dp(8) })
+        root.addView(advancedPanel)
 
         val pageScroll = ScrollView(this).apply {
             isFillViewport = true

@@ -944,3 +944,11 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Histórico de atividade e biblioteca técnica BLE permanecem separados; quadros HEX e inventários GATT não são apresentados como dados de saúde.
 - A documentação de navegação foi atualizada preservando o histórico anterior.
 - **Não validado:** build, Lint, testes Kotlin/Python, CI, APK, execução no Galaxy A06, acessibilidade, rotação e teste físico com GT3 Maxx. Não houve merge nem alteração do protocolo proprietário.
+
+
+### Refinamento da tela Conexão e dispositivo — 06/11/2026
+
+- O cartão de conexão e as ações básicas permanecem visíveis ao entrar na tela secundária.
+- Endereço manual opcional, laboratório, captura, inventário GATT, integração Health Connect e diagnóstico foram agrupados em um painel recolhido por padrão: “Ferramentas técnicas e integração”.
+- A mudança é apenas de hierarquia visual. Os controles e métodos existentes continuam presentes e acessíveis; nenhuma operação BLE foi removida.
+- A validação de build continua bloqueada por uma configuração Gradle herdada da branch-base: `app/build.gradle.kts:89` declara `diagnosticDebugImplementation`, configuração que o Gradle 9.5 não encontra durante a configuração do projeto. Os testes Python de contrato passaram; Kotlin/Android não chegaram a compilar nesta execução.
