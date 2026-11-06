@@ -1,3 +1,11 @@
+## 05/11/2026 — Correção do contrato JUnit e do gate de telemetria
+
+- A execução #428 confirmou Lint concluído para diagnosticDebug e companionDebug, mas falhou em `testDiagnosticDebugUnitTest`: 194 testes encontrados, com `HealthConnectTelemetryGateTest > initializationError`.
+- A causa é o retorno inferido diferente de `Unit` nos métodos `@Test` que usavam expressão `= runBlocking { ... }` e deixavam o retorno de `assertThrows` escapar. O JUnit 4 exige métodos de teste sem valor de retorno.
+- Os casos foram reescritos com corpo de função explícito e execução suspensa interna, preservando a verificação de bloqueio de amostras CANDIDATO/OBSERVADO.
+- Adicionado caso positivo para amostra VALIDADO, verificando encaminhamento e cópia defensiva do payload.
+- A correção ainda depende de nova execução das variantes, testes, builds, guardrails e auditoria de APK. Nenhum APK foi publicado no run #428. Teste físico Galaxy A06 / Android 16 + GT3 MAXX: **não validado**.
+
 ## 05/11/2026 — Correções de compilação e configuração formal do Android Lint
 
 - Corrigido o uso de `singleLine = true` nas entradas de Ferramentas locais e Clima. As telas agora chamam explicitamente `setSingleLine(true)`, preservando a intenção visual sem depender de uma propriedade Kotlin inexistente.
