@@ -14,7 +14,8 @@ for configuration in \
   companionDebugRuntimeClasspath \
   diagnosticReleaseRuntimeClasspath \
   companionReleaseRuntimeClasspath \
-  diagnosticBenchmarkRuntimeClasspath; do
+  diagnosticBenchmarkRuntimeClasspath \
+  companionBenchmarkRuntimeClasspath; do
   report="$REPORT_DIR/${configuration}.txt"
   echo "Auditing Gradle configuration: $configuration"
   gradle --no-daemon --console=plain :app:dependencies --configuration "$configuration" > "$report"
@@ -38,7 +39,8 @@ for configuration in \
   companionDebugRuntimeClasspath \
   diagnosticReleaseRuntimeClasspath \
   companionReleaseRuntimeClasspath \
-  diagnosticBenchmarkRuntimeClasspath; do
+  diagnosticBenchmarkRuntimeClasspath \
+  companionBenchmarkRuntimeClasspath; do
   report="$REPORT_DIR/${configuration}.txt"
   if grep -Eiq 'com\.squareup\.leakcanary|leakcanary-android' "$report"; then
     echo "LeakCanary must not be present in $configuration." >&2
