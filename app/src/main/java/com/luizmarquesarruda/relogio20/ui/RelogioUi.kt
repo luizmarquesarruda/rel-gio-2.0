@@ -2,11 +2,16 @@ package com.luizmarquesarruda.relogio20.ui
 
 import android.app.Activity
 import android.content.Context
+import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.view.Gravity
 import android.view.View
-import android.view.WindowManager
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -36,16 +41,19 @@ object RelogioUi {
         subtitle: String,
         showBack: Boolean = true
     ): LinearLayout {
-        activity.window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-        activity.window.statusBarColor = screen
-        activity.window.navigationBarColor = screen
-        activity.window.decorView.systemUiVisibility = 0
-
         val root = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(screen)
             setPadding(dp(activity, 16), dp(activity, 12), dp(activity, 16), dp(activity, 10))
         }
+        applyEdgeToEdge(
+            activity = activity,
+            root = root,
+            paddingLeftDp = 16,
+            paddingTopDp = 12,
+            paddingRightDp = 16,
+            paddingBottomDp = 10
+        )
 
         val header = LinearLayout(activity).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -93,6 +101,44 @@ object RelogioUi {
         ))
         activity.setContentView(root)
         return body
+    }
+
+
+    /**
+     * Uses edge-to-edge consistently and applies system-bar/cutout insets to the root.
+     * Base padding remains in dp; inset values are added at runtime for each device.
+     */
+    fun applyEdgeToEdge(
+        activity: Activity,
+        root: View,
+        paddingLeftDp: Int,
+        paddingTopDp: Int,
+        paddingRightDp: Int,
+        paddingBottomDp: Int,
+        lightSystemBarIcons: Boolean = false
+    ) {
+        WindowCompat.setDecorFitsSystemWindows(activity.window, false)
+        if (Build.VERSION.SDK_INT < 35) {
+            activity.window.statusBarColor = Color.TRANSPARENT
+            activity.window.navigationBarColor = Color.TRANSPARENT
+        }
+        WindowInsetsControllerCompat(activity.window, root).apply {
+            isAppearanceLightStatusBars = lightSystemBarIcons
+            isAppearanceLightNavigationBars = lightSystemBarIcons
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
+            val systemInsets = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            view.setPadding(
+                dp(activity, paddingLeftDp) + systemInsets.left,
+                dp(activity, paddingTopDp) + systemInsets.top,
+                dp(activity, paddingRightDp) + systemInsets.right,
+                dp(activity, paddingBottomDp) + systemInsets.bottom
+            )
+            insets
+        }
+        ViewCompat.requestApplyInsets(root)
     }
 
     fun section(parent: LinearLayout, title: String, hint: String? = null) {

@@ -55,7 +55,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "generated=true" >> "$GITHUB_OUTPUT"
-          gradle --no-daemon --write-verification-metadata sha256 testDiagnosticDebugUnitTest testCompanionDebugUnitTest assembleDiagnosticDebug assembleCompanionDebug :macrobenchmark:assemble
+          gradle --no-daemon --write-verification-metadata sha256 lintDiagnosticDebug lintCompanionDebug testDiagnosticDebugUnitTest testCompanionDebugUnitTest assembleDiagnosticDebug assembleCompanionDebug :macrobenchmark:assemble
 
       - name: Publish Gradle verification bootstrap for review
         if: ${{ steps.dependency_verification_bootstrap.outputs.generated == 'true' }}

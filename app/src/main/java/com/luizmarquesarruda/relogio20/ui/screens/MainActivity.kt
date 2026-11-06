@@ -12,6 +12,7 @@ import com.luizmarquesarruda.relogio20.device.ble.core.BleScanCandidatePolicy
 import com.luizmarquesarruda.relogio20.device.ble.core.BleValueFormatter
 import com.luizmarquesarruda.relogio20.domain.diagnostics.BleDiagnosticReport
 import com.luizmarquesarruda.relogio20.ui.formatters.StepsCountFormatter
+import com.luizmarquesarruda.relogio20.ui.RelogioUi
 import com.luizmarquesarruda.relogio20.data.preferences.AppPreferences
 import com.luizmarquesarruda.relogio20.device.ble.gatt.SerialGattOperationQueue
 import com.luizmarquesarruda.relogio20.device.ble.gatt.AccessPolicy
@@ -331,6 +332,14 @@ class MainActivity : ComponentActivity() {
             setPadding(dp(16), dp(12), dp(16), dp(8))
             setBackgroundColor(0xFF07111F.toInt())
         }
+        RelogioUi.applyEdgeToEdge(
+            activity = this,
+            root = root,
+            paddingLeftDp = 16,
+            paddingTopDp = 12,
+            paddingRightDp = 16,
+            paddingBottomDp = 8
+        )
 
         val title = TextView(this).apply {
             text = "Conexão e dispositivo"
@@ -414,11 +423,11 @@ class MainActivity : ComponentActivity() {
             setPadding(0, 0, 0, dp(12))
         }
         connectionCard.addView(deviceTimeSyncView)
-        clockSyncButton = makeButton("Sincronização automática de hora") { }.apply { isEnabled = false }
+        clockSyncButton = makeButton("Sincronizar hora") { requestClockSync() }.apply { isEnabled = false }
         connectionCard.addView(clockSyncButton, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
         ).apply { bottomMargin = dp(10) })
-        addText(connectionCard, "Ao conectar, o app envia a hora atual do Android uma única vez, somente após confirmar o fingerprint GATT completo do GT3 MAX Call e o serviço CTS padrão 0x1805/0x2A2B com WRITE. O GT3 MAXX capturado não anunciou esse serviço; nenhuma escrita proprietária é tentada.", 12f, false)
+        addText(connectionCard, "A sincronização só ocorre após confirmação explícita nesta tela, fingerprint GATT completo do GT3 MAX Call e serviço CTS padrão 0x1805/0x2A2B com WRITE. Nenhuma escrita proprietária é tentada.", 12f, false)
 
         val actions = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -2792,20 +2801,43 @@ class MainActivity : ComponentActivity() {
                 appendLog("CTS bloqueado: o dispositivo conectado não corresponde ao fingerprint GATT completo do GT3 MAX Call.")
             }
             BluetoothCurrentTimeCapabilityPolicy.Capability.READY -> {
-                clockSyncButton.isEnabled = false
+                clockSyncButton.isEnabled = !clockSyncAttemptedForSession
                 if (clockSyncAttemptedForSession) {
                     deviceTimeSyncView.text = "CTS disponível; sincronização já tentada nesta conexão."
                 } else {
-                    deviceTimeSyncView.text = "CTS compatível encontrado. Enviando automaticamente a hora do Android."
-                    appendLog("CTS 0x1805/0x2A2B com WRITE confirmado. Iniciando sincronização automática única nesta sessão.")
-                    syncClockUsingCurrentTimeService(gatt)
+                    deviceTimeSyncView.text =
+                        "CTS compatível encontrado. Toque em Sincronizar hora para autorizar a escrita."
                 }
             }
         }
     }
 
+    private fun requestClockSync() {
+        val gatt = bluetoothGatt
+        if (gatt == null || !isGattConnected || isGattDisconnecting ||
+            !::clockSyncButton.isInitialized || !clockSyncButton.isEnabled
+        ) {
+            appendLog("Sincronização CTS não iniciada: sessão não está pronta ou já foi tentada.")
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Sincronizar hora do relógio")
+            .setMessage(
+                "Autoriza enviar a data e hora local deste telefone ao serviço Bluetooth padrão " +
+                    "Current Time (0x1805/0x2A2B) do GT3 MAX Call? Nenhum comando proprietário será enviado."
+            )
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Autorizar e sincronizar") { _, _ ->
+                syncClockUsingCurrentTimeService(gatt, explicitUserConsent = true)
+            }
+            .show()
+    }
+
     @SuppressLint("MissingPermission")
-    private fun syncClockUsingCurrentTimeService(gatt: BluetoothGatt) {
+    private fun syncClockUsingCurrentTimeService(
+        gatt: BluetoothGatt,
+        explicitUserConsent: Boolean
+    ) {
         if (bluetoothGatt !== gatt || !isGattConnected || isGattDisconnecting) {
             if (::clockSyncButton.isInitialized) clockSyncButton.isEnabled = false
             deviceTimeSyncView.text = "Sincronização cancelada: a sessão BLE não está mais ativa."
@@ -2838,7 +2870,7 @@ class MainActivity : ComponentActivity() {
             return
         }
         if (!AccessPolicy.DEFAULT.canWrite(
-                service.uuid, characteristic.uuid, explicitUserConsent = true
+                service.uuid, characteristic.uuid, explicitUserConsent = explicitUserConsent
             )
         ) {
             deviceTimeSyncView.text = "Escrita bloqueada pela política GATT."
@@ -3497,7 +3529,10 @@ class MainActivity : ComponentActivity() {
         val version = runCatching {
             packageManager.getPackageInfo(packageName, 0).versionName ?: "desconhecida"
         }.getOrDefault("desconhecida")
-        val discoveryEntries = listOf("droppedCount=" + droppedTelemetryCount.get()) +
+        val discoveryEntries = listOf(
+            "droppedCount=" + droppedTelemetryCount.get(),
+            "discoveryStorageWriter=" + discoveryLibraryStore.writeHealthSummary()
+        ) +
             when (val stored = discoveryLibraryStore.read()) {
             DiscoveryLibraryReadResult.Empty -> listOf("Nenhuma descoberta persistida até esta exportação.")
             is DiscoveryLibraryReadResult.Available -> stored.snapshot.records.takeLast(1_000).map { record ->
