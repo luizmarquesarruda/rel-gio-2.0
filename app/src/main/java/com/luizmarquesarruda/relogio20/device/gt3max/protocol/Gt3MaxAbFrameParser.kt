@@ -23,7 +23,7 @@ internal data class Gt3MaxAbFrame(
     /**
      * 0x91/0x80 with a final value in 0..100 matches the published DT78
      * battery-notification example. It remains a candidate interpretation
-     * until repeated against the actual watch and its companion app.
+     * until repeated against the actual watch under controlled conditions.
      */
     val batteryPercent: Int?
         get() {
