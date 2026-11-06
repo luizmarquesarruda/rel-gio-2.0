@@ -32,7 +32,7 @@ O inventário completo, propriedades e UUIDs está em [Captura BLE de 03/11/2026
 
 - A conexão GATT e a descoberta de serviços foram concluídas com sucesso naquela sessão.
 - Uma notificação de oito bytes chegou pela NUS TX: \`AB-00-05-FF-91-80-00-0C\`.
-- A estrutura é compatível com uma hipótese de quadro AB já documentada, mas o valor final \`0C\` não foi correlacionado de forma repetível com a bateria mostrada no relógio/Wearfit Pro.
+- A estrutura é compatível com uma hipótese de quadro AB já documentada, mas o valor final \`0C\` não foi correlacionado de forma repetível com a bateria mostrada no indicador de bateria do próprio relógio.
 - Leituras de algumas características customizadas retornaram zero bytes. Isso não prova que sejam inúteis: a semântica pode depender de notificação, estado interno ou interação iniciada por um aplicativo autorizado.
 - Nenhum valor de passos, sono, frequência cardíaca, SpO₂, pressão arterial ou temperatura foi confirmado nessa captura.
 
