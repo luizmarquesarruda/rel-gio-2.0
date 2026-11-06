@@ -32,8 +32,8 @@ import com.luizmarquesarruda.relogio20.device.ble.gatt.BluetoothCurrentTimeCapab
 import com.luizmarquesarruda.relogio20.device.ble.core.BleReconnectPolicy
 import com.luizmarquesarruda.relogio20.device.ble.core.BleReconnectCoordinator
 import com.luizmarquesarruda.relogio20.device.ble.core.GattCallbackSafetyPolicy
-import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbFrameParser
-import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitProtocolProfile
+import com.luizmarquesarruda.relogio20.device.gt3max.protocol.Gt3MaxAbFrameParser
+import com.luizmarquesarruda.relogio20.device.gt3max.protocol.Gt3MaxProtocolProfile
 import com.luizmarquesarruda.relogio20.device.gt3max.protocol.Gt3MaxCallDeviceProfile
 import com.luizmarquesarruda.relogio20.data.discovery.FeatureDiscoveryStore
 import com.luizmarquesarruda.relogio20.data.discovery.DiscoveryLibraryKind
@@ -50,7 +50,7 @@ import com.luizmarquesarruda.relogio20.device.discovery.GattProgressOperation
 import com.luizmarquesarruda.relogio20.device.discovery.BlePacketFingerprintAnalyzer
 import com.luizmarquesarruda.relogio20.device.discovery.PassiveBleObservationTracker
 import com.luizmarquesarruda.relogio20.device.discovery.GattDiscoveryRecoveryPolicy
-import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbStreamDecoder
+import com.luizmarquesarruda.relogio20.device.gt3max.protocol.Gt3MaxAbStreamDecoder
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectAvailability
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsRepository
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsResult
@@ -281,7 +281,7 @@ class MainActivity : ComponentActivity() {
     private val deepExplorationAttempted = mutableSetOf<String>()
     private val invalidatedGattOperationKeys = mutableSetOf<String>()
     private val invalidatedCccdCharacteristicKeys = mutableSetOf<String>()
-    private val nusFrameDecoder = WearfitAbStreamDecoder()
+    private val nusFrameDecoder = Gt3MaxAbStreamDecoder()
     private val passiveBleObservationTracker = PassiveBleObservationTracker()
     private var clockSyncAttemptedForSession = false
     private var pendingCurrentTimeWriteKey: String? = null
@@ -312,8 +312,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         bluetoothAdapter = getSystemService(BluetoothManager::class.java)?.adapter
-        // Migration: remove the legacy Wearfit handoff lock; this app now owns BLE sessions.
-        connectionPrefs.edit { remove("wearfit_handoff_active") }
         buildScreen()
         appendLog("Aplicativo iniciado. Diagnóstico BLE local.")
         appendLog(
@@ -2906,12 +2904,12 @@ class MainActivity : ComponentActivity() {
                 "a exploração manual, mediante confirmação, pode ler canais customizados somente com READ " +
                 "e ativar NOTIFY/INDICATE via CCCD. Nenhum payload de escrita é enviado.", 12f)
 
-            val nusService = gatt.getService(WearfitProtocolProfile.SERVICE_UUID)
+            val nusService = gatt.getService(Gt3MaxProtocolProfile.SERVICE_UUID)
             val rxCharacteristic = nusService?.getCharacteristic(
-                WearfitProtocolProfile.RX_CHARACTERISTIC_UUID
+                Gt3MaxProtocolProfile.RX_CHARACTERISTIC_UUID
             )
             val txCharacteristic = nusService?.getCharacteristic(
-                WearfitProtocolProfile.TX_CHARACTERISTIC_UUID
+                Gt3MaxProtocolProfile.TX_CHARACTERISTIC_UUID
             )
             if (rxCharacteristic != null && txCharacteristic != null) {
                 addText(
@@ -2920,7 +2918,7 @@ class MainActivity : ComponentActivity() {
                         "Identidade/chipset do GT3 Maxx não confirmados; comandos proprietários permanecem bloqueados.",
                     12f
                 )
-                appendLog("Fingerprint BLE candidato detectado: " + WearfitProtocolProfile.PROFILE_ID)
+                appendLog("Fingerprint BLE candidato detectado: " + Gt3MaxProtocolProfile.PROFILE_ID)
             } else {
                 addText(content, "Perfil NUS/AB candidato não detectado nesta conexão.", 12f)
             }
@@ -3234,8 +3232,8 @@ class MainActivity : ComponentActivity() {
         )
 
         val isNusTx =
-            serviceUuid.equals(WearfitProtocolProfile.SERVICE_UUID.toString(), ignoreCase = true) &&
-                uuid.equals(WearfitProtocolProfile.TX_CHARACTERISTIC_UUID.toString(), ignoreCase = true)
+            serviceUuid.equals(Gt3MaxProtocolProfile.SERVICE_UUID.toString(), ignoreCase = true) &&
+                uuid.equals(Gt3MaxProtocolProfile.TX_CHARACTERISTIC_UUID.toString(), ignoreCase = true)
         val frames = if (isNusTx) nusFrameDecoder.append(value) else emptyList()
         if (isNusTx && frames.isEmpty()) {
             appendLog("NUS TX: nenhum quadro AB completo nesta notificação; aguardando fragmento ou formato ainda desconhecido.")
