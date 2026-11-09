@@ -288,11 +288,14 @@ class FeatureDiscoveryActivity : Activity() {
                 ) { saved ->
                     runOnUiThread {
                         if (isFinishing || isDestroyed) return@runOnUiThread
-                        handler.removeCallbacks(countdownTick)
-                        updateTimerUi(null)
-                        if (!saved) {
+                        if (saved) {
+                            handler.removeCallbacks(countdownTick)
+                            updateTimerUi(null)
+                        } else {
+                            stopButton.isEnabled = true
+                            updateTimerUi(store.activeSession(System.currentTimeMillis()))
                             AlertDialog.Builder(this@FeatureDiscoveryActivity)
-                                .setMessage("Não foi possível persistir o encerramento do teste.")
+                                .setMessage("Não foi possível persistir o encerramento do teste. A sessão continua ativa.")
                                 .setPositiveButton("OK", null)
                                 .show()
                         }
