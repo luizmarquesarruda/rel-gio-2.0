@@ -281,9 +281,30 @@ class FeatureDiscoveryActivity : Activity() {
             isAllCaps = false
             visibility = View.GONE
             setOnClickListener {
-                store.finishTestSession(System.currentTimeMillis(), "Finalizado pelo usuário")
-                handler.removeCallbacks(countdownTick)
-                updateTimerUi(null)
+                isEnabled = false
+                val queued = store.finishTestSessionAsync(
+                    System.currentTimeMillis(),
+                    "Finalizado pelo usuário"
+                ) { saved ->
+                    runOnUiThread {
+                        if (isFinishing || isDestroyed) return@runOnUiThread
+                        handler.removeCallbacks(countdownTick)
+                        updateTimerUi(null)
+                        if (!saved) {
+                            AlertDialog.Builder(this@FeatureDiscoveryActivity)
+                                .setMessage("Não foi possível persistir o encerramento do teste.")
+                                .setPositiveButton("OK", null)
+                                .show()
+                        }
+                    }
+                }
+                if (!queued) {
+                    isEnabled = true
+                    AlertDialog.Builder(this@FeatureDiscoveryActivity)
+                        .setMessage("A fila de persistência está indisponível. O teste não foi finalizado.")
+                        .setPositiveButton("OK", null)
+                        .show()
+                }
             }
         }
         actions.addView(startButton, LinearLayout.LayoutParams(0, dp(48), 1f))
@@ -321,13 +342,27 @@ class FeatureDiscoveryActivity : Activity() {
             )
             .setNegativeButton("Cancelar", null)
             .setPositiveButton("Iniciar e salvar") { _, _ ->
-                val started = store.startTestSession(selectedDurationSeconds, System.currentTimeMillis())
-                if (started) {
-                    scheduleCountdown()
-                    updateTimerUi(store.activeSession(System.currentTimeMillis()))
-                } else {
+                startButton.isEnabled = false
+                val now = System.currentTimeMillis()
+                val queued = store.startTestSessionAsync(selectedDurationSeconds, now) { started ->
+                    runOnUiThread {
+                        if (isFinishing || isDestroyed) return@runOnUiThread
+                        startButton.isEnabled = true
+                        if (started) {
+                            scheduleCountdown()
+                            updateTimerUi(store.activeSession(System.currentTimeMillis()))
+                        } else {
+                            AlertDialog.Builder(this@FeatureDiscoveryActivity)
+                                .setMessage("Não foi possível iniciar. Verifique se já existe um teste ativo ou se a biblioteca está inválida/incompatível.")
+                                .setPositiveButton("OK", null)
+                                .show()
+                        }
+                    }
+                }
+                if (!queued) {
+                    startButton.isEnabled = true
                     AlertDialog.Builder(this)
-                        .setMessage("Não foi possível iniciar. Verifique se já existe um teste ativo ou se a biblioteca está inválida/incompatível.")
+                        .setMessage("A fila de persistência está indisponível. O teste não foi iniciado.")
                         .setPositiveButton("OK", null)
                         .show()
                 }
