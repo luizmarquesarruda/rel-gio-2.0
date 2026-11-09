@@ -22,7 +22,9 @@ internal data class AccessPolicy(
         serviceUuid: UUID,
         characteristicUuid: UUID,
         explicitUserConsent: Boolean
-    ): Boolean = false
+    ): Boolean {
+        return false
+    }
 
     companion object {
         val FE59_DFU_SERVICE = UUID.fromString("0000fe59-0000-1000-8000-00805f9b34fb")
