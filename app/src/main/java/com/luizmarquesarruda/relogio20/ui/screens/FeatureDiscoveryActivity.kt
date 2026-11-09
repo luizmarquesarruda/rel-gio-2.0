@@ -281,7 +281,7 @@ class FeatureDiscoveryActivity : Activity() {
             isAllCaps = false
             visibility = View.GONE
             setOnClickListener {
-                isEnabled = false
+                stopButton.isEnabled = false
                 val queued = store.finishTestSessionAsync(
                     System.currentTimeMillis(),
                     "Finalizado pelo usuário"
@@ -299,7 +299,7 @@ class FeatureDiscoveryActivity : Activity() {
                     }
                 }
                 if (!queued) {
-                    isEnabled = true
+                    stopButton.isEnabled = true
                     AlertDialog.Builder(this@FeatureDiscoveryActivity)
                         .setMessage("A fila de persistência está indisponível. O teste não foi finalizado.")
                         .setPositiveButton("OK", null)
