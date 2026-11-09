@@ -2181,7 +2181,15 @@ class MainActivity : ComponentActivity() {
             now
         ) { started ->
             runOnUiThread {
-                if (isFinishing || isDestroyed) return@runOnUiThread
+                if (isFinishing || isDestroyed) {
+                    if (started) {
+                        discoveryLibraryStore.finishTestSessionAsync(
+                            System.currentTimeMillis(),
+                            "Activity encerrada antes de confirmar a captura automática"
+                        )
+                    }
+                    return@runOnUiThread
+                }
                 if (!started) {
                     appendLog(
                         "Testes automáticos bloqueados: a biblioteca local não aceitou iniciar a sessão. " +
