@@ -28,8 +28,6 @@ import com.luizmarquesarruda.relogio20.domain.session.SessionEndReason
 import com.luizmarquesarruda.relogio20.domain.session.SessionState
 import com.luizmarquesarruda.relogio20.device.ble.core.ReconnectPolicy
 import com.luizmarquesarruda.relogio20.BuildConfig
-import com.luizmarquesarruda.relogio20.device.ble.gatt.BluetoothCurrentTimePayload
-import com.luizmarquesarruda.relogio20.device.ble.gatt.BluetoothCurrentTimeCapabilityPolicy
 import com.luizmarquesarruda.relogio20.device.ble.core.BleReconnectPolicy
 import com.luizmarquesarruda.relogio20.device.ble.core.BleReconnectCoordinator
 import com.luizmarquesarruda.relogio20.device.ble.core.GattCallbackSafetyPolicy
@@ -59,6 +57,7 @@ import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectPermissio
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectPermissionStatePolicy
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectOriginPolicy
 import androidx.activity.ComponentActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.annotation.RequiresApi
 import androidx.core.content.edit
 import androidx.core.net.toUri
@@ -70,6 +69,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -104,7 +104,6 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
-import java.time.LocalDateTime
 
 class MainActivity : ComponentActivity() {
     private lateinit var content: LinearLayout
@@ -114,7 +113,6 @@ class MainActivity : ComponentActivity() {
     private lateinit var deviceProfileView: TextView
     private lateinit var deviceBatteryView: TextView
     private lateinit var deviceTimeSyncView: TextView
-    private lateinit var clockSyncButton: Button
     private lateinit var scanButton: Button
     private lateinit var disconnectButton: Button
     private lateinit var deepScanButton: Button
@@ -200,9 +198,14 @@ class MainActivity : ComponentActivity() {
             if (sessionManager.watchdogTick(nowWall)) {
                 val finished = sessionManager.state.value as? SessionState.Finished
                 if (finished?.session?.endReason == SessionEndReason.STALLED) {
-                    discoveryLibraryStore.finishTestSession(
-                        nowWall, "SESSION_STALLED: sem evento BLE dentro do limite"
-                    )
+                    discoveryLibraryStore.finishTestSessionAsync(
+                        nowWall,
+                        "SESSION_STALLED: sem evento BLE dentro do limite"
+                    ) { saved ->
+                        if (!saved) runOnUiThread {
+                            appendLog("SESSION_STALLED: não foi possível persistir o encerramento da sessão.")
+                        }
+                    }
                     appendLog("SESSION_STALLED: sessão de captura finalizada por ausência de eventos BLE.")
                 }
             }
@@ -228,6 +231,7 @@ class MainActivity : ComponentActivity() {
     private val scanResults = linkedMapOf<String, ScanResult>()
     private val logLines = mutableListOf<String>()
     private var pendingDiagnosticReport: String? = null
+    private var diagnosticExportInProgress = false
     private var lastConnectedDeviceName: String? = null
     private var lastConnectedDeviceAddress: String? = null
     private val identityPrefs by lazy { getSharedPreferences("device_identity", MODE_PRIVATE) }
@@ -286,8 +290,6 @@ class MainActivity : ComponentActivity() {
     private val invalidatedCccdCharacteristicKeys = mutableSetOf<String>()
     private val nusFrameDecoder = Gt3MaxAbStreamDecoder()
     private val passiveBleObservationTracker = PassiveBleObservationTracker()
-    private var clockSyncAttemptedForSession = false
-    private var pendingCurrentTimeWriteKey: String? = null
     private var pendingDeepExplorationRequest = false
 
     private val cccdUuid: UUID =
@@ -317,10 +319,7 @@ class MainActivity : ComponentActivity() {
         bluetoothAdapter = getSystemService(BluetoothManager::class.java)?.adapter
         buildScreen()
         appendLog("Aplicativo iniciado. Diagnóstico BLE local.")
-        appendLog(
-            "Payloads proprietários permanecem bloqueados. A hora do Android é enviada automaticamente uma vez por sessão, " +
-                "somente se o serviço CTS padrão 0x1805/0x2A2B anunciar a propriedade WRITE."
-        )
+        appendLog("Modo BLE somente leitura ativo: nenhuma característica recebe escrita; somente CCCD padrão é usado para subscrições.")
         if (reconnectPolicy.isEnabled) {
             appendLog("Reconexão automática restaurada para a identidade GT3 MAX configurada localmente.")
         }
@@ -417,17 +416,12 @@ class MainActivity : ComponentActivity() {
         connectionCard.addView(deviceBatteryView)
 
         deviceTimeSyncView = TextView(this).apply {
-            text = "Hora do relógio: aguardando conexão BLE"
+            text = "Sincronização do relógio desativada. O aplicativo opera em modo BLE somente leitura."
             textSize = 13f
             setTextColor(0xFF9FB4CF.toInt())
             setPadding(0, 0, 0, dp(12))
         }
         connectionCard.addView(deviceTimeSyncView)
-        clockSyncButton = makeButton("Sincronizar hora") { requestClockSync() }.apply { isEnabled = false }
-        connectionCard.addView(clockSyncButton, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
-        ).apply { bottomMargin = dp(10) })
-        addText(connectionCard, "A sincronização só ocorre após confirmação explícita nesta tela, fingerprint GATT completo do GT3 MAX Call e serviço CTS padrão 0x1805/0x2A2B com WRITE. Nenhuma escrita proprietária é tentada.", 12f, false)
 
         val actions = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -740,22 +734,18 @@ class MainActivity : ComponentActivity() {
 
     private fun persistWearableActionMarker(action: String) {
         val now = System.currentTimeMillis()
-        if (!discoveryLibraryStore.flushPendingWrites()) {
-            appendLog("Marcador temporal não registrado: a fila de gravação BLE não foi concluída.")
-            return
-        }
-        val saved = discoveryLibraryStore.recordDiscovery(
+        val queued = discoveryLibraryStore.recordDiscoveryAsync(
             title = "Ação manual no relógio • " + action,
             detail = "Marcador temporal informado pelo usuário para correlação com leituras e notificações BLE. Não representa uma medição confirmada.",
             nowMillis = now,
             source = "USER_WEARABLE_ACTION",
             confidence = "MARCADOR_TEMPORAL_MANUAL"
         )
-        if (saved) {
-            appendLog("Marcador temporal registrado: " + action + " • " +
+        if (queued) {
+            appendLog("Marcador temporal enfileirado: " + action + " • " +
                 SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault()).format(Date(now)))
         } else {
-            appendLog("Marcador temporal não foi salvo: biblioteca indisponível, corrompida ou com schema incompatível.")
+            appendLog("Marcador temporal não enfileirado: fila de persistência indisponível.")
         }
     }
 
@@ -1464,20 +1454,12 @@ class MainActivity : ComponentActivity() {
         isGattConnected = false
         invalidatedGattOperationKeys.clear()
         invalidatedCccdCharacteristicKeys.clear()
-        clockSyncAttemptedForSession = false
-        pendingCurrentTimeWriteKey = null
-        if (::deviceTimeSyncView.isInitialized) {
-            deviceTimeSyncView.text = "Hora do relógio: aguardando descoberta dos serviços GATT"
-        }
         cancelConnectionTimeout()
         cancelGattServiceDiscoveryTimeout()
         lastConnectedDeviceName = safeDeviceName(device) ?: "Dispositivo sem nome"
         lastConnectedDeviceAddress = safeDeviceAddress(device)
         // A new BluetoothGatt instance is a new CTS attempt scope, even if the old
         // connection ended without delivering its final disconnect callback.
-        clockSyncAttemptedForSession = false
-        pendingCurrentTimeWriteKey = null
-        if (::clockSyncButton.isInitialized) clockSyncButton.isEnabled = false
         resetGattOperationQueue()
         pendingNotifications.clear()
         activeNotifications.clear()
@@ -1652,9 +1634,6 @@ class MainActivity : ComponentActivity() {
                 automaticNotificationKeys.clear()
                 pendingAutomaticUnsubscribeKeys.clear()
                 queuedAutomaticUnsubscribeKeys.clear()
-                pendingCurrentTimeWriteKey = null
-                clockSyncAttemptedForSession = false
-                deviceTimeSyncView.text = "Hora do relógio: sessão GATT encerrada antes da confirmação."
                 if (bluetoothGatt === gatt) bluetoothGatt = null
                 updateStatus("Falha na conexão GATT. Status: " + status)
                 appendLog("Conexão GATT falhou; estado e fila foram limpos.")
@@ -1663,6 +1642,7 @@ class MainActivity : ComponentActivity() {
                 runCatching { gatt.close() }
                 if (reconnectPolicy.isEnabled) scheduleAutoReconnect("Falha na conexão GATT: " + status)
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                recordPendingGattDiscoveryInterruption("Desconexão espontânea antes do callback onServicesDiscovered.")
                 isGattDisconnecting = false
                 isGattConnected = false
                 stopTelemetryWatchdog()
@@ -1671,10 +1651,6 @@ class MainActivity : ComponentActivity() {
                 updateGattProgressUi()
                 cancelConnectionTimeout()
                 deviceBatteryView.text = "Bateria do relógio: sem sessão BLE ativa"
-                pendingCurrentTimeWriteKey = null
-                clockSyncAttemptedForSession = false
-                deviceTimeSyncView.text = "Hora do relógio: sem sessão BLE ativa"
-                if (::clockSyncButton.isInitialized) clockSyncButton.isEnabled = false
                 updateStatus("Relógio desconectado.")
                 appendLog("Conexão GATT encerrada.")
                 finishAutomaticCaptureSession("Conexão BLE encerrada")
@@ -1725,8 +1701,6 @@ class MainActivity : ComponentActivity() {
             automaticNotificationKeys.clear()
             pendingAutomaticUnsubscribeKeys.clear()
             queuedAutomaticUnsubscribeKeys.clear()
-            pendingCurrentTimeWriteKey = null
-            clockSyncAttemptedForSession = false
             automaticGattProbeStartedForConnection = false
             nusFrameDecoder.reset()
             passiveBleObservationTracker.resetSession()
@@ -1774,7 +1748,6 @@ class MainActivity : ComponentActivity() {
                 runSafeGattExploration(gatt)
                 inspectGt3MaxProfileAndSubscribe(gatt)
                 maybeStartAutomaticGattProbe(gatt)
-                updateClockSyncAvailability(gatt)
                 updateStatus("Conectado. Serviços encontrados: " + gatt.services.size)
                 if (pendingDeepExplorationRequest) {
                     pendingDeepExplorationRequest = false
@@ -1841,33 +1814,6 @@ class MainActivity : ComponentActivity() {
                 )
             ) return
             handleNotification(characteristic.service.uuid.toString(), characteristic.uuid.toString(), value)
-        }
-
-        override fun onCharacteristicWrite(
-            gatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic,
-            status: Int
-        ) {
-            val key = characteristic.service.uuid.toString() + "/" + characteristic.uuid.toString()
-            val operationKey = gattOperationKey(
-                characteristic.service.uuid.toString(), characteristic.uuid.toString(), "WRITE"
-            )
-            if (!acceptsGattOperationCallback(gatt, operationKey) || pendingCurrentTimeWriteKey != key) return
-
-            pendingCurrentTimeWriteKey = null
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                deviceTimeSyncView.text =
-                    "Hora enviada pelo CTS; o GATT confirmou a escrita. O visor/RTC do relógio ainda não foi verificado."
-                appendLog(
-                    "Bluetooth CTS 0x2A2B: callback GATT confirmou a escrita da hora local do Android. " +
-                        "A aceitação GATT não comprova que o firmware atualizou o RTC ou o mostrador."
-                )
-            } else {
-                deviceTimeSyncView.text =
-                    "Falha ao gravar a hora pelo CTS (status " + status + ")."
-                appendLog("Bluetooth CTS 0x2A2B: escrita GATT falhou. Status=" + status)
-            }
-            completeGattOperation(gatt, operationKey)
         }
 
         @SuppressLint("MissingPermission")
@@ -2212,7 +2158,7 @@ class MainActivity : ComponentActivity() {
             .show()
     }
 
-    private fun ensureAutomaticCaptureSession(): Boolean {
+    private fun ensureAutomaticCaptureSession(onReady: (Boolean) -> Unit) {
         val now = System.currentTimeMillis()
         val active = discoveryLibraryStore.activeSession(now)
         if (active != null) {
@@ -2226,40 +2172,53 @@ class MainActivity : ComponentActivity() {
                 "Sessão de captura manual existente será reutilizada sem assumir sua propriedade. " +
                     "Ao pausar a coleta automática, o teste manual não será encerrado."
             )
-            return true
+            onReady(true)
+            return
         }
 
         automaticGattDiscoveryPrefs.edit { remove(KEY_AUTOMATIC_SESSION_ID) }
-        if (!discoveryLibraryStore.startTestSession(AUTOMATIC_GATT_CAPTURE_SECONDS, now)) {
-            appendLog(
-                "Testes automáticos bloqueados: a biblioteca local não aceitou iniciar a sessão. " +
-                    "Conteúdo corrompido ou schema futuro permanece preservado."
-            )
-            return false
+        val accepted = discoveryLibraryStore.startTestSessionAsync(
+            AUTOMATIC_GATT_CAPTURE_SECONDS,
+            now
+        ) { started ->
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                if (!started) {
+                    appendLog(
+                        "Testes automáticos bloqueados: a biblioteca local não aceitou iniciar a sessão. " +
+                            "Conteúdo corrompido ou schema futuro permanece preservado."
+                    )
+                    onReady(false)
+                    return@runOnUiThread
+                }
+                val created = discoveryLibraryStore.activeSession(System.currentTimeMillis())
+                if (created == null) {
+                    appendLog("Testes automáticos bloqueados: a sessão não foi confirmada no armazenamento local.")
+                    onReady(false)
+                    return@runOnUiThread
+                }
+                sessionManager.start(created.id, created.startedAtMillis)
+                startTelemetryWatchdog()
+                automaticGattDiscoveryPrefs.edit {
+                    putString(KEY_AUTOMATIC_SESSION_ID, created.id)
+                    putBoolean(KEY_AUTOMATIC_SESSION_OWNED, true)
+                }
+                discoveryLibraryStore.recordDiscoveryAsync(
+                    title = "Captura automática GATT iniciada",
+                    detail = "Fingerprint completo GT3 MAX Call. Sessão local de até 10 minutos; somente READ e CCCD padrão.",
+                    nowMillis = System.currentTimeMillis(),
+                    source = "AUTO_GATT_PROBE",
+                    confidence = "CONSENTIMENTO_LOCAL"
+                )
+                appendLog("Sessão automática de captura iniciada por até 10 minutos.")
+                updatePhoneClock()
+                onReady(true)
+            }
         }
-
-        val created = discoveryLibraryStore.activeSession(now)
-        if (created == null) {
-            appendLog("Testes automáticos bloqueados: a sessão não foi confirmada no armazenamento local.")
-            return false
+        if (!accepted) {
+            appendLog("Testes automáticos bloqueados: fila de persistência indisponível.")
+            onReady(false)
         }
-
-        sessionManager.start(created.id, now)
-        startTelemetryWatchdog()
-        automaticGattDiscoveryPrefs.edit {
-            putString(KEY_AUTOMATIC_SESSION_ID, created.id)
-            putBoolean(KEY_AUTOMATIC_SESSION_OWNED, true)
-        }
-        discoveryLibraryStore.recordDiscoveryAsync(
-            title = "Captura automática GATT iniciada",
-            detail = "Fingerprint completo GT3 MAX Call. Sessão local de até 10 minutos; somente READ e CCCD padrão.",
-            nowMillis = now,
-            source = "AUTO_GATT_PROBE",
-            confidence = "CONSENTIMENTO_LOCAL"
-        )
-        appendLog("Sessão automática de captura iniciada por até 10 minutos.")
-        updatePhoneClock()
-        return true
     }
 
     private fun finishAutomaticCaptureSession(reason: String) {
@@ -2276,7 +2235,12 @@ class MainActivity : ComponentActivity() {
             )
         ) {
             val finishedAt = System.currentTimeMillis()
-            discoveryLibraryStore.finishTestSession(finishedAt, reason)
+            val queued = discoveryLibraryStore.finishTestSessionAsync(finishedAt, reason) { saved ->
+                if (!saved) runOnUiThread {
+                    appendLog("Sessão automática: não foi possível persistir o encerramento.")
+                }
+            }
+            if (!queued) appendLog("Sessão automática: fila de persistência indisponível para finalizar.")
             sessionManager.finalize(SessionEndReason.COMPLETED, finishedAt)
             appendLog("Sessão automática de captura finalizada: " + reason)
         } else if (active?.id == ownedSessionId) {
@@ -2318,50 +2282,53 @@ class MainActivity : ComponentActivity() {
             )
             return
         }
-        if (!shouldStart || !ensureAutomaticCaptureSession()) return
+        if (!shouldStart) return
 
-        automaticGattProbeStartedForConnection = true
-        deepExplorationAttempted.clear()
-        val inventory = gatt.services.map { service ->
-            GattServiceRecord(
-                uuid = service.uuid.toString(),
-                characteristics = service.characteristics.map { characteristic ->
-                    val properties = linkedSetOf<String>()
-                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_READ != 0) properties.add("READ")
-                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0) properties.add("NOTIFY")
-                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0) properties.add("INDICATE")
-                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE != 0) properties.add("WRITE")
-                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0) properties.add("WRITE_NO_RESPONSE")
-                    GattCharacteristicRecord(
-                        uuid = characteristic.uuid.toString(),
-                        properties = properties,
-                        descriptorUuids = characteristic.descriptors.map { it.uuid.toString() }.toSet(),
-                        descriptorInstances = characteristic.descriptors
-                            .groupBy { it.uuid.toString() }
-                            .flatMap { (uuid, descriptors) ->
-                                descriptors.mapIndexed { index, _ ->
-                                    com.luizmarquesarruda.relogio20.device.discovery.GattDescriptorRecord(uuid, index)
+        ensureAutomaticCaptureSession { sessionReady ->
+            if (!sessionReady || bluetoothGatt !== gatt || !isGattConnected || isGattDisconnecting) return@ensureAutomaticCaptureSession
+            automaticGattProbeStartedForConnection = true
+            deepExplorationAttempted.clear()
+            val inventory = gatt.services.map { service ->
+                GattServiceRecord(
+                    uuid = service.uuid.toString(),
+                    characteristics = service.characteristics.map { characteristic ->
+                        val properties = linkedSetOf<String>()
+                        if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_READ != 0) properties.add("READ")
+                        if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0) properties.add("NOTIFY")
+                        if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0) properties.add("INDICATE")
+                        if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE != 0) properties.add("WRITE")
+                        if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0) properties.add("WRITE_NO_RESPONSE")
+                        GattCharacteristicRecord(
+                            uuid = characteristic.uuid.toString(),
+                            properties = properties,
+                            descriptorUuids = characteristic.descriptors.map { it.uuid.toString() }.toSet(),
+                            descriptorInstances = characteristic.descriptors
+                                .groupBy { it.uuid.toString() }
+                                .flatMap { (uuid, descriptors) ->
+                                    descriptors.mapIndexed { index, _ ->
+                                        com.luizmarquesarruda.relogio20.device.discovery.GattDescriptorRecord(uuid, index)
+                                    }
                                 }
-                            }
-                    )
-                }
+                        )
+                    }
+                )
+            }
+            val operationCount = SafeGattExplorationPlan.buildDeep(
+                inventory, ExplorationPolicy.forObservedInventory(inventory)
+            ).size
+            discoveryLibraryStore.recordDiscoveryAsync(
+                title = "Varredura automática de sensores iniciada",
+                detail = operationCount.toString() + " operações GATT elegíveis. Escritas de características, NUS RX e DFU/OTA permanecem bloqueados.",
+                nowMillis = System.currentTimeMillis(),
+                source = "AUTO_GATT_PROBE",
+                confidence = "FINGERPRINT_COMPLETO"
             )
+            appendLog(
+                "Fingerprint completo confirmado. Iniciando exploração automática de " +
+                    operationCount + " operações READ/CCCD compatíveis."
+            )
+            runDeepGattExploration(gatt, automatic = true)
         }
-        val operationCount = SafeGattExplorationPlan.buildDeep(
-            inventory, ExplorationPolicy.forObservedInventory(inventory)
-        ).size
-        discoveryLibraryStore.recordDiscoveryAsync(
-            title = "Varredura automática de sensores iniciada",
-            detail = operationCount.toString() + " operações GATT elegíveis. Escritas de características, NUS RX e DFU/OTA permanecem bloqueados.",
-            nowMillis = System.currentTimeMillis(),
-            source = "AUTO_GATT_PROBE",
-            confidence = "FINGERPRINT_COMPLETO"
-        )
-        appendLog(
-            "Fingerprint completo confirmado. Iniciando exploração automática de " +
-                operationCount + " operações READ/CCCD compatíveis."
-        )
-        runDeepGattExploration(gatt, automatic = true)
     }
 
     @SuppressLint("MissingPermission")
@@ -2742,213 +2709,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
-    @SuppressLint("MissingPermission")
-    private fun updateClockSyncAvailability(gatt: BluetoothGatt) {
-        if (!::clockSyncButton.isInitialized || !::deviceTimeSyncView.isInitialized) return
-        if (bluetoothGatt !== gatt || !isGattConnected || isGattDisconnecting) {
-            clockSyncButton.isEnabled = false
-            deviceTimeSyncView.text = "Hora do relógio: aguardando uma sessão BLE ativa."
-            return
-        }
-
-        val observedServices = gatt.services.associate { service ->
-            service.uuid to service.characteristics.map { it.uuid }.toSet()
-        }
-        val deviceProfileConfirmed = Gt3MaxCallDeviceProfile.evaluate(
-            lastConnectedDeviceName,
-            observedServices
-        ) == Gt3MaxCallDeviceProfile.Match.CAPTURED_GATT_FINGERPRINT
-        val service = gatt.getService(UUID.fromString(BluetoothCurrentTimePayload.SERVICE_UUID))
-        val characteristic = service?.getCharacteristic(
-            UUID.fromString(BluetoothCurrentTimePayload.CURRENT_TIME_UUID)
-        )
-        val capability = BluetoothCurrentTimeCapabilityPolicy.evaluate(
-            connected = true,
-            servicePresent = service != null,
-            characteristicPresent = characteristic != null,
-            supportsWrite = characteristic?.let {
-                it.properties and BluetoothGattCharacteristic.PROPERTY_WRITE != 0
-            } == true,
-            deviceProfileConfirmed = deviceProfileConfirmed
-        )
-        when (capability) {
-            BluetoothCurrentTimeCapabilityPolicy.Capability.DISCONNECTED -> {
-                clockSyncButton.isEnabled = false
-                deviceTimeSyncView.text = "Hora do relógio: aguardando uma sessão BLE ativa."
-            }
-            BluetoothCurrentTimeCapabilityPolicy.Capability.SERVICE_MISSING -> {
-                clockSyncButton.isEnabled = false
-                deviceTimeSyncView.text =
-                    "Hora não sincronizada: CTS padrão (0x1805) ausente. Investigação passiva mantida; nenhum comando alternativo será enviado."
-                appendLog("CTS 0x1805 ausente nesta sessão. Sincronização indisponível; nenhum protocolo proprietário foi tentado.")
-            }
-            BluetoothCurrentTimeCapabilityPolicy.Capability.CHARACTERISTIC_MISSING -> {
-                clockSyncButton.isEnabled = false
-                deviceTimeSyncView.text =
-                    "CTS 0x1805 anunciado, mas Current Time (0x2A2B) ausente."
-                appendLog("CTS anunciado sem 0x2A2B; sincronização manual indisponível.")
-            }
-            BluetoothCurrentTimeCapabilityPolicy.Capability.WRITE_UNSUPPORTED -> {
-                clockSyncButton.isEnabled = false
-                deviceTimeSyncView.text =
-                    "CTS encontrado, mas 0x2A2B não anuncia WRITE. Sincronização indisponível."
-                appendLog("CTS 0x1805/0x2A2B identificado sem WRITE. Nenhuma escrita será tentada.")
-            }
-            BluetoothCurrentTimeCapabilityPolicy.Capability.DEVICE_PROFILE_UNCONFIRMED -> {
-                clockSyncButton.isEnabled = false
-                deviceTimeSyncView.text = "CTS anunciado, mas o fingerprint GATT do GT3 MAX Call não foi confirmado. Nenhuma escrita será realizada."
-                appendLog("CTS bloqueado: o dispositivo conectado não corresponde ao fingerprint GATT completo do GT3 MAX Call.")
-            }
-            BluetoothCurrentTimeCapabilityPolicy.Capability.READY -> {
-                clockSyncButton.isEnabled = !clockSyncAttemptedForSession
-                if (clockSyncAttemptedForSession) {
-                    deviceTimeSyncView.text = "CTS disponível; sincronização já tentada nesta conexão."
-                } else {
-                    deviceTimeSyncView.text =
-                        "CTS compatível encontrado. Toque em Sincronizar hora para autorizar a escrita."
-                }
-            }
-        }
-    }
-
-    private fun requestClockSync() {
-        val gatt = bluetoothGatt
-        if (gatt == null || !isGattConnected || isGattDisconnecting ||
-            !::clockSyncButton.isInitialized || !clockSyncButton.isEnabled
-        ) {
-            appendLog("Sincronização CTS não iniciada: sessão não está pronta ou já foi tentada.")
-            return
-        }
-        AlertDialog.Builder(this)
-            .setTitle("Sincronizar hora do relógio")
-            .setMessage(
-                "Autoriza enviar a data e hora local deste telefone ao serviço Bluetooth padrão " +
-                    "Current Time (0x1805/0x2A2B) do GT3 MAX Call? Nenhum comando proprietário será enviado."
-            )
-            .setNegativeButton("Cancelar", null)
-            .setPositiveButton("Autorizar e sincronizar") { _, _ ->
-                syncClockUsingCurrentTimeService(gatt, explicitUserConsent = true)
-            }
-            .show()
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun syncClockUsingCurrentTimeService(
-        gatt: BluetoothGatt,
-        explicitUserConsent: Boolean
-    ) {
-        if (bluetoothGatt !== gatt || !isGattConnected || isGattDisconnecting) {
-            if (::clockSyncButton.isInitialized) clockSyncButton.isEnabled = false
-            deviceTimeSyncView.text = "Sincronização cancelada: a sessão BLE não está mais ativa."
-            appendLog("Escrita CTS não iniciada: a sessão GATT não é mais a conexão ativa.")
-            return
-        }
-        if (clockSyncAttemptedForSession) {
-            deviceTimeSyncView.text = "Sincronização CTS já tentada nesta conexão. Reconecte para uma nova tentativa."
-            return
-        }
-
-        val serviceUuid = UUID.fromString(BluetoothCurrentTimePayload.SERVICE_UUID)
-        val characteristicUuid = UUID.fromString(BluetoothCurrentTimePayload.CURRENT_TIME_UUID)
-        val service = gatt.getService(serviceUuid)
-        if (service == null) {
-            deviceTimeSyncView.text =
-                "Hora não sincronizada: o relógio não anunciou o serviço CTS padrão (0x1805)."
-            appendLog(
-                "Sincronização de hora indisponível: CTS 0x1805 ausente. " +
-                    "Nenhum comando proprietário foi enviado."
-            )
-            return
-        }
-
-        val characteristic = service.getCharacteristic(characteristicUuid)
-        if (characteristic == null) {
-            deviceTimeSyncView.text =
-                "CTS encontrado, mas a característica Current Time (0x2A2B) não foi anunciada."
-            appendLog("CTS 0x1805 sem a característica obrigatória Current Time 0x2A2B.")
-            return
-        }
-        if (!AccessPolicy.DEFAULT.canWrite(
-                service.uuid, characteristic.uuid, explicitUserConsent = explicitUserConsent
-            )
-        ) {
-            deviceTimeSyncView.text = "Escrita bloqueada pela política GATT."
-            appendLog("Política GATT bloqueou escrita fora do CTS SIG explicitamente acionado.")
-            return
-        }
-        if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE == 0) {
-            deviceTimeSyncView.text =
-                "CTS encontrado, mas 0x2A2B não anuncia WRITE. Sincronização não iniciada."
-            appendLog(
-                "CTS 0x1805/0x2A2B sem propriedade GATT WRITE. " +
-                    "A sincronização manual foi bloqueada sem tentar outro canal."
-            )
-            return
-        }
-
-        clockSyncAttemptedForSession = true
-        if (::clockSyncButton.isInitialized) clockSyncButton.isEnabled = false
-        val localDateTime = LocalDateTime.now()
-        val payload = BluetoothCurrentTimePayload.encode(localDateTime)
-        val key = service.uuid.toString() + "/" + characteristic.uuid.toString()
-        pendingCurrentTimeWriteKey = key
-        deviceTimeSyncView.text =
-            "Sincronizando com a hora local do celular: " + localDateTime.toString()
-        appendLog(
-            "CTS compatível encontrado. Solicitada sincronização com a hora local do Android: " +
-                localDateTime.toString() + ". A operação usa somente o serviço padrão 0x1805/0x2A2B."
-        )
-
-        enqueueGattOperation(
-            gattOperationKey(service.uuid.toString(), characteristic.uuid.toString(), "WRITE"),
-            onTimeout = {
-                pendingCurrentTimeWriteKey = null
-                deviceTimeSyncView.text = "Sincronização CTS expirou; o relógio não foi confirmado."
-            }
-        ) {
-            if (bluetoothGatt !== gatt || !isGattConnected || isGattDisconnecting) {
-                pendingCurrentTimeWriteKey = null
-                deviceTimeSyncView.text = "Sincronização cancelada: sessão GATT não está ativa."
-                appendLog("Escrita CTS cancelada antes do início: sessão GATT mudou ou foi encerrada.")
-                false
-            } else {
-                val started = if (Build.VERSION.SDK_INT >= 33) {
-                    writeCurrentTimeApi33(gatt, characteristic, payload)
-                } else {
-                    @Suppress("DEPRECATION")
-                    run {
-                        characteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-                        characteristic.value = payload
-                        gatt.writeCharacteristic(characteristic)
-                    }
-                }
-                if (started) {
-                    appendLog("Escrita CTS iniciada; aguardando callback onCharacteristicWrite.")
-                    true
-                } else {
-                    pendingCurrentTimeWriteKey = null
-                    deviceTimeSyncView.text =
-                        "O Android recusou iniciar a escrita de hora pelo CTS."
-                    appendLog("Android recusou iniciar a escrita GATT de Current Time (0x2A2B).")
-                    false
-                }
-            }
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    @SuppressLint("MissingPermission")
-    private fun writeCurrentTimeApi33(
-        gatt: BluetoothGatt,
-        characteristic: BluetoothGattCharacteristic,
-        value: ByteArray
-    ): Boolean =
-        gatt.writeCharacteristic(
-            characteristic,
-            value,
-            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-        ) == BluetoothStatusCodes.SUCCESS
 
     @SuppressLint("MissingPermission")
     private fun renderGattServices(gatt: BluetoothGatt) {
@@ -3519,52 +3279,70 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun exportDiagnosticReport() {
-        val historyFlushed = discoveryLibraryStore.flushPendingWrites()
-        if (!historyFlushed) {
-            appendLog("A exportação seguirá com o último snapshot confirmado; há gravações BLE pendentes.")
-        }
+        if (diagnosticExportInProgress) return
+        diagnosticExportInProgress = true
         val now = Date()
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(now)
         val generatedAt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z", Locale.US).format(now)
         val version = runCatching {
             packageManager.getPackageInfo(packageName, 0).versionName ?: "desconhecida"
         }.getOrDefault("desconhecida")
-        val discoveryEntries = listOf(
-            "droppedCount=" + droppedTelemetryCount.get(),
-            "discoveryStorageWriter=" + discoveryLibraryStore.writeHealthSummary()
-        ) +
-            when (val stored = discoveryLibraryStore.read()) {
-            DiscoveryLibraryReadResult.Empty -> listOf("Nenhuma descoberta persistida até esta exportação.")
-            is DiscoveryLibraryReadResult.Available -> stored.snapshot.records.takeLast(1_000).map { record ->
-                val occurredAt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
-                    .format(Date(record.occurredAtMillis))
-                buildString {
-                    append(occurredAt).append(" | ").append(record.kind).append(" | ")
-                    append(record.title).append(" | ").append(record.detail)
-                    append(" | origem=").append(record.source).append(" | confiança=").append(record.confidence)
-                    record.serviceUuid?.let { append(" | serviço=").append(it) }
-                    record.characteristicUuid?.let { append(" | característica=").append(it) }
-                    record.payloadHex?.let { append(" | HEX=").append(it) }
+        val eventCount = logLines.size
+
+        lifecycleScope.launch {
+            try {
+                val report = withContext(Dispatchers.IO) {
+                    val historyFlushed = discoveryLibraryStore.flushPendingWrites()
+                    if (!historyFlushed) {
+                        appendLog("Exportação: fila de persistência não foi totalmente concluída; usando o snapshot confirmado.")
+                    }
+                    val discoveryEntries = listOf(
+                        "droppedCount=" + droppedTelemetryCount.get(),
+                        "discoveryStorageWriter=" + discoveryLibraryStore.writeHealthSummary()
+                    ) + when (val stored = discoveryLibraryStore.read()) {
+                        DiscoveryLibraryReadResult.Empty -> emptyList()
+                        is DiscoveryLibraryReadResult.Available ->
+                            stored.snapshot.records.takeLast(1_000).map { record ->
+                                val occurredAt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+                                    .format(Date(record.occurredAtMillis))
+                                val payloadBytes = record.payloadHex
+                                    ?.replace("-", "")
+                                    ?.length
+                                    ?.div(2) ?: 0
+                                buildString {
+                                    append(occurredAt).append(" | ").append(record.kind)
+                                    append(" | bytes=").append(payloadBytes)
+                                    append(" | origem=").append(record.source)
+                                    append(" | confianca=").append(record.confidence)
+                                    record.serviceUuid?.let { append(" | servico=").append(it) }
+                                    record.characteristicUuid?.let { append(" | caracteristica=").append(it) }
+                                }
+                            }
+                        DiscoveryLibraryReadResult.Corrupt ->
+                            listOf("Biblioteca local corrompida; conteúdo preservado e não sobrescrito.")
+                        is DiscoveryLibraryReadResult.UnsupportedSchema ->
+                            listOf("Biblioteca local usa schema futuro; conteúdo preservado e não sobrescrito.")
+                    }
+                    BleDiagnosticReport.build(
+                        appVersion = version,
+                        androidVersion = Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")",
+                        connectionState = "omitido por privacidade",
+                        deviceName = null,
+                        deviceAddress = null,
+                        generatedAt = generatedAt,
+                        logLines = List(eventCount) { "" },
+                        discoveryEntries = discoveryEntries
+                    )
                 }
+                pendingDiagnosticReport = report
+                diagnosticExportLauncher.launch("relogio2_diagnostico_GT3MAX_" + timestamp + ".txt")
+                appendLog("Solicitada exportação TXT com metadados não sensíveis. O Android abrirá o seletor para escolher onde salvar.")
+            } catch (error: Exception) {
+                appendLog("Falha ao preparar relatório TXT: " + (error.message ?: "erro desconhecido"))
+            } finally {
+                diagnosticExportInProgress = false
             }
-            DiscoveryLibraryReadResult.Corrupt -> listOf("Biblioteca local corrompida; conteúdo preservado e não sobrescrito.")
-            is DiscoveryLibraryReadResult.UnsupportedSchema -> listOf(
-                "Biblioteca local usa schema futuro (" + stored.version + "); conteúdo preservado e não sobrescrito."
-            )
         }
-        val report = BleDiagnosticReport.build(
-            appVersion = version,
-            androidVersion = Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")",
-            connectionState = statusView.text?.toString() ?: "indisponível",
-            deviceName = lastConnectedDeviceName,
-            deviceAddress = lastConnectedDeviceAddress,
-            generatedAt = generatedAt,
-            logLines = logLines.toList(),
-            discoveryEntries = discoveryEntries
-        )
-        pendingDiagnosticReport = report
-        diagnosticExportLauncher.launch("relogio2_diagnostico_GT3MAX_" + timestamp + ".txt")
-        appendLog("Solicitada exportação TXT. O Android abrirá o seletor para escolher onde salvar.")
     }
 
     private fun appendLog(value: String) {
@@ -3629,8 +3407,7 @@ class MainActivity : ComponentActivity() {
 
     private fun recordPendingGattDiscoveryInterruption(reason: String) {
         if (serviceDiscoveryTimeoutTask == null || bluetoothGatt == null) return
-        val historyFlushed = discoveryLibraryStore.flushPendingWrites()
-        discoveryLibraryStore.recordDiscovery(
+        val queued = discoveryLibraryStore.recordDiscoveryAsync(
             title = "Descoberta GATT interrompida antes do callback",
             detail = reason + " O inventário de uma conexão anterior não representa esta tentativa.",
             nowMillis = System.currentTimeMillis(),
@@ -3638,7 +3415,7 @@ class MainActivity : ComponentActivity() {
             confidence = "INTERRUPTIDA"
         )
         appendLog("Descoberta GATT interrompida: " + reason +
-            if (historyFlushed) "" else " • gravações BLE anteriores ainda pendentes")
+            if (queued) " • evento enfileirado" else " • fila de persistência indisponível")
     }
 
     @SuppressLint("MissingPermission")
@@ -3808,9 +3585,6 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         gattLifecycleGeneration += 1
         stopTelemetryWatchdog()
-        if (!discoveryLibraryStore.flushPendingWrites()) {
-            appendLog("Encerramento com gravações BLE ainda pendentes; o último lote pode não entrar no histórico.")
-        }
         isActivityResumed = false
         cancelReconnectTask()
         cancelConnectionTimeout()
