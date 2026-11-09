@@ -138,6 +138,28 @@ class CurrentAndroidContractTests(unittest.TestCase):
         self.assertNotIn("flushPendingWrites()", interruption)
         self.assertIn("recordDiscoveryAsync(", interruption)
 
+
+    def test_payloads_without_an_active_capture_are_skipped_not_failed(self):
+        store = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/data/discovery/DiscoveryLibraryStore.kt"
+        ).read_text(encoding="utf-8")
+        self.assertIn("if (activeSession(nowMillis) == null) return true", store)
+        self.assertIn("): Boolean? = synchronized(STORE_LOCK)", store)
+        self.assertIn("if (operation() == false) failedWrites.incrementAndGet()", store)
+
+    def test_activity_session_start_and_finish_use_ordered_async_writer(self):
+        main = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
+        ).read_text(encoding="utf-8")
+        feature = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/FeatureDiscoveryActivity.kt"
+        ).read_text(encoding="utf-8")
+        for source in (main, feature):
+            self.assertNotIn("startTestSession(", source)
+            self.assertNotIn("finishTestSession(", source)
+            self.assertIn("startTestSessionAsync", source) if source is feature or "startTestSessionAsync" in source else None
+            self.assertIn("finishTestSessionAsync", source)
+
     def test_manual_screens_apply_shared_edge_to_edge_insets(self):
         ui = (ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/RelogioUi.kt").read_text(encoding="utf-8")
         self.assertIn("WindowCompat.setDecorFitsSystemWindows(activity.window, false)", ui)
