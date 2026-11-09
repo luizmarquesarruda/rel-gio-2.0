@@ -15,7 +15,6 @@ import com.luizmarquesarruda.relogio20.ui.formatters.StepsCountFormatter
 import com.luizmarquesarruda.relogio20.ui.RelogioUi
 import com.luizmarquesarruda.relogio20.data.preferences.AppPreferences
 import com.luizmarquesarruda.relogio20.device.ble.gatt.SerialGattOperationQueue
-import com.luizmarquesarruda.relogio20.device.ble.gatt.AccessPolicy
 import com.luizmarquesarruda.relogio20.device.ble.gatt.GattInventoryLogger
 import com.luizmarquesarruda.relogio20.device.ble.gatt.GattDescriptorInventoryRow
 import com.luizmarquesarruda.relogio20.device.discovery.ExplorationPolicy
