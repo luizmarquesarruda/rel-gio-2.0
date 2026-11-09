@@ -2303,9 +2303,18 @@ class MainActivity : ComponentActivity() {
         }
         if (!shouldStart) return
 
+        // Mark the attempt before the asynchronous session write to prevent duplicate sessions.
+        automaticGattProbeStartedForConnection = true
         ensureAutomaticCaptureSession { sessionReady ->
-            if (!sessionReady || bluetoothGatt !== gatt || !isGattConnected || isGattDisconnecting) return@ensureAutomaticCaptureSession
-            automaticGattProbeStartedForConnection = true
+            if (!sessionReady) {
+                automaticGattProbeStartedForConnection = false
+                return@ensureAutomaticCaptureSession
+            }
+            if (bluetoothGatt !== gatt || !isGattConnected || isGattDisconnecting) {
+                automaticGattProbeStartedForConnection = false
+                finishAutomaticCaptureSession("Conexão encerrada antes da exploração automática.")
+                return@ensureAutomaticCaptureSession
+            }
             deepExplorationAttempted.clear()
             val inventory = gatt.services.map { service ->
                 GattServiceRecord(
