@@ -157,7 +157,7 @@ class CurrentAndroidContractTests(unittest.TestCase):
         for source in (main, feature):
             self.assertNotIn("startTestSession(", source)
             self.assertNotIn("finishTestSession(", source)
-            self.assertIn("startTestSessionAsync", source) if source is feature or "startTestSessionAsync" in source else None
+            self.assertIn("startTestSessionAsync", source)
             self.assertIn("finishTestSessionAsync", source)
 
     def test_manual_screens_apply_shared_edge_to_edge_insets(self):
