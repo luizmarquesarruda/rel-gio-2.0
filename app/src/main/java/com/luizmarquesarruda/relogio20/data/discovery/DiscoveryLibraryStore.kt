@@ -71,7 +71,6 @@ internal class DiscoveryLibraryStore(context: Context) {
         confidence: String = "OBSERVADO"
     ): Boolean {
         if (nowMillis < 0L) return false
-        if (activeSession(nowMillis) == null) return true
         return enqueueWrite {
             recordSessionDiscovery(title, detail, nowMillis, source, confidence)
         }
@@ -89,7 +88,6 @@ internal class DiscoveryLibraryStore(context: Context) {
         nowMillis: Long
     ): Boolean {
         if (nowMillis < 0L) return false
-        if (activeSession(nowMillis) == null) return true
         return enqueueWrite {
             recordPayload(
                 kind, title, detail, source, confidence,
