@@ -69,8 +69,11 @@ internal class DiscoveryLibraryStore(context: Context) {
         nowMillis: Long,
         source: String = "GATT_SESSION",
         confidence: String = "OBSERVADO"
-    ): Boolean = enqueueWrite {
-        recordSessionDiscovery(title, detail, nowMillis, source, confidence)
+    ): Boolean {
+        if (activeSession(nowMillis) == null) return true
+        return enqueueWrite {
+            recordSessionDiscovery(title, detail, nowMillis, source, confidence)
+        }
     }
 
     fun recordPayloadAsync(
@@ -83,11 +86,14 @@ internal class DiscoveryLibraryStore(context: Context) {
         characteristicUuid: String,
         payloadHex: String,
         nowMillis: Long
-    ): Boolean = enqueueWrite {
-        recordPayload(
-            kind, title, detail, source, confidence,
-            serviceUuid, characteristicUuid, payloadHex, nowMillis
-        )
+    ): Boolean {
+        if (activeSession(nowMillis) == null) return true
+        return enqueueWrite {
+            recordPayload(
+                kind, title, detail, source, confidence,
+                serviceUuid, characteristicUuid, payloadHex, nowMillis
+            )
+        }
     }
 
     internal fun flushPendingWrites(timeoutMillis: Long = WRITE_FLUSH_TIMEOUT_MS): Boolean =
@@ -98,10 +104,10 @@ internal class DiscoveryLibraryStore(context: Context) {
             false
         }
 
-    private fun enqueueWrite(operation: () -> Boolean): Boolean = try {
+    private fun enqueueWrite(operation: () -> Boolean?): Boolean = try {
         writeExecutor.execute {
             try {
-                if (!operation()) failedWrites.incrementAndGet()
+                if (operation() == false) failedWrites.incrementAndGet()
             } catch (error: Exception) {
                 failedWrites.incrementAndGet()
                 lastWriteFailure.set(error.javaClass.simpleName.take(80))
@@ -122,7 +128,21 @@ internal class DiscoveryLibraryStore(context: Context) {
 
     fun startTestSession(durationSeconds: Int, nowMillis: Long): Boolean {
         if (!flushPendingWrites()) return false
-        return synchronized(STORE_LOCK) {
+        return startTestSessionInternal(durationSeconds, nowMillis)
+    }
+
+    fun startTestSessionAsync(
+        durationSeconds: Int,
+        nowMillis: Long,
+        onComplete: (Boolean) -> Unit = {}
+    ): Boolean = enqueueWrite {
+        val result = startTestSessionInternal(durationSeconds, nowMillis)
+        runCatching { onComplete(result) }
+        result
+    }
+
+    private fun startTestSessionInternal(durationSeconds: Int, nowMillis: Long): Boolean =
+        synchronized(STORE_LOCK) {
             if (!DiscoveryTestDuration.isAllowed(durationSeconds) || nowMillis < 0L) {
                 return@synchronized false
             }
@@ -164,17 +184,33 @@ internal class DiscoveryLibraryStore(context: Context) {
                 records = (base.records + startRecord).takeLast(DiscoveryLibraryCodec.MAX_RECORDS)
             ))
         }
-    }
 
     fun finishTestSession(nowMillis: Long, reason: String = "Encerrado pelo usuário"): Boolean {
         if (nowMillis < 0L || !flushPendingWrites()) return false
-        return synchronized(STORE_LOCK) {
+        return finishTestSessionInternal(nowMillis, reason)
+    }
+
+    fun finishTestSessionAsync(
+        nowMillis: Long,
+        reason: String = "Encerrado pelo usuário",
+        onComplete: (Boolean) -> Unit = {}
+    ): Boolean {
+        if (nowMillis < 0L) return false
+        return enqueueWrite {
+            val result = finishTestSessionInternal(nowMillis, reason)
+            runCatching { onComplete(result) }
+            result
+        }
+    }
+
+    private fun finishTestSessionInternal(nowMillis: Long, reason: String): Boolean =
+        synchronized(STORE_LOCK) {
+            if (nowMillis < 0L) return@synchronized false
             val current = writableSnapshot() ?: return@synchronized false
             val session = current.activeSession ?: return@synchronized false
             if (nowMillis < session.startedAtMillis) return@synchronized false
             persist(finishSnapshot(current, nowMillis, reason))
         }
-    }
 
     fun activeSession(nowMillis: Long): DiscoveryTestSession? {
         if (nowMillis < 0L) return null
@@ -264,14 +300,17 @@ internal class DiscoveryLibraryStore(context: Context) {
         nowMillis: Long,
         source: String = "GATT_SESSION",
         confidence: String = "OBSERVADO"
-    ): Boolean = synchronized(STORE_LOCK) {
+    ): Boolean? = synchronized(STORE_LOCK) {
         if (nowMillis < 0L) return@synchronized false
         val current = writableSnapshot() ?: return@synchronized false
-        val session = current.activeSession ?: return@synchronized false
-        if (nowMillis < session.startedAtMillis) return@synchronized false
+        val session = current.activeSession ?: return@synchronized null
+        if (nowMillis < session.startedAtMillis) return@synchronized null
         if (!session.isActive(nowMillis)) {
-            persist(finishSnapshot(current, nowMillis, "Tempo de captura concluído"))
-            return@synchronized false
+            return@synchronized if (persist(finishSnapshot(current, nowMillis, "Tempo de captura concluído"))) {
+                null
+            } else {
+                false
+            }
         }
 
         val record = DiscoveryLibraryRecord(
@@ -299,7 +338,7 @@ internal class DiscoveryLibraryStore(context: Context) {
         characteristicUuid: String,
         payloadHex: String,
         nowMillis: Long
-    ): Boolean = synchronized(STORE_LOCK) {
+    ): Boolean? = synchronized(STORE_LOCK) {
         if (nowMillis < 0L ||
             kind != DiscoveryLibraryKind.NOTIFICATION && kind != DiscoveryLibraryKind.GATT_READ ||
             !isBoundedIdentifier(serviceUuid) ||
@@ -307,11 +346,14 @@ internal class DiscoveryLibraryStore(context: Context) {
             !isValidPayloadHex(payloadHex)
         ) return@synchronized false
         val current = writableSnapshot() ?: return@synchronized false
-        val session = current.activeSession ?: return@synchronized false
-        if (nowMillis < session.startedAtMillis) return@synchronized false
+        val session = current.activeSession ?: return@synchronized null
+        if (nowMillis < session.startedAtMillis) return@synchronized null
         if (!session.isActive(nowMillis)) {
-            persist(finishSnapshot(current, nowMillis, "Tempo de captura concluído"))
-            return@synchronized false
+            return@synchronized if (persist(finishSnapshot(current, nowMillis, "Tempo de captura concluído"))) {
+                null
+            } else {
+                false
+            }
         }
         val record = DiscoveryLibraryRecord(
             id = UUID.randomUUID().toString(),
