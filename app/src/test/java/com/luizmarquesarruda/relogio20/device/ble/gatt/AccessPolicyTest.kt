@@ -21,26 +21,31 @@ class AccessPolicyTest {
     }
 
     @Test
-    fun hardBlocklistCannotBeMutatedAtRuntime() {
-        @Suppress("UNCHECKED_CAST")
-        val mutableView = AccessPolicy.HARD_FORBIDDEN as MutableSet<java.util.UUID>
-        assertThrows(UnsupportedOperationException::class.java) {
-            mutableView.add(java.util.UUID.randomUUID())
-        }
+    fun defaultPolicyHasNoAllowedCharacteristicWrites() {
+        assertTrue(AccessPolicy.DEFAULT.allowWrite.isEmpty())
     }
 
     @Test
-    fun onlyExplicitlyConfirmedSigCurrentTimeWriteIsPermitted() {
+    fun currentTimeCharacteristicWriteIsRejectedEvenWithExplicitConsent() {
         val policy = AccessPolicy.DEFAULT
         assertFalse(policy.canWrite(
             AccessPolicy.CURRENT_TIME_SERVICE,
             AccessPolicy.CURRENT_TIME_CHARACTERISTIC,
             explicitUserConsent = false
         ))
-        assertTrue(policy.canWrite(
+        assertFalse(policy.canWrite(
             AccessPolicy.CURRENT_TIME_SERVICE,
             AccessPolicy.CURRENT_TIME_CHARACTERISTIC,
             explicitUserConsent = true
         ))
+    }
+
+    @Test
+    fun hardBlocklistCannotBeMutatedAtRuntime() {
+        @Suppress("UNCHECKED_CAST")
+        val mutableView = AccessPolicy.HARD_FORBIDDEN as MutableSet<java.util.UUID>
+        assertThrows(UnsupportedOperationException::class.java) {
+            mutableView.add(java.util.UUID.randomUUID())
+        }
     }
 }
