@@ -160,6 +160,13 @@ class CurrentAndroidContractTests(unittest.TestCase):
             self.assertIn("startTestSessionAsync", source)
             self.assertIn("finishTestSessionAsync", source)
 
+
+    def test_ktlint_gate_requires_successful_gradle_setup(self):
+        workflow = (ROOT / ".github/workflows/android-ci.yml").read_text(encoding="utf-8")
+        self.assertIn("steps.manifest_policy_tests.outcome == 'success'", workflow)
+        self.assertIn("steps.setup_gradle.outcome == 'success'", workflow)
+        self.assertIn("steps.ktlint_baseline_bootstrap.outcome == 'skipped'", workflow)
+
     def test_manual_screens_apply_shared_edge_to_edge_insets(self):
         ui = (ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/RelogioUi.kt").read_text(encoding="utf-8")
         self.assertIn("WindowCompat.setDecorFitsSystemWindows(activity.window, false)", ui)
