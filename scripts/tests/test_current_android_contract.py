@@ -172,6 +172,20 @@ class CurrentAndroidContractTests(unittest.TestCase):
         self.assertIn("steps.setup_gradle.outcome == 'success'", workflow)
         self.assertIn("steps.ktlint_baseline_bootstrap.outcome == 'skipped'", workflow)
 
+
+    def test_automatic_gatt_probe_reserves_single_start_before_async_session_write(self):
+        source = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
+        ).read_text(encoding="utf-8")
+        probe = source.split("private fun maybeStartAutomaticGattProbe", 1)[1].split(
+            "private fun stopAutomaticGattNotifications", 1
+        )[0]
+        self.assertLess(
+            probe.index("automaticGattProbeStartedForConnection = true"),
+            probe.index("ensureAutomaticCaptureSession"),
+        )
+        self.assertIn("finishAutomaticCaptureSession(\"Conexão encerrada antes da exploração automática.\")", probe)
+
     def test_manual_screens_apply_shared_edge_to_edge_insets(self):
         ui = (ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/RelogioUi.kt").read_text(encoding="utf-8")
         self.assertIn("WindowCompat.setDecorFitsSystemWindows(activity.window, false)", ui)
