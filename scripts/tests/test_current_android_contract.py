@@ -90,14 +90,53 @@ class CurrentAndroidContractTests(unittest.TestCase):
                 self.assertIsNotNone(max_sdk)
                 self.assertLessEqual(int(max_sdk), 30)
 
-    def test_cts_clock_write_requires_confirmation_after_gatt_validation(self):
+    def test_all_characteristic_writes_are_forbidden(self):
         source = (
             ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
         ).read_text(encoding="utf-8")
-        self.assertIn('makeButton("Sincronizar hora") { requestClockSync() }', source)
-        self.assertIn('setPositiveButton("Autorizar e sincronizar")', source)
-        self.assertIn("explicitUserConsent = explicitUserConsent", source)
-        self.assertNotIn("Enviando automaticamente a hora do Android", source)
+        policy = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/device/ble/gatt/AccessPolicy.kt"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn("writeCharacteristic(", source)
+        self.assertNotIn('makeButton("Sincronizar hora")', source)
+        self.assertIn("allowWrite: Set<UUID> = emptySet()", policy)
+        self.assertIn("fun canWrite(", policy)
+        self.assertIn("return false", policy)
+
+    def test_spontaneous_disconnect_records_pending_gatt_discovery_interruption(self):
+        source = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
+        ).read_text(encoding="utf-8")
+        disconnected = source.split(
+            "else if (newState == BluetoothProfile.STATE_DISCONNECTED)", 1
+        )[1].split("override fun onServicesDiscovered", 1)[0]
+        self.assertIn("recordPendingGattDiscoveryInterruption", disconnected)
+        self.assertLess(
+            disconnected.index("recordPendingGattDiscoveryInterruption"),
+            disconnected.index("cancelGattServiceDiscoveryTimeout"),
+        )
+
+    def test_diagnostic_export_does_not_block_activity_or_export_raw_logs(self):
+        source = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
+        ).read_text(encoding="utf-8")
+        destroy = source.split("override fun onDestroy()", 1)[1]
+        self.assertNotIn("flushPendingWrites()", destroy)
+        export = source.split("private fun exportDiagnosticReport()", 1)[1].split(
+            "private fun appendLog", 1
+        )[0]
+        self.assertIn("withContext(Dispatchers.IO)", export)
+        self.assertNotIn("logLines.toList()", export)
+
+    def test_pending_gatt_interruption_uses_async_persistence(self):
+        source = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
+        ).read_text(encoding="utf-8")
+        interruption = source.split("private fun recordPendingGattDiscoveryInterruption", 1)[1].split(
+            "@SuppressLint", 1
+        )[0]
+        self.assertNotIn("flushPendingWrites()", interruption)
+        self.assertIn("recordDiscoveryAsync(", interruption)
 
     def test_manual_screens_apply_shared_edge_to_edge_insets(self):
         ui = (ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/RelogioUi.kt").read_text(encoding="utf-8")
