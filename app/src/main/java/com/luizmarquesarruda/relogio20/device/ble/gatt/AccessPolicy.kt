@@ -3,27 +3,26 @@ package com.luizmarquesarruda.relogio20.device.ble.gatt
 import java.util.Collections
 import java.util.UUID
 
-/** Fail-closed GATT access policy; the only optional write is user-confirmed SIG CTS. */
+/**
+ * Fail-closed GATT policy. Characteristic writes are prohibited.
+ * The standard CCCD descriptor (0x2902) is handled separately for subscriptions only.
+ */
 internal data class AccessPolicy(
     val allowRead: Set<UUID> = emptySet(),
-    val allowWrite: Set<UUID> = setOf(CURRENT_TIME_CHARACTERISTIC),
+    val allowWrite: Set<UUID> = emptySet(),
     val forbidden: Set<UUID> = emptySet()
 ) {
     init {
-        require(allowWrite.intersect(forbidden + HARD_FORBIDDEN).isEmpty()) {
-            "allowWrite intersects the hard or configured GATT blocklist"
+        require(allowWrite.isEmpty()) {
+            "Characteristic writes are prohibited by the read-only device policy."
         }
     }
 
-    fun canWrite(serviceUuid: UUID, characteristicUuid: UUID, explicitUserConsent: Boolean): Boolean =
-        explicitUserConsent &&
-            serviceUuid == CURRENT_TIME_SERVICE &&
-            characteristicUuid == CURRENT_TIME_CHARACTERISTIC &&
-            characteristicUuid in allowWrite &&
-            serviceUuid !in forbidden &&
-            characteristicUuid !in forbidden &&
-            serviceUuid !in HARD_FORBIDDEN &&
-            characteristicUuid !in HARD_FORBIDDEN
+    fun canWrite(
+        serviceUuid: UUID,
+        characteristicUuid: UUID,
+        explicitUserConsent: Boolean
+    ): Boolean = false
 
     companion object {
         val FE59_DFU_SERVICE = UUID.fromString("0000fe59-0000-1000-8000-00805f9b34fb")
