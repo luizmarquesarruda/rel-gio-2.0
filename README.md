@@ -40,7 +40,7 @@ O relógio foi observado no nRF Connect como **GT3 MAX**. A conexão BLE e a des
 - Preparação da integração de escrita para publicar no Health Connect apenas amostras reais do smartwatch, após validar o protocolo e solicitar a permissão específica. Ainda não há escrita de passos do GT3 Maxx nesta versão.
 - Hora local do Android, com indicação das opções de data/hora automática e fuso automático do sistema.
 - Consulta de clima pela rede móvel ou Wi-Fi via Open-Meteo, com pesquisa manual de cidade, cache privado, previsão atual/diária e atualização periódica aproximada.
-- A sincronização física de horário é automática somente quando o GATT anuncia o serviço padrão CTS 0x1805/0x2A2B com WRITE. O GT3 MAXX capturado não anunciou CTS; seu RTC/visor ainda não foi sincronizado de forma comprovada.
+- A sincronização física de horário via BLE está desativada. O aplicativo não escreve em características GATT, inclusive CTS 0x1805/0x2A2B. Somente o descritor padrão CCCD 0x2902 é escrito para ativar/desativar NOTIFY/INDICATE.
 - A previsão meteorológica ainda não é transmitida ao GT3 MAXX: o protocolo de clima deste firmware não foi identificado. Nenhum comando proprietário é enviado.
 - O Google Fit legado não é integrado diretamente; os dados podem chegar pelo Health Connect se o aplicativo de origem os compartilhar.
 
@@ -66,7 +66,7 @@ Detalhes: [Integração Health Connect, passos e horário](docs/INTEGRACAO-HEALT
 
 - Não envia payloads a características proprietárias do relógio.
 - Não envia comandos pela Nordic UART RX.
-- Não são enviados payloads a características proprietárias. A única escrita em característica de dados permitida é a sincronização automática, uma vez por sessão, pelo Bluetooth SIG CTS (0x1805/0x2A2B), somente quando o relógio anuncia a característica com propriedade WRITE. O callback GATT não comprova atualização do RTC/mostrador. A configuração do descritor CCCD padrão continua limitada à ativação de notificações/indicações permitidas.
+- O aplicativo não envia payloads nem realiza escrita em características GATT, incluindo CTS 0x1805/0x2A2B. A única escrita GATT permitida é no descritor padrão CCCD 0x2902, exclusivamente para ativar/desativar NOTIFY/INDICATE.
 - Não toca no Secure DFU/OTA, reset, calibração ou configuração.
 - Não atribui semântica a canais proprietários desconhecidos. Há decoders somente para formatos Bluetooth SIG identificados; passos e sono proprietários continuam não interpretados. Body Composition Measurement 0x2A9C também permanece bruto até completar a leitura contextual de flags, unidades, resoluções e pacotes múltiplos.
 - Não transmite dados de saúde à rede nem os publica no Health Connect. A captura local de leituras/notifications e HEX exige ativação explícita e permanece no armazenamento privado do app.
