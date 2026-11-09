@@ -43,7 +43,7 @@ O firmware V1.07 e build SH0050-1_1.1.3_1.23_1.18_1.1 são metadados apresentado
 
 ## Hora e data
 
-O CTS 0x1805 está ausente. O app sincroniza apenas pelo CTS padrão quando serviço, característica 0x2A2B e WRITE estão presentes. Na captura atual isso não ocorre. Não se deve enviar payload aleatório ao NUS RX.
+CTS 0x1805/0x2A2B não é usado para escrita, mesmo que venha a ser anunciado com WRITE: a política global bloqueia todas as escritas em características. Não se deve enviar payload aleatório ao NUS RX. Somente o descritor padrão CCCD 0x2902 pode ser escrito para subscrição NOTIFY/INDICATE.
 
 A abordagem permitida é observar passivamente a conexão direta do Relógio 2.0 com o GT3 MAX durante ações iniciadas fisicamente no relógio. Sem documentação oficial e capturas repetíveis do próprio dispositivo, UUIDs, handshake, timezone, checksum e sequência de inicialização permanecem desconhecidos; sincronização proprietária continua bloqueada.
 
