@@ -91,7 +91,7 @@ jobs:
 
       - name: Run KtLint as a blocking source gate
         id: ktlint
-        if: ${{ !cancelled() && steps.ktlint_baseline_bootstrap.outcome == 'skipped' }}
+        if: ${{ !cancelled() && steps.manifest_policy_tests.outcome == 'success' && steps.setup_gradle.outcome == 'success' && steps.ktlint_baseline_bootstrap.outcome == 'skipped' }}
         run: gradle --no-daemon :app:ktlintCheck
 
       - name: Run Android Lint for both variants
