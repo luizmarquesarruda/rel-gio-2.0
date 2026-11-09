@@ -143,9 +143,14 @@ class CurrentAndroidContractTests(unittest.TestCase):
         store = (
             ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/data/discovery/DiscoveryLibraryStore.kt"
         ).read_text(encoding="utf-8")
-        self.assertIn("if (activeSession(nowMillis) == null) return true", store)
+        self.assertNotIn("if (activeSession(nowMillis) == null) return true", store)
         self.assertIn("): Boolean? = synchronized(STORE_LOCK)", store)
         self.assertIn("if (operation() == false) failedWrites.incrementAndGet()", store)
+        main = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
+        ).read_text(encoding="utf-8")
+        self.assertIn("val payloadQueued = if (activeSession)", main)
+        self.assertIn("val captureActive = discoveryLibraryStore.activeSession(observedAtMillis) != null", main)
 
     def test_activity_session_start_and_finish_use_ordered_async_writer(self):
         main = (
