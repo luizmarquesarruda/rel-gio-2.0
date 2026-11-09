@@ -2665,7 +2665,7 @@ class MainActivity : ComponentActivity() {
             "Leitura GATT concluída: " + characteristicUuid + " | " + value.size + " bytes" +
                 if (activeSession) " | HEX=" + payloadHex else ""
         )
-        val payloadQueued = discoveryLibraryStore.recordPayloadAsync(
+        val payloadQueued = if (activeSession) discoveryLibraryStore.recordPayloadAsync(
             kind = DiscoveryLibraryKind.GATT_READ,
             title = "Leitura GATT • " + characteristicUuid,
             detail = "Leitura concluída • " + value.size + " bytes",
@@ -2675,7 +2675,7 @@ class MainActivity : ComponentActivity() {
             characteristicUuid = characteristicUuid,
             payloadHex = payloadHex,
             nowMillis = nowMillis
-        )
+        ) else true
         if (!payloadQueued) {
             val dropped = droppedTelemetryCount.incrementAndGet()
             appendLog("Leitura GATT recebida, mas amostra descartada por fila cheia. droppedCount=" + dropped)
@@ -3081,7 +3081,8 @@ class MainActivity : ComponentActivity() {
             "AB cmd=0x" + frame.command.toString(16).uppercase(Locale.US) +
                 "/resp=0x" + frame.response.toString(16).uppercase(Locale.US)
         }
-        val payloadQueued = discoveryLibraryStore.recordPayloadAsync(
+        val captureActive = discoveryLibraryStore.activeSession(observedAtMillis) != null
+        val payloadQueued = if (captureActive) discoveryLibraryStore.recordPayloadAsync(
             kind = DiscoveryLibraryKind.NOTIFICATION,
             title = "Notificação BLE • " + uuid,
             detail = value.size.toString() + " bytes recebidos" +
@@ -3093,7 +3094,7 @@ class MainActivity : ComponentActivity() {
             characteristicUuid = uuid,
             payloadHex = BleValueFormatter.toHex(value),
             nowMillis = observedAtMillis
-        )
+        ) else true
         if (!payloadQueued) {
             val dropped = droppedTelemetryCount.incrementAndGet()
             appendLog("Fila de gravação BLE cheia; amostra descartada. droppedCount=" + dropped)
@@ -3113,7 +3114,7 @@ class MainActivity : ComponentActivity() {
             serviceUuid, uuid, value.size, decodedNotificationValues.size, observedAtMillis
         )
         updateGattProgressUi()
-        if (discoveryLibraryStore.activeSession(observedAtMillis) != null) {
+        if (captureActive) {
             decodedNotificationValues.forEach { item ->
                 discoveryLibraryStore.recordSessionDiscoveryAsync(
                     title = "Dado BLE observado • " + item.metric,
