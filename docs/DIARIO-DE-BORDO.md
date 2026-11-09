@@ -952,3 +952,14 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Endereço manual opcional, laboratório, captura, inventário GATT, integração Health Connect e diagnóstico foram agrupados em um painel recolhido por padrão: “Ferramentas técnicas e integração”.
 - A mudança é apenas de hierarquia visual. Os controles e métodos existentes continuam presentes e acessíveis; nenhuma operação BLE foi removida.
 - A validação de build continua bloqueada por uma configuração Gradle herdada da branch-base: `app/build.gradle.kts:89` declara `diagnosticDebugImplementation`, configuração que o Gradle 9.5 não encontra durante a configuração do projeto. Os testes Python de contrato passaram; Kotlin/Android não chegaram a compilar nesta execução.
+
+
+## 09/11/2026 — Correção de segurança BLE, privacidade e persistência
+
+- Removida a ação de sincronização CTS 0x1805/0x2A2B e o caminho de escrita em característica da interface principal. A política de acesso agora nega toda escrita em características, inclusive com consentimento explícito. A escrita do descritor CCCD 0x2902 permanece restrita à ativação/desativação de NOTIFY/INDICATE.
+- O relatório TXT passou a omitir nome/endereço do dispositivo, conteúdo livre dos logs, valores decodificados de saúde e payload HEX. São exportadas apenas informações gerais e contagens de eventos.
+- Exportação e flush de histórico foram movidos para Dispatchers.IO. Início/finalização de sessões passaram a usar o escritor serial assíncrono; onDestroy e callback de interrupção não aguardam flush síncrono.
+- Amostras recebidas fora de uma sessão de captura consentida são ignoradas como skip, sem incrementar failedWrites ou pressionar desnecessariamente a fila.
+- Desconexão espontânea durante descoberta GATT registra a interrupção antes de cancelar o watchdog.
+- A CI de teste TDD reproduziu as falhas dos contratos antes da implementação. A validação final de Kotlin, Android Lint, build e APK ainda depende da próxima execução da CI. Teste físico Galaxy A06 + GT3 MAX: **não validado**.
+- Sem SQLite, sem mudança de schema e sem comandos de escrita ao relógio.
