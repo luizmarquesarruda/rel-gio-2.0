@@ -2243,19 +2243,31 @@ class MainActivity : ComponentActivity() {
         ) {
             val finishedAt = System.currentTimeMillis()
             val queued = discoveryLibraryStore.finishTestSessionAsync(finishedAt, reason) { saved ->
-                if (!saved) runOnUiThread {
-                    appendLog("Sessão automática: não foi possível persistir o encerramento.")
+                if (saved) {
+                    automaticGattDiscoveryPrefs.edit {
+                        remove(KEY_AUTOMATIC_SESSION_ID)
+                        remove(KEY_AUTOMATIC_SESSION_OWNED)
+                    }
+                } else {
+                    runOnUiThread {
+                        appendLog("Sessão automática: falha ao persistir o encerramento; a referência local foi preservada para recuperação.")
+                    }
                 }
             }
-            if (!queued) appendLog("Sessão automática: fila de persistência indisponível para finalizar.")
+            if (!queued) {
+                appendLog("Sessão automática: fila de persistência indisponível; referência local preservada.")
+                return
+            }
             sessionManager.finalize(SessionEndReason.COMPLETED, finishedAt)
             appendLog("Sessão automática de captura finalizada: " + reason)
-        } else if (active?.id == ownedSessionId) {
-            appendLog("Sessão manual compartilhada preservada; somente a coleta automática foi desativada.")
-        }
-        automaticGattDiscoveryPrefs.edit {
-            remove(KEY_AUTOMATIC_SESSION_ID)
-            remove(KEY_AUTOMATIC_SESSION_OWNED)
+        } else {
+            if (active?.id == ownedSessionId) {
+                appendLog("Sessão manual compartilhada preservada; somente a coleta automática foi desativada.")
+            }
+            automaticGattDiscoveryPrefs.edit {
+                remove(KEY_AUTOMATIC_SESSION_ID)
+                remove(KEY_AUTOMATIC_SESSION_OWNED)
+            }
         }
         if (::captureSessionView.isInitialized) updatePhoneClock()
     }
