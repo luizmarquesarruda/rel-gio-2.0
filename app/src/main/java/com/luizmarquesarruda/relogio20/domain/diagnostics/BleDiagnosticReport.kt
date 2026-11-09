@@ -1,15 +1,13 @@
 package com.luizmarquesarruda.relogio20.domain.diagnostics
+
 internal object BleDiagnosticReport {
-    private val macPattern = Regex("(?i)(?:[0-9a-f]{2}:){5}[0-9a-f]{2}")
+    fun maskAddress(address: String?): String =
+        if (address.isNullOrBlank()) "não disponível" else "identificação ocultada"
 
-    fun maskAddress(address: String?): String {
-        if (address.isNullOrBlank()) return "não disponível"
-        val normalized = address.trim()
-        if (!macPattern.matches(normalized)) return "identificação ocultada"
-        val parts = normalized.split(":")
-        return "XX:XX:XX:" + parts.takeLast(3).joinToString(":")
-    }
-
+    /**
+     * Diagnostic TXT is a shareable artifact. It intentionally excludes free-form logs,
+     * device identifiers, decoded health values and raw BLE payloads.
+     */
     fun build(
         appVersion: String,
         androidVersion: String,
@@ -19,53 +17,36 @@ internal object BleDiagnosticReport {
         generatedAt: String,
         logLines: List<String>,
         discoveryEntries: List<String> = emptyList()
-    ): String {
-        val sanitizedLogs = logLines.map { line ->
-            macPattern.replace(line) { match -> maskAddress(match.value) }
-        }
-        val sanitizedDiscoveries = discoveryEntries.map { line ->
-            macPattern.replace(line) { match -> maskAddress(match.value) }
-        }
-        return buildString {
-            appendLine("RELÓGIO 2.0 — RELATÓRIO DE DIAGNÓSTICO BLE")
-            appendLine("Gerado em: " + generatedAt)
-            appendLine()
-            appendLine("[APLICATIVO E AMBIENTE]")
-            appendLine("Versão do aplicativo: " + appVersion)
-            appendLine("Android: " + androidVersion)
-            appendLine("Relatório gerado localmente no aparelho.")
-            appendLine()
-            appendLine("[DISPOSITIVO]")
-            appendLine("Nome observado: " + (deviceName?.takeIf { it.isNotBlank() } ?: "não disponível"))
-            appendLine("Endereço Bluetooth: " + maskAddress(deviceAddress))
-            appendLine("Estado da interface no momento da exportação: " + connectionState)
-            appendLine()
-            appendLine("[EVIDÊNCIAS E LIMITES]")
-            appendLine("- Eventos e valores hexadecimais abaixo são observações registradas pelo aplicativo.")
-            appendLine("- UUIDs e propriedades GATT observados não identificam, por si só, o protocolo proprietário.")
-            appendLine("- Interpretações marcadas como candidatas ou não validadas não são medições confirmadas.")
-            appendLine("- Conexão BLE/GATT não comprova leitura correta de sensores.")
-            appendLine("- O relatório não inclui conteúdo textual de notificações do telefone.")
-            appendLine("- Payloads BLE em hexadecimal podem conter dados de saúde; compartilhe o arquivo somente com quem você autorizou.")
-            appendLine()
-            appendLine("[REGISTRO DA SESSÃO — ATÉ 250 EVENTOS MAIS RECENTES]")
-            if (sanitizedLogs.isEmpty()) {
-                appendLine("Nenhum evento registrado nesta sessão.")
-            } else {
-                sanitizedLogs.forEach(::appendLine)
-            }
-            appendLine()
-            appendLine("[DESCOBERTAS PERSISTIDAS — ATÉ 1.000 REGISTROS MAIS RECENTES]")
-            if (sanitizedDiscoveries.isEmpty()) {
-                appendLine("Nenhuma descoberta persistida disponível.")
-            } else {
-                sanitizedDiscoveries.forEach(::appendLine)
-            }
-            appendLine()
-            appendLine("[CLASSIFICAÇÃO]")
-            appendLine("Observado: eventos, status, UUIDs, propriedades e bytes efetivamente recebidos.")
-            appendLine("Hipótese: qualquer interpretação de payload ainda não comparada com uma referência independente.")
-            appendLine("Validado: somente quando houver teste reproduzível documentado; este relatório não promove hipóteses a validações.")
-        }
+    ): String = buildString {
+        appendLine("RELÓGIO 2.0 — RELATÓRIO DE DIAGNÓSTICO BLE")
+        appendLine("Gerado em: " + generatedAt)
+        appendLine()
+        appendLine("[APLICATIVO E AMBIENTE]")
+        appendLine("Versão do aplicativo: " + appVersion)
+        appendLine("Android: " + androidVersion)
+        appendLine("Relatório gerado localmente no aparelho.")
+        appendLine()
+        appendLine("[DISPOSITIVO]")
+        appendLine("Nome observado: identificação ocultada")
+        appendLine("Endereço Bluetooth: identificação ocultada")
+        appendLine("Estado da conexão: informação omitida por privacidade")
+        appendLine()
+        appendLine("[EVIDÊNCIAS E LIMITES]")
+        appendLine("- O relatório contém somente metadados não sensíveis.")
+        appendLine("- Logs livres, identificadores do dispositivo, valores de saúde e payloads BLE foram omitidos.")
+        appendLine("- UUIDs e propriedades GATT não identificam, por si só, o protocolo proprietário.")
+        appendLine("- Interpretações candidatas ou não validadas não são medições confirmadas.")
+        appendLine("- Conexão BLE/GATT não comprova leitura correta de sensores.")
+        appendLine()
+        appendLine("[REGISTRO DA SESSÃO]")
+        appendLine("Eventos técnicos omitidos por privacidade: " + logLines.size)
+        appendLine()
+        appendLine("[DESCOBERTAS PERSISTIDAS]")
+        appendLine("Registros técnicos omitidos por privacidade: " + discoveryEntries.size)
+        appendLine()
+        appendLine("[CLASSIFICAÇÃO]")
+        appendLine("Observado: somente metadados técnicos sem conteúdo de payload.")
+        appendLine("Hipótese: qualquer interpretação ainda não comparada com uma referência independente.")
+        appendLine("Validado: somente quando houver teste reproduzível documentado; este relatório não promove hipóteses a validações.")
     }
 }
