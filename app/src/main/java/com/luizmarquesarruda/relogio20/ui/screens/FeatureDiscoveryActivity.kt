@@ -346,7 +346,15 @@ class FeatureDiscoveryActivity : Activity() {
                 val now = System.currentTimeMillis()
                 val queued = store.startTestSessionAsync(selectedDurationSeconds, now) { started ->
                     runOnUiThread {
-                        if (isFinishing || isDestroyed) return@runOnUiThread
+                        if (isFinishing || isDestroyed) {
+                            if (started) {
+                                store.finishTestSessionAsync(
+                                    System.currentTimeMillis(),
+                                    "Tela de captura fechada antes de atualizar a interface"
+                                )
+                            }
+                            return@runOnUiThread
+                        }
                         startButton.isEnabled = true
                         if (started) {
                             scheduleCountdown()
