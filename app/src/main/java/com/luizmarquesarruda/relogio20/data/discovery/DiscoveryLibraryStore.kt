@@ -70,6 +70,7 @@ internal class DiscoveryLibraryStore(context: Context) {
         source: String = "GATT_SESSION",
         confidence: String = "OBSERVADO"
     ): Boolean {
+        if (nowMillis < 0L) return false
         if (activeSession(nowMillis) == null) return true
         return enqueueWrite {
             recordSessionDiscovery(title, detail, nowMillis, source, confidence)
@@ -87,6 +88,7 @@ internal class DiscoveryLibraryStore(context: Context) {
         payloadHex: String,
         nowMillis: Long
     ): Boolean {
+        if (nowMillis < 0L) return false
         if (activeSession(nowMillis) == null) return true
         return enqueueWrite {
             recordPayload(
@@ -136,7 +138,7 @@ internal class DiscoveryLibraryStore(context: Context) {
         nowMillis: Long,
         onComplete: (Boolean) -> Unit = {}
     ): Boolean = enqueueWrite {
-        val result = startTestSessionInternal(durationSeconds, nowMillis)
+        val result = runCatching { startTestSessionInternal(durationSeconds, nowMillis) }.getOrDefault(false)
         runCatching { onComplete(result) }
         result
     }
@@ -197,7 +199,7 @@ internal class DiscoveryLibraryStore(context: Context) {
     ): Boolean {
         if (nowMillis < 0L) return false
         return enqueueWrite {
-            val result = finishTestSessionInternal(nowMillis, reason)
+            val result = runCatching { finishTestSessionInternal(nowMillis, reason) }.getOrDefault(false)
             runCatching { onComplete(result) }
             result
         }
