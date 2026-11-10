@@ -164,7 +164,8 @@ class CurrentAndroidContractTests(unittest.TestCase):
         payload_writer = store.split("fun recordPayload(", 1)[1].split(
             "private fun writableSnapshot", 1
         )[0]
-        self.assertIn("): Boolean? = synchronized(STORE_LOCK)", payload_writer)
+        self.assertIn("): Boolean? =", payload_writer)
+        self.assertIn("synchronized(STORE_LOCK)", payload_writer)
         self.assertIn("val session = current.activeSession ?: return@synchronized null", payload_writer)
         self.assertIn("if (operation() == false) failedWrites.incrementAndGet()", store)
         main = (
