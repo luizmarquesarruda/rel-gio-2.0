@@ -28,11 +28,28 @@ jobs:
           gradle wrapper --gradle-version 8.13 --distribution-type bin --gradle-distribution-sha256-sum 20f1b1176237254a6fc204d8434196fa11a4cfb387567519c61556e8710aed78
           echo "81a82aaea5abcc8ff68b3dfcb58b3c3c429378efd98e7433460610fecd7ae45f  gradle/wrapper/gradle-wrapper.jar" | sha256sum --check
       - name: Apply ktlint formatting
+        id: format
+        continue-on-error: true
         run: ./gradlew --no-daemon :app:ktlintFormat
+      - name: Export formatted Kotlin sources and KtLint reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ktlint-format-debug-snapshot
+          path: |
+            app/src/**/*.kt
+            app/build/reports/ktlint/**
+            gradlew
+            gradlew.bat
+            gradle/wrapper/**
+          if-no-files-found: error
+          retention-days: 3
       - name: Generate SHA-256 dependency verification metadata and validate project
+        if: ${{ steps.format.outcome == 'success' }}
         run: |
           ./gradlew --no-daemon --write-verification-metadata sha256 lintDiagnosticDebug lintCompanionDebug testDiagnosticDebugUnitTest testCompanionDebugUnitTest assembleDiagnosticDebug assembleCompanionDebug :macrobenchmark:assemble
       - name: Commit reviewed build tooling and formatter output
+        if: ${{ steps.format.outcome == 'success' }}
         shell: bash
         run: |
           set -euo pipefail
