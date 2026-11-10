@@ -216,7 +216,7 @@ class CurrentAndroidContractTests(unittest.TestCase):
         )
         self.assertEqual("false", activity.attrib.get(ANDROID + "exported"))
         feature_hub = (ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/FeatureHubActivity.kt").read_text(encoding="utf-8")
-        self.assertIn('Feature("Hora e clima"', feature_hub)
+        self.assertRegex(feature_hub, r'Feature\(\s*"Hora e clima"')
         self.assertIn('"time_weather" -> startActivity(Intent(this, TimeWeatherActivity::class.java))', feature_hub)
 
     def test_manifest_policy_auditor_rejects_sdk31_permission_element(self):
