@@ -16,13 +16,15 @@ class BleDiagnosticReportTest {
             deviceName = "Luiz GT3 MAX C0:27:AB:64:6C:E2",
             deviceAddress = "C0:27:AB:64:6C:E2",
             generatedAt = "2026-11-04 12:00:00 +0000",
-            logLines = listOf(
-                "Frequência cardíaca: 147 bpm",
-                "NOTIFICAÇÃO: AB-00-05-FF-91-80-00-0C"
-            ),
-            discoveryEntries = listOf(
-                "Nome=Luiz GT3 MAX | HEX=AB-00-05-FF-91-80-00-0C | C0:27:AB:64:6C:E2"
-            )
+            logLines =
+                listOf(
+                    "Frequência cardíaca: 147 bpm",
+                    "NOTIFICAÇÃO: AB-00-05-FF-91-80-00-0C",
+                ),
+            discoveryEntries =
+                listOf(
+                    "Nome=Luiz GT3 MAX | HEX=AB-00-05-FF-91-80-00-0C | C0:27:AB:64:6C:E2",
+                ),
         )
 
         assertTrue(report.contains("identificação ocultada"))
@@ -45,7 +47,7 @@ class BleDiagnosticReportTest {
             deviceName = null,
             deviceAddress = null,
             generatedAt = "2026-11-04 12:00:00 +0000",
-            logLines = emptyList()
+            logLines = emptyList(),
         )
 
         assertTrue(report.contains("não validada"))
@@ -56,7 +58,13 @@ class BleDiagnosticReportTest {
 
     @Test
     fun addressMaskNeverRetainsAnyAddressOctets() {
-        assertEquals("identificação ocultada", BleDiagnosticReport.maskAddress("C0:27:AB:64:6C:E2"))
-        assertEquals("identificação ocultada", BleDiagnosticReport.maskAddress("invalid-device-id"))
+        assertEquals(
+            "identificação ocultada",
+            BleDiagnosticReport.maskAddress("C0:27:AB:64:6C:E2"),
+        )
+        assertEquals(
+            "identificação ocultada",
+            BleDiagnosticReport.maskAddress("invalid-device-id"),
+        )
     }
 }
