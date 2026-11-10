@@ -10,12 +10,14 @@ internal object HealthConnectHistorySyncRetryPolicy {
     fun shouldAttempt(
         syncKey: String,
         terminalSyncKey: String?,
+        lastAttemptSyncKey: String?,
         lastAttemptElapsedRealtimeMillis: Long?,
         nowElapsedRealtimeMillis: Long
     ): Boolean {
         if (syncKey.isBlank() || syncKey == terminalSyncKey || nowElapsedRealtimeMillis < 0L) {
             return false
         }
+        if (lastAttemptSyncKey != syncKey) return true
         val lastAttempt = lastAttemptElapsedRealtimeMillis ?: return true
         if (lastAttempt < 0L || nowElapsedRealtimeMillis < lastAttempt) return true
         return nowElapsedRealtimeMillis - lastAttempt >= RETRY_INTERVAL_MILLIS

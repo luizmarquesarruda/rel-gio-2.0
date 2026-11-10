@@ -11,6 +11,7 @@ class HealthConnectHistorySyncRetryPolicyTest {
             HealthConnectHistorySyncRetryPolicy.shouldAttempt(
                 syncKey = "20670@America/Sao_Paulo",
                 terminalSyncKey = null,
+                lastAttemptSyncKey = null,
                 lastAttemptElapsedRealtimeMillis = null,
                 nowElapsedRealtimeMillis = 100L
             )
@@ -23,6 +24,7 @@ class HealthConnectHistorySyncRetryPolicyTest {
             HealthConnectHistorySyncRetryPolicy.shouldAttempt(
                 syncKey = "20670@America/Sao_Paulo",
                 terminalSyncKey = null,
+                lastAttemptSyncKey = "20670@America/Sao_Paulo",
                 lastAttemptElapsedRealtimeMillis = 100L,
                 nowElapsedRealtimeMillis = 100L + HealthConnectHistorySyncRetryPolicy.RETRY_INTERVAL_MILLIS - 1L
             )
@@ -31,6 +33,7 @@ class HealthConnectHistorySyncRetryPolicyTest {
             HealthConnectHistorySyncRetryPolicy.shouldAttempt(
                 syncKey = "20670@America/Sao_Paulo",
                 terminalSyncKey = null,
+                lastAttemptSyncKey = "20670@America/Sao_Paulo",
                 lastAttemptElapsedRealtimeMillis = 100L,
                 nowElapsedRealtimeMillis = 100L + HealthConnectHistorySyncRetryPolicy.RETRY_INTERVAL_MILLIS
             )
@@ -43,6 +46,7 @@ class HealthConnectHistorySyncRetryPolicyTest {
             HealthConnectHistorySyncRetryPolicy.shouldAttempt(
                 syncKey = "20670@America/Sao_Paulo",
                 terminalSyncKey = "20670@America/Sao_Paulo",
+                lastAttemptSyncKey = "20670@America/Sao_Paulo",
                 lastAttemptElapsedRealtimeMillis = 100L,
                 nowElapsedRealtimeMillis = 10_000L
             )
@@ -51,6 +55,7 @@ class HealthConnectHistorySyncRetryPolicyTest {
             HealthConnectHistorySyncRetryPolicy.shouldAttempt(
                 syncKey = "20671@America/Sao_Paulo",
                 terminalSyncKey = "20670@America/Sao_Paulo",
+                lastAttemptSyncKey = "20670@America/Sao_Paulo",
                 lastAttemptElapsedRealtimeMillis = 100L,
                 nowElapsedRealtimeMillis = 10_000L
             )

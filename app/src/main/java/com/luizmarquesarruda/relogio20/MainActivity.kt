@@ -114,6 +114,7 @@ class MainActivity : ComponentActivity() {
         HealthConnectActivityHistorySync(healthConnectRepository, dailyActivityHistoryRepository)
     }
     private var lastHistorySyncTerminalKey: String? = null
+    private var lastHistorySyncAttemptKey: String? = null
     private var lastHistorySyncAttemptElapsedRealtimeMillis: Long? = null
     private val featureDiscoveryStore by lazy(LazyThreadSafetyMode.NONE) {
         FeatureDiscoveryStore(this)
@@ -900,10 +901,12 @@ class MainActivity : ComponentActivity() {
                 if (HealthConnectHistorySyncRetryPolicy.shouldAttempt(
                         syncKey = syncKey,
                         terminalSyncKey = lastHistorySyncTerminalKey,
+                        lastAttemptSyncKey = lastHistorySyncAttemptKey,
                         lastAttemptElapsedRealtimeMillis = lastHistorySyncAttemptElapsedRealtimeMillis,
                         nowElapsedRealtimeMillis = attemptElapsedRealtimeMillis
                     )
                 ) {
+                    lastHistorySyncAttemptKey = syncKey
                     lastHistorySyncAttemptElapsedRealtimeMillis = attemptElapsedRealtimeMillis
                     val syncStatus = healthConnectActivityHistorySync.syncPreviousCompletedDay(now, zoneId)
                     if (HealthConnectHistorySyncRetryPolicy.isTerminal(syncStatus)) {
