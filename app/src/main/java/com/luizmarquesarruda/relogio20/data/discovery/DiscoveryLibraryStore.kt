@@ -340,7 +340,8 @@ internal class DiscoveryLibraryStore(context: Context) {
         nowMillis: Long
     ): Boolean? = synchronized(STORE_LOCK) {
         if (nowMillis < 0L ||
-            kind != DiscoveryLibraryKind.NOTIFICATION && kind != DiscoveryLibraryKind.GATT_READ ||
+            (kind != DiscoveryLibraryKind.NOTIFICATION &&
+                kind != DiscoveryLibraryKind.GATT_READ) ||
             !isBoundedIdentifier(serviceUuid) ||
             !isBoundedIdentifier(characteristicUuid) ||
             !isValidPayloadHex(payloadHex)

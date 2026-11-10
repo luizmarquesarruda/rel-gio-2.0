@@ -453,7 +453,17 @@ class MainActivity : ComponentActivity() {
             setPadding(0, dp(8), 0, dp(8))
         }
 
-        advancedPanel.addView(makeButton("Configurar endereço manualmente (opcional)") { configureExpectedWatchAddress() }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(44)).apply { bottomMargin = dp(6) })
+        advancedPanel.addView(
+            makeButton("Configurar endereço manualmente (opcional)") {
+                configureExpectedWatchAddress()
+            },
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(44)
+            ).apply {
+                bottomMargin = dp(6)
+            }
+        )
 
         addText(advancedPanel, "Laboratório e registros", 17f, true)
         advancedPanel.addView(makeButton("Testes e descobertas BLE") {
@@ -491,7 +501,9 @@ class MainActivity : ComponentActivity() {
         ).apply { bottomMargin = dp(4) })
         addText(
             root,
-            "Após a ativação, o app testa sozinho o GT3 MAX identificado, lê canais READ e recebe NOTIFY/INDICATE compatíveis. Valores e HEX recebidos ficam no histórico local enquanto a captura estiver ativa.",
+            "Após a ativação, o app testa sozinho o GT3 MAX identificado, lê canais READ e " +
+                "recebe NOTIFY/INDICATE compatíveis. Valores e HEX recebidos ficam no " +
+                "histórico local enquanto a captura estiver ativa.",
             11f
         )
 
@@ -656,8 +668,12 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun updatePhoneClock() {
-        clockView.text = "Hora do celular: " +
-            SimpleDateFormat("dd/MM/yyyy " + if (AppPreferences.uses24HourClock(this)) "HH:mm:ss" else "hh:mm:ss a", Locale.getDefault()).format(Date())
+        val timePattern = if (AppPreferences.uses24HourClock(this)) "HH:mm:ss" else "hh:mm:ss a"
+        val formattedTime = SimpleDateFormat(
+            "dd/MM/yyyy " + timePattern,
+            Locale.getDefault()
+        ).format(Date())
+        clockView.text = "Hora do celular: " + formattedTime
 
         if (::captureSessionView.isInitialized) {
             val nowMillis = System.currentTimeMillis()
@@ -739,7 +755,8 @@ class MainActivity : ComponentActivity() {
         val now = System.currentTimeMillis()
         val queued = discoveryLibraryStore.recordDiscoveryAsync(
             title = "Ação manual no relógio • " + action,
-            detail = "Marcador temporal informado pelo usuário para correlação com leituras e notificações BLE. Não representa uma medição confirmada.",
+            detail = "Marcador temporal informado pelo usuário para correlação com leituras " +
+                "e notificações BLE. Não representa uma medição confirmada.",
             nowMillis = now,
             source = "USER_WEARABLE_ACTION",
             confidence = "MARCADOR_TEMPORAL_MANUAL"
@@ -1147,7 +1164,11 @@ class MainActivity : ComponentActivity() {
         }
         AlertDialog.Builder(this)
             .setTitle("Identificar meu GT3 MAX")
-            .setMessage("Opcional. O aplicativo procura dispositivos BLE automaticamente e valida o perfil GATT do GT3 MAX. Informe um endereço somente se quiser fixar manualmente a identidade; ele fica salvo neste aparelho.")
+            .setMessage(
+                "Opcional. O aplicativo procura dispositivos BLE automaticamente e valida " +
+                    "o perfil GATT do GT3 MAX. Informe um endereço somente se quiser fixar " +
+                    "manualmente a identidade; ele fica salvo neste aparelho."
+            )
             .setView(input)
             .setNegativeButton("Cancelar", null)
             .setNeutralButton("Remover") { _, _ ->
@@ -1161,7 +1182,10 @@ class MainActivity : ComponentActivity() {
                 else {
                     if (expectedWatchAddress != null && expectedWatchAddress != address) {
                         disconnectGatt()
-                        appendLog("Identidade do relógio alterada; uma nova conexão manual será necessária para habilitar a reconexão automática.")
+                        appendLog(
+                            "Identidade do relógio alterada; uma nova conexão manual será " +
+                                "necessária para habilitar a reconexão automática."
+                        )
                     }
                     identityPrefs.edit { putString("gt3_max_address", address) }
                     appendLog("Identidade GT3 MAX salva localmente: " + maskAddress(address))
@@ -1226,8 +1250,22 @@ class MainActivity : ComponentActivity() {
         scanResults.clear()
         content.removeAllViews()
         addText(content, "Dispositivos encontrados", 18f, true)
-        updateStatus(if (automatic) "Procurando GT3 MAX e candidatos BLE próximos..." else "Procurando dispositivos BLE próximos por 15 segundos...")
-        appendLog(if (automatic) "Início da busca BLE geral para localizar o GT3 MAX; endereço salvo será usado como pista, não como único filtro." else "Início da busca BLE geral por 15 segundos; dispositivos sem nome também serão listados.")
+        updateStatus(
+            if (automatic) {
+                "Procurando GT3 MAX e candidatos BLE próximos..."
+            } else {
+                "Procurando dispositivos BLE próximos por 15 segundos..."
+            }
+        )
+        appendLog(
+            if (automatic) {
+                "Início da busca BLE geral para localizar o GT3 MAX; endereço salvo " +
+                    "será usado como pista, não como único filtro."
+            } else {
+                "Início da busca BLE geral por 15 segundos; dispositivos sem nome " +
+                    "também serão listados."
+            }
+        )
 
         val callback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
@@ -1254,12 +1292,20 @@ class MainActivity : ComponentActivity() {
                         if (result.rssi <= AUTO_CONNECT_MIN_RSSI) {
                             if (!weakSignalWarningLogged) {
                                 weakSignalWarningLogged = true
-                                appendLog("Candidato GT3 MAX encontrado, mas RSSI fraco: " + result.rssi + " dBm. A conexão automática aguardará sinal melhor.")
+                                appendLog(
+                                    "Candidato GT3 MAX encontrado, mas RSSI fraco: " +
+                                        result.rssi +
+                                        " dBm. A conexão automática aguardará sinal melhor."
+                                )
                                 updateStatus("GT3 MAX candidato encontrado, mas sinal muito fraco.")
                             }
                         } else {
                             autoConnectAttempted = true
-                            appendLog("Candidato BLE compatível (" + candidateMatch.name + "); iniciando conexão para validar fingerprint GATT antes de explorar serviços.")
+                            appendLog(
+                                "Candidato BLE compatível (" + candidateMatch.name +
+                                    "); iniciando conexão para validar fingerprint GATT " +
+                                    "antes de explorar serviços."
+                            )
                             stopBleScan()
                             connectToDevice(
                                 result.device,
@@ -1615,7 +1661,9 @@ class MainActivity : ComponentActivity() {
                 if (started) {
                     discoveryLibraryStore.recordDiscoveryAsync(
                         title = "Descoberta GATT solicitada",
-                        detail = "A API Android aceitou discoverServices(); aguardando callback onServicesDiscovered. Inventário anterior não representa esta conexão.",
+                        detail = "A API Android aceitou discoverServices(); aguardando " +
+                            "callback onServicesDiscovered. Inventário anterior não " +
+                            "representa esta conexão.",
                         nowMillis = System.currentTimeMillis(),
                         source = "GATT_LIFECYCLE",
                         confidence = "AGUARDANDO_CALLBACK"
@@ -1813,7 +1861,11 @@ class MainActivity : ComponentActivity() {
                     servicesDiscovered = isGattServicesReady
                 )
             ) return
-            handleNotification(characteristic.service.uuid.toString(), characteristic.uuid.toString(), characteristic.value ?: byteArrayOf())
+            handleNotification(
+                characteristic.service.uuid.toString(),
+                characteristic.uuid.toString(),
+                characteristic.value ?: byteArrayOf()
+            )
         }
 
         override fun onCharacteristicChanged(
@@ -2004,7 +2056,12 @@ class MainActivity : ComponentActivity() {
                     if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0) properties.add("NOTIFY")
                     if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0) properties.add("INDICATE")
                     if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE != 0) properties.add("WRITE")
-                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0) properties.add("WRITE_NO_RESPONSE")
+                    val supportsWriteNoResponse =
+                        characteristic.properties and
+                            BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0
+                    if (supportsWriteNoResponse) {
+                        properties.add("WRITE_NO_RESPONSE")
+                    }
                     GattCharacteristicRecord(
                         uuid = characteristic.uuid.toString(),
                         properties = properties,
@@ -2069,7 +2126,12 @@ class MainActivity : ComponentActivity() {
                     if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0) properties.add("NOTIFY")
                     if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0) properties.add("INDICATE")
                     if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE != 0) properties.add("WRITE")
-                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0) properties.add("WRITE_NO_RESPONSE")
+                    val supportsWriteNoResponse =
+                        characteristic.properties and
+                            BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0
+                    if (supportsWriteNoResponse) {
+                        properties.add("WRITE_NO_RESPONSE")
+                    }
                     GattCharacteristicRecord(
                         uuid = characteristic.uuid.toString(),
                         properties = properties,
@@ -2094,7 +2156,10 @@ class MainActivity : ComponentActivity() {
             source = "EXPLORATION_POLICY",
             confidence = policy.source.name
         )
-        appendLog("Exploração GATT segura: " + plan.size + " operações padronizadas elegíveis; canais proprietários, NUS RX e DFU excluídos.")
+        appendLog(
+            "Exploração GATT segura: " + plan.size +
+                " operações padronizadas elegíveis; canais proprietários, NUS RX e DFU excluídos."
+        )
         plan.forEach { operation ->
             val service = gatt.getService(runCatching { UUID.fromString(operation.serviceUuid) }.getOrNull())
             val characteristic = service?.getCharacteristic(runCatching { UUID.fromString(operation.characteristicUuid) }.getOrNull())
@@ -2148,7 +2213,8 @@ class MainActivity : ComponentActivity() {
             stopAutomaticGattNotifications()
             automaticGattProbeStartedForConnection = false
             appendLog(
-                "Coleta automática pausada. Novas leituras/inscrições param; canais ativados pelo teste automático serão desinscritos via CCCD padrão."
+                "Coleta automática pausada. Novas leituras/inscrições param; canais " +
+                    "ativados pelo teste automático serão desinscritos via CCCD padrão."
             )
             updateAutomaticGattDiscoveryButton()
             return
@@ -2157,11 +2223,19 @@ class MainActivity : ComponentActivity() {
         AlertDialog.Builder(this)
             .setTitle("Ativar testes automáticos do GT3 MAX")
             .setMessage(
-                "Depois de ativar, o aplicativo vai iniciar automaticamente quando reconhecer o fingerprint GATT completo do GT3 MAX Call. " +
-                    "Ele percorrerá os canais compatíveis que anunciam READ e ativará NOTIFY/INDICATE com CCCD padrão. " +
-                    "Leituras e notificações recebidas serão salvas localmente, incluindo HEX que pode conter dados de saúde, em sessões de até 10 minutos. " +
-                    "A autorização fica salva neste aparelho até você pausar. A captura usa blocos locais de até 10 minutos, renovados enquanto o app permanece em primeiro plano e conectado. Ao sair da tela, a renovação fica suspensa e retoma ao voltar. Nenhum payload de escrita, comando proprietário, NUS RX, DFU, OTA ou reset será enviado. " +
-                    "Ativar uma notificação não força o relógio a iniciar uma medição: o app só recebe dados que o firmware disponibilizar."
+                "Depois de ativar, o aplicativo vai iniciar automaticamente quando reconhecer " +
+                    "o fingerprint GATT completo do GT3 MAX Call. " +
+                    "Ele percorrerá os canais compatíveis que anunciam READ e ativará " +
+                    "NOTIFY/INDICATE com CCCD padrão. " +
+                    "Leituras e notificações recebidas serão salvas localmente, incluindo HEX " +
+                    "que pode conter dados de saúde, em sessões de até 10 minutos. " +
+                    "A autorização fica salva neste aparelho até você pausar. A captura usa " +
+                    "blocos locais de até 10 minutos, renovados enquanto o app permanece em " +
+                    "primeiro plano e conectado. Ao sair da tela, a renovação fica suspensa " +
+                    "e retoma ao voltar. Nenhum payload de escrita, comando proprietário, " +
+                    "NUS RX, DFU, OTA ou reset será enviado. " +
+                    "Ativar uma notificação não força o relógio a iniciar uma medição: o app " +
+                    "só recebe dados que o firmware disponibilizar."
             )
             .setNegativeButton("Cancelar", null)
             .setPositiveButton("Ativar automaticamente") { _, _ ->
@@ -2266,7 +2340,10 @@ class MainActivity : ComponentActivity() {
                     }
                 } else {
                     runOnUiThread {
-                        appendLog("Sessão automática: falha ao persistir o encerramento; a referência local foi preservada para recuperação.")
+                        appendLog(
+                            "Sessão automática: falha ao persistir o encerramento; a " +
+                                "referência local foi preservada para recuperação."
+                        )
                     }
                 }
             }
@@ -2341,7 +2418,12 @@ class MainActivity : ComponentActivity() {
                         if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0) properties.add("NOTIFY")
                         if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0) properties.add("INDICATE")
                         if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE != 0) properties.add("WRITE")
-                        if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0) properties.add("WRITE_NO_RESPONSE")
+                        val supportsWriteNoResponse =
+                        characteristic.properties and
+                            BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0
+                    if (supportsWriteNoResponse) {
+                        properties.add("WRITE_NO_RESPONSE")
+                    }
                         GattCharacteristicRecord(
                             uuid = characteristic.uuid.toString(),
                             properties = properties,
@@ -2362,7 +2444,9 @@ class MainActivity : ComponentActivity() {
             ).size
             discoveryLibraryStore.recordDiscoveryAsync(
                 title = "Varredura automática de sensores iniciada",
-                detail = operationCount.toString() + " operações GATT elegíveis. Escritas de características, NUS RX e DFU/OTA permanecem bloqueados.",
+                detail = operationCount.toString() +
+                    " operações GATT elegíveis. Escritas de características, NUS RX " +
+                    "e DFU/OTA permanecem bloqueados.",
                 nowMillis = System.currentTimeMillis(),
                 source = "AUTO_GATT_PROBE",
                 confidence = "FINGERPRINT_COMPLETO"
@@ -2503,7 +2587,12 @@ class MainActivity : ComponentActivity() {
                     if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0) properties.add("NOTIFY")
                     if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0) properties.add("INDICATE")
                     if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE != 0) properties.add("WRITE")
-                    if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0) properties.add("WRITE_NO_RESPONSE")
+                    val supportsWriteNoResponse =
+                        characteristic.properties and
+                            BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0
+                    if (supportsWriteNoResponse) {
+                        properties.add("WRITE_NO_RESPONSE")
+                    }
                     GattCharacteristicRecord(
                         uuid = characteristic.uuid.toString(),
                         properties = properties,
@@ -2637,14 +2726,21 @@ class MainActivity : ComponentActivity() {
                             }
                             updateGattProgressUi()
                             appendLog(if (started) {
-                                (if (automatic) "Leitura automática somente READ solicitada: " else "Leitura manual somente READ solicitada: ") +
-                                    operation.serviceUuid + "/" + operation.characteristicUuid
+                                (if (automatic) {
+                                    "Leitura automática somente READ solicitada: "
+                                } else {
+                                    "Leitura manual somente READ solicitada: "
+                                }) + operation.serviceUuid + "/" + operation.characteristicUuid
                             } else {
                                 "Android recusou leitura GATT: " + operation.characteristicUuid
                             })
                             discoveryLibraryStore.recordDiscoveryAsync(
                                 title = "Leitura GATT solicitada • " + operation.characteristicUuid,
-                                detail = if (started) "Android aceitou iniciar a leitura assíncrona." else "Android recusou iniciar a leitura.",
+                                detail = if (started) {
+                                    "Android aceitou iniciar a leitura assíncrona."
+                                } else {
+                                    "Android recusou iniciar a leitura."
+                                },
                                 nowMillis = System.currentTimeMillis(),
                                 source = probeSource,
                                 confidence = if (started) "SOLICITADA" else "API_RECUSOU"
@@ -2711,7 +2807,9 @@ class MainActivity : ComponentActivity() {
             updateGattProgressUi()
             discoveryLibraryStore.recordDiscoveryAsync(
                 title = "Leitura concluída sem bytes • " + characteristicUuid,
-                detail = "O relógio respondeu ao READ com comprimento zero. Isso não prova ausência de função; o canal pode depender de notificações ou de uma sequência ainda não identificada.",
+                detail = "O relógio respondeu ao READ com comprimento zero. Isso não " +
+                    "prova ausência de função; o canal pode depender de notificações ou " +
+                    "de uma sequência ainda não identificada.",
                 nowMillis = nowMillis,
                 source = "GATT_READ",
                 confidence = "READ_OK_SEM_PAYLOAD"
@@ -2812,7 +2910,12 @@ class MainActivity : ComponentActivity() {
                         if (labels.isEmpty()) "não informadas" else labels.joinToString(" • "),
                         11f)
 
-                    appendLog("GATT característica observada: serviço=" + service.uuid + " | característica=" + characteristic.uuid + " | propriedades=" + if (labels.isEmpty()) "não informadas" else labels.joinToString(","))
+                    appendLog(
+                        "GATT característica observada: serviço=" + service.uuid +
+                            " | característica=" + characteristic.uuid +
+                            " | propriedades=" +
+                            if (labels.isEmpty()) "não informadas" else labels.joinToString(",")
+                    )
                     characteristic.descriptors.forEach { descriptor ->
                         appendLog("GATT descritor observado: " + descriptor.uuid + " | característica=" + characteristic.uuid)
                         addText(content, "Descritor: " + descriptor.uuid, 10f)
@@ -3281,7 +3384,8 @@ class MainActivity : ComponentActivity() {
                 }
                 value.startsWith("Falha na conexão GATT. Status: 147") -> {
                     headline = "Tempo limite na conexão BLE"
-                    detail = "A conexão GATT expirou (status 147). Aproxime o relógio, mantenha-o ativo e tente novamente. A causa ainda não foi determinada."
+                    detail = "A conexão GATT expirou (status 147). Aproxime o relógio, " +
+                        "mantenha-o ativo e tente novamente. A causa ainda não foi determinada."
                     indicatorColor = 0xFFCA4B4B.toInt()
                 }
                 value.startsWith("Falha") || value.startsWith("Não foi possível") ||
@@ -3567,7 +3671,9 @@ class MainActivity : ComponentActivity() {
         finishAutomaticCaptureSession("Descoberta GATT não concluída")
         discoveryLibraryStore.recordDiscoveryAsync(
             title = "Descoberta GATT não concluída",
-            detail = reason + " A sessão anterior não será apresentada como inventário desta conexão; reconexão será tentada conforme a política local.",
+            detail = reason +
+                " A sessão anterior não será apresentada como inventário desta conexão; " +
+                "reconexão será tentada conforme a política local.",
             nowMillis = System.currentTimeMillis(),
             source = "GATT_LIFECYCLE",
             confidence = if (reason.contains("Tempo limite")) "TIMEOUT" else "FALHA"

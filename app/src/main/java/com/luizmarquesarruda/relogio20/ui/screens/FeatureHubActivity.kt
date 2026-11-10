@@ -177,58 +177,231 @@ class FeatureHubActivity : Activity() {
 
     private fun featuresFor(id: String): List<Feature> = when (id) {
         "health" -> listOf(
-            Feature("Frequência cardíaca", "O recurso é anunciado para a categoria do relógio, mas a leitura direta, a interpretação e a validação independente ainda não foram comprovadas.", "INTEGRAÇÃO DIRETA PENDENTE"),
-            Feature("Oxigênio no sangue (SpO₂)", "Leitura óptica não diagnóstica. Parser próprio e validação independente pendentes.", "NÃO VALIDADO"),
-            Feature("Pressão arterial", "O fabricante informa que o resultado é apenas referência. Não usar para diagnóstico ou tratamento.", "NÃO DIAGNÓSTICO • NÃO VALIDADO"),
-            Feature("Sono", "Monitoramento descrito pelo fabricante; fases, horários e origem ainda precisam de validação no protocolo.", "INTEGRAÇÃO DIRETA PENDENTE"),
+            Feature(
+                "Frequência cardíaca",
+                "O recurso é anunciado para a categoria do relógio, mas a leitura direta, a " +
+                "interpretação e a validação independente ainda não foram comprovadas.",
+                "INTEGRAÇÃO DIRETA PENDENTE",
+            ),
+            Feature(
+                "Oxigênio no sangue (SpO₂)",
+                "Leitura óptica não diagnóstica. Parser próprio e validação independente pendentes.",
+                "NÃO VALIDADO",
+            ),
+            Feature(
+                "Pressão arterial",
+                "O fabricante informa que o resultado é apenas referência. Não usar para " +
+                "diagnóstico ou tratamento.",
+                "NÃO DIAGNÓSTICO • NÃO VALIDADO",
+            ),
+            Feature(
+                "Sono",
+                "Monitoramento descrito pelo fabricante; fases, horários e origem ainda " +
+                "precisam de validação no protocolo.",
+                "INTEGRAÇÃO DIRETA PENDENTE",
+            ),
             Feature("Estresse / pressão", "Escala e significado exatos ainda precisam ser confirmados.", "SEMÂNTICA PENDENTE"),
-            Feature("METT", "Equivalente metabólico (MET). Não converter automaticamente para calorias.", "UNIDADE DEFINIDA • SENSOR PENDENTE"),
-            Feature("Treinamento respiratório", "Treino guiado executado localmente no telefone; não controla o relógio.", "IMPLEMENTADO NO ANDROID", available = true, route = "local_tools"),
-            Feature("Lembretes de saúde", "Lembrete diário local por notificação Android; não é enviado ao relógio.", "IMPLEMENTADO NO ANDROID", available = true, route = "local_tools"),
-            Feature("Ciclo fisiológico", "Dados sensíveis. Exige consentimento específico e controles de privacidade antes de qualquer integração.", "NÃO IMPLEMENTADO")
+            Feature(
+                "METT",
+                "Equivalente metabólico (MET). Não converter automaticamente para calorias.",
+                "UNIDADE DEFINIDA • SENSOR PENDENTE",
+            ),
+            Feature(
+                "Treinamento respiratório",
+                "Treino guiado executado localmente no telefone; não controla o relógio.",
+                "IMPLEMENTADO NO ANDROID",
+                available = true,
+                route = "local_tools",
+            ),
+            Feature(
+                "Lembretes de saúde",
+                "Lembrete diário local por notificação Android; não é enviado ao relógio.",
+                "IMPLEMENTADO NO ANDROID",
+                available = true,
+                route = "local_tools",
+            ),
+            Feature(
+                "Ciclo fisiológico",
+                "Dados sensíveis. Exige consentimento específico e controles de privacidade " +
+                "antes de qualquer integração.",
+                "NÃO IMPLEMENTADO",
+            )
         )
         "activity" -> listOf(
-            Feature("Reconhecimento automático", "O fabricante lista reconhecimento automático de movimento; início, fim e tipos ainda não são recebidos pelo app.", "NÃO VALIDADO"),
+            Feature(
+                "Reconhecimento automático",
+                "O fabricante lista reconhecimento automático de movimento; início, fim e " +
+                "tipos ainda não são recebidos pelo app.",
+                "NÃO VALIDADO",
+            ),
             Feature("Caminhadas e corridas", "Histórico de atividade e percurso no mapa ainda não implementados.", "NÃO IMPLEMENTADO"),
-            Feature("Metas", "Meta diária local de passos com progresso baseado no agregado Health Connect, quando autorizado.", "IMPLEMENTADO NO ANDROID", available = true, route = "local_tools"),
-            Feature("Histórico de passos", "Histórico diário de 7 dias agregado pelo Health Connect, com origem filtrada; não é histórico direto do GT3 MAX.", "IMPLEMENTADO • HEALTH CONNECT", available = true, route = "local_tools")
+            Feature(
+                "Metas",
+                "Meta diária local de passos com progresso baseado no agregado Health " +
+                "Connect, quando autorizado.",
+                "IMPLEMENTADO NO ANDROID",
+                available = true,
+                route = "local_tools",
+            ),
+            Feature(
+                "Histórico de passos",
+                "Histórico diário de 7 dias agregado pelo Health Connect, com origem " +
+                "filtrada; não é histórico direto do GT3 MAX.",
+                "IMPLEMENTADO • HEALTH CONNECT",
+                available = true,
+                route = "local_tools",
+            )
         )
         "device" -> listOf(
-            Feature("Divisão de tela do dispositivo", "Rótulo de origem ambíguo; não equivale a multi-janela Android e não há função de firmware confirmada.", "SEM DEFINIÇÃO • NÃO IMPLEMENTADO"),
-            Feature("Bateria do relógio", "Notificação NUS TX do GT3 MAX Call com interpretação AB 0x91/0x80. O valor só será confirmado após comparação com Wearfit Pro em diferentes níveis de carga.", "LEITURA CANDIDATA • NÃO VALIDADA"),
+            Feature(
+                "Divisão de tela do dispositivo",
+                "Rótulo de origem ambíguo; não equivale a multi-janela Android e não há " +
+                "função de firmware confirmada.",
+                "SEM DEFINIÇÃO • NÃO IMPLEMENTADO",
+            ),
+            Feature(
+                "Bateria do relógio",
+                "Notificação NUS TX do GT3 MAX Call com interpretação AB 0x91/0x80. O valor " +
+                "só será confirmado após comparação com Wearfit Pro em diferentes níveis de " +
+                "carga.",
+                "LEITURA CANDIDATA • NÃO VALIDADA",
+            ),
             Feature("Brilho da tela", "Ajuste remoto depende de comando proprietário identificado e validado.", "BLOQUEADO ATÉ VALIDAR"),
-            Feature("Personalizar botão inferior", "Disponibilidade varia por modelo; mapeamento e comando não confirmados.", "SUPORTE INCERTO"),
-            Feature("Função motora / vibração", "Pode representar motor de vibração do relógio. Padrões e comandos não foram identificados; nenhuma escrita proprietária será enviada.", "PROTOCOLO NÃO VALIDADO"),
-            Feature("Bloqueio / desbloqueio", "Controle remoto de bloqueio não está habilitado.", "BLOQUEADO POR SEGURANÇA", blocked = true),
-            Feature("Sincronização automática de hora", "O app identifica o perfil CTS 0x1805/0x2A2B no inventário, mas não escreve a hora do relógio nesta versão. A sincronização física continua pendente de implementação e validação seguras; a integração física permanece pendente; nenhum comando proprietário será usado como alternativa.", "ESCRITA CTS SUSPENSA • NÃO VALIDADO"),
-            Feature("Reiniciar / desligar", "Comandos de energia não serão enviados sem protocolo e confirmação explícita.", "BLOQUEADO POR SEGURANÇA", blocked = true),
+            Feature(
+                "Personalizar botão inferior",
+                "Disponibilidade varia por modelo; mapeamento e comando não confirmados.",
+                "SUPORTE INCERTO",
+            ),
+            Feature(
+                "Função motora / vibração",
+                "Pode representar motor de vibração do relógio. Padrões e comandos não foram " +
+                "identificados; nenhuma escrita proprietária será enviada.",
+                "PROTOCOLO NÃO VALIDADO",
+            ),
+            Feature(
+                "Bloqueio / desbloqueio",
+                "Controle remoto de bloqueio não está habilitado.",
+                "BLOQUEADO POR SEGURANÇA",
+                blocked = true,
+            ),
+            Feature(
+                "Sincronização automática de hora",
+                "O app identifica o perfil CTS 0x1805/0x2A2B no inventário, mas não escreve a " +
+                "hora do relógio nesta versão. A sincronização física continua pendente de " +
+                "implementação e validação seguras; a integração física permanece pendente; " +
+                "nenhum comando proprietário será usado como alternativa.",
+                "ESCRITA CTS SUSPENSA • NÃO VALIDADO",
+            ),
+            Feature(
+                "Reiniciar / desligar",
+                "Comandos de energia não serão enviados sem protocolo e confirmação explícita.",
+                "BLOQUEADO POR SEGURANÇA",
+                blocked = true,
+            ),
             Feature("Restaurar fábrica", "Risco de perda de dados e pareamento. Sem ação disponível.", "BLOQUEADO", blocked = true),
-            Feature("Atualização OTA", "Firmware e assinatura não foram identificados. Não executar atualização por engenharia reversa.", "BLOQUEADO", blocked = true)
+            Feature(
+                "Atualização OTA",
+                "Firmware e assinatura não foram identificados. Não executar atualização por " +
+                "engenharia reversa.",
+                "BLOQUEADO",
+                blocked = true,
+            )
         )
         "connectivity" -> listOf(
-            Feature("Notificações", "Tela de consentimento e seleção de aplicativos já existente na variante companion.", "TELA EXISTENTE", available = true, route = "notifications"),
+            Feature(
+                "Notificações",
+                "Tela de consentimento e seleção de aplicativos já existente na variante companion.",
+                "TELA EXISTENTE",
+                available = true,
+                route = "notifications",
+            ),
             Feature("Chamadas", "Perfil de áudio Bluetooth Classic e sinalização de chamadas ainda não integrados.", "NÃO IMPLEMENTADO"),
-            Feature("Configuração de áudio Bluetooth I", "Canal Classic separado do BLE; perfil e comportamento do primeiro item ainda não identificados.", "NÃO VALIDADO"),
-            Feature("Configuração de áudio Bluetooth II", "Canal Classic separado do BLE; perfil e comportamento do segundo item ainda não identificados.", "NÃO VALIDADO"),
+            Feature(
+                "Configuração de áudio Bluetooth I",
+                "Canal Classic separado do BLE; perfil e comportamento do primeiro item ainda " +
+                "não identificados.",
+                "NÃO VALIDADO",
+            ),
+            Feature(
+                "Configuração de áudio Bluetooth II",
+                "Canal Classic separado do BLE; perfil e comportamento do segundo item ainda " +
+                "não identificados.",
+                "NÃO VALIDADO",
+            ),
             Feature("Controle de música", "Controles de mídia do telefone ainda não integrados.", "NÃO IMPLEMENTADO"),
             Feature("Câmera remota", "Exige fluxo explícito e integração Android segura; não implementado.", "NÃO IMPLEMENTADO")
         )
         "tools" -> listOf(
-            Feature("Hora e clima", "Hora fornecida pelo sistema Android e previsão meteorológica obtida pela internet do celular, com cache local. Envio ao GT3 MAXX depende de protocolo identificado.", "ANDROID IMPLEMENTADO • BLE PENDENTE", available = true, route = "time_weather"),
-            Feature("Alarmes", "Cria um alarme no aplicativo Relógio do Android; não sincroniza com o smartwatch.", "IMPLEMENTADO NO ANDROID", available = true, route = "local_tools"),
-            Feature("Cronômetro", "Cronômetro local com iniciar, pausar e zerar.", "IMPLEMENTADO NO ANDROID", available = true, route = "local_tools"),
-            Feature("Temporizador", "Temporizador local de 1 a 180 minutos.", "IMPLEMENTADO NO ANDROID", available = true, route = "local_tools"),
+            Feature(
+                "Hora e clima",
+                "Hora fornecida pelo sistema Android e previsão meteorológica obtida pela " +
+                "internet do celular, com cache local. Envio ao GT3 MAXX depende de protocolo " +
+                "identificado.",
+                "ANDROID IMPLEMENTADO • BLE PENDENTE",
+                available = true,
+                route = "time_weather",
+            ),
+            Feature(
+                "Alarmes",
+                "Cria um alarme no aplicativo Relógio do Android; não sincroniza com o smartwatch.",
+                "IMPLEMENTADO NO ANDROID",
+                available = true,
+                route = "local_tools",
+            ),
+            Feature(
+                "Cronômetro",
+                "Cronômetro local com iniciar, pausar e zerar.",
+                "IMPLEMENTADO NO ANDROID",
+                available = true,
+                route = "local_tools",
+            ),
+            Feature(
+                "Temporizador",
+                "Temporizador local de 1 a 180 minutos.",
+                "IMPLEMENTADO NO ANDROID",
+                available = true,
+                route = "local_tools",
+            ),
             Feature("Encontrar telefone", "Exige canal de comando validado e ação explícita.", "NÃO IMPLEMENTADO"),
             Feature("Cartão de visita", "Compartilhamento de dados pessoais não implementado.", "NÃO IMPLEMENTADO"),
-            Feature("Quick collection", "Finalidade exata não confirmada; não atribuir semântica por tradução literal.", "SIGNIFICADO PENDENTE"),
-            Feature("Orientação de uso do ChatGPT", "Apenas referência de ajuda; não representa integração oficial com ChatGPT nem comando para o relógio.", "DOCUMENTAÇÃO • SEM INTEGRAÇÃO"),
-            Feature("Alipay", "Pagamentos e carteiras digitais não serão implementados sem integração oficial e requisitos de segurança.", "FORA DO ESCOPO ATUAL", blocked = true),
+            Feature(
+                "Quick collection",
+                "Finalidade exata não confirmada; não atribuir semântica por tradução literal.",
+                "SIGNIFICADO PENDENTE",
+            ),
+            Feature(
+                "Orientação de uso do ChatGPT",
+                "Apenas referência de ajuda; não representa integração oficial com ChatGPT " +
+                "nem comando para o relógio.",
+                "DOCUMENTAÇÃO • SEM INTEGRAÇÃO",
+            ),
+            Feature(
+                "Alipay",
+                "Pagamentos e carteiras digitais não serão implementados sem integração " +
+                "oficial e requisitos de segurança.",
+                "FORA DO ESCOPO ATUAL",
+                blocked = true,
+            ),
             Feature("Cartão de acesso", "Emulação de credenciais de acesso não implementada.", "BLOQUEADO POR SEGURANÇA", blocked = true)
         )
         "privacy" -> listOf(
-            Feature("Dados de saúde e privacidade", "Finalidades, permissões e limites da integração atual.", "TELA EXISTENTE", available = true, route = "privacy"),
-            Feature("Permissões Android", "Permissões devem ser concedidas pelo usuário nas configurações do Android.", "CONTROLE DO ANDROID"),
-            Feature("Fontes e qualidade dos dados", "A origem deve ser preservada: relógio, telefone ou agregado Health Connect.", "CONTRATO DE DOMÍNIO CRIADO")
+            Feature(
+                "Dados de saúde e privacidade",
+                "Finalidades, permissões e limites da integração atual.",
+                "TELA EXISTENTE",
+                available = true,
+                route = "privacy",
+            ),
+            Feature(
+                "Permissões Android",
+                "Permissões devem ser concedidas pelo usuário nas configurações do Android.",
+                "CONTROLE DO ANDROID",
+            ),
+            Feature(
+                "Fontes e qualidade dos dados",
+                "A origem deve ser preservada: relógio, telefone ou agregado Health Connect.",
+                "CONTRATO DE DOMÍNIO CRIADO",
+            )
         )
         else -> emptyList()
     }
