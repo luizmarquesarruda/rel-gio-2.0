@@ -60,3 +60,4 @@ O contrato implementado está em [CONTRATO-METRICAS-SAUDE.md](CONTRATO-METRICAS-
 6. Extrair adaptadores Platform quando os recursos Android forem priorizados.
 
 Cada extração deve ser pequena, testada e reversível. Não misturar refatoração com engenharia reversa de protocolo.
+\n## Inteligência local (Fase 1)\n\n- `domain/intelligence/DailyActivityObservation.kt`: agregado diário com origem e estado de validação.\n- `domain/intelligence/ActivityTrendEngine.kt`: comparação determinística de 7 dias contra 7 dias, sem dependências Android/BLE.\n- O motor recusa mistura de fontes e exige validação física para amostras atribuídas ao GT3 MAX.\n- Escopo e limites: [IA-LOCAL-FASE-1.md](IA-LOCAL-FASE-1.md).\n
