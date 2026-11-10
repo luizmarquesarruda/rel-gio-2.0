@@ -66,32 +66,9 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      - name: Bootstrap KtLint baseline for existing style debt
-        id: ktlint_baseline_bootstrap
-        if: ${{ !hashFiles('app/config/ktlint/baseline.xml') }}
-        run: gradle --no-daemon :app:ktlintGenerateBaseline
-
-      - name: Publish KtLint baseline for review
-        if: ${{ steps.ktlint_baseline_bootstrap.outcome == 'success' }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: ktlint-baseline-review
-          path: app/config/ktlint/baseline.xml
-          if-no-files-found: error
-          retention-days: 30
-
-      - name: Require review and commit of the generated KtLint baseline
-        if: ${{ steps.ktlint_baseline_bootstrap.outcome == 'success' }}
-        shell: bash
-        run: |
-          echo "A baseline KtLint foi gerada e publicada para revisão." >&2
-          echo "Revise app/config/ktlint/baseline.xml, commit o arquivo e execute a CI novamente." >&2
-          echo "Nenhum APK será publicado enquanto a baseline não estiver versionada." >&2
-          exit 1
-
       - name: Run KtLint as a blocking source gate
         id: ktlint
-        if: ${{ !cancelled() && steps.manifest_policy_tests.outcome == 'success' && steps.setup_gradle.outcome == 'success' && steps.ktlint_baseline_bootstrap.outcome == 'skipped' }}
+        if: ${{ !cancelled() && steps.manifest_policy_tests.outcome == 'success' && steps.setup_gradle.outcome == 'success' }}
         run: gradle --no-daemon :app:ktlintCheck
 
       - name: Run Android Lint for both variants
