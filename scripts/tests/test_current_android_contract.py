@@ -432,7 +432,7 @@ class CurrentAndroidContractTests(unittest.TestCase):
             ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
         ).read_text(encoding="utf-8")
         callback = source.split("private fun handleNotification", 1)[1].split(
-            "\\n    private fun ", 1
+            "\n    private fun ", 1
         )[0]
         self.assertEqual(1, callback.count("val captureActive ="))
 
