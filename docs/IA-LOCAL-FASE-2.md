@@ -2,7 +2,7 @@
 
 ## Escopo
 
-Fundação de persistência local para observações diárias de passos. A integração com Health Connect foi adicionada na Fase 3.
+Implementa a fundação de persistência local para observações diárias de passos. Não altera BLE, permissões, UI, notificações ou agendamento. A integração com Health Connect foi adicionada na Fase 3.
 
 ## Contrato de armazenamento
 
@@ -17,9 +17,14 @@ Fundação de persistência local para observações diárias de passos. A integ
 - Limite: 4.000 observações e 1 MiB. Não há limpeza automática ou descarte dos registros antigos; ao atingir o limite, novas chaves são recusadas.
 - O arquivo permanece no armazenamento interno privado do app. Não há criptografia adicional nesta fase nem transmissão de dados.
 
-## Limitações
+## Testes
 
-- O motor de tendências ainda não consome o histórico automaticamente.
+Cobertura unitária de proveniência, idempotência, atualização, rejeição de dado antigo, separação por origem, consulta por intervalo, corrupção, schema futuro, conteúdo malformado e falha de gravação simulada.
+
+## Limitações e próxima etapa
+
+- A Fase 3 conectou o histórico ao HealthConnectStepsRepository. O motor de tendências ainda não consome o histórico automaticamente.
 - Nenhuma amostra do GT3 MAX é inserida automaticamente; validação física continua obrigatória.
 - Schema 1 é a versão inicial. Migrações serão adicionadas somente quando houver mudança real de formato, com testes dedicados.
+- A capacidade de 4.000 observações é limite de segurança, não política de retenção. É necessário revisar capacidade e política de exportação/limpeza explícita antes de coleta longitudinal contínua.
 - Teste físico no Galaxy A06 e GT3 MAX: **não validado**.
