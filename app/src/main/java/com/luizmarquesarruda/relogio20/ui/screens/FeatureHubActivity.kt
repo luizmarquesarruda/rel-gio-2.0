@@ -114,7 +114,8 @@ class FeatureHubActivity : Activity() {
         addCard(
             body,
             "Autodescoberta BLE",
-            "Inventário automático de perfis GATT, canais encontrados e notificações realmente recebidas. Hipóteses permanecem separadas de funções validadas.",
+            "Inventário automático de perfis GATT, canais encontrados e notificações " +
+                "realmente recebidas. Hipóteses permanecem separadas de funções validadas.",
             "ABRIR DESCOBERTA",
             false
         ) {
