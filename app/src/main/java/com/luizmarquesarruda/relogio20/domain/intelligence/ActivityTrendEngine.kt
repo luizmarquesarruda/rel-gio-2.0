@@ -1,6 +1,7 @@
 package com.luizmarquesarruda.relogio20.domain.intelligence
 
 import com.luizmarquesarruda.relogio20.domain.health.HealthDataOrigin
+import com.luizmarquesarruda.relogio20.domain.health.HealthValidationStatus
 import kotlin.math.abs
 
 enum class ActivityTrendStatus {
@@ -68,7 +69,7 @@ class ActivityTrendEngine(
         if (origins.size != 1) return ActivityTrendAnalysis(ActivityTrendStatus.MIXED_SOURCES)
         val origin = origins.single()
         if (origin == HealthDataOrigin.GT3_MAX &&
-            ordered.any { it.validationStatus.name != "PHYSICALLY_VALIDATED" }) {
+            ordered.any { it.validationStatus != HealthValidationStatus.PHYSICALLY_VALIDATED }) {
             return ActivityTrendAnalysis(ActivityTrendStatus.INSUFFICIENT_DATA)
         }
 
