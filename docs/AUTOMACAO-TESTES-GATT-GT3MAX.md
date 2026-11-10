@@ -156,3 +156,17 @@ O botão **Registrar ação realizada no relógio** cria um marcador temporal lo
 
 
 A métrica de progresso separa operações finalizadas (READ respondido, CCCD confirmado, falha ou timeout) das operações não executadas. O percentual indica operações tratadas, mas o contador de resultados não incorpora itens pulados após desconexão ou pausa.
+
+## Ciclo de vida da descoberta de serviços
+
+A conexão GATT não é considerada pronta para exploração apenas porque `discoverServices()` retornou `true`. Esse retorno significa somente que a solicitação foi aceita pelo Android.
+
+O app persiste três evidências separadas:
+- `AGUARDANDO_CALLBACK`: solicitação aceita; nenhum inventário novo deve ser tratado como atual.
+- `CALLBACK_OK`: `onServicesDiscovered` retornou sucesso e o inventário da conexão atual pode ser registrado.
+- `FALHA` ou `TIMEOUT`: a descoberta não foi concluída; a conexão é encerrada, as operações pendentes são descartadas e a reconexão automática pode ser retomada.
+- `INTERRUPTIDA`: o usuário desconectou ou o aplicativo foi encerrado antes do callback; a tentativa fica registrada sem promover o inventário anterior a atual.
+
+O watchdog é de 12 segundos. Esse valor é um limite operacional do aplicativo, não um tempo garantido pelo protocolo BLE. Inventários de sessões anteriores permanecem no histórico, mas o evento de ciclo de vida mais recente permite distinguir dados antigos de uma descoberta pendente.
+
+A captura física e a validação de sensores continuam dependentes de dados reais do GT3 MAX. Um callback GATT bem-sucedido não comprova que os sensores emitiram medições.
