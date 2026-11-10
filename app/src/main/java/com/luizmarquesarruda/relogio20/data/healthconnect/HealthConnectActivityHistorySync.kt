@@ -9,7 +9,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 
 internal enum class HealthConnectActivityHistorySyncStatus {
-    SAVED, UNCHANGED, NO_DATA, INCOMPLETE_DAY, PERMISSION_REQUIRED,
+    SAVED, UNCHANGED, STALE_IGNORED, NO_DATA, INCOMPLETE_DAY, PERMISSION_REQUIRED,
     PROVIDER_UNAVAILABLE, PROVIDER_UPDATE_REQUIRED, CORRUPT_HISTORY,
     UNSUPPORTED_SCHEMA, CAPACITY_REACHED, STORAGE_FAILURE, READ_FAILURE
 }
@@ -46,7 +46,7 @@ internal class HealthConnectActivityHistorySync(
                 when (history.upsert(observation)) {
                     DailyActivityHistoryWriteResult.SAVED -> HealthConnectActivityHistorySyncStatus.SAVED
                     DailyActivityHistoryWriteResult.UNCHANGED -> HealthConnectActivityHistorySyncStatus.UNCHANGED
-                    DailyActivityHistoryWriteResult.STALE_IGNORED,
+                    DailyActivityHistoryWriteResult.STALE_IGNORED -> HealthConnectActivityHistorySyncStatus.STALE_IGNORED
                     DailyActivityHistoryWriteResult.STORAGE_FAILURE -> HealthConnectActivityHistorySyncStatus.STORAGE_FAILURE
                     DailyActivityHistoryWriteResult.CAPACITY_REACHED -> HealthConnectActivityHistorySyncStatus.CAPACITY_REACHED
                     DailyActivityHistoryWriteResult.CORRUPT -> HealthConnectActivityHistorySyncStatus.CORRUPT_HISTORY

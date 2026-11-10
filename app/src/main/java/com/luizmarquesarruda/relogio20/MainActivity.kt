@@ -68,6 +68,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
@@ -111,7 +112,8 @@ class MainActivity : ComponentActivity() {
     private val healthConnectActivityHistorySync by lazy(LazyThreadSafetyMode.NONE) {
         HealthConnectActivityHistorySync(healthConnectRepository, dailyActivityHistoryRepository)
     }
-    private var lastHistorySyncAttemptKey: String? = null
+    private var lastHistorySyncTerminalKey: String? = null
+    private var lastHistorySyncAttemptElapsedRealtimeMillis: Long? = null
     private val featureDiscoveryStore by lazy(LazyThreadSafetyMode.NONE) {
         FeatureDiscoveryStore(this)
     }
@@ -893,12 +895,25 @@ class MainActivity : ComponentActivity() {
                 val zoneId = ZoneId.systemDefault()
                 val previousDay = now.atZone(zoneId).toLocalDate().minusDays(1)
                 val syncKey = "${previousDay.toEpochDay()}@${zoneId.id}"
-                if (lastHistorySyncAttemptKey != syncKey) {
-                    lastHistorySyncAttemptKey = syncKey
-                    when (healthConnectActivityHistorySync.syncPreviousCompletedDay(now, zoneId)) {
+                val attemptElapsedRealtimeMillis = SystemClock.elapsedRealtime()
+                if (HealthConnectHistorySyncRetryPolicy.shouldAttempt(
+                        syncKey = syncKey,
+                        terminalSyncKey = lastHistorySyncTerminalKey,
+                        lastAttemptElapsedRealtimeMillis = lastHistorySyncAttemptElapsedRealtimeMillis,
+                        nowElapsedRealtimeMillis = attemptElapsedRealtimeMillis
+                    )
+                ) {
+                    lastHistorySyncAttemptElapsedRealtimeMillis = attemptElapsedRealtimeMillis
+                    val syncStatus = healthConnectActivityHistorySync.syncPreviousCompletedDay(now, zoneId)
+                    if (HealthConnectHistorySyncRetryPolicy.isTerminal(syncStatus)) {
+                        lastHistorySyncTerminalKey = syncKey
+                    }
+                    when (syncStatus) {
                         HealthConnectActivityHistorySyncStatus.SAVED ->
                             appendLog("Histórico IA: agregado completo do dia anterior armazenado com origem Health Connect.")
                         HealthConnectActivityHistorySyncStatus.UNCHANGED -> Unit
+                        HealthConnectActivityHistorySyncStatus.STALE_IGNORED ->
+                            appendLog("Histórico IA: observação antiga ignorada; o registro mais recente foi preservado.")
                         HealthConnectActivityHistorySyncStatus.NO_DATA ->
                             appendLog("Histórico IA: sem agregado de passos para o dia anterior; nenhum valor zero foi inventado.")
                         HealthConnectActivityHistorySyncStatus.INCOMPLETE_DAY ->

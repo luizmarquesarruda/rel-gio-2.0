@@ -4,6 +4,8 @@ import com.luizmarquesarruda.relogio20.data.intelligence.DailyActivityHistoryRep
 import com.luizmarquesarruda.relogio20.data.intelligence.DailyActivityHistoryStorage
 import com.luizmarquesarruda.relogio20.data.intelligence.DailyActivityHistoryReadResult
 import com.luizmarquesarruda.relogio20.domain.health.HealthDataOrigin
+import com.luizmarquesarruda.relogio20.domain.health.HealthValidationStatus
+import com.luizmarquesarruda.relogio20.domain.intelligence.DailyActivityObservation
 import com.luizmarquesarruda.relogio20.domain.health.StepsSnapshot
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -91,6 +93,35 @@ class HealthConnectActivityHistorySyncTest {
         val item = (history.read() as DailyActivityHistoryReadResult.Available).snapshot.observations.single()
         assertEquals(5_432L, item.steps)
         assertEquals(HealthDataOrigin.HEALTH_CONNECT_AGGREGATE, item.origin)
+    }
+
+    @Test
+    fun olderObservationIsReportedAsStaleAndNewerStoredValueIsPreserved() {
+        val source = FakeSource().apply {
+            result = HealthConnectStepsResult.Success(snapshot(5_000L))
+        }
+        val storage = MemoryStorage()
+        val history = DailyActivityHistoryRepository(storage)
+        val existing = DailyActivityObservation(
+            epochDay = previousDay.toEpochDay(),
+            steps = 7_000L,
+            origin = HealthDataOrigin.HEALTH_CONNECT_AGGREGATE,
+            receivedAtEpochMillis = now.plusSeconds(120).toEpochMilli(),
+            validationStatus = HealthValidationStatus.UNVALIDATED
+        )
+        assertEquals(
+            com.luizmarquesarruda.relogio20.data.intelligence.DailyActivityHistoryWriteResult.SAVED,
+            history.upsert(existing)
+        )
+        val sync = HealthConnectActivityHistorySync(source, history)
+
+        assertEquals(
+            HealthConnectActivityHistorySyncStatus.STALE_IGNORED,
+            runBlocking { sync.syncPreviousCompletedDay(now, zone) }
+        )
+        val saved = (history.read() as DailyActivityHistoryReadResult.Available)
+            .snapshot.observations.single()
+        assertEquals(7_000L, saved.steps)
     }
 
     @Test
