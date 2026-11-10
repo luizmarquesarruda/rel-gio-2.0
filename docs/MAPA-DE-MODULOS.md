@@ -97,3 +97,13 @@ A fila GATT, o parser candidato e o adaptador Health Connect de passos foram iso
 
 | `domain/intelligence/DailyActivityObservation.kt` | Domain / Intelligence | Agregado diário de passos com proveniência e validação. |
 | `domain/intelligence/ActivityTrendEngine.kt` | Domain / Intelligence | Detecta variação entre duas janelas completas de sete dias; não acessa Android, BLE ou rede. |
+
+
+| Arquivo | Módulo | Responsabilidade |
+|---|---|---|
+| data/intelligence/DailyActivityHistoryRepository.kt | Data / Intelligence | Upsert idempotente por dia e origem; impede sobrescrita por amostra antiga e recusa arquivo corrompido ou schema futuro. |
+| data/intelligence/DailyActivityHistoryCodec.kt | Data / Intelligence | Codec binário schema 1 sem Android; valida origem, status, duplicidade, tamanho e limite de observações. |
+| data/intelligence/DailyActivityHistoryAtomicFile.kt | Data / Local storage | Persiste no sandbox privado usando AtomicFile. |
+| test/data/intelligence/DailyActivityHistoryRepositoryTest.kt | Testes / Data | Cobre proveniência, deduplicação, atualização, corrupção, schema futuro e falha de gravação. |
+
+O repositório ainda não está ligado ao Health Connect nem ao motor de tendências.

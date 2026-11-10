@@ -723,3 +723,14 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Testes unitários adicionados para tendência, origem, validação, janela incompleta, baseline zero e limiar.
 - Sem alteração BLE, UI, permissões, notificações, armazenamento, API externa ou dependências.
 - CI e validação física no Galaxy A06/GT3 MAX: **não validados nesta alteração**.
+
+
+## 2026-11-10 — IA local, Fase 2: histórico diário versionado
+
+- Criado repositório local para agregados diários de passos, mantendo origem e estado de validação.
+- Chave de deduplicação: dia + origem. Repetição idêntica é idempotente; observação mais antiga não substitui a mais recente; origens distintas permanecem separadas.
+- Persistência no arquivo privado do aplicativo via Android AtomicFile; codec binário independente do Android, schema 1.
+- Arquivo corrompido ou schema futuro é somente leitura; nenhuma migração destrutiva é executada.
+- Limite explícito: 4.000 observações e 1 MiB. Não há expurgo automático; ao atingir o limite, novas observações são recusadas para evitar perda silenciosa.
+- Testes unitários cobrem proveniência, idempotência, atualização, amostra antiga, origens separadas, corrupção, schema futuro e falha de gravação.
+- Ainda não conectado ao fluxo Health Connect nem à UI. Teste físico no Galaxy A06/GT3 MAX: **não validado**.

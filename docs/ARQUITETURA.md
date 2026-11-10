@@ -67,3 +67,12 @@ Cada extração deve ser pequena, testada e reversível. Não misturar refatora�
 - `domain/intelligence/ActivityTrendEngine.kt`: comparação determinística de 7 dias contra 7 dias, sem dependências Android/BLE.
 - O motor recusa mistura de fontes e exige validação física para amostras atribuídas ao GT3 MAX.
 - Escopo e limites: [IA-LOCAL-FASE-1.md](IA-LOCAL-FASE-1.md).
+
+
+## Inteligência local — Fase 2
+
+- data/intelligence/DailyActivityHistoryRepository.kt: repositório de observações diárias com chave única por dia/origem, idempotência e rejeição de atualização antiga.
+- data/intelligence/DailyActivityHistoryCodec.kt: formato binário versionado (schema 1), ordenação estável, validação de integridade, duplicidade, tamanho e contagem.
+- data/intelligence/DailyActivityHistoryAtomicFile.kt: armazenamento privado do app com escrita atômica e recuperação gerenciada por Android AtomicFile.
+- Arquivos corrompidos e schemas futuros permanecem somente leitura; capacidade de 4.000 observações sem descarte automático.
+- Escopo: IA-LOCAL-FASE-2.md.
