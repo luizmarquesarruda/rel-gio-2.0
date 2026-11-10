@@ -31,6 +31,10 @@ jobs:
         id: format
         continue-on-error: true
         run: ./gradlew --no-daemon :app:ktlintFormat
+      - name: Verify formatted Kotlin sources
+        id: ktlint
+        continue-on-error: true
+        run: ./gradlew --no-daemon :app:ktlintCheck
       - name: Export formatted Kotlin sources and KtLint reports
         if: always()
         uses: actions/upload-artifact@v7
@@ -39,26 +43,31 @@ jobs:
           path: |
             app/src/**/*.kt
             app/build/reports/ktlint/**
+            app/build/reports/**
+            app/build/test-results/**
             gradlew
             gradlew.bat
             gradle/wrapper/**
           if-no-files-found: error
           retention-days: 3
       - name: Generate SHA-256 dependency verification metadata and validate project
-        if: ${{ steps.format.outcome == 'success' }}
+        if: ${{ steps.format.outcome == 'success' && steps.ktlint.outcome == 'success' }}
         run: |
           ./gradlew --no-daemon --write-verification-metadata sha256 lintDiagnosticDebug lintCompanionDebug testDiagnosticDebugUnitTest testCompanionDebugUnitTest assembleDiagnosticDebug assembleCompanionDebug :macrobenchmark:assemble
-      - name: Commit reviewed build tooling and formatter output
-        if: ${{ steps.format.outcome == 'success' }}
+      - name: Commit formatted sources and Gradle wrapper for iterative review
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add gradlew gradlew.bat gradle/wrapper app/src gradle/verification-metadata.xml
+          git add gradlew gradlew.bat gradle/wrapper app/src
+          if [[ -f gradle/verification-metadata.xml ]]; then
+            git add gradle/verification-metadata.xml
+          fi
           if git diff --cached --quiet; then
             echo "No generated tooling or formatting changes."
             exit 0
           fi
-          git commit -m "build: pin Gradle wrapper and dependency checksums"
+          git commit -m "style: apply Kotlin formatter and pin Gradle wrapper"
           git push origin HEAD:fix/security-privacy-gatt-20261109
