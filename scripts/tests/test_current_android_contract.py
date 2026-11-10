@@ -196,7 +196,9 @@ class CurrentAndroidContractTests(unittest.TestCase):
         workflow = (ROOT / ".github/workflows/android-ci.yml").read_text(encoding="utf-8")
         self.assertIn("steps.manifest_policy_tests.outcome == 'success'", workflow)
         self.assertIn("steps.setup_gradle.outcome == 'success'", workflow)
-        self.assertIn("steps.ktlint_baseline_bootstrap.outcome == 'skipped'", workflow)
+        self.assertIn("run: gradle --no-daemon :app:ktlintCheck", workflow)
+        self.assertNotIn("ktlintGenerateBaseline", workflow)
+        self.assertNotIn("ktlint_baseline_bootstrap", workflow)
 
 
     def test_automatic_gatt_probe_reserves_single_start_before_async_session_write(self):
