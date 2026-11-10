@@ -17,6 +17,7 @@ internal sealed class DailyActivityHistoryReadResult {
     object Empty : DailyActivityHistoryReadResult()
     data class Available(val snapshot: DailyActivityHistorySnapshot) : DailyActivityHistoryReadResult()
     object Corrupt : DailyActivityHistoryReadResult()
+    object StorageFailure : DailyActivityHistoryReadResult()
     data class UnsupportedSchema(val version: Int) : DailyActivityHistoryReadResult()
 }
 

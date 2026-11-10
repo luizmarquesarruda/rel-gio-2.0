@@ -28,7 +28,7 @@ internal class DailyActivityHistoryRepository(
         val bytes = try {
             storage.readBytes()
         } catch (_: Exception) {
-            return DailyActivityHistoryReadResult.Corrupt
+            return DailyActivityHistoryReadResult.StorageFailure
         } ?: return DailyActivityHistoryReadResult.Empty
 
         return DailyActivityHistoryCodec.decode(bytes)
@@ -40,6 +40,7 @@ internal class DailyActivityHistoryRepository(
             DailyActivityHistoryReadResult.Empty -> DailyActivityHistorySnapshot()
             is DailyActivityHistoryReadResult.Available -> result.snapshot
             DailyActivityHistoryReadResult.Corrupt -> return DailyActivityHistoryWriteResult.CORRUPT
+            DailyActivityHistoryReadResult.StorageFailure -> return DailyActivityHistoryWriteResult.STORAGE_FAILURE
             is DailyActivityHistoryReadResult.UnsupportedSchema ->
                 return DailyActivityHistoryWriteResult.UNSUPPORTED_SCHEMA
         }

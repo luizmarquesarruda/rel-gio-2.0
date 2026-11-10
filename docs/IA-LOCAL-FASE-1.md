@@ -30,4 +30,4 @@ O limiar de 25% é uma regra inicial de produto, não um parâmetro clínico. De
 
 ## Próxima etapa
 
-Implementar repositório local versionado de agregados diários, com deduplicação, proteção contra corrupção/schema futuro, retenção explícita e testes de migração. Só depois integrar WorkManager e notificações locais.
+Fase 2 implementou a fundação de histórico versionado e escrita atômica. A próxima etapa é integrar o repositório ao agregado diário do Health Connect com testes de origem, fuso horário, dia incompleto, repetição e atualização; só depois avaliar WorkManager e notificações locais.

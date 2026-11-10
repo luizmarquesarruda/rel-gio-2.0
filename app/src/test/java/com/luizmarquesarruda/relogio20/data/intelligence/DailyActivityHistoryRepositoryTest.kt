@@ -12,7 +12,12 @@ class DailyActivityHistoryRepositoryTest {
     private class MemoryStorage(var bytes: ByteArray? = null) : DailyActivityHistoryStorage {
         var failWrites = false
 
-        override fun readBytes(): ByteArray? = bytes?.copyOf()
+        var failReads = false
+
+        override fun readBytes(): ByteArray? {
+            if (failReads) error("Simulated read failure")
+            return bytes?.copyOf()
+        }
 
         override fun writeAtomically(bytes: ByteArray): Boolean {
             if (failWrites) return false
