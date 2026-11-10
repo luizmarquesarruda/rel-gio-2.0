@@ -32,6 +32,10 @@ import com.luizmarquesarruda.relogio20.device.gt3max.protocol.WearfitAbStreamDec
 import com.luizmarquesarruda.relogio20.HealthPrivacyActivity
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectAvailability
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsRepository
+import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectActivityHistorySync
+import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectActivityHistorySyncStatus
+import com.luizmarquesarruda.relogio20.data.intelligence.DailyActivityHistoryAtomicFile
+import com.luizmarquesarruda.relogio20.data.intelligence.DailyActivityHistoryRepository
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsResult
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectPermissionState
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectPermissionStatePolicy
@@ -75,6 +79,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import java.time.Instant
+import java.time.ZoneId
 
 class MainActivity : ComponentActivity() {
     private lateinit var content: LinearLayout
@@ -99,6 +105,13 @@ class MainActivity : ComponentActivity() {
     private val healthConnectRepository by lazy(LazyThreadSafetyMode.NONE) {
         HealthConnectStepsRepository(this)
     }
+    private val dailyActivityHistoryRepository by lazy(LazyThreadSafetyMode.NONE) {
+        DailyActivityHistoryRepository(DailyActivityHistoryAtomicFile(this))
+    }
+    private val healthConnectActivityHistorySync by lazy(LazyThreadSafetyMode.NONE) {
+        HealthConnectActivityHistorySync(healthConnectRepository, dailyActivityHistoryRepository)
+    }
+    private var lastHistorySyncAttemptKey: String? = null
     private val featureDiscoveryStore by lazy(LazyThreadSafetyMode.NONE) {
         FeatureDiscoveryStore(this)
     }
@@ -825,7 +838,8 @@ class MainActivity : ComponentActivity() {
             return
         }
         healthScope.launch {
-            when (val result = healthConnectRepository.readTodaySteps()) {
+            val result = healthConnectRepository.readTodaySteps()
+            when (result) {
                 is HealthConnectStepsResult.Success -> {
                     val count = result.snapshot.totalSteps
                     stepsView.text = StepsCountFormatter.label(count)
@@ -870,6 +884,40 @@ class MainActivity : ComponentActivity() {
                 is HealthConnectStepsResult.Failure -> {
                     healthStatusView.text = "Falha ao ler passos do Health Connect."
                     appendLog("Erro ao ler passos: " + result.reason)
+                }
+                HealthConnectStepsResult.IncompleteDay -> Unit
+            }
+
+            if (result is HealthConnectStepsResult.Success) {
+                val now = Instant.now()
+                val zoneId = ZoneId.systemDefault()
+                val previousDay = now.atZone(zoneId).toLocalDate().minusDays(1)
+                val syncKey = "${previousDay.toEpochDay()}@${zoneId.id}"
+                if (lastHistorySyncAttemptKey != syncKey) {
+                    lastHistorySyncAttemptKey = syncKey
+                    when (healthConnectActivityHistorySync.syncPreviousCompletedDay(now, zoneId)) {
+                        HealthConnectActivityHistorySyncStatus.SAVED ->
+                            appendLog("Histórico IA: agregado completo do dia anterior armazenado com origem Health Connect.")
+                        HealthConnectActivityHistorySyncStatus.UNCHANGED -> Unit
+                        HealthConnectActivityHistorySyncStatus.NO_DATA ->
+                            appendLog("Histórico IA: sem agregado de passos para o dia anterior; nenhum valor zero foi inventado.")
+                        HealthConnectActivityHistorySyncStatus.INCOMPLETE_DAY ->
+                            appendLog("Histórico IA: dia ainda incompleto; gravação adiada.")
+                        HealthConnectActivityHistorySyncStatus.PERMISSION_REQUIRED ->
+                            appendLog("Histórico IA: permissão READ_STEPS necessária para sincronizar o dia anterior.")
+                        HealthConnectActivityHistorySyncStatus.PROVIDER_UNAVAILABLE,
+                        HealthConnectActivityHistorySyncStatus.PROVIDER_UPDATE_REQUIRED ->
+                            appendLog("Histórico IA: Conexão Saúde indisponível ou precisa de atualização.")
+                        HealthConnectActivityHistorySyncStatus.CORRUPT_HISTORY ->
+                            appendLog("Histórico IA: arquivo local corrompido; preservado sem sobrescrita.")
+                        HealthConnectActivityHistorySyncStatus.UNSUPPORTED_SCHEMA ->
+                            appendLog("Histórico IA: versão futura do histórico; arquivo preservado sem sobrescrita.")
+                        HealthConnectActivityHistorySyncStatus.CAPACITY_REACHED ->
+                            appendLog("Histórico IA: limite de armazenamento atingido; nenhum registro antigo foi removido.")
+                        HealthConnectActivityHistorySyncStatus.STORAGE_FAILURE,
+                        HealthConnectActivityHistorySyncStatus.READ_FAILURE ->
+                            appendLog("Histórico IA: falha ao consultar ou gravar dados; nenhuma confirmação de persistência.")
+                    }
                 }
             }
         }

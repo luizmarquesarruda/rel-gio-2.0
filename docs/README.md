@@ -1,19 +1,17 @@
 # Documentação do Relógio 2.0
 
-Este índice separa decisões de arquitetura, integrações, evidências do dispositivo e governança.
-
 ## Visão geral e arquitetura
 - [IA local — Fase 2: histórico e persistência](IA-LOCAL-FASE-2.md)
-- [Arquitetura](ARQUITETURA.md) — camadas, contratos e regras de integração.
-- [Mapa de módulos](MAPA-DE-MODULOS.md) — estado real, estrutura-alvo e dívida técnica.
-- [Navegação e layout](NAVEGACAO-E-LAYOUT.md) — áreas, telas secundárias, estados e limites visuais.
-- [Matriz de compatibilidade GT3 MAX](MATRIZ-COMPATIBILIDADE-GT3-MAXX.md) — 33 entradas, módulos responsáveis, riscos e validação.
-- [Contrato de métricas de saúde](CONTRATO-METRICAS-SAUDE.md) — tipos, unidades, origem, timestamps e portão de validação.
+- [IA local — Fase 3: integração Health Connect](IA-LOCAL-FASE-3.md)
+- [Arquitetura](ARQUITETURA.md)
+- [Mapa de módulos](MAPA-DE-MODULOS.md)
+- [Navegação e layout](NAVEGACAO-E-LAYOUT.md)
+- [Matriz de compatibilidade GT3 MAX](MATRIZ-COMPATIBILIDADE-GT3-MAXX.md)
+- [Contrato de métricas de saúde](CONTRATO-METRICAS-SAUDE.md)
 
 ## Integrações Android
 - [Alinhamento Google Android/Wear OS](ALINHAMENTO-GOOGLE-ANDROID-WEAROS.md)
 - [Play Protect e distribuição segura](ALINHAMENTO-PLAY-PROTECT-DISTRIBUICAO.md)
-- [Investigação do bloqueio B do Play Protect](INVESTIGACAO-BLOQUEIO-PLAY-PROTECT-2026-11-04.md) — classificação recebida, evidências por variante e próximos passos.
 - [Arquitetura Saúde & Fitness](SAUDE-FITNESS-ARQUITETURA.md)
 - [Passos e referência de horário](INTEGRACAO-HEALTH-CONNECT-PASSOS-HORARIO.md)
 - [Plano de mapas, rotas e sinais vitais](PLANO-MAPAS-E-ROTAS-HEALTH-CONNECT.md)
@@ -22,9 +20,9 @@ Este índice separa decisões de arquitetura, integrações, evidências do disp
 ## Dispositivo e evidências
 - [Identificação do relógio](IDENTIFICACAO-DO-RELOGIO.md)
 - [Perfil GT3 Maxx](PERFIL-GT3-MAXX.md)
-- [Perfil de acesso GT3 MAX Call](PERFIL-ACESSO-GT3-MAX-CALL.md) — identificação de software informada, fingerprint GATT e escopo de leitura segura.
+- [Perfil de acesso GT3 MAX Call](PERFIL-ACESSO-GT3-MAX-CALL.md)
 - [Captura BLE de 03/11/2026](CAPTURA-BLE-GT3-MAX-2026-11-03.md)
-- [Automação de testes GATT e coleta local](AUTOMACAO-TESTES-GATT-GT3MAX.md) — consentimento, leituras, notificações, decoders e limites.
+- [Automação de testes GATT e coleta local](AUTOMACAO-TESTES-GATT-GT3MAX.md)
 
 ## Governança e versões
 - [Diário de bordo](DIARIO-DE-BORDO.md)

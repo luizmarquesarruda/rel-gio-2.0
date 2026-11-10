@@ -1,78 +1,47 @@
 # Arquitetura do Relógio 2.0
 
-## Plataforma atual
+## Plataforma e camadas
 
-A implementação em andamento é um protótipo Android nativo em Kotlin. Não há uma aplicação React Native nesta fase. O GT3 MAX é tratado como dispositivo BLE/GATT genérico; não presumir Wear OS, chipset ou SDK proprietário.
+Aplicativo Android nativo Kotlin. Não há React Native nesta fase. O GT3 MAX é tratado como dispositivo BLE/GATT genérico; não presumir Wear OS, chipset ou SDK proprietário.
 
-## Camadas
-
-1. **UI / Presentation** — telas, estado visual, acessibilidade e ações do usuário. Não conhece UUIDs nem payloads proprietários.
-2. **Domain** — modelos de métricas/sessões, unidades, proveniência, qualidade, metas e casos de uso. Não depende de Android, BLE ou Wearfit Pro.
-3. **Device / BLE transport** — scan, conexão GATT, callbacks, fila serial, descoberta, reconexão e encerramento. Não interpreta métricas.
-4. **Device / GT3 MAX protocol** — perfil candidato, framing, parser e correlação de comandos/respostas. Só promove semântica após capturas repetíveis.
-5. **Data / Local storage** — histórico e preferências locais, esquema versionado, origem e timestamps.
-6. **Data / Health Connect** — adaptador separado para leitura/escrita, permissões por tipo, consentimento e idempotência.
-7. **Platform** — APIs Android para Bluetooth Classic, mídia, chamadas, alarmes, notificações, câmera e permissões.
-8. **Privacy & diagnostics** — consentimento, minimização, retenção e logs sem conteúdo sensível.
+1. UI / Presentation — telas, estado visual e ações do usuário.
+2. Domain — modelos de métricas, unidades, proveniência e validação; sem Android/BLE.
+3. Device / BLE transport — scan, conexão GATT, callbacks, fila serial e reconexão.
+4. Device / GT3 MAX protocol — framing e parser; semântica somente após capturas repetíveis.
+5. Data / Local storage — histórico e preferências locais, schema versionado.
+6. Data / Health Connect — adaptador separado, permissões por tipo e leitura autorizada.
+7. Platform — APIs Android e permissões.
+8. Privacy & diagnostics — consentimento, minimização, retenção e logs.
 
 ## Estado real nesta PR
 
-- MainActivity.kt ainda concentra apresentação, permissões BLE e conexão/ciclo GATT. A consulta agregada de passos do Health Connect foi extraída para data/healthconnect.
-- domain/health/HealthMetricSample.kt foi criado como modelo Kotlin puro para tipo, unidade, origem, timestamps e estado de validação. Não recebe bytes BLE nem grava dados.
-- O contrato exige unidade compatível, valores finitos/não negativos, timestamp de recebimento e origem explícita; passos são inteiros e SpO₂ fica no intervalo de 0 a 100.
-- METT tem unidade MET e não é convertido automaticamente em calorias. Pressão arterial/SpO₂ não são tratados como medições clínicas.
-- SerialGattOperationQueue foi isolada em device/ble/gatt.
-- WearfitProtocolProfile, WearfitAbFrame e WearfitAbFrameParser foram isolados em device/gt3max/protocol. O nome do pacote não confirma chipset nem identidade do dispositivo.
-- Os testes acompanham os pacotes correspondentes; os testes do contrato Domain verificam unidades, limites e preservação de origem.
-- Notification Listener permanece na variante companion; diagnostic não deve declarar essa capacidade.
-- Health Connect é acessado pelo HealthConnectStepsRepository em data/healthconnect; MainActivity consome resultado tipado e não monta consultas Health Connect.
-- Não foram adicionados serviços, permissões ou escritas BLE proprietárias.
+- MainActivity.kt ainda concentra apresentação, permissões BLE e ciclo GATT.
+- HealthConnectStepsRepository encapsula consultas agregadas de passos.
+- DailyActivityHistoryRepository persiste observações locais versionadas e idempotentes.
+- HealthConnectActivityHistorySync conecta a leitura agregada ao histórico, importando somente o dia anterior completo.
+- O agregado mantém origem HEALTH_CONNECT_AGGREGATE e estado UNVALIDATED; não é atribuído ao GT3 MAX.
+- Dias sem dados não são convertidos em zero.
+- Não foram adicionadas permissões, dependências, rede, LLM ou escritas BLE proprietárias.
 
 ## Regras de dependência
 
 - UI → Domain; UI não importa UUIDs ou parser.
 - BLE transport → Android Bluetooth; não depende da camada de saúde.
-- Driver/protocolo → Kotlin puro e bytes; não depende de Android UI.
 - Domain → Kotlin/JDK; sem Android SDK.
-- Health Connect adapter → Domain + API Health Connect; nunca atribui um agregado multiorigem ao GT3 MAX.
+- Health Connect adapter → Domain + API Health Connect; nunca atribui agregado multiorigem ao GT3 MAX.
 - Storage → Domain; conserva origem, timestamps, qualidade e versão do esquema.
-- Platform adapters → APIs Android com permissões mínimas.
-
-## Contrato mínimo de métrica
-
-O contrato implementado está em [CONTRATO-METRICAS-SAUDE.md](CONTRATO-METRICAS-SAUDE.md). Ele registra tipo, valor, unidade, origem, instante de recebimento, instante da medição quando disponível e estado de validação. Ausência não é zero; estimativa não é medição confirmada; bytes desconhecidos permanecem brutos.
+- Qualquer permissão nova exige finalidade clara, consentimento e teste de revogação.
 
 ## Segurança de comandos
 
-- Manter somente leituras GATT e CCCD padrão nas ações explícitas existentes.
-- Sem NUS RX, comando proprietário, calibração, lock/unlock, vibração, mudança de idioma/hora, reset, factory restore ou OTA nesta fase.
+- Manter somente leituras GATT e CCCD padrão nas ações explicitamente permitidas.
+- Sem NUS RX, comandos proprietários, calibração, reset, factory restore ou OTA.
 - Chamadas e áudio Classic são canais separados do BLE de sensores.
-- Qualquer permissão nova exige recurso funcional, finalidade clara, consentimento e teste de revogação.
 
-## Sequência de extração
+## Inteligência local — Fases 1 a 3
 
-1. Isolar utilitários puros e testes sem mudar comportamento (concluído parcialmente).
-2. Extrair scan/máquina de estados GATT de MainActivity para device/ble/core, preservando fila e callbacks antigos.
-3. Criar armazenamento local versionado de amostras e sessões, com deduplicação e migrações testadas.
-3. Extrair Health Connect para data/healthconnect.
-4. Criar persistência local versionada e repositório para o modelo Domain.
-5. Implementar parsers somente após evidência repetível por métrica.
-6. Extrair adaptadores Platform quando os recursos Android forem priorizados.
-
-Cada extração deve ser pequena, testada e reversível. Não misturar refatoração com engenharia reversa de protocolo.
-
-## Inteligência local (Fase 1)
-
-- `domain/intelligence/DailyActivityObservation.kt`: agregado diário com origem e estado de validação.
-- `domain/intelligence/ActivityTrendEngine.kt`: comparação determinística de 7 dias contra 7 dias, sem dependências Android/BLE.
-- O motor recusa mistura de fontes e exige validação física para amostras atribuídas ao GT3 MAX.
-- Escopo e limites: [IA-LOCAL-FASE-1.md](IA-LOCAL-FASE-1.md).
-
-
-## Inteligência local — Fase 2
-
-- data/intelligence/DailyActivityHistoryRepository.kt: repositório de observações diárias com chave única por dia/origem, idempotência e rejeição de atualização antiga.
-- data/intelligence/DailyActivityHistoryCodec.kt: formato binário versionado (schema 1), ordenação estável, validação de integridade, duplicidade, tamanho e contagem.
-- data/intelligence/DailyActivityHistoryAtomicFile.kt: armazenamento privado do app com escrita atômica e recuperação gerenciada por Android AtomicFile.
-- Arquivos corrompidos e schemas futuros permanecem somente leitura; capacidade de 4.000 observações sem descarte automático.
-- Escopo: IA-LOCAL-FASE-2.md.
+- Domain: DailyActivityObservation e ActivityTrendEngine, comparando duas janelas completas de sete dias.
+- Data: histórico diário binário schema 1 via AtomicFile, com proteção contra corrupção e schema futuro.
+- Integração Health Connect: importa somente o dia local anterior já completo, usando ZoneId e limites reais de calendário.
+- O motor de tendências ainda não consome o histórico automaticamente.
+- Escopo: IA-LOCAL-FASE-3.md.

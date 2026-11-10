@@ -8,31 +8,32 @@ import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import com.luizmarquesarruda.relogio20.domain.health.StepsSnapshot
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import kotlin.coroutines.cancellation.CancellationException
 
 internal enum class HealthConnectAvailability {
-    AVAILABLE,
-    PROVIDER_UNAVAILABLE,
-    PROVIDER_UPDATE_REQUIRED
+    AVAILABLE, PROVIDER_UNAVAILABLE, PROVIDER_UPDATE_REQUIRED
 }
 
 internal sealed class HealthConnectStepsResult {
     data class Success(val snapshot: StepsSnapshot) : HealthConnectStepsResult()
     object PermissionRequired : HealthConnectStepsResult()
+    object IncompleteDay : HealthConnectStepsResult()
     object ProviderUnavailable : HealthConnectStepsResult()
     object ProviderUpdateRequired : HealthConnectStepsResult()
     data class Failure(val reason: String) : HealthConnectStepsResult()
 }
 
+internal interface CompletedDailyStepsSource {
+    suspend fun readCompletedDaySteps(day: LocalDate, now: Instant, zoneId: ZoneId): HealthConnectStepsResult
+}
+
 /**
- * Android data adapter for the aggregate daily step count.
- *
- * UI code does not access HealthConnectClient, record classes, or query builders.
- * This adapter deliberately reads aggregate steps only; it does not claim that
- * the result came from the GT3 MAX or write any data back to Health Connect.
+ * Android adapter for aggregate steps. It does not attribute provider aggregates to GT3 MAX
+ * and does not write any data to Health Connect.
  */
-internal class HealthConnectStepsRepository(context: Context) {
+internal class HealthConnectStepsRepository(context: Context) : CompletedDailyStepsSource {
     private val appContext = context.applicationContext
 
     val readPermissions: Set<String> = setOf(
@@ -52,6 +53,50 @@ internal class HealthConnectStepsRepository(context: Context) {
         return client.permissionController.getGrantedPermissions().containsAll(readPermissions)
     }
 
+    override suspend fun readCompletedDaySteps(
+        day: LocalDate,
+        now: Instant,
+        zoneId: ZoneId
+    ): HealthConnectStepsResult {
+        val interval = HealthConnectDayWindow.completedDay(day, now, zoneId)
+            ?: return HealthConnectStepsResult.IncompleteDay
+
+        when (availability()) {
+            HealthConnectAvailability.PROVIDER_UNAVAILABLE ->
+                return HealthConnectStepsResult.ProviderUnavailable
+            HealthConnectAvailability.PROVIDER_UPDATE_REQUIRED ->
+                return HealthConnectStepsResult.ProviderUpdateRequired
+            HealthConnectAvailability.AVAILABLE -> Unit
+        }
+
+        return try {
+            val client = HealthConnectClient.getOrCreate(appContext)
+            val granted = client.permissionController.getGrantedPermissions()
+            if (!granted.containsAll(readPermissions)) return HealthConnectStepsResult.PermissionRequired
+
+            val response = client.aggregate(
+                AggregateRequest(
+                    metrics = setOf(StepsRecord.COUNT_TOTAL),
+                    timeRangeFilter = TimeRangeFilter.between(interval.start, interval.end)
+                )
+            )
+            HealthConnectStepsResult.Success(
+                StepsSnapshot(
+                    totalSteps = response[StepsRecord.COUNT_TOTAL],
+                    intervalStart = interval.start,
+                    intervalEnd = interval.end,
+                    receivedAt = Instant.now()
+                )
+            )
+        } catch (_: SecurityException) {
+            HealthConnectStepsResult.PermissionRequired
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            HealthConnectStepsResult.Failure(error.message ?: "Unknown Health Connect error.")
+        }
+    }
+
     suspend fun readTodaySteps(
         now: Instant = Instant.now(),
         zoneId: ZoneId = ZoneId.systemDefault()
@@ -67,9 +112,7 @@ internal class HealthConnectStepsRepository(context: Context) {
         return try {
             val client = HealthConnectClient.getOrCreate(appContext)
             val granted = client.permissionController.getGrantedPermissions()
-            if (!granted.containsAll(readPermissions)) {
-                return HealthConnectStepsResult.PermissionRequired
-            }
+            if (!granted.containsAll(readPermissions)) return HealthConnectStepsResult.PermissionRequired
 
             val start = HealthConnectDayWindow.startOfDay(now, zoneId)
             val response = client.aggregate(
@@ -78,7 +121,6 @@ internal class HealthConnectStepsRepository(context: Context) {
                     timeRangeFilter = TimeRangeFilter.between(start, now)
                 )
             )
-
             HealthConnectStepsResult.Success(
                 StepsSnapshot(
                     totalSteps = response[StepsRecord.COUNT_TOTAL],
@@ -87,14 +129,12 @@ internal class HealthConnectStepsRepository(context: Context) {
                     receivedAt = Instant.now()
                 )
             )
-        } catch (error: SecurityException) {
+        } catch (_: SecurityException) {
             HealthConnectStepsResult.PermissionRequired
         } catch (error: CancellationException) {
             throw error
         } catch (error: Exception) {
-            HealthConnectStepsResult.Failure(
-                error.message ?: "Unknown Health Connect error."
-            )
+            HealthConnectStepsResult.Failure(error.message ?: "Unknown Health Connect error.")
         }
     }
 }
