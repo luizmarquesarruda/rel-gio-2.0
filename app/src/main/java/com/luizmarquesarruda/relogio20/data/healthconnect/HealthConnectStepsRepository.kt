@@ -8,7 +8,6 @@ import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import com.luizmarquesarruda.relogio20.domain.health.StepsSnapshot
 import java.time.Instant
-import java.time.LocalDate
 import java.time.ZoneId
 import kotlin.coroutines.cancellation.CancellationException
 
