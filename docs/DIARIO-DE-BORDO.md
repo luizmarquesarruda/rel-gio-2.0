@@ -1,3 +1,12 @@
+## 10/11/2026 — Correção das duas violações bloqueantes do KtLint
+
+- A CI `42896080650` executou KtLint sem baseline e identificou somente duas violações de comprimento de linha em `MainActivity.kt` (linhas 2015 e 2212).
+- As duas mensagens de diagnóstico GATT foram divididas em concatenações de strings, sem alterar conteúdo, ordem dos eventos, callbacks, persistência ou comportamento BLE.
+- Revisão estática do diff: alteração restrita aos argumentos `detail` dos dois registros; nenhuma permissão, comando GATT, escrita de característica, política de privacidade ou fluxo de conexão foi modificado.
+- O KtLint anterior não apontou outras violações no source set principal. A validação final depende da nova CI, que deve executar KtLint sem baseline, Android Lint, testes, builds das variantes, guardrails e auditoria de APK.
+- Gradle 8.13 emite aviso de descontinuação futura em relação a Kotlin 2.5.0; não foi atualizado nesta correção porque o workflow declara AGP 8.13.2 e associa explicitamente a toolchain ao Gradle 8.13. Revisar atualização coordenada de AGP/Kotlin/Gradle em mudança própria.
+- CI disparada automaticamente pelo novo commit da PR #22. APK, testes completos e validação física do Galaxy A06 / GT3 MAX: **aguardando validação**.
+
 ## 06/11/2026 — Correção da configuração Kotlin DSL das dependências por variante
 
 - A CI #443 identificou que os acessores Kotlin DSL `diagnosticDebugImplementation` e `diagnosticBenchmarkImplementation` não estavam disponíveis para os flavors/build types criados dinamicamente.
