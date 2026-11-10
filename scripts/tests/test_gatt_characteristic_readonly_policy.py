@@ -9,13 +9,13 @@ KOTLIN_SOURCE = ROOT / "app" / "src" / "main"
 
 class GattCharacteristicReadOnlyPolicyTest(unittest.TestCase):
     def test_application_does_not_write_gatt_characteristics(self):
-        write_call = re.compile(r"\\.\\s*writeCharacteristic\\s*\\(")
+        write_call = re.compile(r"\.\s*writeCharacteristic\s*\(")
         violations = []
 
         for source in KOTLIN_SOURCE.rglob("*.kt"):
             content = source.read_text(encoding="utf-8")
             for match in write_call.finditer(content):
-                line = content.count("\\n", 0, match.start()) + 1
+                line = content.count("\n", 0, match.start()) + 1
                 violations.append(f"{source.relative_to(ROOT)}:{line}")
 
         self.assertEqual(
