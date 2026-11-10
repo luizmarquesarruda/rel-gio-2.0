@@ -58,6 +58,14 @@ jobs:
             exit 1
           fi
           ./gradlew --no-daemon --write-verification-metadata sha256 lintDiagnosticDebug lintCompanionDebug testDiagnosticDebugUnitTest testCompanionDebugUnitTest assembleDiagnosticDebug assembleCompanionDebug :macrobenchmark:assemble
+      - name: Export generated SHA-256 dependency metadata for review
+        if: ${{ always() && hashFiles('gradle/verification-metadata.xml') != '' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: gradle-verification-metadata-review
+          path: gradle/verification-metadata.xml
+          if-no-files-found: error
+          retention-days: 7
       - name: Commit formatted sources and Gradle wrapper for iterative review
         if: always()
         shell: bash
@@ -66,9 +74,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add gradlew gradlew.bat gradle/wrapper app/src
-          if [[ -f gradle/verification-metadata.xml ]]; then
-            git add gradle/verification-metadata.xml
-          fi
           if git diff --cached --quiet; then
             echo "No generated tooling or formatting changes."
             exit 0
