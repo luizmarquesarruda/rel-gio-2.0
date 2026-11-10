@@ -2012,7 +2012,8 @@ class MainActivity : ComponentActivity() {
                 if (started) {
                     discoveryLibraryStore.recordDiscoveryAsync(
                         title = "Tabela de serviços GATT alterada",
-                        detail = "onServiceChanged recebido. O Android aceitou uma nova descoberta; a tabela anterior não será reutilizada.",
+                        detail = "onServiceChanged recebido. O Android aceitou uma nova descoberta; " +
+                            "a tabela anterior não será reutilizada.",
                         nowMillis = System.currentTimeMillis(),
                         source = "GATT_LIFECYCLE",
                         confidence = "REDESCOBERTA_SOLICITADA",
@@ -2209,7 +2210,8 @@ class MainActivity : ComponentActivity() {
                         appendLog("Notificação/indicação confirmada pelo callback GATT para " + characteristic.uuid)
                         discoveryLibraryStore.recordDiscoveryAsync(
                             title = "Inscrição GATT confirmada • " + characteristic.uuid,
-                            detail = "Callback Android confirmou o descritor CCCD 0x2902. O app passa a aguardar dados emitidos pelo relógio.",
+                            detail = "Callback Android confirmou o descritor CCCD 0x2902. " +
+                                "O app passa a aguardar dados emitidos pelo relógio.",
                             nowMillis = System.currentTimeMillis(),
                             source = "GATT_CCCD",
                             confidence = "SUBSCRICAO_CONFIRMADA",
