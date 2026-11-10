@@ -15,6 +15,7 @@ import com.luizmarquesarruda.relogio20.ui.formatters.StepsCountFormatter
 import com.luizmarquesarruda.relogio20.ui.RelogioUi
 import com.luizmarquesarruda.relogio20.data.preferences.AppPreferences
 import com.luizmarquesarruda.relogio20.device.ble.gatt.SerialGattOperationQueue
+import com.luizmarquesarruda.relogio20.device.ble.gatt.AccessPolicy
 import com.luizmarquesarruda.relogio20.device.ble.gatt.GattInventoryLogger
 import com.luizmarquesarruda.relogio20.device.ble.gatt.GattDescriptorInventoryRow
 import com.luizmarquesarruda.relogio20.device.discovery.ExplorationPolicy
@@ -672,8 +673,10 @@ class MainActivity : ComponentActivity() {
                         remove(KEY_AUTOMATIC_SESSION_ID)
                         remove(KEY_AUTOMATIC_SESSION_OWNED)
                     }
-                    if (ensureAutomaticCaptureSession()) {
-                        appendLog("Janela automática de captura renovada; coleta continua até pausar ou desconectar.")
+                    ensureAutomaticCaptureSession { sessionReady ->
+                        if (sessionReady) {
+                            appendLog("Janela automática de captura renovada; coleta continua até pausar ou desconectar.")
+                        }
                     }
                 }
             } else {
@@ -3090,7 +3093,6 @@ class MainActivity : ComponentActivity() {
             "AB cmd=0x" + frame.command.toString(16).uppercase(Locale.US) +
                 "/resp=0x" + frame.response.toString(16).uppercase(Locale.US)
         }
-        val captureActive = discoveryLibraryStore.activeSession(observedAtMillis) != null
         val payloadQueued = if (captureActive) discoveryLibraryStore.recordPayloadAsync(
             kind = DiscoveryLibraryKind.NOTIFICATION,
             title = "Notificação BLE • " + uuid,
