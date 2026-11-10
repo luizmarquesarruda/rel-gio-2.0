@@ -1,0 +1,31 @@
+name: Export Kotlin formatting
+on:
+  push:
+    branches:
+      - fix/security-privacy-gatt-20261109
+permissions:
+  contents: read
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Set up Java 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Set up Gradle 8.13
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: "8.13"
+      - name: Apply ktlint formatting
+        run: gradle --no-daemon :app:ktlintFormat
+      - name: Export formatted Kotlin sources
+        uses: actions/upload-artifact@v7
+        with:
+          name: formatted-kotlin-sources
+          path: app/src/**/*.kt
+          if-no-files-found: error
+          retention-days: 3

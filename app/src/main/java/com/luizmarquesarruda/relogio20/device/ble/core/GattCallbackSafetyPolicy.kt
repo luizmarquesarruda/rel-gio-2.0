@@ -9,9 +9,11 @@ internal object GattCallbackSafetyPolicy {
         connectionIsCurrent: Boolean,
         activeOperationKey: String?,
         callbackOperationKey: String,
-        invalidatedOperationKeys: Set<String> = emptySet()
+        invalidatedOperationKeys: Set<String> = emptySet(),
+        servicesDiscovered: Boolean = true
     ): Boolean =
         connectionIsCurrent &&
+            servicesDiscovered &&
             callbackOperationKey.isNotBlank() &&
             callbackOperationKey !in invalidatedOperationKeys &&
             activeOperationKey == callbackOperationKey
@@ -29,9 +31,10 @@ internal object GattCallbackSafetyPolicy {
     fun acceptsNotificationCallback(
         connectionIsCurrent: Boolean,
         connected: Boolean,
-        disconnecting: Boolean
+        disconnecting: Boolean,
+        servicesDiscovered: Boolean = true
     ): Boolean =
-        connectionIsCurrent && connected && !disconnecting
+        connectionIsCurrent && connected && !disconnecting && servicesDiscovered
 
     fun shouldRediscoverServices(
         connectionIsCurrent: Boolean,

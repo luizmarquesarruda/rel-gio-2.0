@@ -68,6 +68,47 @@ class GattCallbackSafetyPolicyTest {
     }
 
     @Test
+    fun rejectsOperationCallbacksWhileServicesAreBeingRediscovered() {
+        val key = "180f/2a19/READ"
+        assertFalse(
+            GattCallbackSafetyPolicy.acceptsOperationCallback(
+                connectionIsCurrent = true,
+                activeOperationKey = key,
+                callbackOperationKey = key,
+                servicesDiscovered = false
+            )
+        )
+        assertTrue(
+            GattCallbackSafetyPolicy.acceptsOperationCallback(
+                connectionIsCurrent = true,
+                activeOperationKey = key,
+                callbackOperationKey = key,
+                servicesDiscovered = true
+            )
+        )
+    }
+
+    @Test
+    fun rejectsNotificationsWhileServicesAreBeingRediscovered() {
+        assertFalse(
+            GattCallbackSafetyPolicy.acceptsNotificationCallback(
+                connectionIsCurrent = true,
+                connected = true,
+                disconnecting = false,
+                servicesDiscovered = false
+            )
+        )
+        assertTrue(
+            GattCallbackSafetyPolicy.acceptsNotificationCallback(
+                connectionIsCurrent = true,
+                connected = true,
+                disconnecting = false,
+                servicesDiscovered = true
+            )
+        )
+    }
+
+    @Test
     fun descriptorWriteCallbackKeepsEnableAndDisableOperationsDistinct() {
         val enable = "180d/2a37/CCCD_ENABLE"
         val disable = "180d/2a37/CCCD_DISABLE"

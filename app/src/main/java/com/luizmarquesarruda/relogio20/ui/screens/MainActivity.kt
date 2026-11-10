@@ -249,6 +249,7 @@ class MainActivity : ComponentActivity() {
     private var isAutoReconnectScan = false
     private var isActivityResumed = false
     private var isGattConnected = false
+    private var isGattServicesReady = false
     private var reconnectRunnable: Runnable? = null
     private var connectionTimeoutTask: Runnable? = null
     private var serviceDiscoveryTimeoutTask: Runnable? = null
@@ -1454,6 +1455,8 @@ class MainActivity : ComponentActivity() {
         }
         isGattDisconnecting = false
         isGattConnected = false
+        isGattServicesReady = false
+        stopTelemetryWatchdog()
         invalidatedGattOperationKeys.clear()
         invalidatedCccdCharacteristicKeys.clear()
         cancelConnectionTimeout()
@@ -1600,6 +1603,7 @@ class MainActivity : ComponentActivity() {
                 newState == BluetoothProfile.STATE_CONNECTED) {
                 isGattDisconnecting = false
                 isGattConnected = true
+                isGattServicesReady = false
                 cancelConnectionTimeout()
                 cancelReconnectTask()
                 reconnectPolicy.markConnected()
@@ -1623,6 +1627,7 @@ class MainActivity : ComponentActivity() {
             } else if (status != BluetoothGatt.GATT_SUCCESS) {
                 isGattDisconnecting = false
                 isGattConnected = false
+                isGattServicesReady = false
                 stopTelemetryWatchdog()
                 cancelGattServiceDiscoveryTimeout()
                 gattExplorationProgress.markRemainingSkipped()
@@ -1647,6 +1652,7 @@ class MainActivity : ComponentActivity() {
                 recordPendingGattDiscoveryInterruption("Desconexão espontânea antes do callback onServicesDiscovered.")
                 isGattDisconnecting = false
                 isGattConnected = false
+                isGattServicesReady = false
                 stopTelemetryWatchdog()
                 cancelGattServiceDiscoveryTimeout()
                 gattExplorationProgress.markRemainingSkipped()
@@ -1686,6 +1692,8 @@ class MainActivity : ComponentActivity() {
                 return
             }
             appendLog("Android informou Service Changed: tabela GATT desatualizada. Limpando operações e redescobrindo serviços.")
+            isGattServicesReady = false
+            stopTelemetryWatchdog()
             activeGattOperationKey?.let { activeKey ->
                 invalidatedGattOperationKeys.add(activeKey)
                 val parts = activeKey.split("/", limit = 3)
@@ -1731,9 +1739,11 @@ class MainActivity : ComponentActivity() {
             cancelGattServiceDiscoveryTimeout()
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 if (gatt.services.isEmpty()) {
+                    isGattServicesReady = false
                     recoverEmptyGattInventory(gatt)
                     return
                 }
+                isGattServicesReady = true
                 emptyInventoryRetryPolicy.reset()
                 telemetryState = TelemetryState.Idle
                 appendLog("Serviços descobertos: " + gatt.services.size)
@@ -1757,6 +1767,7 @@ class MainActivity : ComponentActivity() {
                     runOnUiThread { requestDeepGattExploration() }
                 }
             } else {
+                isGattServicesReady = false
                 failGattServiceDiscovery(gatt, "Callback onServicesDiscovered retornou status " + status + ".")
             }
         }
@@ -1798,7 +1809,8 @@ class MainActivity : ComponentActivity() {
             if (!GattCallbackSafetyPolicy.acceptsNotificationCallback(
                     connectionIsCurrent = bluetoothGatt === gatt,
                     connected = isGattConnected,
-                    disconnecting = isGattDisconnecting
+                    disconnecting = isGattDisconnecting,
+                    servicesDiscovered = isGattServicesReady
                 )
             ) return
             handleNotification(characteristic.service.uuid.toString(), characteristic.uuid.toString(), characteristic.value ?: byteArrayOf())
@@ -1812,7 +1824,8 @@ class MainActivity : ComponentActivity() {
             if (!GattCallbackSafetyPolicy.acceptsNotificationCallback(
                     connectionIsCurrent = bluetoothGatt === gatt,
                     connected = isGattConnected,
-                    disconnecting = isGattDisconnecting
+                    disconnecting = isGattDisconnecting,
+                    servicesDiscovered = isGattServicesReady
                 )
             ) return
             handleNotification(characteristic.service.uuid.toString(), characteristic.uuid.toString(), value)
@@ -2835,8 +2848,8 @@ class MainActivity : ComponentActivity() {
             appendLog("Notificação já pendente para " + characteristic.uuid)
             return
         }
-        if (bluetoothGatt !== gatt || isGattDisconnecting) {
-            appendLog("Inscrição cancelada: conexão GATT não está ativa para novas operações.")
+        if (bluetoothGatt !== gatt || isGattDisconnecting || !isGattServicesReady) {
+            appendLog("Inscrição cancelada: tabela GATT não está validada para novas operações.")
             return
         }
 
@@ -2877,7 +2890,7 @@ class MainActivity : ComponentActivity() {
                 appendLog("Inscrição CCCD expirou para " + characteristic.uuid + "; inscrição local desativada.")
             }
         ) {
-            if (bluetoothGatt !== gatt || isGattDisconnecting) {
+            if (bluetoothGatt !== gatt || isGattDisconnecting || !isGattServicesReady) {
                 pendingNotifications.remove(key)
                 pendingAutomaticNotifications.remove(key)
                 gattExplorationProgress.markSkipped(
@@ -2980,7 +2993,7 @@ class MainActivity : ComponentActivity() {
                 }
                 appendLog("Operação GATT não repetida nesta conexão após timeout/Service Changed: " + key)
                 false
-            } else if (bluetoothGatt == null || isGattDisconnecting) {
+            } else if (bluetoothGatt == null || isGattDisconnecting || !isGattServicesReady) {
                 false
             } else {
                 activeGattOperationKey = key
@@ -3017,7 +3030,8 @@ class MainActivity : ComponentActivity() {
             connectionIsCurrent = bluetoothGatt === gatt,
             activeOperationKey = activeGattOperationKey,
             callbackOperationKey = key,
-            invalidatedOperationKeys = invalidatedGattOperationKeys
+            invalidatedOperationKeys = invalidatedGattOperationKeys,
+            servicesDiscovered = isGattServicesReady
         )
         if (!accepted) {
             appendLog("Callback GATT tardio ou não correspondente descartado antes de registrar dados: " + key)
@@ -3401,7 +3415,7 @@ class MainActivity : ComponentActivity() {
     private fun attemptControlledTelemetryHandshake() {
         if (telemetryHandshakeAttempted) return
         val gatt = bluetoothGatt ?: return
-        if (!isGattConnected || isGattDisconnecting) return
+        if (!isGattConnected || isGattDisconnecting || !isGattServicesReady) return
         val entry = activeNotificationCharacteristics.entries.firstOrNull() ?: return
         val key = entry.key
         val characteristic = entry.value
@@ -3419,7 +3433,9 @@ class MainActivity : ComponentActivity() {
         pendingNotifications.remove(key)
         runCatching { gatt.setCharacteristicNotification(characteristic, false) }
         handler.postDelayed({
-            if (bluetoothGatt === gatt && isGattConnected && !isGattDisconnecting) {
+            if (bluetoothGatt === gatt && isGattConnected &&
+                !isGattDisconnecting && isGattServicesReady
+            ) {
                 appendLog("Handshake controlado: renovando inscrição CCCD padrão em " + characteristic.uuid)
                 enableNotifications(gatt, characteristic)
             }
@@ -3536,6 +3552,7 @@ class MainActivity : ComponentActivity() {
         if (bluetoothGatt !== gatt) return
         cancelGattServiceDiscoveryTimeout()
         isGattConnected = false
+        isGattServicesReady = false
         stopTelemetryWatchdog()
         gattExplorationProgress.markRemainingSkipped()
         updateGattProgressUi()
