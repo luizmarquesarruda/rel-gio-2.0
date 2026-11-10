@@ -8,10 +8,15 @@ on:
   pull_request:
     branches:
       - main
+      - 'fix/**'
       - feat/ble-readonly-proof-of-concept
       - 'feat/**'
       - 'docs/**'
   workflow_dispatch:
+
+concurrency:
+  group: android-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -121,7 +126,7 @@ jobs:
           app=Relógio 2.0
           variant=diagnosticDebug
           package=com.luizmarquesarruda.relogio20.diagnostic
-          version=0.4.0-alpha.1-diagnostic
+          version=0.4.0-alpha.2-diagnostic
           build_type=debug
           commit=$GITHUB_SHA
           workflow_run=$GITHUB_RUN_ID

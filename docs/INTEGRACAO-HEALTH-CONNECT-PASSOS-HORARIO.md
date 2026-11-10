@@ -2,13 +2,15 @@
 
 ## Conexão Saúde / Health Connect
 
-O aplicativo usa Health Connect (Conexão Saúde) como camada Android para ler a contagem agregada de passos do dia. Não usa as APIs antigas do Google Fit, cuja descontinuação está prevista para o fim de 2026.
+O aplicativo usa Health Connect (Conexão Saúde) como camada Android local para ler a contagem agregada de passos do dia. Não usa as APIs antigas do Google Fit, cujo suporte está previsto até o fim de 2026. Health Connect não equivale a sincronização automática com a nuvem da Conta Google.
 
 - Permissão solicitada: `android.permission.health.READ_STEPS`.
 - Acesso somente após consentimento explícito.
 - Consulta o total agregado desde o início do dia no fuso horário local até o momento da leitura.
 - Atualiza automaticamente a cada 60 segundos enquanto o aplicativo está aberto; ao sair da tela, interrompe as consultas periódicas.
 - Não grava passos no Health Connect nesta fase.
+- A consulta está encapsulada em data/healthconnect/HealthConnectStepsRepository; domain/health/StepsSnapshot preserva intervalo, hora de recebimento e origem HEALTH_CONNECT_AGGREGATE.
+- null (sem agregado disponível) permanece distinto de 0 (agregado real igual a zero).
 - O total pode incluir dados do telefone e de aplicativos/dispositivos que publiquem passos no Health Connect.
 - A presença dos passos do GT3 MAX depende de o Wearfit Pro ou outro componente publicar esses dados no Health Connect. Isso ainda não foi confirmado neste aparelho.
 
@@ -49,3 +51,35 @@ Health Connect é uma camada centrada no dispositivo, com controle local de perm
 - Implementar escrita por tipo somente depois de validar fonte e metadados.
 - Solicitar apenas as permissões WRITE dos tipos efetivamente publicados.
 - Verificar ausência de duplicação e comparação com a leitura exibida no app original.
+
+## Próxima evolução: rotas, mapa e sinais vitais
+
+### Caminhadas e rotas
+
+Há dois fluxos distintos que não devem ser confundidos:
+1. **Registrar uma caminhada pelo telefone:** GPS do Android e serviço em primeiro plano durante a sessão, com consentimento de localização e controle claro de início/pausa/fim.
+2. **Importar uma rota que já veio do relógio:** requer que o Wearfit Pro, um SDK oficial ou o protocolo do GT3 MAX disponibilize uma sessão com pontos de rota e timestamps. A captura BLE disponível hoje não demonstra esse suporte.
+
+O Health Connect possui registros de sessão de exercício e rotas, mas o acesso à rota exige permissões próprias de rota além das permissões da sessão. A integração deve armazenar pontos, altitude e tempo de forma coerente, evitar amostrar localização fora de uma sessão ativa e permitir revogação/exclusão. Uma visualização no mapa só será ligada a dados de rota reais; não inferir caminhos a partir de contagem de passos ou localizações isoladas.
+
+### Frequência cardíaca, SpO₂ e pressão
+
+Health Connect oferece tipos de registro para frequência cardíaca, saturação de oxigênio e pressão arterial, cada um com permissões próprias. Isso não significa que o GT3 MAX exporte esses tipos, nem que Health Connect os tenha recebido do Wearfit Pro.
+
+- Primeiro verificar, no Health Connect, quais tipos têm registros e qual aplicativo/dispositivo os originou.
+- Só então avaliar leitura pelo Relógio 2.0 com permissões específicas e proveniência preservada.
+- Para dados BLE diretos, exigir payloads correlacionados em várias sessões com a tela do relógio e Wearfit Pro, unidades e timestamps confirmados.
+- Nunca transformar a alegação de sensor óptico em medição recebida. Não apresentar pressão estimada como diagnóstico.
+
+### Estado do adaptador de passos nesta fase
+
+- Acesso ao provider e consulta de passos foram movidos para HealthConnectStepsRepository.
+- O módulo UI não monta mais diretamente AggregateRequest nem conhece StepsRecord.
+- Foram adicionados testes para zero, ausência, origem e intervalo.
+- As demais métricas e rotas permanecem **não implementadas/não validadas**.
+
+## Referências oficiais
+
+- Migração do Google Fit: https://developer.android.com/health-and-fitness/health-connect/migration/fit?hl=pt-br
+- Rotas de exercício e permissões: https://developer.android.com/health-and-fitness/health-connect/features/exercise-routes?hl=pt-br
+- Sinais vitais e permissões por tipo: https://developer.android.com/health-and-fitness/health-connect/experiences/vitals?hl=pt-br

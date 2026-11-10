@@ -17,7 +17,7 @@ A implementação em andamento é um protótipo Android nativo em Kotlin. Não h
 
 ## Estado real nesta PR
 
-- MainActivity.kt ainda concentra apresentação, permissões BLE, conexão/ciclo GATT e leitura agregada do Health Connect.
+- MainActivity.kt ainda concentra apresentação, permissões BLE e conexão/ciclo GATT. A consulta agregada de passos do Health Connect foi extraída para data/healthconnect.
 - domain/health/HealthMetricSample.kt foi criado como modelo Kotlin puro para tipo, unidade, origem, timestamps e estado de validação. Não recebe bytes BLE nem grava dados.
 - O contrato exige unidade compatível, valores finitos/não negativos, timestamp de recebimento e origem explícita; passos são inteiros e SpO₂ fica no intervalo de 0 a 100.
 - METT tem unidade MET e não é convertido automaticamente em calorias. Pressão arterial/SpO₂ não são tratados como medições clínicas.
@@ -25,7 +25,7 @@ A implementação em andamento é um protótipo Android nativo em Kotlin. Não h
 - WearfitProtocolProfile, WearfitAbFrame e WearfitAbFrameParser foram isolados em device/gt3max/protocol. O nome do pacote não confirma chipset nem identidade do dispositivo.
 - Os testes acompanham os pacotes correspondentes; os testes do contrato Domain verificam unidades, limites e preservação de origem.
 - Notification Listener permanece na variante companion; diagnostic não deve declarar essa capacidade.
-- Health Connect ainda é chamado diretamente por MainActivity; extração para data/healthconnect não foi feita.
+- Health Connect é acessado pelo HealthConnectStepsRepository em data/healthconnect; MainActivity consome resultado tipado e não monta consultas Health Connect.
 - Não foram adicionados serviços, permissões ou escritas BLE proprietárias.
 
 ## Regras de dependência
@@ -53,6 +53,7 @@ O contrato implementado está em [CONTRATO-METRICAS-SAUDE.md](CONTRATO-METRICAS-
 
 1. Isolar utilitários puros e testes sem mudar comportamento (concluído parcialmente).
 2. Extrair scan/máquina de estados GATT de MainActivity para device/ble/core, preservando fila e callbacks antigos.
+3. Criar armazenamento local versionado de amostras e sessões, com deduplicação e migrações testadas.
 3. Extrair Health Connect para data/healthconnect.
 4. Criar persistência local versionada e repositório para o modelo Domain.
 5. Implementar parsers somente após evidência repetível por métrica.
