@@ -963,3 +963,12 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Desconexão espontânea durante descoberta GATT registra a interrupção antes de cancelar o watchdog.
 - A CI de teste TDD reproduziu as falhas dos contratos antes da implementação. A validação final de Kotlin, Android Lint, build e APK ainda depende da próxima execução da CI. Teste físico Galaxy A06 + GT3 MAX: **não validado**.
 - Sem SQLite, sem mudança de schema e sem comandos de escrita ao relógio.
+
+
+## 10/11/2026 — Ajustes de contratos e invalidação GATT
+
+- A CI da PR #22 revelou duas asserções Python desatualizadas: a política de escrita passou a negar com expressão Boolean sempre falsa, e o armazenamento passou a distinguir ausência de sessão (null) de falha de persistência (false). Os testes foram ajustados para verificar os contratos sem exigir uma forma sintática antiga.
+- Adicionado teste de contrato para onServiceChanged: o watchdog é parado, a lista de características ativas é invalidada e as filas/notificações pendentes são limpas antes da redescoberta de serviços.
+- A verificação da política BLE continua fail-closed: allowWrite vazio, canWrite sempre falso e sem writeCharacteristic na aplicação.
+- O Gradle Wrapper 8.13 foi incorporado com checksum da distribuição e verificação do JAR. A metadata SHA-256 ainda depende da execução completa do bootstrap de dependências e será considerada pendente até gradle/verification-metadata.xml estar versionado e validado.
+- Testes Android, Lint, APK e validação física Galaxy A06 + GT3 MAX: não validados neste registro.
