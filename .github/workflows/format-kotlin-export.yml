@@ -51,8 +51,14 @@ jobs:
           if-no-files-found: error
           retention-days: 3
       - name: Generate SHA-256 dependency verification metadata and validate project
-        if: ${{ steps.format.outcome == 'success' && steps.ktlint.outcome == 'success' }}
+        if: always()
+        shell: bash
         run: |
+          set -euo pipefail
+          if [[ "${{ steps.format.outcome }}" != "success" || "${{ steps.ktlint.outcome }}" != "success" ]]; then
+            echo "Formatter and KtLint must both pass before dependency metadata can be trusted."
+            exit 1
+          fi
           ./gradlew --no-daemon --write-verification-metadata sha256 lintDiagnosticDebug lintCompanionDebug testDiagnosticDebugUnitTest testCompanionDebugUnitTest assembleDiagnosticDebug assembleCompanionDebug :macrobenchmark:assemble
       - name: Commit formatted sources and Gradle wrapper for iterative review
         if: always()
