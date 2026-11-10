@@ -72,7 +72,7 @@ internal class HealthConnectStepsRepository(context: Context) {
                 return HealthConnectStepsResult.PermissionRequired
             }
 
-            val start = LocalDate.ofInstant(now, zoneId).atStartOfDay(zoneId).toInstant()
+            val start = now.atZone(zoneId).toLocalDate().atStartOfDay(zoneId).toInstant()
             val response = client.aggregate(
                 AggregateRequest(
                     metrics = setOf(StepsRecord.COUNT_TOTAL),
