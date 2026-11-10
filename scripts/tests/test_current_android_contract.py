@@ -416,5 +416,35 @@ class CurrentAndroidContractTests(unittest.TestCase):
         ).read_text(encoding="utf-8"))
 
 
+    def test_automatic_capture_session_renewal_uses_async_completion_callback(self):
+        source = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
+        ).read_text(encoding="utf-8")
+        clock_update = source.split("private fun updatePhoneClock()", 1)[1].split(
+            "private fun updateGattProgressUi", 1
+        )[0]
+        self.assertIn("ensureAutomaticCaptureSession { sessionReady ->", clock_update)
+        self.assertIn("if (sessionReady)", clock_update)
+        self.assertNotIn("if (ensureAutomaticCaptureSession())", clock_update)
+
+    def test_notification_capture_active_state_is_declared_once(self):
+        source = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
+        ).read_text(encoding="utf-8")
+        callback = source.split("private fun handleNotification", 1)[1].split(
+            "\\n    private fun ", 1
+        )[0]
+        self.assertEqual(1, callback.count("val captureActive ="))
+
+    def test_main_activity_imports_gatt_access_policy_used_by_handshake_guard(self):
+        source = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            "import com.luizmarquesarruda.relogio20.device.ble.gatt.AccessPolicy",
+            source,
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
