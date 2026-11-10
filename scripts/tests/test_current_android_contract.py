@@ -171,8 +171,12 @@ class CurrentAndroidContractTests(unittest.TestCase):
         main = (
             ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
         ).read_text(encoding="utf-8")
-        self.assertIn("val payloadQueued = if (activeSession)", main)
-        self.assertIn("val captureActive = discoveryLibraryStore.activeSession(observedAtMillis) != null", main)
+        self.assertIn("val activeSession = discoveryLibraryStore.activeSession(nowMillis) != null", main)
+        notification_handler = main.split("private fun handleNotification(", 1)[1]
+        self.assertIn("val captureActive = discoveryLibraryStore.activeSession(observedAtMillis) != null", notification_handler)
+        self.assertIn("val payloadQueued =", notification_handler)
+        self.assertIn("if (captureActive)", notification_handler)
+        self.assertIn("} else {\n                true\n            }", notification_handler)
 
     def test_activity_session_start_and_finish_use_ordered_async_writer(self):
         main = (
