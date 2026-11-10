@@ -96,4 +96,10 @@ class ActivityTrendEngineTest {
             engine.analyze(observations() + extra, asOfDay).status
         )
     }
+
+    @Test fun exactThresholdIsSignificant() {
+        val result = engine.analyze(observations(recent = 4500L), asOfDay)
+        assertEquals(ActivityTrendStatus.SIGNIFICANT_CHANGE, result.status)
+        assertEquals(-25.0, result.insight?.percentageChange ?: 0.0, 0.0001)
+    }
 }
