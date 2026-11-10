@@ -971,4 +971,5 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Adicionado teste de contrato para onServiceChanged: o watchdog é parado, a lista de características ativas é invalidada e as filas/notificações pendentes são limpas antes da redescoberta de serviços.
 - A verificação da política BLE continua fail-closed: allowWrite vazio, canWrite sempre falso e sem writeCharacteristic na aplicação.
 - O Gradle Wrapper 8.13 foi incorporado com checksum da distribuição e verificação do JAR. A metadata SHA-256 ainda depende da execução completa do bootstrap de dependências e será considerada pendente até gradle/verification-metadata.xml estar versionado e validado.
+- A primeira repetição da CI mostrou que a função `recordPayload` usa `synchronized(STORE_LOCK)` em expressão multilinha. A asserção foi refinada para validar o tipo nullable, o lock e o retorno `null` sem exigir que tudo esteja na mesma linha.
 - Testes Android, Lint, APK e validação física Galaxy A06 + GT3 MAX: não validados neste registro.
