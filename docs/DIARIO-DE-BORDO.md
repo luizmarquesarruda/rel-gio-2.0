@@ -972,4 +972,6 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - A verificação da política BLE continua fail-closed: allowWrite vazio, canWrite sempre falso e sem writeCharacteristic na aplicação.
 - O Gradle Wrapper 8.13 foi incorporado com checksum da distribuição e verificação do JAR. A metadata SHA-256 ainda depende da execução completa do bootstrap de dependências e será considerada pendente até gradle/verification-metadata.xml estar versionado e validado.
 - A primeira repetição da CI mostrou que a função `recordPayload` usa `synchronized(STORE_LOCK)` em expressão multilinha. A asserção foi refinada para validar o tipo nullable, o lock e o retorno `null` sem exigir que tudo esteja na mesma linha.
+- O gate Android CI foi simplificado para executar KtLint diretamente, sem gerar baseline automática. A baseline poderia registrar violações existentes e mascará-las; agora qualquer violação bloqueia a CI até ser corrigida no código.
+- A workflow auxiliar passou a reutilizar o Gradle Wrapper versionado e a publicar a metadata de dependências como artefato para revisão, em vez de incorporá-la automaticamente ao commit.
 - Testes Android, Lint, APK e validação física Galaxy A06 + GT3 MAX: não validados neste registro.
