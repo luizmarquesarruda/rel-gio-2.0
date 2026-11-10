@@ -15,7 +15,7 @@ class NotificationCenterActivity : Activity() {
                     "especial às notificações do Android."
                 textSize = 16f
                 setPadding(32, 32, 32, 32)
-            }
+            },
         )
     }
 }
