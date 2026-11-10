@@ -94,4 +94,6 @@ A fila GATT, o parser candidato e o adaptador Health Connect de passos foram iso
 - Inventários GATT são salvos como descobertas. Notificações e leituras com HEX são guardadas somente enquanto uma sessão cronometrada, iniciada com confirmação, estiver ativa.
 - A biblioteca permite pesquisa e filtros por descobertas, leituras e testes. Nenhum dado é enviado à rede e nenhuma permissão adicional foi criada.
 - O arquivo é local ao aplicativo; a implementação não declara criptografia própria. Payloads HEX ainda podem conter dados sensíveis e são mantidos no sandbox privado do Android.
-\n| `domain/intelligence/DailyActivityObservation.kt` | Domain / Intelligence | Agregado diário de passos com proveniência e validação. |\n| `domain/intelligence/ActivityTrendEngine.kt` | Domain / Intelligence | Detecta variação entre duas janelas completas de sete dias; não acessa Android, BLE ou rede. |\n
+
+| `domain/intelligence/DailyActivityObservation.kt` | Domain / Intelligence | Agregado diário de passos com proveniência e validação. |
+| `domain/intelligence/ActivityTrendEngine.kt` | Domain / Intelligence | Detecta variação entre duas janelas completas de sete dias; não acessa Android, BLE ou rede. |
