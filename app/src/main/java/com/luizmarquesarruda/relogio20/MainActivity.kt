@@ -34,6 +34,7 @@ import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectAvailabil
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsRepository
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectActivityHistorySync
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectActivityHistorySyncStatus
+import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectHistorySyncRetryPolicy
 import com.luizmarquesarruda.relogio20.data.intelligence.DailyActivityHistoryAtomicFile
 import com.luizmarquesarruda.relogio20.data.intelligence.DailyActivityHistoryRepository
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsResult
