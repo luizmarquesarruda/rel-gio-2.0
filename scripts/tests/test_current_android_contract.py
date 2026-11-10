@@ -101,7 +101,8 @@ class CurrentAndroidContractTests(unittest.TestCase):
         self.assertNotIn('makeButton("Sincronizar hora")', source)
         self.assertIn("allowWrite: Set<UUID> = emptySet()", policy)
         self.assertIn("fun canWrite(", policy)
-        self.assertIn("return false", policy)
+        self.assertRegex(policy, r"fun canWrite\([\s\S]*?\): Boolean = false")
+        self.assertIn("require(allowWrite.isEmpty())", policy)
 
     def test_spontaneous_disconnect_records_pending_gatt_discovery_interruption(self):
         source = (
@@ -128,6 +129,22 @@ class CurrentAndroidContractTests(unittest.TestCase):
         self.assertIn("withContext(Dispatchers.IO)", export)
         self.assertNotIn("logLines.toList()", export)
 
+    def test_service_changed_invalidates_notification_state_before_rediscovery(self):
+        source = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
+        ).read_text(encoding="utf-8")
+        callback = source.split("override fun onServiceChanged", 1)[1].split(
+            "override fun onServicesDiscovered", 1
+        )[0]
+        self.assertIn("stopTelemetryWatchdog()", callback)
+        self.assertIn("pendingNotifications.clear()", callback)
+        self.assertIn("activeNotifications.clear()", callback)
+        self.assertLess(callback.index("stopTelemetryWatchdog()"), callback.index("gatt.discoverServices()"))
+        watchdog = source.split("private fun stopTelemetryWatchdog()", 1)[1].split(
+            "private fun attemptControlledTelemetryHandshake", 1
+        )[0]
+        self.assertIn("activeNotificationCharacteristics.clear()", watchdog)
+
     def test_pending_gatt_interruption_uses_async_persistence(self):
         source = (
             ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
@@ -144,7 +161,11 @@ class CurrentAndroidContractTests(unittest.TestCase):
             ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/data/discovery/DiscoveryLibraryStore.kt"
         ).read_text(encoding="utf-8")
         self.assertNotIn("if (activeSession(nowMillis) == null) return true", store)
-        self.assertIn("): Boolean? = synchronized(STORE_LOCK)", store)
+        payload_writer = store.split("fun recordPayload(", 1)[1].split(
+            "private fun writableSnapshot", 1
+        )[0]
+        self.assertIn("): Boolean? = synchronized(STORE_LOCK)", payload_writer)
+        self.assertIn("val session = current.activeSession ?: return@synchronized null", payload_writer)
         self.assertIn("if (operation() == false) failedWrites.incrementAndGet()", store)
         main = (
             ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
