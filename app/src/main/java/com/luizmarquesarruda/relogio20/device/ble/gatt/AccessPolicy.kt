@@ -10,7 +10,7 @@ import java.util.UUID
 internal data class AccessPolicy(
     val allowRead: Set<UUID> = emptySet(),
     val allowWrite: Set<UUID> = emptySet(),
-    val forbidden: Set<UUID> = emptySet()
+    val forbidden: Set<UUID> = emptySet(),
 ) {
     init {
         require(allowWrite.isEmpty()) {
@@ -21,10 +21,8 @@ internal data class AccessPolicy(
     fun canWrite(
         serviceUuid: UUID,
         characteristicUuid: UUID,
-        explicitUserConsent: Boolean
-    ): Boolean {
-        return false
-    }
+        explicitUserConsent: Boolean,
+    ): Boolean = false
 
     companion object {
         val FE59_DFU_SERVICE = UUID.fromString("0000fe59-0000-1000-8000-00805f9b34fb")
@@ -35,9 +33,10 @@ internal data class AccessPolicy(
         val CURRENT_TIME_SERVICE = UUID.fromString("00001805-0000-1000-8000-00805f9b34fb")
         val CURRENT_TIME_CHARACTERISTIC = UUID.fromString("00002a2b-0000-1000-8000-00805f9b34fb")
 
-        val HARD_FORBIDDEN: Set<UUID> = Collections.unmodifiableSet(
-            setOf(FE59_DFU_SERVICE, DFU_CONTROL_POINT, DFU_PACKET, NUS_SERVICE, NUS_RX)
-        )
+        val HARD_FORBIDDEN: Set<UUID> =
+            Collections.unmodifiableSet(
+                setOf(FE59_DFU_SERVICE, DFU_CONTROL_POINT, DFU_PACKET, NUS_SERVICE, NUS_RX),
+            )
         val DEFAULT = AccessPolicy()
     }
 }

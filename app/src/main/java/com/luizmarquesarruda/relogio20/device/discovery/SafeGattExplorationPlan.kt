@@ -10,14 +10,14 @@ internal object SafeGattExplorationPlan {
         val serviceUuid: String,
         val characteristicUuid: String,
         val kind: Kind,
-        val reason: String
+        val reason: String,
     )
 
     enum class Kind {
         READ_STANDARD_VALUE,
         SUBSCRIBE_STANDARD_MEASUREMENT,
         READ_PROPRIETARY_VALUE,
-        SUBSCRIBE_PROPRIETARY_CHANNEL
+        SUBSCRIBE_PROPRIETARY_CHANNEL,
     }
 
     private data class KnownCharacteristic(
@@ -25,37 +25,38 @@ internal object SafeGattExplorationPlan {
         val characteristic: String,
         val read: Boolean,
         val notify: Boolean,
-        val description: String
+        val description: String,
     )
 
-    private val known = listOf(
-        KnownCharacteristic("180a", "2a29", true, false, "fabricante"),
-        KnownCharacteristic("180a", "2a24", true, false, "modelo"),
-        KnownCharacteristic("180a", "2a26", true, false, "versão de firmware"),
-        KnownCharacteristic("180a", "2a27", true, false, "versão de hardware"),
-        KnownCharacteristic("180a", "2a28", true, false, "versão de software"),
-        KnownCharacteristic("180f", "2a19", true, true, "bateria"),
-        KnownCharacteristic("1805", "2a2b", true, false, "hora atual"),
-        KnownCharacteristic("1809", "2a1c", false, true, "temperatura medida"),
-        KnownCharacteristic("1809", "2a1e", false, true, "temperatura intermediária"),
-        KnownCharacteristic("180d", "2a37", false, true, "frequência cardíaca"),
-        KnownCharacteristic("180d", "2a38", true, false, "localização do sensor cardíaco"),
-        KnownCharacteristic("1810", "2a35", false, true, "pressão arterial"),
-        KnownCharacteristic("1810", "2a36", false, true, "pressão intermediária"),
-        KnownCharacteristic("1810", "2a49", true, false, "recursos de pressão arterial"),
-        KnownCharacteristic("181a", "2a6d", true, true, "pressão ambiental"),
-        KnownCharacteristic("181a", "2a6e", true, true, "temperatura ambiente"),
-        KnownCharacteristic("181a", "2a6f", true, true, "umidade"),
-        KnownCharacteristic("1822", "2a5e", true, false, "oximetria spot-check"),
-        KnownCharacteristic("1822", "2a5f", false, true, "oximetria contínua"),
-        KnownCharacteristic("1822", "2a60", true, false, "recursos de oximetria"),
-        KnownCharacteristic("181b", "2a9b", true, false, "recursos de composição corporal"),
-        KnownCharacteristic("181b", "2a9c", false, true, "composição corporal"),
-        KnownCharacteristic("1814", "2a53", false, true, "velocidade/cadência de corrida"),
-        KnownCharacteristic("1814", "2a54", true, false, "recursos de corrida"),
-        KnownCharacteristic("1816", "2a5b", false, true, "velocidade/cadência de ciclismo"),
-        KnownCharacteristic("1816", "2a5c", true, false, "recursos de ciclismo")
-    )
+    private val known =
+        listOf(
+            KnownCharacteristic("180a", "2a29", true, false, "fabricante"),
+            KnownCharacteristic("180a", "2a24", true, false, "modelo"),
+            KnownCharacteristic("180a", "2a26", true, false, "versão de firmware"),
+            KnownCharacteristic("180a", "2a27", true, false, "versão de hardware"),
+            KnownCharacteristic("180a", "2a28", true, false, "versão de software"),
+            KnownCharacteristic("180f", "2a19", true, true, "bateria"),
+            KnownCharacteristic("1805", "2a2b", true, false, "hora atual"),
+            KnownCharacteristic("1809", "2a1c", false, true, "temperatura medida"),
+            KnownCharacteristic("1809", "2a1e", false, true, "temperatura intermediária"),
+            KnownCharacteristic("180d", "2a37", false, true, "frequência cardíaca"),
+            KnownCharacteristic("180d", "2a38", true, false, "localização do sensor cardíaco"),
+            KnownCharacteristic("1810", "2a35", false, true, "pressão arterial"),
+            KnownCharacteristic("1810", "2a36", false, true, "pressão intermediária"),
+            KnownCharacteristic("1810", "2a49", true, false, "recursos de pressão arterial"),
+            KnownCharacteristic("181a", "2a6d", true, true, "pressão ambiental"),
+            KnownCharacteristic("181a", "2a6e", true, true, "temperatura ambiente"),
+            KnownCharacteristic("181a", "2a6f", true, true, "umidade"),
+            KnownCharacteristic("1822", "2a5e", true, false, "oximetria spot-check"),
+            KnownCharacteristic("1822", "2a5f", false, true, "oximetria contínua"),
+            KnownCharacteristic("1822", "2a60", true, false, "recursos de oximetria"),
+            KnownCharacteristic("181b", "2a9b", true, false, "recursos de composição corporal"),
+            KnownCharacteristic("181b", "2a9c", false, true, "composição corporal"),
+            KnownCharacteristic("1814", "2a53", false, true, "velocidade/cadência de corrida"),
+            KnownCharacteristic("1814", "2a54", true, false, "recursos de corrida"),
+            KnownCharacteristic("1816", "2a5b", false, true, "velocidade/cadência de ciclismo"),
+            KnownCharacteristic("1816", "2a5c", true, false, "recursos de ciclismo"),
+        )
 
     private val standardServiceIds = known.map { it.service }.toSet() + setOf("1800", "1801")
     private val automaticServiceIds = setOf("180a", "180f", "1805")
@@ -64,25 +65,29 @@ internal object SafeGattExplorationPlan {
     /** Automatic plan: basic device metadata and battery read only. */
     fun build(
         services: List<GattServiceRecord>,
-        policy: ExplorationPolicy = ExplorationPolicy.forObservedInventory(services)
+        policy: ExplorationPolicy = ExplorationPolicy.forObservedInventory(services),
     ): List<Operation> {
         val plan = mutableListOf<Operation>()
         services.forEach { service ->
             val serviceShort = shortUuid(service.uuid)
             if (serviceShort == "fe59" || serviceShort !in automaticServiceIds) return@forEach
             service.characteristics.forEach characteristicLoop@{ characteristic ->
-                val profile = known.firstOrNull {
-                    it.service == serviceShort && it.characteristic == shortUuid(characteristic.uuid)
-                } ?: return@characteristicLoop
+                val profile =
+                    known.firstOrNull {
+                        it.service == serviceShort && it.characteristic == shortUuid(characteristic.uuid)
+                    } ?: return@characteristicLoop
                 if (!profile.read || "READ" !in characteristic.properties ||
                     !policy.isEligible(service.uuid, characteristic.uuid, ExplorationPolicy.Operation.READ)
-                ) return@characteristicLoop
-                plan += Operation(
-                    service.uuid,
-                    characteristic.uuid,
-                    Kind.READ_STANDARD_VALUE,
-                    "Leitura automática não clínica: ${profile.description}."
-                )
+                ) {
+                    return@characteristicLoop
+                }
+                plan +=
+                    Operation(
+                        service.uuid,
+                        characteristic.uuid,
+                        Kind.READ_STANDARD_VALUE,
+                        "Leitura automática não clínica: ${profile.description}.",
+                    )
             }
         }
         return plan.distinctBy {
@@ -97,7 +102,7 @@ internal object SafeGattExplorationPlan {
      */
     fun buildDeep(
         services: List<GattServiceRecord>,
-        policy: ExplorationPolicy = ExplorationPolicy.forObservedInventory(services)
+        policy: ExplorationPolicy = ExplorationPolicy.forObservedInventory(services),
     ): List<Operation> {
         val plan = mutableListOf<Operation>()
         services.forEach { service ->
@@ -105,7 +110,9 @@ internal object SafeGattExplorationPlan {
             val normalizedService = service.uuid.trim().lowercase()
             if (serviceShort == "fe59" || serviceShort in setOf("1800", "1801") ||
                 normalizedService == NUS_SERVICE
-            ) return@forEach
+            ) {
+                return@forEach
+            }
 
             if (serviceShort in standardServiceIds) {
                 if (serviceShort in automaticServiceIds) {
@@ -115,9 +122,10 @@ internal object SafeGattExplorationPlan {
                 service.characteristics.forEach characteristicLoop@{ characteristic ->
                     val shortCharacteristic = shortUuid(characteristic.uuid)
                     if (shortCharacteristic in setOf("2a25", "2a23", "2a50")) return@characteristicLoop
-                    val profile = known.firstOrNull {
-                        it.service == serviceShort && it.characteristic == shortCharacteristic
-                    } ?: return@characteristicLoop
+                    val profile =
+                        known.firstOrNull {
+                            it.service == serviceShort && it.characteristic == shortCharacteristic
+                        } ?: return@characteristicLoop
                     val properties = characteristic.properties
                     // Battery 0x2A19 is already read by the automatic baseline plan.
                     // Deep exploration keeps only its optional CCCD subscription.
@@ -125,20 +133,26 @@ internal object SafeGattExplorationPlan {
                     if (profile.read && "READ" in properties && !alreadyReadByBaseline &&
                         policy.isEligible(service.uuid, characteristic.uuid, ExplorationPolicy.Operation.READ)
                     ) {
-                        plan += Operation(
-                            service.uuid, characteristic.uuid, Kind.READ_STANDARD_VALUE,
-                            "Leitura manual de perfil de sensor Bluetooth SIG: ${profile.description}."
-                        )
+                        plan +=
+                            Operation(
+                                service.uuid,
+                                characteristic.uuid,
+                                Kind.READ_STANDARD_VALUE,
+                                "Leitura manual de perfil de sensor Bluetooth SIG: ${profile.description}.",
+                            )
                     }
                     if (profile.notify &&
                         ("NOTIFY" in properties || "INDICATE" in properties) &&
                         characteristic.descriptorUuids.any { shortUuid(it) == "2902" } &&
                         policy.isEligible(service.uuid, characteristic.uuid, ExplorationPolicy.Operation.READ)
                     ) {
-                        plan += Operation(
-                            service.uuid, characteristic.uuid, Kind.SUBSCRIBE_STANDARD_MEASUREMENT,
-                            "Inscrição manual em medição Bluetooth SIG: ${profile.description}."
-                        )
+                        plan +=
+                            Operation(
+                                service.uuid,
+                                characteristic.uuid,
+                                Kind.SUBSCRIBE_STANDARD_MEASUREMENT,
+                                "Inscrição manual em medição Bluetooth SIG: ${profile.description}.",
+                            )
                     }
                 }
             } else {
@@ -149,19 +163,25 @@ internal object SafeGattExplorationPlan {
                     if ("READ" in properties &&
                         policy.isEligible(service.uuid, characteristic.uuid, ExplorationPolicy.Operation.READ)
                     ) {
-                        plan += Operation(
-                            service.uuid, characteristic.uuid, Kind.READ_PROPRIETARY_VALUE,
-                            "Leitura manual de canal customizado; nenhum payload será escrito."
-                        )
+                        plan +=
+                            Operation(
+                                service.uuid,
+                                characteristic.uuid,
+                                Kind.READ_PROPRIETARY_VALUE,
+                                "Leitura manual de canal customizado; nenhum payload será escrito.",
+                            )
                     }
                     if (("NOTIFY" in properties || "INDICATE" in properties) &&
                         characteristic.descriptorUuids.any { shortUuid(it) == "2902" } &&
                         policy.isEligible(service.uuid, characteristic.uuid, ExplorationPolicy.Operation.READ)
                     ) {
-                        plan += Operation(
-                            service.uuid, characteristic.uuid, Kind.SUBSCRIBE_PROPRIETARY_CHANNEL,
-                            "Inscrição manual via CCCD padrão; sem envio de comando proprietário."
-                        )
+                        plan +=
+                            Operation(
+                                service.uuid,
+                                characteristic.uuid,
+                                Kind.SUBSCRIBE_PROPRIETARY_CHANNEL,
+                                "Inscrição manual via CCCD padrão; sem envio de comando proprietário.",
+                            )
                     }
                 }
             }

@@ -8,7 +8,7 @@ internal object BluetoothCurrentTimeCapabilityPolicy {
         CHARACTERISTIC_MISSING,
         WRITE_UNSUPPORTED,
         DEVICE_PROFILE_UNCONFIRMED,
-        READY
+        READY,
     }
 
     fun evaluate(
@@ -16,13 +16,14 @@ internal object BluetoothCurrentTimeCapabilityPolicy {
         servicePresent: Boolean,
         characteristicPresent: Boolean,
         supportsWrite: Boolean,
-        deviceProfileConfirmed: Boolean = false
-    ): Capability = when {
-        !connected -> Capability.DISCONNECTED
-        !servicePresent -> Capability.SERVICE_MISSING
-        !characteristicPresent -> Capability.CHARACTERISTIC_MISSING
-        !supportsWrite -> Capability.WRITE_UNSUPPORTED
-        !deviceProfileConfirmed -> Capability.DEVICE_PROFILE_UNCONFIRMED
-        else -> Capability.READY
-    }
+        deviceProfileConfirmed: Boolean = false,
+    ): Capability =
+        when {
+            !connected -> Capability.DISCONNECTED
+            !servicePresent -> Capability.SERVICE_MISSING
+            !characteristicPresent -> Capability.CHARACTERISTIC_MISSING
+            !supportsWrite -> Capability.WRITE_UNSUPPORTED
+            !deviceProfileConfirmed -> Capability.DEVICE_PROFILE_UNCONFIRMED
+            else -> Capability.READY
+        }
 }

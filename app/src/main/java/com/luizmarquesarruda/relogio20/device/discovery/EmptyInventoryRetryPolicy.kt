@@ -1,10 +1,14 @@
 package com.luizmarquesarruda.relogio20.device.discovery
 
 /** Bounded retry counter for a successful GATT callback that exposes an empty service list. */
-internal class EmptyInventoryRetryPolicy(val maxAttempts: Int) {
+internal class EmptyInventoryRetryPolicy(
+    val maxAttempts: Int,
+) {
     private var attempts = 0
 
-    init { require(maxAttempts >= 1) }
+    init {
+        require(maxAttempts >= 1)
+    }
 
     @Synchronized
     fun nextRetry(): Int? {

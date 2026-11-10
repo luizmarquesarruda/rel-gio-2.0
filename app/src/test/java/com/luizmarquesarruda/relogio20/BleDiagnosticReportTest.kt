@@ -9,23 +9,24 @@ import org.junit.Test
 class BleDiagnosticReportTest {
     @Test
     fun reportOmitsDeviceIdentityAndRawLogContents() {
-        val report = BleDiagnosticReport.build(
-            appVersion = "0.4.0",
-            androidVersion = "16 (API 36)",
-            connectionState = "Bluetooth conectado",
-            deviceName = "Luiz GT3 MAX C0:27:AB:64:6C:E2",
-            deviceAddress = "C0:27:AB:64:6C:E2",
-            generatedAt = "2026-11-04 12:00:00 +0000",
-            logLines =
-                listOf(
-                    "Frequência cardíaca: 147 bpm",
-                    "NOTIFICAÇÃO: AB-00-05-FF-91-80-00-0C",
-                ),
-            discoveryEntries =
-                listOf(
-                    "Nome=Luiz GT3 MAX | HEX=AB-00-05-FF-91-80-00-0C | C0:27:AB:64:6C:E2",
-                ),
-        )
+        val report =
+            BleDiagnosticReport.build(
+                appVersion = "0.4.0",
+                androidVersion = "16 (API 36)",
+                connectionState = "Bluetooth conectado",
+                deviceName = "Luiz GT3 MAX C0:27:AB:64:6C:E2",
+                deviceAddress = "C0:27:AB:64:6C:E2",
+                generatedAt = "2026-11-04 12:00:00 +0000",
+                logLines =
+                    listOf(
+                        "Frequência cardíaca: 147 bpm",
+                        "NOTIFICAÇÃO: AB-00-05-FF-91-80-00-0C",
+                    ),
+                discoveryEntries =
+                    listOf(
+                        "Nome=Luiz GT3 MAX | HEX=AB-00-05-FF-91-80-00-0C | C0:27:AB:64:6C:E2",
+                    ),
+            )
 
         assertTrue(report.contains("identificação ocultada"))
         assertTrue(report.contains("Eventos técnicos omitidos por privacidade: 2"))
@@ -40,15 +41,16 @@ class BleDiagnosticReportTest {
 
     @Test
     fun reportKeepsValidationWarningsWithoutInventingSensorData() {
-        val report = BleDiagnosticReport.build(
-            appVersion = "0.4.0",
-            androidVersion = "16 (API 36)",
-            connectionState = "Desconectado",
-            deviceName = null,
-            deviceAddress = null,
-            generatedAt = "2026-11-04 12:00:00 +0000",
-            logLines = emptyList(),
-        )
+        val report =
+            BleDiagnosticReport.build(
+                appVersion = "0.4.0",
+                androidVersion = "16 (API 36)",
+                connectionState = "Desconectado",
+                deviceName = null,
+                deviceAddress = null,
+                generatedAt = "2026-11-04 12:00:00 +0000",
+                logLines = emptyList(),
+            )
 
         assertTrue(report.contains("não validada"))
         assertTrue(report.contains("Eventos técnicos omitidos por privacidade: 0"))

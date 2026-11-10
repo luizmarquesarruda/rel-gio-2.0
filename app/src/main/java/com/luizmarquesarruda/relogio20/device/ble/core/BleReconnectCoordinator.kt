@@ -7,36 +7,42 @@ package com.luizmarquesarruda.relogio20.device.ble.core
  * owns only the retry gates and decisions so they can be tested independently.
  */
 internal class BleReconnectCoordinator(
-    private val reconnectPolicy: BleReconnectPolicy
+    private val reconnectPolicy: BleReconnectPolicy,
 ) {
     sealed class ScheduleDecision {
         object Disabled : ScheduleDecision()
+
         object DeferredToForeground : ScheduleDecision()
+
         object AlreadyActive : ScheduleDecision()
-        data class Scheduled(val delayMillis: Long) : ScheduleDecision()
+
+        data class Scheduled(
+            val delayMillis: Long,
+        ) : ScheduleDecision()
     }
 
     enum class AttemptDecision {
         Skip,
         PermissionRequired,
-        StartScan
+        StartScan,
     }
 
     fun planSchedule(
         activityResumed: Boolean,
         gattSessionExists: Boolean,
         scanInProgress: Boolean,
-        immediate: Boolean = false
+        immediate: Boolean = false,
     ): ScheduleDecision {
         if (!reconnectPolicy.isEnabled) return ScheduleDecision.Disabled
         if (!activityResumed) return ScheduleDecision.DeferredToForeground
         if (gattSessionExists || scanInProgress) return ScheduleDecision.AlreadyActive
 
-        val delayMillis = if (immediate) {
-            0L
-        } else {
-            reconnectPolicy.nextRetryDelayMillis() ?: return ScheduleDecision.Disabled
-        }
+        val delayMillis =
+            if (immediate) {
+                0L
+            } else {
+                reconnectPolicy.nextRetryDelayMillis() ?: return ScheduleDecision.Disabled
+            }
         return ScheduleDecision.Scheduled(delayMillis)
     }
 
@@ -44,7 +50,7 @@ internal class BleReconnectCoordinator(
         activityResumed: Boolean,
         gattSessionExists: Boolean,
         scanInProgress: Boolean,
-        hasBlePermissions: () -> Boolean
+        hasBlePermissions: () -> Boolean,
     ): AttemptDecision {
         if (!activityResumed || !reconnectPolicy.isEnabled ||
             gattSessionExists || scanInProgress

@@ -8,7 +8,7 @@ internal enum class HealthConnectPermissionState {
     NOT_REQUESTED,
     DENIED,
     GRANTED,
-    REVOKED
+    REVOKED,
 }
 
 internal object HealthConnectPermissionStatePolicy {
@@ -17,17 +17,17 @@ internal object HealthConnectPermissionStatePolicy {
 
     fun afterPermissionRefresh(
         granted: Boolean,
-        previous: HealthConnectPermissionState
-    ): HealthConnectPermissionState = when {
-        granted -> HealthConnectPermissionState.GRANTED
-        previous == HealthConnectPermissionState.GRANTED -> HealthConnectPermissionState.REVOKED
-        else -> previous
-    }
+        previous: HealthConnectPermissionState,
+    ): HealthConnectPermissionState =
+        when {
+            granted -> HealthConnectPermissionState.GRANTED
+            previous == HealthConnectPermissionState.GRANTED -> HealthConnectPermissionState.REVOKED
+            else -> previous
+        }
 
     fun shouldOfferSettings(state: HealthConnectPermissionState): Boolean =
         state == HealthConnectPermissionState.DENIED ||
             state == HealthConnectPermissionState.REVOKED
 
-    fun shouldRequestPermission(state: HealthConnectPermissionState): Boolean =
-        state == HealthConnectPermissionState.NOT_REQUESTED
+    fun shouldRequestPermission(state: HealthConnectPermissionState): Boolean = state == HealthConnectPermissionState.NOT_REQUESTED
 }

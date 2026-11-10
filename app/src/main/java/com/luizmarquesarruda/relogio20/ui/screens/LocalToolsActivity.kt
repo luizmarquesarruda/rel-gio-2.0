@@ -64,26 +64,28 @@ class LocalToolsActivity : Activity() {
     private var breathingPhaseIndex = 0
     private var currentSteps: Long? = null
 
-    private val stopwatchTick = object : Runnable {
-        override fun run() {
-            if (!stopwatchRunning || !::stopwatchValue.isInitialized) return
-            val elapsed = stopwatchAccumulated + (SystemClock.elapsedRealtime() - stopwatchStartedAt)
-            stopwatchValue.text = formatElapsed(elapsed)
-            handler.postDelayed(this, 100L)
+    private val stopwatchTick =
+        object : Runnable {
+            override fun run() {
+                if (!stopwatchRunning || !::stopwatchValue.isInitialized) return
+                val elapsed = stopwatchAccumulated + (SystemClock.elapsedRealtime() - stopwatchStartedAt)
+                stopwatchValue.text = formatElapsed(elapsed)
+                handler.postDelayed(this, 100L)
+            }
         }
-    }
 
-    private val breathingTick = object : Runnable {
-        override fun run() {
-            if (!breathingRunning || !::breathingValue.isInitialized) return
-            val phases = listOf("Inspire", "Segure", "Expire")
-            val seconds = listOf(4L, 2L, 6L)
-            val currentPhase = breathingPhaseIndex
-            breathingValue.text = phases[currentPhase] + " • " + seconds[currentPhase] + " s"
-            breathingPhaseIndex = (currentPhase + 1) % phases.size
-            handler.postDelayed(this, seconds[currentPhase] * 1_000L)
+    private val breathingTick =
+        object : Runnable {
+            override fun run() {
+                if (!breathingRunning || !::breathingValue.isInitialized) return
+                val phases = listOf("Inspire", "Segure", "Expire")
+                val seconds = listOf(4L, 2L, 6L)
+                val currentPhase = breathingPhaseIndex
+                breathingValue.text = phases[currentPhase] + " • " + seconds[currentPhase] + " s"
+                breathingPhaseIndex = (currentPhase + 1) % phases.size
+                handler.postDelayed(this, seconds[currentPhase] * 1_000L)
+            }
         }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -111,11 +113,12 @@ class LocalToolsActivity : Activity() {
     }
 
     private fun buildUi() {
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), dp(14), dp(18), dp(18))
-            setBackgroundColor(0xFFF4F6F8.toInt())
-        }
+        val root =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(18), dp(14), dp(18), dp(18))
+                setBackgroundColor(0xFFF4F6F8.toInt())
+            }
         RelogioUi.applyEdgeToEdge(
             activity = this,
             root = root,
@@ -123,36 +126,48 @@ class LocalToolsActivity : Activity() {
             paddingTopDp = 14,
             paddingRightDp = 18,
             paddingBottomDp = 18,
-            lightSystemBarIcons = true
+            lightSystemBarIcons = true,
         )
-        val header = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-        }
-        header.addView(Button(this).apply {
-            text = "‹"
-            textSize = 25f
-            isAllCaps = false
-            setOnClickListener { finish() }
-        }, LinearLayout.LayoutParams(dp(52), dp(48)))
-        header.addView(TextView(this).apply {
-            text = "Ferramentas locais"
-            textSize = 22f
-            setTextColor(0xFF14212B.toInt())
-            setTypeface(typeface, Typeface.BOLD)
-            setPadding(dp(8), 0, 0, 0)
-        })
+        val header =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+            }
+        header.addView(
+            Button(this).apply {
+                text = "‹"
+                textSize = 25f
+                isAllCaps = false
+                setOnClickListener { finish() }
+            },
+            LinearLayout.LayoutParams(dp(52), dp(48)),
+        )
+        header.addView(
+            TextView(this).apply {
+                text = "Ferramentas locais"
+                textSize = 22f
+                setTextColor(0xFF14212B.toInt())
+                setTypeface(typeface, Typeface.BOLD)
+                setPadding(dp(8), 0, 0, 0)
+            },
+        )
         root.addView(header)
 
         val scroll = ScrollView(this).apply { isFillViewport = true }
-        body = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(0, dp(12), 0, dp(24))
-        }
+        body =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(0, dp(12), 0, dp(24))
+            }
         scroll.addView(body)
-        root.addView(scroll, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
-        ))
+        root.addView(
+            scroll,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f,
+            ),
+        )
         setContentView(root)
 
         addText("Estas funções executam no Android. Nenhuma delas envia comandos BLE ao relógio.", 13f)
@@ -168,24 +183,29 @@ class LocalToolsActivity : Activity() {
         section("Meta diária de passos")
         stepsStatus = addText("Consultando o agregado local do Health Connect…", 13f)
         addText("Origem dos dados: somente o próprio Relógio 2.0 por padrão. Você pode incluir outros aplicativos explicitamente.", 11f)
-        val includeExternalSwitch = Switch(this).apply {
-            text = "Incluir registros de outros aplicativos"
-            isChecked = selectedOriginPolicy() == HealthConnectOriginPolicy.INCLUDE_EXTERNAL
-            setOnCheckedChangeListener { _, checked ->
-                AppPreferences.setIncludeExternalHealthSources(this@LocalToolsActivity, checked)
-                currentSteps = null
-                refreshSteps()
-                refreshStepsHistory()
+        val includeExternalSwitch =
+            Switch(this).apply {
+                text = "Incluir registros de outros aplicativos"
+                isChecked = selectedOriginPolicy() == HealthConnectOriginPolicy.INCLUDE_EXTERNAL
+                setOnCheckedChangeListener { _, checked ->
+                    AppPreferences.setIncludeExternalHealthSources(this@LocalToolsActivity, checked)
+                    currentSteps = null
+                    refreshSteps()
+                    refreshStepsHistory()
+                }
             }
-        }
         body.addView(includeExternalSwitch, matchWrap())
-        goalInput = EditText(this).apply {
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            setSingleLine(true)
-            hint = "Meta de passos (padrão 8000)"
-        }
-        goalInput.setText(getSharedPreferences(PREFS, MODE_PRIVATE)
-            .getInt(KEY_STEP_GOAL, LocalFeaturePolicy.DEFAULT_STEP_GOAL).toString())
+        goalInput =
+            EditText(this).apply {
+                inputType = android.text.InputType.TYPE_CLASS_NUMBER
+                setSingleLine(true)
+                hint = "Meta de passos (padrão 8000)"
+            }
+        goalInput.setText(
+            getSharedPreferences(PREFS, MODE_PRIVATE)
+                .getInt(KEY_STEP_GOAL, LocalFeaturePolicy.DEFAULT_STEP_GOAL)
+                .toString(),
+        )
         body.addView(goalInput, matchWrap())
         button("Salvar meta") {
             val goal = goalInput.text.toString().toIntOrNull()
@@ -199,8 +219,7 @@ class LocalToolsActivity : Activity() {
                         }
                         updateStepProgress()
                         toast("Meta diária salva.")
-                    }
-                    .onFailure { toast(it.message ?: "Meta inválida.") }
+                    }.onFailure { toast(it.message ?: "Meta inválida.") }
             }
         }
         section("Histórico de passos • últimos 7 dias")
@@ -211,28 +230,37 @@ class LocalToolsActivity : Activity() {
         if (!::stepsStatus.isInitialized) return
         currentSteps = null
         ioScope.launch {
-            val result = runCatching {
-                val repository = HealthConnectStepsRepository(applicationContext)
-                if (!repository.hasReadPermission()) {
-                    HealthConnectStepsResult.PermissionRequired
-                } else {
-                    repository.readTodaySteps(originPolicy = selectedOriginPolicy())
-                }
-            }.getOrElse { HealthConnectStepsResult.Failure(it.message ?: "Falha ao consultar passos.") }
+            val result =
+                runCatching {
+                    val repository = HealthConnectStepsRepository(applicationContext)
+                    if (!repository.hasReadPermission()) {
+                        HealthConnectStepsResult.PermissionRequired
+                    } else {
+                        repository.readTodaySteps(originPolicy = selectedOriginPolicy())
+                    }
+                }.getOrElse { HealthConnectStepsResult.Failure(it.message ?: "Falha ao consultar passos.") }
             runOnUiThread {
                 when (result) {
                     is HealthConnectStepsResult.Success -> {
                         currentSteps = result.snapshot.totalSteps
                         updateStepProgress()
                     }
-                    HealthConnectStepsResult.PermissionRequired ->
+
+                    HealthConnectStepsResult.PermissionRequired -> {
                         stepsStatus.text = "Passos indisponíveis: conceda READ_STEPS no painel principal. Ausência não significa zero."
-                    HealthConnectStepsResult.ProviderUnavailable ->
+                    }
+
+                    HealthConnectStepsResult.ProviderUnavailable -> {
                         stepsStatus.text = "Health Connect não está disponível neste aparelho."
-                    HealthConnectStepsResult.ProviderUpdateRequired ->
+                    }
+
+                    HealthConnectStepsResult.ProviderUpdateRequired -> {
                         stepsStatus.text = "Atualize o Health Connect para consultar passos."
-                    is HealthConnectStepsResult.Failure ->
+                    }
+
+                    is HealthConnectStepsResult.Failure -> {
                         stepsStatus.text = "Falha ao consultar passos: " + result.reason
+                    }
                 }
             }
         }
@@ -241,74 +269,97 @@ class LocalToolsActivity : Activity() {
     private fun refreshStepsHistory() {
         if (!::historyStatus.isInitialized) return
         ioScope.launch {
-            val result = runCatching {
-                val repository = HealthConnectStepsRepository(applicationContext)
-                if (!repository.hasReadPermission()) {
-                    HealthConnectStepsHistoryResult.PermissionRequired
-                } else {
-                    repository.readStepsHistory(days = 7, originPolicy = selectedOriginPolicy())
-                }
-            }.getOrElse {
-                HealthConnectStepsHistoryResult.Failure(it.message ?: "Falha ao consultar histórico.")
-            }
-            runOnUiThread {
-                historyStatus.text = when (result) {
-                    HealthConnectStepsHistoryResult.PermissionRequired ->
-                        "Histórico indisponível: conceda READ_STEPS no painel principal."
-                    is HealthConnectStepsHistoryResult.Failure ->
-                        "Histórico indisponível: " + result.reason
-                    is HealthConnectStepsHistoryResult.Success -> result.days.joinToString("\n") { day ->
-                        val count = day.totalSteps?.let {
-                            NumberFormat.getIntegerInstance(Locale.getDefault()).format(it)
-                        } ?: "Sem registro"
-                        day.date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM", Locale.getDefault())) +
-                            " • " + count + " passos"
+            val result =
+                runCatching {
+                    val repository = HealthConnectStepsRepository(applicationContext)
+                    if (!repository.hasReadPermission()) {
+                        HealthConnectStepsHistoryResult.PermissionRequired
+                    } else {
+                        repository.readStepsHistory(days = 7, originPolicy = selectedOriginPolicy())
                     }
+                }.getOrElse {
+                    HealthConnectStepsHistoryResult.Failure(it.message ?: "Falha ao consultar histórico.")
                 }
+            runOnUiThread {
+                historyStatus.text =
+                    when (result) {
+                        HealthConnectStepsHistoryResult.PermissionRequired -> {
+                            "Histórico indisponível: conceda READ_STEPS no painel principal."
+                        }
+
+                        is HealthConnectStepsHistoryResult.Failure -> {
+                            "Histórico indisponível: " + result.reason
+                        }
+
+                        is HealthConnectStepsHistoryResult.Success -> {
+                            result.days.joinToString("\n") { day ->
+                                val count =
+                                    day.totalSteps?.let {
+                                        NumberFormat.getIntegerInstance(Locale.getDefault()).format(it)
+                                    } ?: "Sem registro"
+                                day.date.format(
+                                    java.time.format.DateTimeFormatter
+                                        .ofPattern("dd/MM", Locale.getDefault()),
+                                ) +
+                                    " • " + count + " passos"
+                            }
+                        }
+                    }
             }
         }
     }
 
     private fun updateStepProgress() {
-        val goal = getSharedPreferences(PREFS, MODE_PRIVATE)
-            .getInt(KEY_STEP_GOAL, LocalFeaturePolicy.DEFAULT_STEP_GOAL)
+        val goal =
+            getSharedPreferences(PREFS, MODE_PRIVATE)
+                .getInt(KEY_STEP_GOAL, LocalFeaturePolicy.DEFAULT_STEP_GOAL)
         val current = currentSteps
-        stepsStatus.text = if (current == null) {
-            "Sem agregado disponível. O aplicativo não substitui ausência por zero."
-        } else {
-            val formatted = NumberFormat.getIntegerInstance(Locale.getDefault()).format(current)
-            val remaining = LocalFeaturePolicy.remainingSteps(current, goal) ?: 0L
-            "Hoje: $formatted passos • meta: $goal • faltam: $remaining • " +
-                LocalFeaturePolicy.progressPercent(current, goal) + "%"
-        }
+        stepsStatus.text =
+            if (current == null) {
+                "Sem agregado disponível. O aplicativo não substitui ausência por zero."
+            } else {
+                val formatted = NumberFormat.getIntegerInstance(Locale.getDefault()).format(current)
+                val remaining = LocalFeaturePolicy.remainingSteps(current, goal) ?: 0L
+                "Hoje: $formatted passos • meta: $goal • faltam: $remaining • " +
+                    LocalFeaturePolicy.progressPercent(current, goal) + "%"
+            }
     }
 
     private fun addStopwatchSection() {
         section("Cronômetro")
         stopwatchValue = addText("00:00.0", 28f)
         val row = horizontal()
-        row.addView(actionButton("Iniciar") {
-            if (!stopwatchRunning) {
-                stopwatchStartedAt = SystemClock.elapsedRealtime()
-                stopwatchRunning = true
-                handler.removeCallbacks(stopwatchTick)
-                handler.post(stopwatchTick)
-            }
-        }, weighted())
-        row.addView(actionButton("Pausar") {
-            if (stopwatchRunning) {
-                stopwatchAccumulated += SystemClock.elapsedRealtime() - stopwatchStartedAt
+        row.addView(
+            actionButton("Iniciar") {
+                if (!stopwatchRunning) {
+                    stopwatchStartedAt = SystemClock.elapsedRealtime()
+                    stopwatchRunning = true
+                    handler.removeCallbacks(stopwatchTick)
+                    handler.post(stopwatchTick)
+                }
+            },
+            weighted(),
+        )
+        row.addView(
+            actionButton("Pausar") {
+                if (stopwatchRunning) {
+                    stopwatchAccumulated += SystemClock.elapsedRealtime() - stopwatchStartedAt
+                    stopwatchRunning = false
+                    handler.removeCallbacks(stopwatchTick)
+                    stopwatchValue.text = formatElapsed(stopwatchAccumulated)
+                }
+            },
+            weighted(),
+        )
+        row.addView(
+            actionButton("Zerar") {
                 stopwatchRunning = false
+                stopwatchAccumulated = 0L
                 handler.removeCallbacks(stopwatchTick)
-                stopwatchValue.text = formatElapsed(stopwatchAccumulated)
-            }
-        }, weighted())
-        row.addView(actionButton("Zerar") {
-            stopwatchRunning = false
-            stopwatchAccumulated = 0L
-            handler.removeCallbacks(stopwatchTick)
-            stopwatchValue.text = "00:00.0"
-        }, weighted())
+                stopwatchValue.text = "00:00.0"
+            },
+            weighted(),
+        )
         body.addView(row)
     }
 
@@ -316,34 +367,43 @@ class LocalToolsActivity : Activity() {
         section("Temporizador")
         timerValue = addText("Temporizador parado", 20f)
         addText("A contagem funciona enquanto esta tela permanecer aberta; não é um alarme persistente em segundo plano.", 11f)
-        val minutes = EditText(this).apply {
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            setSingleLine(true)
-            hint = "Minutos (1 a 180)"
-        }
+        val minutes =
+            EditText(this).apply {
+                inputType = android.text.InputType.TYPE_CLASS_NUMBER
+                setSingleLine(true)
+                hint = "Minutos (1 a 180)"
+            }
         body.addView(minutes, matchWrap())
         val row = horizontal()
-        row.addView(actionButton("Iniciar") {
-            val value = minutes.text.toString().toIntOrNull()
-            if (value == null || value !in 1..180) {
-                toast("Escolha entre 1 e 180 minutos.")
-            } else {
+        row.addView(
+            actionButton("Iniciar") {
+                val value = minutes.text.toString().toIntOrNull()
+                if (value == null || value !in 1..180) {
+                    toast("Escolha entre 1 e 180 minutos.")
+                } else {
+                    timer?.cancel()
+                    timer =
+                        object : CountDownTimer(value * 60_000L, 1_000L) {
+                            override fun onTick(millisUntilFinished: Long) {
+                                timerValue.text = formatRemaining(millisUntilFinished)
+                            }
+
+                            override fun onFinish() {
+                                timerValue.text = "Tempo concluído"
+                                toast("Temporizador concluído.")
+                            }
+                        }.start()
+                }
+            },
+            weighted(),
+        )
+        row.addView(
+            actionButton("Cancelar") {
                 timer?.cancel()
-                timer = object : CountDownTimer(value * 60_000L, 1_000L) {
-                    override fun onTick(millisUntilFinished: Long) {
-                        timerValue.text = formatRemaining(millisUntilFinished)
-                    }
-                    override fun onFinish() {
-                        timerValue.text = "Tempo concluído"
-                        toast("Temporizador concluído.")
-                    }
-                }.start()
-            }
-        }, weighted())
-        row.addView(actionButton("Cancelar") {
-            timer?.cancel()
-            timerValue.text = "Temporizador parado"
-        }, weighted())
+                timerValue.text = "Temporizador parado"
+            },
+            weighted(),
+        )
         body.addView(row)
     }
 
@@ -351,19 +411,25 @@ class LocalToolsActivity : Activity() {
         section("Treino respiratório guiado")
         breathingValue = addText("Pronto • ciclo 4–2–6", 20f)
         val row = horizontal()
-        row.addView(actionButton("Iniciar") {
-            if (!breathingRunning) {
-                breathingRunning = true
-                breathingPhaseIndex = 0
+        row.addView(
+            actionButton("Iniciar") {
+                if (!breathingRunning) {
+                    breathingRunning = true
+                    breathingPhaseIndex = 0
+                    handler.removeCallbacks(breathingTick)
+                    handler.post(breathingTick)
+                }
+            },
+            weighted(),
+        )
+        row.addView(
+            actionButton("Parar") {
+                breathingRunning = false
                 handler.removeCallbacks(breathingTick)
-                handler.post(breathingTick)
-            }
-        }, weighted())
-        row.addView(actionButton("Parar") {
-            breathingRunning = false
-            handler.removeCallbacks(breathingTick)
-            breathingValue.text = "Pausado"
-        }, weighted())
+                breathingValue.text = "Pausado"
+            },
+            weighted(),
+        )
         body.addView(row)
         addText("Guia de respiração sem medição fisiológica ou orientação clínica.", 11f)
     }
@@ -372,12 +438,16 @@ class LocalToolsActivity : Activity() {
         section("Alarme do Android")
         addText("Abre o aplicativo Relógio do Android para você confirmar o alarme. Não sincroniza com o GT3 MAX.", 12f)
         button("Configurar alarme no Android") {
-            val intent = Intent(AlarmClock.ACTION_SET_ALARM)
-                .putExtra(AlarmClock.EXTRA_HOUR, 7)
-                .putExtra(AlarmClock.EXTRA_MINUTES, 0)
-                .putExtra(AlarmClock.EXTRA_SKIP_UI, false)
-            if (intent.resolveActivity(packageManager) != null) startActivity(intent)
-            else toast("Nenhum aplicativo de relógio compatível foi encontrado.")
+            val intent =
+                Intent(AlarmClock.ACTION_SET_ALARM)
+                    .putExtra(AlarmClock.EXTRA_HOUR, 7)
+                    .putExtra(AlarmClock.EXTRA_MINUTES, 0)
+                    .putExtra(AlarmClock.EXTRA_SKIP_UI, false)
+            if (intent.resolveActivity(packageManager) != null) {
+                startActivity(intent)
+            } else {
+                toast("Nenhum aplicativo de relógio compatível foi encontrado.")
+            }
         }
     }
 
@@ -386,8 +456,13 @@ class LocalToolsActivity : Activity() {
         addText("Notificação local no telefone. Não é enviada ao relógio e pode exigir reativação após reiniciar o aparelho.", 12f)
         button("Escolher horário do lembrete") {
             val now = Calendar.getInstance()
-            TimePickerDialog(this, { _, hour, minute -> requestAndScheduleReminder(hour, minute) },
-                now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE), true).show()
+            TimePickerDialog(
+                this,
+                { _, hour, minute -> requestAndScheduleReminder(hour, minute) },
+                now.get(Calendar.HOUR_OF_DAY),
+                now.get(Calendar.MINUTE),
+                true,
+            ).show()
         }
         button("Desativar lembrete") {
             cancelHealthReminder()
@@ -395,7 +470,10 @@ class LocalToolsActivity : Activity() {
         }
     }
 
-    private fun requestAndScheduleReminder(hour: Int, minute: Int) {
+    private fun requestAndScheduleReminder(
+        hour: Int,
+        minute: Int,
+    ) {
         if (Build.VERSION.SDK_INT >= 33 &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) {
@@ -407,7 +485,11 @@ class LocalToolsActivity : Activity() {
         scheduleHealthReminder(hour, minute)
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_NOTIFICATIONS) {
             if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
@@ -418,14 +500,24 @@ class LocalToolsActivity : Activity() {
         }
     }
 
-    private fun scheduleHealthReminder(hour: Int, minute: Int) {
+    private fun scheduleHealthReminder(
+        hour: Int,
+        minute: Int,
+    ) {
         getSharedPreferences(PREFS, MODE_PRIVATE).edit {
             putInt(KEY_REMINDER_HOUR, hour)
             putInt(KEY_REMINDER_MINUTE, minute)
             putBoolean(KEY_REMINDER_ENABLED, true)
         }
         LocalHealthReminderAlarm.schedule(this, hour, minute)
-        toast(String.format(Locale.getDefault(), "Lembrete diário definido para %02d:%02d. O Android pode entregá-lo com atraso.", hour, minute))
+        toast(
+            String.format(
+                Locale.getDefault(),
+                "Lembrete diário definido para %02d:%02d. O Android pode entregá-lo com atraso.",
+                hour,
+                minute,
+            ),
+        )
     }
 
     private fun cancelHealthReminder() {
@@ -444,34 +536,49 @@ class LocalToolsActivity : Activity() {
 
     private fun loadStepGoal() {
         if (::goalInput.isInitialized) {
-            goalInput.setText(getSharedPreferences(PREFS, MODE_PRIVATE)
-                .getInt(KEY_STEP_GOAL, LocalFeaturePolicy.DEFAULT_STEP_GOAL).toString())
+            goalInput.setText(
+                getSharedPreferences(PREFS, MODE_PRIVATE)
+                    .getInt(KEY_STEP_GOAL, LocalFeaturePolicy.DEFAULT_STEP_GOAL)
+                    .toString(),
+            )
         }
     }
 
     private fun section(label: String) {
-        body.addView(TextView(this).apply {
-            text = label
-            textSize = 17f
-            setTextColor(0xFF14212B.toInt())
-            setTypeface(typeface, Typeface.BOLD)
-            setPadding(0, dp(18), 0, dp(7))
-        })
+        body.addView(
+            TextView(this).apply {
+                text = label
+                textSize = 17f
+                setTextColor(0xFF14212B.toInt())
+                setTypeface(typeface, Typeface.BOLD)
+                setPadding(0, dp(18), 0, dp(7))
+            },
+        )
     }
 
-    private fun addText(value: String, size: Float): TextView = TextView(this).apply {
-        text = value
-        textSize = size
-        setTextColor(0xFF526574.toInt())
-        setPadding(0, dp(4), 0, dp(6))
-        body.addView(this, matchWrap())
-    }
+    private fun addText(
+        value: String,
+        size: Float,
+    ): TextView =
+        TextView(this).apply {
+            text = value
+            textSize = size
+            setTextColor(0xFF526574.toInt())
+            setPadding(0, dp(4), 0, dp(6))
+            body.addView(this, matchWrap())
+        }
 
-    private fun button(label: String, action: () -> Unit) {
+    private fun button(
+        label: String,
+        action: () -> Unit,
+    ) {
         body.addView(actionButton(label, action), matchWrap())
     }
 
-    private fun actionButton(label: String, action: () -> Unit): Button =
+    private fun actionButton(
+        label: String,
+        action: () -> Unit,
+    ): Button =
         Button(this).apply {
             text = label
             isAllCaps = false
@@ -479,13 +586,21 @@ class LocalToolsActivity : Activity() {
         }
 
     private fun horizontal() = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-    private fun matchWrap() = LinearLayout.LayoutParams(
-        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-    ).apply { bottomMargin = dp(5) }
-    private fun weighted() = LinearLayout.LayoutParams(0, dp(48), 1f).apply {
-        marginEnd = dp(4)
-    }
+
+    private fun matchWrap() =
+        LinearLayout
+            .LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { bottomMargin = dp(5) }
+
+    private fun weighted() =
+        LinearLayout.LayoutParams(0, dp(48), 1f).apply {
+            marginEnd = dp(4)
+        }
+
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+
     private fun toast(message: String) = Toast.makeText(this, message, Toast.LENGTH_LONG).show()
 
     private fun formatElapsed(ms: Long): String {
@@ -524,23 +639,28 @@ private object LocalHealthReminderAlarm {
     const val KEY_MINUTE = "reminder_minute"
     const val KEY_ENABLED = "reminder_enabled"
 
-    fun schedule(context: Context, hour: Int, minute: Int) {
+    fun schedule(
+        context: Context,
+        hour: Int,
+        minute: Int,
+    ) {
         require(hour in 0..23 && minute in 0..59)
         val appContext = context.applicationContext
-        val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, hour)
-            set(Calendar.MINUTE, minute)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-            if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
-        }
+        val calendar =
+            Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, hour)
+                set(Calendar.MINUTE, minute)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+                if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
+            }
         val pendingIntent = pendingIntent(appContext)
         val manager = appContext.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
         manager.setInexactRepeating(
             android.app.AlarmManager.RTC_WAKEUP,
             calendar.timeInMillis,
             android.app.AlarmManager.INTERVAL_DAY,
-            pendingIntent
+            pendingIntent,
         )
     }
 
@@ -556,14 +676,17 @@ private object LocalHealthReminderAlarm {
             context,
             REQUEST_CODE,
             intent,
-            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE,
         )
     }
 }
 
 /** Delivers an Android-local notification; no watch transport is involved. */
 class LocalHealthReminderReceiver : android.content.BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent?) {
+    override fun onReceive(
+        context: Context,
+        intent: Intent?,
+    ) {
         val preferences = context.getSharedPreferences("local_feature_tools", Context.MODE_PRIVATE)
         if (intent?.action == Intent.ACTION_BOOT_COMPLETED ||
             intent?.action == Intent.ACTION_MY_PACKAGE_REPLACED
@@ -572,7 +695,7 @@ class LocalHealthReminderReceiver : android.content.BroadcastReceiver() {
                 LocalHealthReminderAlarm.schedule(
                     context,
                     preferences.getInt(LocalHealthReminderAlarm.KEY_HOUR, 9),
-                    preferences.getInt(LocalHealthReminderAlarm.KEY_MINUTE, 0)
+                    preferences.getInt(LocalHealthReminderAlarm.KEY_MINUTE, 0),
                 )
             }
             return
@@ -582,17 +705,21 @@ class LocalHealthReminderReceiver : android.content.BroadcastReceiver() {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "local_health_reminders"
         manager.createNotificationChannel(
-            NotificationChannel(channelId, "Lembretes de bem-estar", NotificationManager.IMPORTANCE_DEFAULT)
+            NotificationChannel(channelId, "Lembretes de bem-estar", NotificationManager.IMPORTANCE_DEFAULT),
         )
         if (Build.VERSION.SDK_INT >= 33 &&
             context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) return
-        val notification = android.app.Notification.Builder(context, channelId)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("Pausa de bem-estar")
-            .setContentText("Faça uma pausa, alongue-se e hidrate-se.")
-            .setAutoCancel(true)
-            .build()
+        ) {
+            return
+        }
+        val notification =
+            android.app.Notification
+                .Builder(context, channelId)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle("Pausa de bem-estar")
+                .setContentText("Faça uma pausa, alongue-se e hidrate-se.")
+                .setAutoCancel(true)
+                .build()
         manager.notify(4104, notification)
     }
 }

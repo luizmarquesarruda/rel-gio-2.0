@@ -9,24 +9,26 @@ import java.io.DataOutputStream
 class DiscoveryLibraryCodecTest {
     @Test
     fun roundTripsSessionAndReadingMetadata() {
-        val snapshot = DiscoveryLibrarySnapshot(
-            activeSession = DiscoveryTestSession("session-1", 1_000L, 121_000L, 120),
-            records = listOf(
-                DiscoveryLibraryRecord(
-                    id = "record-1",
-                    occurredAtMillis = 2_000L,
-                    sessionId = "session-1",
-                    kind = DiscoveryLibraryKind.NOTIFICATION,
-                    title = "Notificação BLE",
-                    detail = "8 bytes recebidos",
-                    source = "BLE_NOTIFY",
-                    confidence = "OBSERVADO",
-                    serviceUuid = "service",
-                    characteristicUuid = "characteristic",
-                    payloadHex = "AB0005FF91800032"
-                )
+        val snapshot =
+            DiscoveryLibrarySnapshot(
+                activeSession = DiscoveryTestSession("session-1", 1_000L, 121_000L, 120),
+                records =
+                    listOf(
+                        DiscoveryLibraryRecord(
+                            id = "record-1",
+                            occurredAtMillis = 2_000L,
+                            sessionId = "session-1",
+                            kind = DiscoveryLibraryKind.NOTIFICATION,
+                            title = "Notificação BLE",
+                            detail = "8 bytes recebidos",
+                            source = "BLE_NOTIFY",
+                            confidence = "OBSERVADO",
+                            serviceUuid = "service",
+                            characteristicUuid = "characteristic",
+                            payloadHex = "AB0005FF91800032",
+                        ),
+                    ),
             )
-        )
 
         val decoded = DiscoveryLibraryCodec.decode(DiscoveryLibraryCodec.encode(snapshot))
         assertTrue(decoded is DiscoveryLibraryReadResult.Available)
@@ -37,20 +39,22 @@ class DiscoveryLibraryCodecTest {
 
     @Test
     fun roundTripsDecodedDiscoveryLinkedToCaptureSession() {
-        val record = DiscoveryLibraryRecord(
-            id = "decoded-1",
-            occurredAtMillis = 3_000L,
-            sessionId = "session-42",
-            kind = DiscoveryLibraryKind.DISCOVERY,
-            title = "Dado GATT observado • frequência cardíaca",
-            detail = "72 bpm • formato Bluetooth SIG decodificado",
-            source = "GATT_SIG_DECODER",
-            confidence = "FORMATO_PADRONIZADO_OBSERVADO"
-        )
-        val snapshot = DiscoveryLibrarySnapshot(
-            activeSession = DiscoveryTestSession("session-42", 1_000L, 601_000L, 600),
-            records = listOf(record)
-        )
+        val record =
+            DiscoveryLibraryRecord(
+                id = "decoded-1",
+                occurredAtMillis = 3_000L,
+                sessionId = "session-42",
+                kind = DiscoveryLibraryKind.DISCOVERY,
+                title = "Dado GATT observado • frequência cardíaca",
+                detail = "72 bpm • formato Bluetooth SIG decodificado",
+                source = "GATT_SIG_DECODER",
+                confidence = "FORMATO_PADRONIZADO_OBSERVADO",
+            )
+        val snapshot =
+            DiscoveryLibrarySnapshot(
+                activeSession = DiscoveryTestSession("session-42", 1_000L, 601_000L, 600),
+                records = listOf(record),
+            )
 
         val decoded = DiscoveryLibraryCodec.decode(DiscoveryLibraryCodec.encode(snapshot))
         assertTrue(decoded is DiscoveryLibraryReadResult.Available)
@@ -62,16 +66,24 @@ class DiscoveryLibraryCodecTest {
     @Test
     fun removesOnlyRequestedRecordAndPreservesActiveSession() {
         val session = DiscoveryTestSession("session-1", 1_000L, 61_000L, 60)
-        val first = DiscoveryLibraryRecord(
-            id = "record-1", occurredAtMillis = 2_000L, sessionId = "session-1",
-            kind = DiscoveryLibraryKind.NOTIFICATION, title = "Leitura", detail = "HEX capturado",
-            source = "BLE_NOTIFY", confidence = "OBSERVADO", payloadHex = "AABB"
-        )
+        val first =
+            DiscoveryLibraryRecord(
+                id = "record-1",
+                occurredAtMillis = 2_000L,
+                sessionId = "session-1",
+                kind = DiscoveryLibraryKind.NOTIFICATION,
+                title = "Leitura",
+                detail = "HEX capturado",
+                source = "BLE_NOTIFY",
+                confidence = "OBSERVADO",
+                payloadHex = "AABB",
+            )
         val second = first.copy(id = "record-2", payloadHex = "CCDD")
-        val snapshot = DiscoveryLibrarySnapshot(
-            activeSession = session,
-            records = listOf(first, second)
-        )
+        val snapshot =
+            DiscoveryLibrarySnapshot(
+                activeSession = session,
+                records = listOf(first, second),
+            )
 
         val updated = snapshot.withoutRecord("record-1")
 
@@ -95,46 +107,51 @@ class DiscoveryLibraryCodecTest {
 
     @Test
     fun refusesFutureSchemaInsteadOfTreatingItAsEmpty() {
-        val bytes = ByteArrayOutputStream().also { output ->
-            DataOutputStream(output).use { data ->
-                data.writeInt(DiscoveryLibraryCodec.MAGIC)
-                data.writeInt(DiscoveryLibraryCodec.SCHEMA_VERSION + 1)
-            }
-        }.toByteArray()
+        val bytes =
+            ByteArrayOutputStream()
+                .also { output ->
+                    DataOutputStream(output).use { data ->
+                        data.writeInt(DiscoveryLibraryCodec.MAGIC)
+                        data.writeInt(DiscoveryLibraryCodec.SCHEMA_VERSION + 1)
+                    }
+                }.toByteArray()
         val decoded = DiscoveryLibraryCodec.decode(bytes)
         assertTrue(decoded is DiscoveryLibraryReadResult.UnsupportedSchema)
     }
 
     @Test
     fun rejectsSessionWithDeadlineThatDoesNotMatchItsDuration() {
-        val bytes = ByteArrayOutputStream().also { output ->
-            DataOutputStream(output).use { data ->
-                data.writeInt(DiscoveryLibraryCodec.MAGIC)
-                data.writeInt(DiscoveryLibraryCodec.SCHEMA_VERSION)
-                data.writeBoolean(true)
-                data.writeUTF("session-corrupt")
-                data.writeLong(1_000L)
-                data.writeLong(61_000L)
-                data.writeInt(120)
-                data.writeInt(0)
-            }
-        }.toByteArray()
+        val bytes =
+            ByteArrayOutputStream()
+                .also { output ->
+                    DataOutputStream(output).use { data ->
+                        data.writeInt(DiscoveryLibraryCodec.MAGIC)
+                        data.writeInt(DiscoveryLibraryCodec.SCHEMA_VERSION)
+                        data.writeBoolean(true)
+                        data.writeUTF("session-corrupt")
+                        data.writeLong(1_000L)
+                        data.writeLong(61_000L)
+                        data.writeInt(120)
+                        data.writeInt(0)
+                    }
+                }.toByteArray()
 
         assertTrue(DiscoveryLibraryCodec.decode(bytes) is DiscoveryLibraryReadResult.Corrupt)
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun encoderRejectsDuplicateRecordIds() {
-        val record = DiscoveryLibraryRecord(
-            id = "duplicate",
-            occurredAtMillis = 1_000L,
-            sessionId = null,
-            kind = DiscoveryLibraryKind.DISCOVERY,
-            title = "Descoberta",
-            detail = "Detalhe",
-            source = "GATT",
-            confidence = "OBSERVADO"
-        )
+        val record =
+            DiscoveryLibraryRecord(
+                id = "duplicate",
+                occurredAtMillis = 1_000L,
+                sessionId = null,
+                kind = DiscoveryLibraryKind.DISCOVERY,
+                title = "Descoberta",
+                detail = "Detalhe",
+                source = "GATT",
+                confidence = "OBSERVADO",
+            )
         DiscoveryLibraryCodec.encode(DiscoveryLibrarySnapshot(records = listOf(record, record)))
     }
 }

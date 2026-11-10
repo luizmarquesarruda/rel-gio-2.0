@@ -23,32 +23,37 @@ internal object Gt3MaxCallDeviceProfile {
         UUID.fromString("6e400003-b5a3-f393-e0a9-e50e24dcca9e")
 
     // Captured custom GATT services. They are a fingerprint, not command documentation.
-    private val capturedCustomCharacteristics = mapOf(
-        UUID.fromString("00003802-0000-1000-8000-00805f9b34fb") to setOf(
-            UUID.fromString("00004a02-0000-1000-8000-00805f9b34fb")
-        ),
-        UUID.fromString("cc353442-be58-4ea2-876e-11d8d6976366") to setOf(
-            UUID.fromString("c551c36a-0377-4a29-9657-74ffb655a188"),
-            UUID.fromString("00008a8f-0000-1000-8000-00805f9b34fb")
-        ),
-        UUID.fromString("00003803-0000-1000-8000-00805f9b34fb") to setOf(
-            UUID.fromString("00004a03-0000-1000-8000-00805f9b34fb")
+    private val capturedCustomCharacteristics =
+        mapOf(
+            UUID.fromString("00003802-0000-1000-8000-00805f9b34fb") to
+                setOf(
+                    UUID.fromString("00004a02-0000-1000-8000-00805f9b34fb"),
+                ),
+            UUID.fromString("cc353442-be58-4ea2-876e-11d8d6976366") to
+                setOf(
+                    UUID.fromString("c551c36a-0377-4a29-9657-74ffb655a188"),
+                    UUID.fromString("00008a8f-0000-1000-8000-00805f9b34fb"),
+                ),
+            UUID.fromString("00003803-0000-1000-8000-00805f9b34fb") to
+                setOf(
+                    UUID.fromString("00004a03-0000-1000-8000-00805f9b34fb"),
+                ),
         )
-    )
 
     enum class Match {
         CAPTURED_GATT_FINGERPRINT,
         DEVICE_NAME_AND_NUS,
         DEVICE_NAME_ONLY,
         NUS_ONLY,
-        OTHER
+        OTHER,
     }
 
     fun isKnownDeviceName(name: String?): Boolean {
-        val normalized = name
-            ?.uppercase(Locale.ROOT)
-            ?.filter { it.isLetterOrDigit() }
-            ?: return false
+        val normalized =
+            name
+                ?.uppercase(Locale.ROOT)
+                ?.filter { it.isLetterOrDigit() }
+                ?: return false
         return normalized == "GT3MAX" || normalized == "GT3MAXCALL"
     }
 
@@ -60,21 +65,35 @@ internal object Gt3MaxCallDeviceProfile {
 
     fun evaluate(
         advertisedName: String?,
-        services: Map<UUID, Set<UUID>>
+        services: Map<UUID, Set<UUID>>,
     ): Match {
         val nameMatches = isKnownDeviceName(advertisedName)
         val nusMatches = hasNusTransport(services)
-        val capturedCustomMatches = capturedCustomCharacteristics.all { (service, expected) ->
-            services[service]?.containsAll(expected) == true
-        }
+        val capturedCustomMatches =
+            capturedCustomCharacteristics.all { (service, expected) ->
+                services[service]?.containsAll(expected) == true
+            }
 
         return when {
-            nusMatches && capturedCustomMatches ->
+            nusMatches && capturedCustomMatches -> {
                 Match.CAPTURED_GATT_FINGERPRINT
-            nameMatches && nusMatches -> Match.DEVICE_NAME_AND_NUS
-            nameMatches -> Match.DEVICE_NAME_ONLY
-            nusMatches -> Match.NUS_ONLY
-            else -> Match.OTHER
+            }
+
+            nameMatches && nusMatches -> {
+                Match.DEVICE_NAME_AND_NUS
+            }
+
+            nameMatches -> {
+                Match.DEVICE_NAME_ONLY
+            }
+
+            nusMatches -> {
+                Match.NUS_ONLY
+            }
+
+            else -> {
+                Match.OTHER
+            }
         }
     }
 
@@ -86,7 +105,6 @@ internal object Gt3MaxCallDeviceProfile {
      */
     fun shouldAutoSubscribeBattery(
         advertisedName: String?,
-        services: Map<UUID, Set<UUID>>
-    ): Boolean =
-        evaluate(advertisedName, services) == Match.CAPTURED_GATT_FINGERPRINT
+        services: Map<UUID, Set<UUID>>,
+    ): Boolean = evaluate(advertisedName, services) == Match.CAPTURED_GATT_FINGERPRINT
 }

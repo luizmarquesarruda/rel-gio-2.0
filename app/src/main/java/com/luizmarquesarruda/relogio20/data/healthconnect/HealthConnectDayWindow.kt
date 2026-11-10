@@ -10,6 +10,13 @@ import java.time.ZoneId
  * available on the app's Android minSdk (26) without relying on API 34.
  */
 internal object HealthConnectDayWindow {
-    fun startOfDay(now: Instant, zoneId: ZoneId): Instant =
-        now.atZone(zoneId).toLocalDate().atStartOfDay(zoneId).toInstant()
+    fun startOfDay(
+        now: Instant,
+        zoneId: ZoneId,
+    ): Instant =
+        now
+            .atZone(zoneId)
+            .toLocalDate()
+            .atStartOfDay(zoneId)
+            .toInstant()
 }

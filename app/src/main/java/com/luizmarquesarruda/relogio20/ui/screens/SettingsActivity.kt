@@ -30,16 +30,19 @@ class SettingsActivity : Activity() {
             "Formato do horário",
             "Define como o horário do telefone aparece no painel principal.",
             if (AppPreferences.uses24HourClock(this)) "24 HORAS" else "12 HORAS",
-            "ALTERAR"
+            "ALTERAR",
         ) {
-            AlertDialog.Builder(this)
+            AlertDialog
+                .Builder(this)
                 .setTitle("Formato do horário")
-                .setSingleChoiceItems(arrayOf("24 horas", "12 horas"), if (AppPreferences.uses24HourClock(this)) 0 else 1) { dialog, which ->
+                .setSingleChoiceItems(
+                    arrayOf("24 horas", "12 horas"),
+                    if (AppPreferences.uses24HourClock(this)) 0 else 1,
+                ) { dialog, which ->
                     AppPreferences.set24HourClock(this, which == 0)
                     dialog.dismiss()
                     render()
-                }
-                .setNegativeButton("Cancelar", null)
+                }.setNegativeButton("Cancelar", null)
                 .show()
         }
         RelogioUi.card(
@@ -47,38 +50,49 @@ class SettingsActivity : Activity() {
             "Unidade de distância",
             "Preferência de apresentação para uma futura métrica de distância validada.",
             if (AppPreferences.usesKilometers(this)) "QUILÔMETROS (KM)" else "MILHAS (MI)",
-            "ALTERAR"
+            "ALTERAR",
         ) {
-            AlertDialog.Builder(this)
+            AlertDialog
+                .Builder(this)
                 .setTitle("Unidade de distância")
-                .setSingleChoiceItems(arrayOf("Quilômetros (km)", "Milhas (mi)"), if (AppPreferences.usesKilometers(this)) 0 else 1) { dialog, which ->
+                .setSingleChoiceItems(
+                    arrayOf("Quilômetros (km)", "Milhas (mi)"),
+                    if (AppPreferences.usesKilometers(this)) 0 else 1,
+                ) { dialog, which ->
                     AppPreferences.setKilometers(this, which == 0)
                     dialog.dismiss()
                     render()
-                }
-                .setNegativeButton("Cancelar", null)
+                }.setNegativeButton("Cancelar", null)
                 .show()
         }
 
         RelogioUi.section(body, "FONTES DE SAÚDE")
-        val includeExternal = Switch(this).apply {
-            text = "Incluir outras fontes do Health Connect"
-            textSize = 13f
-            setTextColor(RelogioUi.text)
-            isChecked = AppPreferences.includesExternalHealthSources(this@SettingsActivity)
-            setPadding(RelogioUi.dp(this@SettingsActivity, 4), RelogioUi.dp(this@SettingsActivity, 8),
-                RelogioUi.dp(this@SettingsActivity, 4), RelogioUi.dp(this@SettingsActivity, 8))
-            setOnCheckedChangeListener { _, checked ->
-                AppPreferences.setIncludeExternalHealthSources(this@SettingsActivity, checked)
+        val includeExternal =
+            Switch(this).apply {
+                text = "Incluir outras fontes do Health Connect"
+                textSize = 13f
+                setTextColor(RelogioUi.text)
+                isChecked = AppPreferences.includesExternalHealthSources(this@SettingsActivity)
+                setPadding(
+                    RelogioUi.dp(this@SettingsActivity, 4),
+                    RelogioUi.dp(this@SettingsActivity, 8),
+                    RelogioUi.dp(this@SettingsActivity, 4),
+                    RelogioUi.dp(this@SettingsActivity, 8),
+                )
+                setOnCheckedChangeListener { _, checked ->
+                    AppPreferences.setIncludeExternalHealthSources(this@SettingsActivity, checked)
+                }
             }
-        }
         body.addView(includeExternal)
         RelogioUi.message(
             body,
-            "Desativado: limita a consulta à origem do próprio aplicativo; como esta versão ainda não grava passos no Health Connect, pode não haver total disponível. Ativado: permite incluir telefone e outros aplicativos autorizados. O resultado continua identificado como agregado e nunca como dado exclusivo do GT3 Maxx."
+            "Desativado: limita a consulta à origem do próprio aplicativo; como esta versão ainda não grava passos no Health Connect, pode não haver total disponível. Ativado: permite incluir telefone e outros aplicativos autorizados. O resultado continua identificado como agregado e nunca como dado exclusivo do GT3 Maxx.",
         )
 
         RelogioUi.section(body, "ARMAZENAMENTO")
-        RelogioUi.message(body, "As preferências desta tela ficam localmente neste aparelho. As alterações não enviam comandos BLE nem alteram o relógio.")
+        RelogioUi.message(
+            body,
+            "As preferências desta tela ficam localmente neste aparelho. As alterações não enviam comandos BLE nem alteram o relógio.",
+        )
     }
 }

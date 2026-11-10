@@ -13,7 +13,7 @@ data class StepsSnapshot(
     val intervalStart: Instant,
     val intervalEnd: Instant,
     val receivedAt: Instant,
-    val origin: HealthDataOrigin = HealthDataOrigin.HEALTH_CONNECT_AGGREGATE
+    val origin: HealthDataOrigin = HealthDataOrigin.HEALTH_CONNECT_AGGREGATE,
 ) {
     init {
         require(totalSteps == null || totalSteps >= 0L) {

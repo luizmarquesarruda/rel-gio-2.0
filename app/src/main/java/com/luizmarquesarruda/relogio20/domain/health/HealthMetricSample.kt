@@ -5,20 +5,38 @@ package com.luizmarquesarruda.relogio20.domain.health
  * Raw protocol bytes must be retained separately until their meaning is established.
  */
 enum class HealthMetricType {
-    HEART_RATE, BLOOD_OXYGEN, BLOOD_PRESSURE_SYSTOLIC, BLOOD_PRESSURE_DIASTOLIC,
-    STEPS, SLEEP_DURATION, METT, STRESS
+    HEART_RATE,
+    BLOOD_OXYGEN,
+    BLOOD_PRESSURE_SYSTOLIC,
+    BLOOD_PRESSURE_DIASTOLIC,
+    STEPS,
+    SLEEP_DURATION,
+    METT,
+    STRESS,
 }
 
 enum class HealthMetricUnit {
-    BEATS_PER_MINUTE, PERCENT, MMHG, COUNT, MINUTES, MET, UNKNOWN
+    BEATS_PER_MINUTE,
+    PERCENT,
+    MMHG,
+    COUNT,
+    MINUTES,
+    MET,
+    UNKNOWN,
 }
 
 enum class HealthDataOrigin {
-    GT3_MAX, PHONE, HEALTH_CONNECT_AGGREGATE, WEARFIT_PRO, MANUAL
+    GT3_MAX,
+    PHONE,
+    HEALTH_CONNECT_AGGREGATE,
+    WEARFIT_PRO,
+    MANUAL,
 }
 
 enum class HealthValidationStatus {
-    UNVALIDATED, SEMANTICS_VALIDATED, PHYSICALLY_VALIDATED
+    UNVALIDATED,
+    SEMANTICS_VALIDATED,
+    PHYSICALLY_VALIDATED,
 }
 
 data class HealthMetricSample(
@@ -28,7 +46,7 @@ data class HealthMetricSample(
     val origin: HealthDataOrigin,
     val receivedAtEpochMillis: Long,
     val measuredAtEpochMillis: Long? = null,
-    val validationStatus: HealthValidationStatus = HealthValidationStatus.UNVALIDATED
+    val validationStatus: HealthValidationStatus = HealthValidationStatus.UNVALIDATED,
 ) {
     init {
         require(value.isFinite()) { "Metric value must be finite." }
@@ -58,19 +76,28 @@ data class HealthMetricSample(
 
     /** True only after repeatable physical validation of a sample originating at the watch. */
     val isPhysicallyValidatedWatchSample: Boolean
-        get() = origin == HealthDataOrigin.GT3_MAX &&
-            validationStatus == HealthValidationStatus.PHYSICALLY_VALIDATED
+        get() =
+            origin == HealthDataOrigin.GT3_MAX &&
+                validationStatus == HealthValidationStatus.PHYSICALLY_VALIDATED
 
     companion object {
-        private fun expectedUnit(type: HealthMetricType): HealthMetricUnit = when (type) {
-            HealthMetricType.HEART_RATE -> HealthMetricUnit.BEATS_PER_MINUTE
-            HealthMetricType.BLOOD_OXYGEN -> HealthMetricUnit.PERCENT
-            HealthMetricType.BLOOD_PRESSURE_SYSTOLIC,
-            HealthMetricType.BLOOD_PRESSURE_DIASTOLIC -> HealthMetricUnit.MMHG
-            HealthMetricType.STEPS -> HealthMetricUnit.COUNT
-            HealthMetricType.SLEEP_DURATION -> HealthMetricUnit.MINUTES
-            HealthMetricType.METT -> HealthMetricUnit.MET
-            HealthMetricType.STRESS -> HealthMetricUnit.UNKNOWN
-        }
+        private fun expectedUnit(type: HealthMetricType): HealthMetricUnit =
+            when (type) {
+                HealthMetricType.HEART_RATE -> HealthMetricUnit.BEATS_PER_MINUTE
+
+                HealthMetricType.BLOOD_OXYGEN -> HealthMetricUnit.PERCENT
+
+                HealthMetricType.BLOOD_PRESSURE_SYSTOLIC,
+                HealthMetricType.BLOOD_PRESSURE_DIASTOLIC,
+                -> HealthMetricUnit.MMHG
+
+                HealthMetricType.STEPS -> HealthMetricUnit.COUNT
+
+                HealthMetricType.SLEEP_DURATION -> HealthMetricUnit.MINUTES
+
+                HealthMetricType.METT -> HealthMetricUnit.MET
+
+                HealthMetricType.STRESS -> HealthMetricUnit.UNKNOWN
+            }
     }
 }

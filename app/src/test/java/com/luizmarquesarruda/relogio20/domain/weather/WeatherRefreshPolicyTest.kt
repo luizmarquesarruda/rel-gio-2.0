@@ -17,8 +17,8 @@ class WeatherRefreshPolicyTest {
         assertFalse(
             WeatherRefreshPolicy.shouldSkipPeriodicRefresh(
                 now - WeatherRefreshPolicy.MIN_REFRESH_AGE_MILLIS,
-                now
-            )
+                now,
+            ),
         )
     }
 

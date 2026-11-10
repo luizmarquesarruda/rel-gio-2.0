@@ -13,7 +13,7 @@ class HealthConnectDayWindowTest {
 
         assertEquals(
             Instant.parse("2026-11-03T03:00:00Z"),
-            HealthConnectDayWindow.startOfDay(now, saoPaulo)
+            HealthConnectDayWindow.startOfDay(now, saoPaulo),
         )
     }
 
@@ -24,7 +24,7 @@ class HealthConnectDayWindowTest {
 
         assertEquals(
             Instant.parse("2026-11-04T11:00:00Z"),
-            HealthConnectDayWindow.startOfDay(now, auckland)
+            HealthConnectDayWindow.startOfDay(now, auckland),
         )
     }
 }

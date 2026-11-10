@@ -6,21 +6,21 @@ package com.luizmarquesarruda.relogio20.device.discovery
  */
 internal class PassiveBleObservationTracker(
     private val maxChannels: Int = 32,
-    private val maxFingerprintsPerChannel: Int = 32
+    private val maxFingerprintsPerChannel: Int = 32,
 ) {
     data class Observation(
         val sequence: Long,
         val channelNotificationCount: Long,
         val channelByteCount: Long,
         val intervalSincePreviousMillis: Long?,
-        val distinctFingerprints: Int
+        val distinctFingerprints: Int,
     )
 
     private data class ChannelState(
         var notificationCount: Long = 0,
         var byteCount: Long = 0,
         var lastObservedAtMillis: Long? = null,
-        val fingerprints: LinkedHashSet<String> = linkedSetOf()
+        val fingerprints: LinkedHashSet<String> = linkedSetOf(),
     )
 
     private val channels = linkedMapOf<String, ChannelState>()
@@ -37,7 +37,7 @@ internal class PassiveBleObservationTracker(
         characteristicUuid: String,
         payloadBytes: Int,
         fingerprint: String,
-        observedAtMillis: Long
+        observedAtMillis: Long,
     ): Observation {
         require(payloadBytes >= 0)
         require(observedAtMillis >= 0)
@@ -63,7 +63,7 @@ internal class PassiveBleObservationTracker(
             channelNotificationCount = state.notificationCount,
             channelByteCount = state.byteCount,
             intervalSincePreviousMillis = interval,
-            distinctFingerprints = state.fingerprints.size
+            distinctFingerprints = state.fingerprints.size,
         )
     }
 

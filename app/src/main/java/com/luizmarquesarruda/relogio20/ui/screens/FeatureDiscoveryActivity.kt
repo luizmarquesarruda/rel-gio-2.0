@@ -2,6 +2,7 @@ package com.luizmarquesarruda.relogio20.ui.screens
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.Intent
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -14,16 +15,15 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
-import android.content.Intent
 import androidx.core.content.edit
 import com.luizmarquesarruda.relogio20.data.discovery.DiscoveryLibraryKind
 import com.luizmarquesarruda.relogio20.data.discovery.DiscoveryLibraryReadResult
-import com.luizmarquesarruda.relogio20.data.discovery.FeatureDiscoveryReadResult
-import com.luizmarquesarruda.relogio20.data.discovery.FeatureDiscoveryStore
 import com.luizmarquesarruda.relogio20.data.discovery.DiscoveryLibraryStore
 import com.luizmarquesarruda.relogio20.data.discovery.DiscoveryTestDuration
-import com.luizmarquesarruda.relogio20.device.discovery.GattCapabilityMatrix
+import com.luizmarquesarruda.relogio20.data.discovery.FeatureDiscoveryReadResult
+import com.luizmarquesarruda.relogio20.data.discovery.FeatureDiscoveryStore
 import com.luizmarquesarruda.relogio20.device.discovery.DiscoverySnapshot
+import com.luizmarquesarruda.relogio20.device.discovery.GattCapabilityMatrix
 import com.luizmarquesarruda.relogio20.device.discovery.WatchExperimentCatalog
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -44,13 +44,14 @@ class FeatureDiscoveryActivity : Activity() {
     private var activeSessionId: String? = null
     private var showExperiments = false
 
-    private val countdownTick = object : Runnable {
-        override fun run() {
-            val session = store.activeSession(System.currentTimeMillis())
-            updateTimerUi(session)
-            if (session != null) handler.postDelayed(this, 1_000L)
+    private val countdownTick =
+        object : Runnable {
+            override fun run() {
+                val session = store.activeSession(System.currentTimeMillis())
+                updateTimerUi(session)
+                if (session != null) handler.postDelayed(this, 1_000L)
+            }
         }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,45 +78,60 @@ class FeatureDiscoveryActivity : Activity() {
     }
 
     private fun buildScreen() {
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(12), dp(16), dp(12))
-            setBackgroundColor(0xFFF4F6F8.toInt())
-        }
-        val header = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-        }
-        header.addView(Button(this).apply {
-            text = "‹"
-            textSize = 24f
-            isAllCaps = false
-            setOnClickListener { finish() }
-        }, LinearLayout.LayoutParams(dp(52), dp(48)))
-        header.addView(TextView(this).apply {
-            text = "Testes e descobertas"
-            textSize = 21f
-            setTextColor(0xFF14212B.toInt())
-            setTypeface(typeface, Typeface.BOLD)
-            setPadding(dp(8), 0, 0, 0)
-        })
+        val root =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(16), dp(12), dp(16), dp(12))
+                setBackgroundColor(0xFFF4F6F8.toInt())
+            }
+        val header =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+            }
+        header.addView(
+            Button(this).apply {
+                text = "‹"
+                textSize = 24f
+                isAllCaps = false
+                setOnClickListener { finish() }
+            },
+            LinearLayout.LayoutParams(dp(52), dp(48)),
+        )
+        header.addView(
+            TextView(this).apply {
+                text = "Testes e descobertas"
+                textSize = 21f
+                setTextColor(0xFF14212B.toInt())
+                setTypeface(typeface, Typeface.BOLD)
+                setPadding(dp(8), 0, 0, 0)
+            },
+        )
         root.addView(header)
-        root.addView(TextView(this).apply {
-            text = "Acompanhe a captura BLE, registre o que o relógio transmite e consulte o histórico local."
-            textSize = 12f
-            setTextColor(0xFF526574.toInt())
-            setPadding(0, dp(6), 0, dp(8))
-        })
+        root.addView(
+            TextView(this).apply {
+                text = "Acompanhe a captura BLE, registre o que o relógio transmite e consulte o histórico local."
+                textSize = 12f
+                setTextColor(0xFF526574.toInt())
+                setPadding(0, dp(6), 0, dp(8))
+            },
+        )
 
         val scroll = ScrollView(this).apply { isFillViewport = true }
-        body = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(0, dp(4), 0, dp(20))
-        }
+        body =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(0, dp(4), 0, dp(20))
+            }
         scroll.addView(body)
-        root.addView(scroll, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
-        ))
+        root.addView(
+            scroll,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f,
+            ),
+        )
         setContentView(root)
     }
 
@@ -130,14 +146,20 @@ class FeatureDiscoveryActivity : Activity() {
                 addSectionTitle("Biblioteca interna")
                 addMessage("Nenhum registro foi salvo ainda. Descobertas e leituras capturadas aparecerão aqui.")
             }
+
             is DiscoveryLibraryReadResult.Available -> {
                 addSectionTitle("Biblioteca interna")
-                addMessage(library.snapshot.records.size.toString() + " registros armazenados localmente.")
+                addMessage(
+                    library.snapshot.records.size
+                        .toString() + " registros armazenados localmente.",
+                )
             }
+
             DiscoveryLibraryReadResult.Corrupt -> {
                 addSectionTitle("Biblioteca interna")
                 addMessage("O arquivo da biblioteca está inválido. Os dados existentes foram preservados e não serão sobrescritos.")
             }
+
             is DiscoveryLibraryReadResult.UnsupportedSchema -> {
                 addSectionTitle("Biblioteca interna")
                 addMessage("A biblioteca usa um schema mais novo (" + library.version + "). Os dados foram preservados sem sobrescrita.")
@@ -148,11 +170,16 @@ class FeatureDiscoveryActivity : Activity() {
                 addSectionTitle("Descobertas GATT")
                 addMessage("Conecte o GT3 MAX no painel principal para registrar serviços e características.")
             }
-            is FeatureDiscoveryReadResult.Available -> renderSnapshot(discovery.snapshot)
+
+            is FeatureDiscoveryReadResult.Available -> {
+                renderSnapshot(discovery.snapshot)
+            }
+
             FeatureDiscoveryReadResult.Corrupt -> {
                 addSectionTitle("Descobertas GATT")
                 addMessage("O catálogo GATT existente está inválido e foi preservado.")
             }
+
             is FeatureDiscoveryReadResult.UnsupportedSchema -> {
                 addSectionTitle("Descobertas GATT")
                 addMessage("O catálogo GATT usa um schema mais novo (" + discovery.version + ") e não será sobrescrito.")
@@ -161,14 +188,14 @@ class FeatureDiscoveryActivity : Activity() {
         renderExperimentGuide()
         addSectionTitle("Segurança da exploração")
         addMessage(
-            "A captura cronometrada registra somente notificações e leituras recebidas durante a sessão. O HEX capturado permanece no histórico privado (máx. 1.000 registros), com exclusão individual disponível na Biblioteca interna. Nenhum payload proprietário, escrita NUS RX, DFU, OTA, reset ou calibração é enviado."
+            "A captura cronometrada registra somente notificações e leituras recebidas durante a sessão. O HEX capturado permanece no histórico privado (máx. 1.000 registros), com exclusão individual disponível na Biblioteca interna. Nenhum payload proprietário, escrita NUS RX, DFU, OTA, reset ou calibração é enviado.",
         )
     }
 
-
     private fun renderAutomaticDiscoveryStatus() {
-        val enabled = getSharedPreferences("automatic_gatt_discovery", MODE_PRIVATE)
-            .getBoolean("enabled", false)
+        val enabled =
+            getSharedPreferences("automatic_gatt_discovery", MODE_PRIVATE)
+                .getBoolean("enabled", false)
         addSectionTitle("Exploração automática GATT")
         addMessage(
             if (enabled) {
@@ -179,206 +206,250 @@ class FeatureDiscoveryActivity : Activity() {
             } else {
                 "Pausada. No painel principal, ative “Ativar testes automáticos ao conectar” uma vez " +
                     "para que o aplicativo execute e salve os testes GATT automaticamente nas conexões válidas."
-            }
+            },
         )
     }
 
     private fun renderDeepExplorationShortcut() {
-        val button = Button(this).apply {
-            text = "Explorar manualmente GATT"
-            isAllCaps = false
-            textSize = 14f
-            setOnClickListener {
-                getSharedPreferences("ble_exploration_requests", MODE_PRIVATE).edit {
-                    putBoolean("pending_deep_exploration", true)
+        val button =
+            Button(this).apply {
+                text = "Explorar manualmente GATT"
+                isAllCaps = false
+                textSize = 14f
+                setOnClickListener {
+                    getSharedPreferences("ble_exploration_requests", MODE_PRIVATE).edit {
+                        putBoolean("pending_deep_exploration", true)
+                    }
+                    finish()
                 }
-                finish()
             }
-        }
-        body.addView(button, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(50)
-        ).apply { bottomMargin = dp(6) })
+        body.addView(
+            button,
+            LinearLayout
+                .LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    dp(50),
+                ).apply { bottomMargin = dp(6) },
+        )
         addMessage(
-            "Esta ação é um atalho manual. O modo automático é controlado no painel principal e não exige esta confirmação a cada conexão."
+            "Esta ação é um atalho manual. O modo automático é controlado no painel principal e não exige esta confirmação a cada conexão.",
         )
     }
 
     private fun renderTimerPanel() {
-        val card = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(15), dp(13), dp(15), dp(13))
-            background = roundedSurface()
-        }
+        val card =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(15), dp(13), dp(15), dp(13))
+                background = roundedSurface()
+            }
         addText(card, "TESTE CRONOMETRADO", 10f, 0xFF687786.toInt(), true)
-        timerValue = TextView(this).apply {
-            text = "02:00"
-            textSize = 38f
-            setTextColor(0xFF14212B.toInt())
-            setTypeface(typeface, Typeface.BOLD)
-            setPadding(0, dp(4), 0, 0)
-            contentDescription = "Tempo restante da sessão de captura"
-        }
+        timerValue =
+            TextView(this).apply {
+                text = "02:00"
+                textSize = 38f
+                setTextColor(0xFF14212B.toInt())
+                setTypeface(typeface, Typeface.BOLD)
+                setPadding(0, dp(4), 0, 0)
+                contentDescription = "Tempo restante da sessão de captura"
+            }
         card.addView(timerValue)
-        timerProgress = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
-            max = 100
-            progress = 0
-        }
-        card.addView(timerProgress, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(8)
-        ).apply { topMargin = dp(5); bottomMargin = dp(7) })
-        timerStatus = TextView(this).apply {
-            text = "Escolha a duração e inicie a captura local."
-            textSize = 12f
-            setTextColor(0xFF526574.toInt())
-        }
+        timerProgress =
+            ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+                max = 100
+                progress = 0
+            }
+        card.addView(
+            timerProgress,
+            LinearLayout
+                .LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    dp(8),
+                ).apply {
+                    topMargin = dp(5)
+                    bottomMargin = dp(7)
+                },
+        )
+        timerStatus =
+            TextView(this).apply {
+                text = "Escolha a duração e inicie a captura local."
+                textSize = 12f
+                setTextColor(0xFF526574.toInt())
+            }
         card.addView(timerStatus)
-        timerCount = TextView(this).apply {
-            text = "0 leituras/notificações capturadas"
-            textSize = 12f
-            setTextColor(0xFF526574.toInt())
-            setPadding(0, dp(4), 0, dp(8))
-        }
+        timerCount =
+            TextView(this).apply {
+                text = "0 leituras/notificações capturadas"
+                textSize = 12f
+                setTextColor(0xFF526574.toInt())
+                setPadding(0, dp(4), 0, dp(8))
+            }
         card.addView(timerCount)
 
         val durations = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         DiscoveryTestDuration.allowedSeconds.forEach { seconds ->
-            val label = when (seconds) {
-                60 -> "1 min"
-                120 -> "2 min"
-                300 -> "5 min"
-                else -> "10 min"
-            }
-            val button = Button(this).apply {
-                text = label
-                textSize = 11f
-                isAllCaps = false
-                isSelected = seconds == selectedDurationSeconds
-                setOnClickListener {
-                    selectedDurationSeconds = seconds
-                    updateDurationButtons(durations)
-                    updateTimerUi(store.activeSession(System.currentTimeMillis()))
+            val label =
+                when (seconds) {
+                    60 -> "1 min"
+                    120 -> "2 min"
+                    300 -> "5 min"
+                    else -> "10 min"
                 }
-                backgroundTintList = android.content.res.ColorStateList.valueOf(
-                    if (isSelected) 0xFFD7E9E3.toInt() else 0xFFE8EDF1.toInt()
-                )
-            }
-            durations.addView(button, LinearLayout.LayoutParams(0, dp(43), 1f).apply {
-                marginEnd = dp(4)
-            })
+            val button =
+                Button(this).apply {
+                    text = label
+                    textSize = 11f
+                    isAllCaps = false
+                    isSelected = seconds == selectedDurationSeconds
+                    setOnClickListener {
+                        selectedDurationSeconds = seconds
+                        updateDurationButtons(durations)
+                        updateTimerUi(store.activeSession(System.currentTimeMillis()))
+                    }
+                    backgroundTintList =
+                        android.content.res.ColorStateList.valueOf(
+                            if (isSelected) 0xFFD7E9E3.toInt() else 0xFFE8EDF1.toInt(),
+                        )
+                }
+            durations.addView(
+                button,
+                LinearLayout.LayoutParams(0, dp(43), 1f).apply {
+                    marginEnd = dp(4)
+                },
+            )
         }
         card.addView(durations)
 
-        val actions = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-        }
-        startButton = Button(this).apply {
-            text = "Iniciar teste"
-            isAllCaps = false
-            setOnClickListener { confirmStartSession() }
-        }
-        stopButton = Button(this).apply {
-            text = "Finalizar"
-            isAllCaps = false
-            visibility = View.GONE
-            setOnClickListener {
-                stopButton.isEnabled = false
-                val queued = store.finishTestSessionAsync(
-                    System.currentTimeMillis(),
-                    "Finalizado pelo usuário"
-                ) { saved ->
-                    runOnUiThread {
-                        if (isFinishing || isDestroyed) return@runOnUiThread
-                        if (saved) {
-                            handler.removeCallbacks(countdownTick)
-                            updateTimerUi(null)
-                        } else {
-                            stopButton.isEnabled = true
-                            updateTimerUi(store.activeSession(System.currentTimeMillis()))
-                            AlertDialog.Builder(this@FeatureDiscoveryActivity)
-                                .setMessage("Não foi possível persistir o encerramento do teste. A sessão continua ativa.")
-                                .setPositiveButton("OK", null)
-                                .show()
+        val actions =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+            }
+        startButton =
+            Button(this).apply {
+                text = "Iniciar teste"
+                isAllCaps = false
+                setOnClickListener { confirmStartSession() }
+            }
+        stopButton =
+            Button(this).apply {
+                text = "Finalizar"
+                isAllCaps = false
+                visibility = View.GONE
+                setOnClickListener {
+                    stopButton.isEnabled = false
+                    val queued =
+                        store.finishTestSessionAsync(
+                            System.currentTimeMillis(),
+                            "Finalizado pelo usuário",
+                        ) { saved ->
+                            runOnUiThread {
+                                if (isFinishing || isDestroyed) return@runOnUiThread
+                                if (saved) {
+                                    handler.removeCallbacks(countdownTick)
+                                    updateTimerUi(null)
+                                } else {
+                                    stopButton.isEnabled = true
+                                    updateTimerUi(store.activeSession(System.currentTimeMillis()))
+                                    AlertDialog
+                                        .Builder(this@FeatureDiscoveryActivity)
+                                        .setMessage("Não foi possível persistir o encerramento do teste. A sessão continua ativa.")
+                                        .setPositiveButton("OK", null)
+                                        .show()
+                                }
+                            }
                         }
+                    if (!queued) {
+                        stopButton.isEnabled = true
+                        AlertDialog
+                            .Builder(this@FeatureDiscoveryActivity)
+                            .setMessage("A fila de persistência está indisponível. O teste não foi finalizado.")
+                            .setPositiveButton("OK", null)
+                            .show()
                     }
                 }
-                if (!queued) {
-                    stopButton.isEnabled = true
-                    AlertDialog.Builder(this@FeatureDiscoveryActivity)
-                        .setMessage("A fila de persistência está indisponível. O teste não foi finalizado.")
-                        .setPositiveButton("OK", null)
-                        .show()
-                }
             }
-        }
         actions.addView(startButton, LinearLayout.LayoutParams(0, dp(48), 1f))
-        actions.addView(stopButton, LinearLayout.LayoutParams(0, dp(48), 1f).apply {
-            marginStart = dp(8)
-        })
+        actions.addView(
+            stopButton,
+            LinearLayout.LayoutParams(0, dp(48), 1f).apply {
+                marginStart = dp(8)
+            },
+        )
         card.addView(actions)
-        body.addView(card, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-        ).apply { bottomMargin = dp(10) })
+        body.addView(
+            card,
+            LinearLayout
+                .LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { bottomMargin = dp(10) },
+        )
         updateTimerUi(store.activeSession(System.currentTimeMillis()))
     }
 
     private fun updateDurationButtons(container: LinearLayout) {
         for (index in 0 until container.childCount) {
             val button = container.getChildAt(index) as? Button ?: continue
-            val seconds = when (button.text.toString()) {
-                "1 min" -> 60
-                "2 min" -> 120
-                "5 min" -> 300
-                else -> 600
-            }
+            val seconds =
+                when (button.text.toString()) {
+                    "1 min" -> 60
+                    "2 min" -> 120
+                    "5 min" -> 300
+                    else -> 600
+                }
             button.isSelected = seconds == selectedDurationSeconds
-            button.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                if (button.isSelected) 0xFFD7E9E3.toInt() else 0xFFE8EDF1.toInt()
-            )
+            button.backgroundTintList =
+                android.content.res.ColorStateList.valueOf(
+                    if (button.isSelected) 0xFFD7E9E3.toInt() else 0xFFE8EDF1.toInt(),
+                )
         }
     }
 
     private fun confirmStartSession() {
-        AlertDialog.Builder(this)
+        AlertDialog
+            .Builder(this)
             .setTitle("Iniciar captura cronometrada")
             .setMessage(
-                "Durante o tempo escolhido, o aplicativo salvará localmente as notificações e leituras BLE recebidas, incluindo HEX que pode conter informações de saúde. Os dados não serão enviados à rede. Inicie a sessão somente quando estiver pronto para observar o GT3 MAX."
-            )
-            .setNegativeButton("Cancelar", null)
+                "Durante o tempo escolhido, o aplicativo salvará localmente as notificações e leituras BLE recebidas, incluindo HEX que pode conter informações de saúde. Os dados não serão enviados à rede. Inicie a sessão somente quando estiver pronto para observar o GT3 MAX.",
+            ).setNegativeButton("Cancelar", null)
             .setPositiveButton("Iniciar e salvar") { _, _ ->
                 startButton.isEnabled = false
                 val now = System.currentTimeMillis()
-                val queued = store.startTestSessionAsync(selectedDurationSeconds, now) { started ->
-                    runOnUiThread {
-                        if (isFinishing || isDestroyed) {
-                            if (started) {
-                                store.finishTestSessionAsync(
-                                    System.currentTimeMillis(),
-                                    "Tela de captura fechada antes de atualizar a interface"
-                                )
+                val queued =
+                    store.startTestSessionAsync(selectedDurationSeconds, now) { started ->
+                        runOnUiThread {
+                            if (isFinishing || isDestroyed) {
+                                if (started) {
+                                    store.finishTestSessionAsync(
+                                        System.currentTimeMillis(),
+                                        "Tela de captura fechada antes de atualizar a interface",
+                                    )
+                                }
+                                return@runOnUiThread
                             }
-                            return@runOnUiThread
-                        }
-                        startButton.isEnabled = true
-                        if (started) {
-                            scheduleCountdown()
-                            updateTimerUi(store.activeSession(System.currentTimeMillis()))
-                        } else {
-                            AlertDialog.Builder(this@FeatureDiscoveryActivity)
-                                .setMessage("Não foi possível iniciar. Verifique se já existe um teste ativo ou se a biblioteca está inválida/incompatível.")
-                                .setPositiveButton("OK", null)
-                                .show()
+                            startButton.isEnabled = true
+                            if (started) {
+                                scheduleCountdown()
+                                updateTimerUi(store.activeSession(System.currentTimeMillis()))
+                            } else {
+                                AlertDialog
+                                    .Builder(this@FeatureDiscoveryActivity)
+                                    .setMessage(
+                                        "Não foi possível iniciar. Verifique se já existe um teste ativo ou se a biblioteca está inválida/incompatível.",
+                                    ).setPositiveButton("OK", null)
+                                    .show()
+                            }
                         }
                     }
-                }
                 if (!queued) {
                     startButton.isEnabled = true
-                    AlertDialog.Builder(this)
+                    AlertDialog
+                        .Builder(this)
                         .setMessage("A fila de persistência está indisponível. O teste não foi iniciado.")
                         .setPositiveButton("OK", null)
                         .show()
                 }
-            }
-            .show()
+            }.show()
     }
 
     private fun scheduleCountdown() {
@@ -393,12 +464,17 @@ class FeatureDiscoveryActivity : Activity() {
         if (session == null) {
             val completedId = activeSessionId
             activeSessionId = null
-            val finished = if (completedId == null) null else {
-                (store.read() as? DiscoveryLibraryReadResult.Available)
-                    ?.snapshot?.records?.lastOrNull {
-                        it.sessionId == completedId && it.kind == DiscoveryLibraryKind.SESSION_FINISHED
-                    }
-            }
+            val finished =
+                if (completedId == null) {
+                    null
+                } else {
+                    (store.read() as? DiscoveryLibraryReadResult.Available)
+                        ?.snapshot
+                        ?.records
+                        ?.lastOrNull {
+                            it.sessionId == completedId && it.kind == DiscoveryLibraryKind.SESSION_FINISHED
+                        }
+                }
             if (finished != null) {
                 timerValue.text = "00:00"
                 timerStatus.text = finished.detail
@@ -420,11 +496,12 @@ class FeatureDiscoveryActivity : Activity() {
         val progress = ((elapsed * 100L) / (session.durationSeconds * 1_000L)).toInt().coerceIn(0, 100)
         val captured = store.recordsForSession(session.id)
         timerValue.text = formatRemaining(remaining)
-        timerStatus.text = if (captured == 0) {
-            "Teste ativo • aguardando notificações ou leituras do relógio."
-        } else {
-            "Teste ativo • os dados recebidos estão sendo salvos."
-        }
+        timerStatus.text =
+            if (captured == 0) {
+                "Teste ativo • aguardando notificações ou leituras do relógio."
+            } else {
+                "Teste ativo • os dados recebidos estão sendo salvos."
+            }
         timerProgress.progress = progress
         timerCount.text = captured.toString() + " leituras/notificações capturadas nesta sessão"
         startButton.isEnabled = false
@@ -432,14 +509,20 @@ class FeatureDiscoveryActivity : Activity() {
     }
 
     private fun renderLibraryShortcut() {
-        val button = Button(this).apply {
-            text = "Abrir biblioteca interna"
-            isAllCaps = false
-            setOnClickListener { startActivity(Intent(this@FeatureDiscoveryActivity, DiscoveryLibraryActivity::class.java)) }
-        }
-        body.addView(button, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
-        ).apply { bottomMargin = dp(10) })
+        val button =
+            Button(this).apply {
+                text = "Abrir biblioteca interna"
+                isAllCaps = false
+                setOnClickListener { startActivity(Intent(this@FeatureDiscoveryActivity, DiscoveryLibraryActivity::class.java)) }
+            }
+        body.addView(
+            button,
+            LinearLayout
+                .LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    dp(48),
+                ).apply { bottomMargin = dp(10) },
+        )
     }
 
     private fun renderSnapshot(snapshot: DiscoverySnapshot) {
@@ -451,22 +534,24 @@ class FeatureDiscoveryActivity : Activity() {
                 snapshot.characteristicCount + " características • " +
                 snapshot.traffic.sumOf { it.notificationCount } + " notificações observadas",
             13f,
-            0xFF526574.toInt()
+            0xFF526574.toInt(),
         )
         val capabilityFindings = snapshot.findings.filter { it.id.startsWith("capability:") }
         if (capabilityFindings.isNotEmpty()) {
             addSectionTitle("Matriz de recursos Bluetooth SIG")
-            val advertised = capabilityFindings.count {
-                it.status != GattCapabilityMatrix.State.NOT_ADVERTISED.label
-            }
-            val observed = capabilityFindings.count {
-                it.status == GattCapabilityMatrix.State.HISTORICAL_TRAFFIC.label ||
-                    it.status == GattCapabilityMatrix.State.TRAFFIC_OBSERVED.label
-            }
+            val advertised =
+                capabilityFindings.count {
+                    it.status != GattCapabilityMatrix.State.NOT_ADVERTISED.label
+                }
+            val observed =
+                capabilityFindings.count {
+                    it.status == GattCapabilityMatrix.State.HISTORICAL_TRAFFIC.label ||
+                        it.status == GattCapabilityMatrix.State.TRAFFIC_OBSERVED.label
+                }
             addMessage(
                 advertised.toString() + " de " + capabilityFindings.size +
                     " perfis/capacidades padronizados anunciados; " + observed +
-                    " com tráfego registrado. Um perfil ausente no GATT pode existir por protocolo proprietário."
+                    " com tráfego registrado. Um perfil ausente no GATT pode existir por protocolo proprietário.",
             )
             capabilityFindings.forEach(::renderFindingCard)
         }
@@ -489,18 +574,19 @@ class FeatureDiscoveryActivity : Activity() {
                     item.characteristicUuid + " • " + item.notificationCount +
                         " notificações • último pacote " + item.lastPayloadBytes + " bytes",
                     11f,
-                    0xFF526574.toInt()
+                    0xFF526574.toInt(),
                 )
             }
         }
     }
 
     private fun renderFindingCard(finding: com.luizmarquesarruda.relogio20.device.discovery.FeatureFinding) {
-        val card = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(13), dp(10), dp(13), dp(10))
-            background = roundedSurface()
-        }
+        val card =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(13), dp(10), dp(13), dp(10))
+                background = roundedSurface()
+            }
         addText(card, finding.category.uppercase(Locale.ROOT), 10f, 0xFF687786.toInt(), true)
         addText(card, finding.title, 15f, 0xFF14212B.toInt(), true)
         addText(card, finding.status, 10f, statusColor(finding.status), true)
@@ -509,86 +595,114 @@ class FeatureDiscoveryActivity : Activity() {
         if (finding.observationCount > 0) {
             addText(card, "Observações: " + finding.observationCount, 10f, 0xFF687786.toInt())
         }
-        body.addView(card, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-        ).apply { bottomMargin = dp(8) })
+        body.addView(
+            card,
+            LinearLayout
+                .LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { bottomMargin = dp(8) },
+        )
     }
 
     private fun renderExperimentGuide() {
         addSectionTitle("Roteiro de experimentos")
-        val toggle = Button(this).apply {
-            text = if (showExperiments) "Ocultar roteiro" else "Mostrar roteiro de sensores e funções"
-            isAllCaps = false
-            setOnClickListener {
-                showExperiments = !showExperiments
-                render()
+        val toggle =
+            Button(this).apply {
+                text = if (showExperiments) "Ocultar roteiro" else "Mostrar roteiro de sensores e funções"
+                isAllCaps = false
+                setOnClickListener {
+                    showExperiments = !showExperiments
+                    render()
+                }
             }
-        }
-        body.addView(toggle, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
-        ))
+        body.addView(
+            toggle,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(44),
+            ),
+        )
         if (showExperiments) {
             WatchExperimentCatalog.all.forEachIndexed { index, experiment ->
-                val card = LinearLayout(this).apply {
-                    orientation = LinearLayout.VERTICAL
-                    setPadding(dp(12), dp(9), dp(12), dp(9))
-                    background = roundedSurface()
-                }
+                val card =
+                    LinearLayout(this).apply {
+                        orientation = LinearLayout.VERTICAL
+                        setPadding(dp(12), dp(9), dp(12), dp(9))
+                        background = roundedSurface()
+                    }
                 addText(card, (index + 1).toString() + ". " + experiment.title, 13f, 0xFF14212B.toInt(), true)
                 addText(card, experiment.instruction, 11f, 0xFF526574.toInt())
                 addText(card, "Evidência: " + experiment.expectedEvidence, 10f, 0xFF687786.toInt())
-                body.addView(card, LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply { bottomMargin = dp(7) })
+                body.addView(
+                    card,
+                    LinearLayout
+                        .LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                        ).apply { bottomMargin = dp(7) },
+                )
             }
         }
     }
 
     private fun addSectionTitle(value: String) {
-        body.addView(TextView(this).apply {
-            text = value
-            textSize = 16f
-            setTextColor(0xFF14212B.toInt())
-            setTypeface(typeface, Typeface.BOLD)
-            setPadding(0, dp(8), 0, dp(5))
-        })
+        body.addView(
+            TextView(this).apply {
+                text = value
+                textSize = 16f
+                setTextColor(0xFF14212B.toInt())
+                setTypeface(typeface, Typeface.BOLD)
+                setPadding(0, dp(8), 0, dp(5))
+            },
+        )
     }
 
     private fun addMessage(value: String) {
         addText(body, value, 12f, 0xFF526574.toInt())
     }
 
-    private fun addText(parent: LinearLayout, value: String, size: Float, color: Int, bold: Boolean = false) {
-        parent.addView(TextView(this).apply {
-            text = value
-            textSize = size
-            setTextColor(color)
-            if (bold) setTypeface(typeface, Typeface.BOLD)
-            setPadding(0, dp(3), 0, dp(4))
-        })
+    private fun addText(
+        parent: LinearLayout,
+        value: String,
+        size: Float,
+        color: Int,
+        bold: Boolean = false,
+    ) {
+        parent.addView(
+            TextView(this).apply {
+                text = value
+                textSize = size
+                setTextColor(color)
+                if (bold) setTypeface(typeface, Typeface.BOLD)
+                setPadding(0, dp(3), 0, dp(4))
+            },
+        )
     }
 
-    private fun statusColor(status: String): Int = when {
-        status.contains("BLOQUEADO") -> 0xFF9B2C2C.toInt()
-        status.contains("CANDIDATO") || status.contains("NÃO VALID") -> 0xFF946200.toInt()
-        status.contains("OBSERVADO") -> 0xFF176B55.toInt()
-        else -> 0xFF526574.toInt()
-    }
+    private fun statusColor(status: String): Int =
+        when {
+            status.contains("BLOQUEADO") -> 0xFF9B2C2C.toInt()
+            status.contains("CANDIDATO") || status.contains("NÃO VALID") -> 0xFF946200.toInt()
+            status.contains("OBSERVADO") -> 0xFF176B55.toInt()
+            else -> 0xFF526574.toInt()
+        }
 
-    private fun roundedSurface(): GradientDrawable = GradientDrawable().apply {
-        setColor(0xFFFFFFFF.toInt())
-        setStroke(dp(1), 0xFFE0E6EB.toInt())
-        cornerRadius = dp(14).toFloat()
-    }
+    private fun roundedSurface(): GradientDrawable =
+        GradientDrawable().apply {
+            setColor(0xFFFFFFFF.toInt())
+            setStroke(dp(1), 0xFFE0E6EB.toInt())
+            cornerRadius = dp(14).toFloat()
+        }
 
     private fun formatDate(timestamp: Long): String =
-        if (timestamp <= 0L) "Horário não disponível"
-        else SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(Date(timestamp))
+        if (timestamp <= 0L) {
+            "Horário não disponível"
+        } else {
+            SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(Date(timestamp))
+        }
 
-    private fun formatRemaining(seconds: Int): String =
-        String.format(Locale.ROOT, "%02d:%02d", seconds / 60, seconds % 60)
+    private fun formatRemaining(seconds: Int): String = String.format(Locale.ROOT, "%02d:%02d", seconds / 60, seconds % 60)
 
-    private fun dp(value: Int): Int =
-        (value * resources.displayMetrics.density).toInt()
-
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 }

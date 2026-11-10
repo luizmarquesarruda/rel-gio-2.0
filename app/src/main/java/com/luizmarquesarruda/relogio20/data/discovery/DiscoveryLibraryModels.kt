@@ -7,16 +7,21 @@ internal object DiscoveryLibraryKind {
     const val SESSION_STARTED = "SESSION_STARTED"
     const val SESSION_FINISHED = "SESSION_FINISHED"
 
-    val all: Set<String> = setOf(
-        DISCOVERY, NOTIFICATION, GATT_READ, SESSION_STARTED, SESSION_FINISHED
-    )
+    val all: Set<String> =
+        setOf(
+            DISCOVERY,
+            NOTIFICATION,
+            GATT_READ,
+            SESSION_STARTED,
+            SESSION_FINISHED,
+        )
 }
 
 internal data class DiscoveryTestSession(
     val id: String,
     val startedAtMillis: Long,
     val endsAtMillis: Long,
-    val durationSeconds: Int
+    val durationSeconds: Int,
 ) {
     init {
         require(id.isNotBlank() && id.length <= 128)
@@ -26,8 +31,7 @@ internal data class DiscoveryTestSession(
         require(endsAtMillis - startedAtMillis == durationSeconds.toLong() * 1_000L)
     }
 
-    fun isActive(nowMillis: Long): Boolean =
-        nowMillis >= startedAtMillis && nowMillis < endsAtMillis
+    fun isActive(nowMillis: Long): Boolean = nowMillis >= startedAtMillis && nowMillis < endsAtMillis
 
     fun remainingSeconds(nowMillis: Long): Int {
         val effectiveNow = nowMillis.coerceAtLeast(startedAtMillis)
@@ -47,13 +51,13 @@ internal data class DiscoveryLibraryRecord(
     val confidence: String,
     val serviceUuid: String? = null,
     val characteristicUuid: String? = null,
-    val payloadHex: String? = null
+    val payloadHex: String? = null,
 )
 
 internal data class DiscoveryLibrarySnapshot(
     val schemaVersion: Int = DiscoveryLibraryCodec.SCHEMA_VERSION,
     val activeSession: DiscoveryTestSession? = null,
-    val records: List<DiscoveryLibraryRecord> = emptyList()
+    val records: List<DiscoveryLibraryRecord> = emptyList(),
 )
 
 /** Returns a copy without exactly one matching record, or null when no match exists. */
@@ -65,9 +69,16 @@ internal fun DiscoveryLibrarySnapshot.withoutRecord(recordId: String): Discovery
 
 internal sealed class DiscoveryLibraryReadResult {
     object Empty : DiscoveryLibraryReadResult()
-    data class Available(val snapshot: DiscoveryLibrarySnapshot) : DiscoveryLibraryReadResult()
+
+    data class Available(
+        val snapshot: DiscoveryLibrarySnapshot,
+    ) : DiscoveryLibraryReadResult()
+
     object Corrupt : DiscoveryLibraryReadResult()
-    data class UnsupportedSchema(val version: Int) : DiscoveryLibraryReadResult()
+
+    data class UnsupportedSchema(
+        val version: Int,
+    ) : DiscoveryLibraryReadResult()
 }
 
 internal object DiscoveryTestDuration {

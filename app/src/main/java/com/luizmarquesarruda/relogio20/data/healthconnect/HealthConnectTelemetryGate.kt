@@ -8,7 +8,9 @@ internal fun interface ValidatedTelemetrySink {
 }
 
 /** Port only: typed Health Connect writes remain disabled until parsers are validated. */
-internal class HealthConnectTelemetryGate(private val sink: ValidatedTelemetrySink) {
+internal class HealthConnectTelemetryGate(
+    private val sink: ValidatedTelemetrySink,
+) {
     suspend fun writeIfEligible(sample: TelemetrySample) {
         require(sample.trustLevel == TrustLevel.VALIDADO) {
             "Health Connect write denied: sample trustLevel must be VALIDADO"

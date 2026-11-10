@@ -11,24 +11,37 @@ data class ManagedSession(
     val startedAtMs: Long,
     val lastEventMs: Long,
     val endReason: SessionEndReason? = null,
-    val endedAtMs: Long? = null
+    val endedAtMs: Long? = null,
 )
 
 sealed interface SessionState {
     data object Idle : SessionState
-    data class Active(val session: ManagedSession) : SessionState
-    data class Finished(val session: ManagedSession) : SessionState
+
+    data class Active(
+        val session: ManagedSession,
+    ) : SessionState
+
+    data class Finished(
+        val session: ManagedSession,
+    ) : SessionState
 }
 
-internal class SessionManager(private val stalledAfterMs: Long) {
+internal class SessionManager(
+    private val stalledAfterMs: Long,
+) {
     private val mutableState = MutableStateFlow<SessionState>(SessionState.Idle)
     val state: StateFlow<SessionState> = mutableState.asStateFlow()
     private val history = mutableListOf<ManagedSession>()
 
-    init { require(stalledAfterMs > 0L) }
+    init {
+        require(stalledAfterMs > 0L)
+    }
 
     @Synchronized
-    fun start(id: String, nowMs: Long): ManagedSession {
+    fun start(
+        id: String,
+        nowMs: Long,
+    ): ManagedSession {
         require(id.isNotBlank() && nowMs >= 0L)
         (mutableState.value as? SessionState.Active)?.session?.let {
             finishInternal(it, SessionEndReason.ORPHANED, nowMs)
@@ -39,7 +52,11 @@ internal class SessionManager(private val stalledAfterMs: Long) {
     }
 
     @Synchronized
-    fun adopt(id: String, startedAtMs: Long, nowMs: Long) {
+    fun adopt(
+        id: String,
+        startedAtMs: Long,
+        nowMs: Long,
+    ) {
         require(id.isNotBlank() && startedAtMs >= 0L && nowMs >= startedAtMs)
         val current = (mutableState.value as? SessionState.Active)?.session
         if (current?.id == id) return
@@ -64,7 +81,10 @@ internal class SessionManager(private val stalledAfterMs: Long) {
     }
 
     @Synchronized
-    fun finalize(reason: SessionEndReason, nowMs: Long): Boolean {
+    fun finalize(
+        reason: SessionEndReason,
+        nowMs: Long,
+    ): Boolean {
         val current = (mutableState.value as? SessionState.Active)?.session ?: return false
         if (nowMs < current.startedAtMs) return false
         finishInternal(current, reason, nowMs)
@@ -74,7 +94,11 @@ internal class SessionManager(private val stalledAfterMs: Long) {
     @Synchronized
     fun finishedSessions(): List<ManagedSession> = history.toList()
 
-    private fun finishInternal(session: ManagedSession, reason: SessionEndReason, nowMs: Long) {
+    private fun finishInternal(
+        session: ManagedSession,
+        reason: SessionEndReason,
+        nowMs: Long,
+    ) {
         if (history.any { it.id == session.id }) return
         val finished = session.copy(endReason = reason, endedAtMs = nowMs)
         history += finished

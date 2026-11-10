@@ -15,6 +15,9 @@ class SleepOverviewActivity : Activity() {
         RelogioUi.metric(body, "Sono leve", "N/D", "Estágios ainda não disponíveis.")
         RelogioUi.metric(body, "Sono REM", "N/D", "Estágios ainda não disponíveis.")
         RelogioUi.section(body, "QUALIDADE DA INFORMAÇÃO")
-        RelogioUi.message(body, "O GT3 Maxx ainda não forneceu dados de sono com interpretação validada. O aplicativo não inventa duração, estágios ou pontuação.")
+        RelogioUi.message(
+            body,
+            "O GT3 Maxx ainda não forneceu dados de sono com interpretação validada. O aplicativo não inventa duração, estágios ou pontuação.",
+        )
     }
 }

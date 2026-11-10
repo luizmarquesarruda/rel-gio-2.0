@@ -26,12 +26,16 @@ class HistoryActivity : ComponentActivity() {
     private lateinit var historyContainer: android.widget.LinearLayout
     private lateinit var status: android.widget.TextView
 
-    private val permissionLauncher = registerForActivityResult(
-        PermissionController.createRequestPermissionResultContract()
-    ) { granted ->
-        if (granted.containsAll(repository.readPermissions)) loadHistory()
-        else status.text = "Permissão READ_STEPS não concedida."
-    }
+    private val permissionLauncher =
+        registerForActivityResult(
+            PermissionController.createRequestPermissionResultContract(),
+        ) { granted ->
+            if (granted.containsAll(repository.readPermissions)) {
+                loadHistory()
+            } else {
+                status.text = "Permissão READ_STEPS não concedida."
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,9 +44,10 @@ class HistoryActivity : ComponentActivity() {
         status = RelogioUi.textView(this, "Atualize para consultar o Health Connect.", 11f)
         body.addView(status)
         RelogioUi.button(body, "Atualizar histórico de passos") { loadHistory() }
-        historyContainer = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-        }
+        historyContainer =
+            android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+            }
         body.addView(historyContainer)
         RelogioUi.section(body, "REGISTROS TÉCNICOS")
         RelogioUi.card(
@@ -50,7 +55,7 @@ class HistoryActivity : ComponentActivity() {
             "Biblioteca de descobertas BLE",
             "Inventários GATT e leituras de diagnóstico. Este conteúdo não é histórico de saúde ou atividade.",
             "LABORATÓRIO",
-            "ABRIR BIBLIOTECA"
+            "ABRIR BIBLIOTECA",
         ) {
             startActivity(android.content.Intent(this, DiscoveryLibraryActivity::class.java))
         }
@@ -71,22 +76,27 @@ class HistoryActivity : ComponentActivity() {
                         status.text = "Health Connect não está disponível neste aparelho."
                         return@launch
                     }
+
                     HealthConnectAvailability.PROVIDER_UPDATE_REQUIRED -> {
                         status.text = "Atualize o Health Connect."
                         return@launch
                     }
-                    HealthConnectAvailability.AVAILABLE -> Unit
+
+                    HealthConnectAvailability.AVAILABLE -> {
+                        Unit
+                    }
                 }
                 if (!repository.hasReadPermission()) {
                     status.text = "É necessária autorização READ_STEPS."
                     permissionLauncher.launch(repository.readPermissions)
                     return@launch
                 }
-                val policy = if (AppPreferences.includesExternalHealthSources(this@HistoryActivity)) {
-                    HealthConnectOriginPolicy.INCLUDE_EXTERNAL
-                } else {
-                    HealthConnectOriginPolicy.APP_ONLY
-                }
+                val policy =
+                    if (AppPreferences.includesExternalHealthSources(this@HistoryActivity)) {
+                        HealthConnectOriginPolicy.INCLUDE_EXTERNAL
+                    } else {
+                        HealthConnectOriginPolicy.APP_ONLY
+                    }
                 when (val result = repository.readStepsHistory(days = 7, originPolicy = policy)) {
                     is HealthConnectStepsHistoryResult.Success -> {
                         status.text = "Health Connect • agregado por dia • origem conforme Configurações"
@@ -98,14 +108,18 @@ class HistoryActivity : ComponentActivity() {
                                 historyContainer,
                                 day.date.format(dateFormatter),
                                 if (day.totalSteps == null) "Sem registro no intervalo." else "Total agregado do dia.",
-                                value
+                                value,
                             )
                         }
                     }
-                    HealthConnectStepsHistoryResult.PermissionRequired ->
+
+                    HealthConnectStepsHistoryResult.PermissionRequired -> {
                         status.text = "Permissão ausente ou revogada."
-                    is HealthConnectStepsHistoryResult.Failure ->
+                    }
+
+                    is HealthConnectStepsHistoryResult.Failure -> {
                         status.text = "Falha ao consultar histórico: " + result.reason
+                    }
                 }
             } catch (error: CancellationException) {
                 throw error

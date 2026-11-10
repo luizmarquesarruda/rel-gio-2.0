@@ -1,17 +1,16 @@
 package com.luizmarquesarruda.relogio20
 
 import com.luizmarquesarruda.relogio20.ui.formatters.StepsCountFormatter
-
-import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.util.Locale
 
 class StepsCountFormatterTest {
     @Test
     fun missingAggregateIsNotPresentedAsZero() {
         assertEquals(
             "Passos hoje: sem registros",
-            StepsCountFormatter.label(null, Locale.US)
+            StepsCountFormatter.label(null, Locale.US),
         )
     }
 

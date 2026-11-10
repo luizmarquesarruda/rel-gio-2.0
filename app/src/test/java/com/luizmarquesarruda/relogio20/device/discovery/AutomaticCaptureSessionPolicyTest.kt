@@ -10,20 +10,20 @@ class AutomaticCaptureSessionPolicyTest {
         assertTrue(
             AutomaticCaptureSessionPolicy.shouldFinish(
                 sessionMatches = true,
-                createdByAutomaticMode = true
-            )
+                createdByAutomaticMode = true,
+            ),
         )
         assertFalse(
             AutomaticCaptureSessionPolicy.shouldFinish(
                 sessionMatches = true,
-                createdByAutomaticMode = false
-            )
+                createdByAutomaticMode = false,
+            ),
         )
         assertFalse(
             AutomaticCaptureSessionPolicy.shouldFinish(
                 sessionMatches = false,
-                createdByAutomaticMode = true
-            )
+                createdByAutomaticMode = true,
+            ),
         )
     }
 }

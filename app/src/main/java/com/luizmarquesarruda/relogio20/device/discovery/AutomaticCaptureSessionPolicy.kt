@@ -4,6 +4,6 @@ package com.luizmarquesarruda.relogio20.device.discovery
 internal object AutomaticCaptureSessionPolicy {
     fun shouldFinish(
         sessionMatches: Boolean,
-        createdByAutomaticMode: Boolean
+        createdByAutomaticMode: Boolean,
     ): Boolean = sessionMatches && createdByAutomaticMode
 }

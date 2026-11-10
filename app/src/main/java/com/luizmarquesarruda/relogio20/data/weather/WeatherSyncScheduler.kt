@@ -13,20 +13,23 @@ internal object WeatherSyncScheduler {
     private const val PERIODIC_WORK_NAME = "weather-refresh-periodic-v1"
 
     fun ensurePeriodic(context: Context) {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
-        val request = PeriodicWorkRequestBuilder<WeatherSyncWorker>(
-            WeatherRefreshPolicy.PERIODIC_INTERVAL_HOURS,
-            TimeUnit.HOURS,
-            1L,
-            TimeUnit.HOURS
-        ).setConstraints(constraints)
-            .build()
+        val constraints =
+            Constraints
+                .Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+        val request =
+            PeriodicWorkRequestBuilder<WeatherSyncWorker>(
+                WeatherRefreshPolicy.PERIODIC_INTERVAL_HOURS,
+                TimeUnit.HOURS,
+                1L,
+                TimeUnit.HOURS,
+            ).setConstraints(constraints)
+                .build()
         WorkManager.getInstance(context.applicationContext).enqueueUniquePeriodicWork(
             PERIODIC_WORK_NAME,
             ExistingPeriodicWorkPolicy.UPDATE,
-            request
+            request,
         )
     }
 }

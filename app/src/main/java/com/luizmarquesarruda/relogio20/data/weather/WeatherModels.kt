@@ -5,12 +5,13 @@ internal data class WeatherLocation(
     val admin1: String?,
     val country: String,
     val latitude: Double,
-    val longitude: Double
+    val longitude: Double,
 ) {
     val displayName: String
-        get() = listOfNotNull(name, admin1, country.takeIf { it.isNotBlank() })
-            .distinct()
-            .joinToString(" · ")
+        get() =
+            listOfNotNull(name, admin1, country.takeIf { it.isNotBlank() })
+                .distinct()
+                .joinToString(" · ")
 }
 
 internal data class WeatherSnapshot(
@@ -33,35 +34,36 @@ internal data class WeatherSnapshot(
     val todayMaximumC: Double?,
     val todayPrecipitationProbabilityPercent: Int?,
     val sunrise: String?,
-    val sunset: String?
+    val sunset: String?,
 )
 
 internal object WeatherCodeLabels {
-    fun describe(code: Int?): String = when (code) {
-        0 -> "Céu limpo"
-        1 -> "Predominantemente limpo"
-        2 -> "Parcialmente nublado"
-        3 -> "Encoberto"
-        45, 48 -> "Nevoeiro"
-        51 -> "Garoa fraca"
-        53 -> "Garoa moderada"
-        55 -> "Garoa intensa"
-        56, 57 -> "Garoa congelante"
-        61 -> "Chuva fraca"
-        63 -> "Chuva moderada"
-        65 -> "Chuva intensa"
-        66, 67 -> "Chuva congelante"
-        71 -> "Neve fraca"
-        73 -> "Neve moderada"
-        75 -> "Neve intensa"
-        77 -> "Grãos de neve"
-        80 -> "Pancadas de chuva fracas"
-        81 -> "Pancadas de chuva moderadas"
-        82 -> "Pancadas de chuva fortes"
-        85, 86 -> "Pancadas de neve"
-        95 -> "Trovoada"
-        96, 99 -> "Trovoada com granizo"
-        null -> "Condição indisponível"
-        else -> "Condição meteorológica não classificada"
-    }
+    fun describe(code: Int?): String =
+        when (code) {
+            0 -> "Céu limpo"
+            1 -> "Predominantemente limpo"
+            2 -> "Parcialmente nublado"
+            3 -> "Encoberto"
+            45, 48 -> "Nevoeiro"
+            51 -> "Garoa fraca"
+            53 -> "Garoa moderada"
+            55 -> "Garoa intensa"
+            56, 57 -> "Garoa congelante"
+            61 -> "Chuva fraca"
+            63 -> "Chuva moderada"
+            65 -> "Chuva intensa"
+            66, 67 -> "Chuva congelante"
+            71 -> "Neve fraca"
+            73 -> "Neve moderada"
+            75 -> "Neve intensa"
+            77 -> "Grãos de neve"
+            80 -> "Pancadas de chuva fracas"
+            81 -> "Pancadas de chuva moderadas"
+            82 -> "Pancadas de chuva fortes"
+            85, 86 -> "Pancadas de neve"
+            95 -> "Trovoada"
+            96, 99 -> "Trovoada com granizo"
+            null -> "Condição indisponível"
+            else -> "Condição meteorológica não classificada"
+        }
 }

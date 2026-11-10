@@ -16,43 +16,51 @@ class DashboardActivity : Activity() {
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var clockCard: android.widget.TextView
 
-    private val clockTick = object : Runnable {
-        override fun run() {
-            if (!::clockCard.isInitialized) return
-            renderClock()
-            handler.postDelayed(this, 1_000L)
+    private val clockTick =
+        object : Runnable {
+            override fun run() {
+                if (!::clockCard.isInitialized) return
+                renderClock()
+                handler.postDelayed(this, 1_000L)
+            }
         }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val body = RelogioUi.install(
-            this,
-            "RELÓGIO 2.0",
-            "PAINEL PRINCIPAL • SAÚDE & FITNESS",
-            showBack = false
-        )
-
-        val timePanel = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            setPadding(
-                RelogioUi.dp(this@DashboardActivity, 16),
-                RelogioUi.dp(this@DashboardActivity, 14),
-                RelogioUi.dp(this@DashboardActivity, 16),
-                RelogioUi.dp(this@DashboardActivity, 14)
+        val body =
+            RelogioUi.install(
+                this,
+                "RELÓGIO 2.0",
+                "PAINEL PRINCIPAL • SAÚDE & FITNESS",
+                showBack = false,
             )
-            background = RelogioUi.rounded(this@DashboardActivity)
-        }
+
+        val timePanel =
+            android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                setPadding(
+                    RelogioUi.dp(this@DashboardActivity, 16),
+                    RelogioUi.dp(this@DashboardActivity, 14),
+                    RelogioUi.dp(this@DashboardActivity, 16),
+                    RelogioUi.dp(this@DashboardActivity, 14),
+                )
+                background = RelogioUi.rounded(this@DashboardActivity)
+            }
         timePanel.addView(RelogioUi.textView(this, "HORÁRIO DO TELEFONE", 10f, RelogioUi.accent, true))
-        clockCard = RelogioUi.textView(this, "", 28f, RelogioUi.text, true).apply {
-            setPadding(0, RelogioUi.dp(this@DashboardActivity, 5), 0, 0)
-        }
+        clockCard =
+            RelogioUi.textView(this, "", 28f, RelogioUi.text, true).apply {
+                setPadding(0, RelogioUi.dp(this@DashboardActivity, 5), 0, 0)
+            }
         timePanel.addView(clockCard)
         timePanel.addView(RelogioUi.textView(this, "Fonte local • sistema Android", 10f, RelogioUi.textSubtle))
-        body.addView(timePanel, android.widget.LinearLayout.LayoutParams(
-            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
-        ).apply { bottomMargin = RelogioUi.dp(this@DashboardActivity, 10) })
+        body.addView(
+            timePanel,
+            android.widget.LinearLayout
+                .LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { bottomMargin = RelogioUi.dp(this@DashboardActivity, 10) },
+        )
         renderClock()
 
         RelogioUi.section(body, "DISPOSITIVO")
@@ -61,7 +69,7 @@ class DashboardActivity : Activity() {
             "GT3 Maxx • conexão não consultada",
             "O painel não presume que o relógio esteja conectado. Abra a tela de conexão para iniciar ou verificar o estado BLE/GATT.",
             "VER ESTADO",
-            "ABRIR CONEXÃO E DISPOSITIVO"
+            "ABRIR CONEXÃO E DISPOSITIVO",
         ) {
             startActivity(Intent(this, MainActivity::class.java))
         }
@@ -72,26 +80,65 @@ class DashboardActivity : Activity() {
         RelogioUi.metric(body, "Sono", "N/D", "Dados de sono ainda não disponíveis em fonte validada.")
 
         RelogioUi.section(body, "NAVEGAÇÃO", "Uma tela principal e seis áreas secundárias independentes")
-        RelogioUi.card(body, "01 • Conexão e dispositivo", "Busca BLE, estado do GT3 Maxx, inventário e diagnóstico técnico.", "TELA 1", "ABRIR") {
+        RelogioUi.card(
+            body,
+            "01 • Conexão e dispositivo",
+            "Busca BLE, estado do GT3 Maxx, inventário e diagnóstico técnico.",
+            "TELA 1",
+            "ABRIR",
+        ) {
             startActivity(Intent(this, MainActivity::class.java))
         }
-        RelogioUi.card(body, "02 • Saúde", "Frequência cardíaca, SpO₂, pressão e temperatura, com origem e validação explícitas.", "TELA 2", "ABRIR") {
+        RelogioUi.card(
+            body,
+            "02 • Saúde",
+            "Frequência cardíaca, SpO₂, pressão e temperatura, com origem e validação explícitas.",
+            "TELA 2",
+            "ABRIR",
+        ) {
             startActivity(Intent(this, HealthOverviewActivity::class.java))
         }
-        RelogioUi.card(body, "03 • Atividade", "Passos agregados do Health Connect; distância, calorias e exercícios somente quando houver fonte válida.", "TELA 3", "ABRIR") {
+        RelogioUi.card(
+            body,
+            "03 • Atividade",
+            "Passos agregados do Health Connect; distância, calorias e exercícios somente quando houver fonte válida.",
+            "TELA 3",
+            "ABRIR",
+        ) {
             startActivity(Intent(this, ActivityOverviewActivity::class.java))
         }
-        RelogioUi.card(body, "04 • Sono", "Duração, estágios e tendências; sem preencher lacunas com valores fictícios.", "TELA 4", "ABRIR") {
+        RelogioUi.card(
+            body,
+            "04 • Sono",
+            "Duração, estágios e tendências; sem preencher lacunas com valores fictícios.",
+            "TELA 4",
+            "ABRIR",
+        ) {
             startActivity(Intent(this, SleepOverviewActivity::class.java))
         }
-        RelogioUi.card(body, "05 • Histórico", "Histórico de passos do Health Connect e acesso separado aos registros técnicos BLE.", "TELA 5", "ABRIR") {
+        RelogioUi.card(
+            body,
+            "05 • Histórico",
+            "Histórico de passos do Health Connect e acesso separado aos registros técnicos BLE.",
+            "TELA 5",
+            "ABRIR",
+        ) {
             startActivity(Intent(this, HistoryActivity::class.java))
         }
-        RelogioUi.card(body, "06 • Mais recursos", "Laboratório BLE, biblioteca de descobertas, catálogo, ferramentas locais e privacidade.", "TELA 6", "ABRIR") {
+        RelogioUi.card(
+            body,
+            "06 • Mais recursos",
+            "Laboratório BLE, biblioteca de descobertas, catálogo, ferramentas locais e privacidade.",
+            "TELA 6",
+            "ABRIR",
+        ) {
             startActivity(Intent(this, MoreResourcesActivity::class.java))
         }
         RelogioUi.section(body, "QUALIDADE DOS DADOS")
-        RelogioUi.message(body, "Conexão Bluetooth não significa leitura de sensor validada. Valores N/D indicam ausência de dado confiável, não zero. O aplicativo não é um dispositivo médico.")
+        RelogioUi.message(
+            body,
+            "Conexão Bluetooth não significa leitura de sensor validada. Valores N/D indicam ausência de dado confiável, não zero. O aplicativo não é um dispositivo médico.",
+        )
     }
 
     override fun onResume() {
