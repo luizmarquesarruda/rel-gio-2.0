@@ -125,11 +125,11 @@ A biblioteca persiste inventários GATT como descobertas. Leituras GATT e notifi
 - Enquanto a captura cronometrada estiver ativa, o painel principal mostra um indicador compacto com tempo restante e quantidade de registros, permitindo acompanhar o prazo ao voltar para a tela de conexão/exploração manual.
 
 
-## Navegação principal 1 + 7 — 06/11/2026
+## Navegação principal 1 + 6 — revisão de 10/11/2026
 
-A navegação de uso diário foi reorganizada em **uma tela principal e sete telas secundárias**. Esta seção substitui a distribuição anterior como estrutura de entrada do aplicativo; as telas de laboratório existentes continuam acessíveis dentro de Mais recursos.
+A navegação de uso diário possui **uma tela principal e seis áreas secundárias de primeiro nível**. Configurações é uma rota subordinada a Mais recursos e não conta como uma sétima área principal. Telas técnicas e informativas abertas a partir dessas áreas também são rotas subordinadas.
 
-| Nível | Tela | Responsabilidade |
+| Nível | Tela/área | Responsabilidade |
 |---|---|---|
 | Principal | Painel | Relógio do telefone, resumo e atalhos. Não presume conexão ativa nem transforma ausência em zero. |
 | Secundária 1 | Conexão e dispositivo | Reutiliza `MainActivity`, preservando scan BLE, ciclo GATT, reconexão, inventário e diagnóstico existentes. |
@@ -137,8 +137,12 @@ A navegação de uso diário foi reorganizada em **uma tela principal e sete tel
 | Secundária 3 | Atividade | Consulta passos agregados do Health Connect; distância, calorias e exercícios permanecem N/D sem fonte validada. |
 | Secundária 4 | Sono | Duração e estágios permanecem N/D enquanto não houver integração comprovada. |
 | Secundária 5 | Histórico | Consulta agregados diários de passos dos últimos sete dias. A biblioteca BLE permanece identificada como histórico técnico, não como histórico de saúde. |
-| Secundária 6 | Mais recursos | Reúne descoberta GATT, biblioteca local, catálogo, ferramentas do telefone, hora/clima e privacidade. Notificações aparecem somente na variante companion. |
-| Secundária 7 | Configurações | Exclusiva para formato de hora, unidade de distância e inclusão opcional de fontes externas do Health Connect. |
+| Secundária 6 | Mais recursos | Reúne descoberta GATT, biblioteca local, catálogo, ferramentas do telefone, hora/clima, privacidade e a rota subordinada Configurações. Notificações aparecem somente na variante companion. |
+
+### Rotas subordinadas
+
+- **Configurações:** acessível por Mais recursos; reúne formato de hora, unidade de distância e inclusão opcional de fontes externas do Health Connect. Não aparece como atalho independente no Painel.
+- Laboratório BLE, biblioteca de descobertas, catálogo, ferramentas locais, hora/clima e privacidade são destinos internos de Mais recursos; não aumentam a contagem das seis áreas secundárias.
 
 ### Linguagem visual
 
