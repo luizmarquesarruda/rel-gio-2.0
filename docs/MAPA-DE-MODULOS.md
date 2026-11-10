@@ -112,3 +112,21 @@ A fila GATT, o parser candidato e o adaptador Health Connect de passos foram iso
 - Inventários GATT são salvos como descobertas. Notificações e leituras com HEX são guardadas somente enquanto uma sessão cronometrada, iniciada com confirmação, estiver ativa.
 - A biblioteca permite pesquisa e filtros por descobertas, leituras e testes. Nenhum dado é enviado à rede e nenhuma permissão adicional foi criada.
 - O arquivo é local ao aplicativo; a implementação não declara criptografia própria. Payloads HEX ainda podem conter dados sensíveis e são mantidos no sandbox privado do Android.
+
+
+## Navegação do aplicativo — 06/11/2026
+
+A apresentação agora está distribuída entre o painel principal e sete destinos secundários:
+
+- `ui/screens/DashboardActivity.kt`: launcher, relógio do telefone e atalhos de entrada.
+- `ui/screens/MainActivity.kt`: conexão e dispositivo; continua sendo o ponto que contém o ciclo BLE/GATT existente.
+- `ui/screens/HealthOverviewActivity.kt`: métricas de saúde sem origem validada aparecem como N/D.
+- `ui/screens/ActivityOverviewActivity.kt`: consulta passos agregados do Health Connect com permissão explícita.
+- `ui/screens/SleepOverviewActivity.kt`: sono permanece N/D até a integração ser comprovada.
+- `ui/screens/HistoryActivity.kt`: histórico de passos por dia; não mistura biblioteca técnica BLE.
+- `ui/screens/MoreResourcesActivity.kt`: atalhos para laboratório, biblioteca, catálogo, ferramentas, hora/clima e privacidade.
+- `ui/screens/SettingsActivity.kt`: única tela de preferências.
+- `ui/RelogioUi.kt`: componentes visuais compartilhados e tokens escuros.
+- `data/preferences/AppPreferences.kt`: preferências locais de horário, unidade e inclusão opcional de fontes externas do Health Connect.
+
+A consulta externa do Health Connect é desativada por padrão. Quando habilitada, os resultados continuam descritos como agregados, sem atribuição exclusiva ao relógio. As novas telas não contêm UUIDs nem código de transporte BLE.

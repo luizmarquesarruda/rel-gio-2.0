@@ -9,6 +9,7 @@ import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * App-private, atomic, bounded library for GATT discoveries and test-session readings.
@@ -98,11 +99,26 @@ internal class DiscoveryLibraryStore(context: Context) {
         }
 
     private fun enqueueWrite(operation: () -> Boolean): Boolean = try {
-        writeExecutor.execute { runCatching(operation) }
+        writeExecutor.execute {
+            try {
+                if (!operation()) failedWrites.incrementAndGet()
+            } catch (error: Exception) {
+                failedWrites.incrementAndGet()
+                lastWriteFailure.set(error.javaClass.simpleName.take(80))
+            }
+        }
+        acceptedWrites.incrementAndGet()
         true
     } catch (_: RejectedExecutionException) {
+        rejectedWrites.incrementAndGet()
         false
     }
+
+    /** Distinguishes queue acceptance from actual persistence completion for diagnostics. */
+    internal fun writeHealthSummary(): String =
+        "accepted=${acceptedWrites.get()}, failed=${failedWrites.get()}, " +
+            "rejected=${rejectedWrites.get()}, pending=${writeExecutor.queue.size}, " +
+            "lastFailure=${lastWriteFailure.get() ?: "none"}"
 
     fun startTestSession(durationSeconds: Int, nowMillis: Long): Boolean {
         if (!flushPendingWrites()) return false
@@ -385,6 +401,10 @@ internal class DiscoveryLibraryStore(context: Context) {
         private var cacheInitialized = false
         private var cachedReadResult: DiscoveryLibraryReadResult? = null
         private val expiringSessionIds = mutableSetOf<String>()
+        private val acceptedWrites = AtomicLong(0L)
+        private val failedWrites = AtomicLong(0L)
+        private val rejectedWrites = AtomicLong(0L)
+        private val lastWriteFailure = java.util.concurrent.atomic.AtomicReference<String?>(null)
         private val writeExecutor = ThreadPoolExecutor(
             1,
             1,

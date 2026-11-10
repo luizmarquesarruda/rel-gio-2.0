@@ -12,6 +12,8 @@ import com.luizmarquesarruda.relogio20.device.ble.core.BleScanCandidatePolicy
 import com.luizmarquesarruda.relogio20.device.ble.core.BleValueFormatter
 import com.luizmarquesarruda.relogio20.domain.diagnostics.BleDiagnosticReport
 import com.luizmarquesarruda.relogio20.ui.formatters.StepsCountFormatter
+import com.luizmarquesarruda.relogio20.ui.RelogioUi
+import com.luizmarquesarruda.relogio20.data.preferences.AppPreferences
 import com.luizmarquesarruda.relogio20.device.ble.gatt.SerialGattOperationQueue
 import com.luizmarquesarruda.relogio20.device.ble.gatt.AccessPolicy
 import com.luizmarquesarruda.relogio20.device.ble.gatt.GattInventoryLogger
@@ -55,6 +57,7 @@ import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsRepo
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectStepsResult
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectPermissionState
 import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectPermissionStatePolicy
+import com.luizmarquesarruda.relogio20.data.healthconnect.HealthConnectOriginPolicy
 import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import androidx.core.content.edit
@@ -327,26 +330,34 @@ class MainActivity : ComponentActivity() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(16), dp(12), dp(16), dp(8))
-            setBackgroundColor(0xFFF7F8FA.toInt())
+            setBackgroundColor(0xFF07111F.toInt())
         }
+        RelogioUi.applyEdgeToEdge(
+            activity = this,
+            root = root,
+            paddingLeftDp = 16,
+            paddingTopDp = 12,
+            paddingRightDp = 16,
+            paddingBottomDp = 8
+        )
 
         val title = TextView(this).apply {
-            text = "Relógio 2.0"
+            text = "Conexão e dispositivo"
             textSize = 26f
-            setTextColor(0xFF17212B.toInt())
+            setTextColor(0xFFF8FAFC.toInt())
         }
         root.addView(title)
 
         val subtitle = TextView(this).apply {
-            text = "SAÚDE & FITNESS • smartwatch + Conexão Saúde"
+            text = "GT3 MAXX • BLUETOOTH LE • DIAGNÓSTICO"
             textSize = 14f
-            setTextColor(0xFF526170.toInt())
+            setTextColor(0xFF9FB4CF.toInt())
         }
         root.addView(subtitle)
 
         clockView = TextView(this).apply {
             textSize = 18f
-            setTextColor(0xFF17212B.toInt())
+            setTextColor(0xFFF8FAFC.toInt())
             setPadding(0, dp(12), 0, dp(4))
         }
         root.addView(clockView)
@@ -357,7 +368,7 @@ class MainActivity : ComponentActivity() {
         val connectionCard = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(16), dp(16), dp(16), dp(16))
-            background = roundedSurface(0xFFFFFFFF.toInt(), 0xFFE1E7EF.toInt())
+            background = roundedSurface(0xFF0E1B2D.toInt(), 0xFF28415F.toInt())
             elevation = dp(2).toFloat()
         }
         val connectionHeading = LinearLayout(this).apply {
@@ -376,7 +387,7 @@ class MainActivity : ComponentActivity() {
             text = "Relógio não conectado"
             textSize = 17f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(0xFF17212B.toInt())
+            setTextColor(0xFFF8FAFC.toInt())
         }
         connectionHeading.addView(statusView)
         connectionCard.addView(connectionHeading)
@@ -384,7 +395,7 @@ class MainActivity : ComponentActivity() {
         statusDetailView = TextView(this).apply {
             text = "Ative o Bluetooth e toque em Buscar relógio para localizar o GT3 MAX."
             textSize = 13f
-            setTextColor(0xFF526170.toInt())
+            setTextColor(0xFF9FB4CF.toInt())
             setPadding(0, dp(8), 0, dp(14))
         }
         connectionCard.addView(statusDetailView)
@@ -392,7 +403,7 @@ class MainActivity : ComponentActivity() {
         deviceProfileView = TextView(this).apply {
             text = "Perfil informado: GT3 MAX Call • firmware V1.07 • build SH0050-1_1.1.3_1.23_1.18_1.1"
             textSize = 11f
-            setTextColor(0xFF526170.toInt())
+            setTextColor(0xFF9FB4CF.toInt())
             setPadding(0, dp(2), 0, dp(6))
         }
         connectionCard.addView(deviceProfileView)
@@ -400,7 +411,7 @@ class MainActivity : ComponentActivity() {
         deviceBatteryView = TextView(this).apply {
             text = "Bateria do relógio: aguardando notificação BLE"
             textSize = 13f
-            setTextColor(0xFF263746.toInt())
+            setTextColor(0xFFE5EDF7.toInt())
             setPadding(0, 0, 0, dp(12))
         }
         connectionCard.addView(deviceBatteryView)
@@ -408,15 +419,15 @@ class MainActivity : ComponentActivity() {
         deviceTimeSyncView = TextView(this).apply {
             text = "Hora do relógio: aguardando conexão BLE"
             textSize = 13f
-            setTextColor(0xFF526170.toInt())
+            setTextColor(0xFF9FB4CF.toInt())
             setPadding(0, 0, 0, dp(12))
         }
         connectionCard.addView(deviceTimeSyncView)
-        clockSyncButton = makeButton("Sincronização automática de hora") { }.apply { isEnabled = false }
+        clockSyncButton = makeButton("Sincronizar hora") { requestClockSync() }.apply { isEnabled = false }
         connectionCard.addView(clockSyncButton, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
         ).apply { bottomMargin = dp(10) })
-        addText(connectionCard, "Ao conectar, o app envia a hora atual do Android uma única vez, somente após confirmar o fingerprint GATT completo do GT3 MAX Call e o serviço CTS padrão 0x1805/0x2A2B com WRITE. O GT3 MAXX capturado não anunciou esse serviço; nenhuma escrita proprietária é tentada.", 12f, false)
+        addText(connectionCard, "A sincronização só ocorre após confirmação explícita nesta tela, fingerprint GATT completo do GT3 MAX Call e serviço CTS padrão 0x1805/0x2A2B com WRITE. Nenhuma escrita proprietária é tentada.", 12f, false)
 
         val actions = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -441,16 +452,22 @@ class MainActivity : ComponentActivity() {
             bottomMargin = dp(8)
         })
 
-        root.addView(makeButton("Configurar endereço manualmente (opcional)") { configureExpectedWatchAddress() }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(44)).apply { bottomMargin = dp(6) })
+        val advancedPanel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            visibility = View.GONE
+            setPadding(0, dp(8), 0, dp(8))
+        }
 
-        addText(root, "Laboratório e registros", 17f, true)
-        root.addView(makeButton("Testes e descobertas BLE") {
+        advancedPanel.addView(makeButton("Configurar endereço manualmente (opcional)") { configureExpectedWatchAddress() }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(44)).apply { bottomMargin = dp(6) })
+
+        addText(advancedPanel, "Laboratório e registros", 17f, true)
+        advancedPanel.addView(makeButton("Testes e descobertas BLE") {
             startActivity(Intent(this, FeatureDiscoveryActivity::class.java))
         }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(52)
         ).apply { bottomMargin = dp(5) })
 
-        root.addView(makeButton("Biblioteca interna de descobertas") {
+        advancedPanel.addView(makeButton("Biblioteca interna de descobertas") {
             startActivity(Intent(this, DiscoveryLibraryActivity::class.java))
         }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(52)
@@ -461,7 +478,7 @@ class MainActivity : ComponentActivity() {
         }.apply {
             isEnabled = false
         }
-        root.addView(deepScanButton, LinearLayout.LayoutParams(
+        advancedPanel.addView(deepScanButton, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(52)
         ).apply { bottomMargin = dp(5) })
 
@@ -474,7 +491,7 @@ class MainActivity : ComponentActivity() {
         ) {
             toggleAutomaticGattDiscovery()
         }
-        root.addView(automaticGattDiscoveryButton, LinearLayout.LayoutParams(
+        advancedPanel.addView(automaticGattDiscoveryButton, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(50)
         ).apply { bottomMargin = dp(4) })
         addText(
@@ -486,49 +503,49 @@ class MainActivity : ComponentActivity() {
         captureSessionView = TextView(this).apply {
             visibility = View.GONE
             textSize = 13f
-            setTextColor(0xFF174B3B.toInt())
+            setTextColor(0xFF4ADE80.toInt())
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             setPadding(dp(12), dp(10), dp(12), dp(10))
-            background = roundedSurface(0xFFE5F2EC.toInt(), 0xFFB7D6C7.toInt())
+            background = roundedSurface(0xFF10261B.toInt(), 0xFF3B8C5A.toInt())
             contentDescription = "Contador regressivo da captura BLE em andamento"
         }
-        root.addView(captureSessionView, LinearLayout.LayoutParams(
+        advancedPanel.addView(captureSessionView, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
         ).apply { bottomMargin = dp(10) })
 
         gattProgressView = TextView(this).apply {
             text = "Exploração GATT: aguardando início."
             textSize = 12f
-            setTextColor(0xFF34495E.toInt())
+            setTextColor(0xFF9FB4CF.toInt())
             setPadding(dp(12), dp(10), dp(12), dp(10))
-            background = roundedSurface(0xFFFFFFFF.toInt(), 0xFFE1E7EF.toInt())
+            background = roundedSurface(0xFF0E1B2D.toInt(), 0xFF28415F.toInt())
         }
-        root.addView(gattProgressView, LinearLayout.LayoutParams(
+        advancedPanel.addView(gattProgressView, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
         ).apply { bottomMargin = dp(5) })
-        root.addView(makeButton("Registrar ação realizada no relógio") {
+        advancedPanel.addView(makeButton("Registrar ação realizada no relógio") {
             registerWearableActionMarker()
         }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
         ).apply { bottomMargin = dp(8) })
 
-        addText(root, "Saúde e integração", 17f, true)
+        addText(advancedPanel, "Saúde e integração", 17f, true)
         stepsView = TextView(this).apply {
             text = "Passos hoje: aguardando dados da Conexão Saúde"
             textSize = 24f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(0xFF17212B.toInt())
+            setTextColor(0xFFF8FAFC.toInt())
             setPadding(0, dp(8), 0, dp(4))
         }
-        root.addView(stepsView)
+        advancedPanel.addView(stepsView)
 
         healthStatusView = TextView(this).apply {
             text = "Fonte: Conexão Saúde • total agregado de fontes autorizadas"
             textSize = 12f
-            setTextColor(0xFF526170.toInt())
+            setTextColor(0xFF9FB4CF.toInt())
             setPadding(0, 0, 0, dp(8))
         }
-        root.addView(healthStatusView)
+        advancedPanel.addView(healthStatusView)
 
         val healthActions = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -541,36 +558,36 @@ class MainActivity : ComponentActivity() {
         }, LinearLayout.LayoutParams(0, dp(56), 1f).apply {
             marginStart = dp(8)
         })
-        root.addView(healthActions)
+        advancedPanel.addView(healthActions)
 
         healthSettingsButton = makeButton("Abrir configurações de acesso") {
             openHealthConnectSettings()
         }.apply {
             visibility = View.GONE
         }
-        root.addView(healthSettingsButton, LinearLayout.LayoutParams(
+        advancedPanel.addView(healthSettingsButton, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
         ).apply { topMargin = dp(4) })
 
-        addText(root, "Mais recursos", 17f, true)
-        root.addView(makeButton("Notificações do telefone") {
+        addText(advancedPanel, "Mais recursos", 17f, true)
+        advancedPanel.addView(makeButton("Notificações do telefone") {
             startActivity(Intent(this, NotificationCenterActivity::class.java))
         }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
         ))
-        root.addView(makeButton("Catálogo de funções do relógio") {
+        advancedPanel.addView(makeButton("Catálogo de funções do relógio") {
             startActivity(Intent(this, FeatureHubActivity::class.java))
         }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
         ))
 
-        addText(root, "Fluxo de saúde: sensores do relógio → aplicativo → Conexão Saúde. " +
+        addText(advancedPanel, "Fluxo de saúde: sensores do relógio → aplicativo → Conexão Saúde. " +
             "A gravação de amostras do GT3 Maxx será ativada somente após validar os dados e sua origem.", 12f)
 
-        addText(root, "Frequência cardíaca, sono e SpO₂: aguardando integração e validação dos sensores. " +
+        addText(advancedPanel, "Frequência cardíaca, sono e SpO₂: aguardando integração e validação dos sensores. " +
             "Não exibir estimativas como medições confirmadas.", 12f)
 
-        root.addView(makeButton("Dados de saúde e privacidade") {
+        advancedPanel.addView(makeButton("Dados de saúde e privacidade") {
             startActivity(Intent(this, HealthPrivacyActivity::class.java))
         }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
@@ -588,12 +605,12 @@ class MainActivity : ComponentActivity() {
         inventoryPanel.addView(content, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
         ))
-        root.addView(makeButton("Inventário GATT • mostrar/ocultar") {
+        advancedPanel.addView(makeButton("Inventário GATT • mostrar/ocultar") {
             inventoryPanel.visibility = if (inventoryPanel.visibility == View.VISIBLE) View.GONE else View.VISIBLE
         }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
         ))
-        root.addView(inventoryPanel)
+        advancedPanel.addView(inventoryPanel)
 
         val diagnosticPanel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -608,23 +625,31 @@ class MainActivity : ComponentActivity() {
         diagnosticPanel.addView(TextView(this).apply {
             text = "Registro técnico • últimos 250 eventos"
             textSize = 12f
-            setTextColor(0xFF526170.toInt())
+            setTextColor(0xFF9FB4CF.toInt())
             setPadding(0, dp(8), 0, dp(4))
         })
         logView = TextView(this).apply {
             textSize = 11f
             maxLines = 8
-            setTextColor(0xFF263746.toInt())
+            setTextColor(0xFFE5EDF7.toInt())
             setPadding(dp(8), dp(8), dp(8), dp(8))
-            background = roundedSurface(0xFFFFFFFF.toInt(), 0xFFE1E7EF.toInt())
+            background = roundedSurface(0xFF0E1B2D.toInt(), 0xFF28415F.toInt())
         }
         diagnosticPanel.addView(logView)
-        root.addView(makeButton("Diagnóstico avançado • mostrar/ocultar") {
+        advancedPanel.addView(makeButton("Diagnóstico avançado • mostrar/ocultar") {
             diagnosticPanel.visibility = if (diagnosticPanel.visibility == View.VISIBLE) View.GONE else View.VISIBLE
         }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
         ))
-        root.addView(diagnosticPanel)
+        advancedPanel.addView(diagnosticPanel)
+
+        root.addView(makeButton("Ferramentas técnicas e integração • mostrar/ocultar") {
+            advancedPanel.visibility = if (advancedPanel.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+        }, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            dp(48)
+        ).apply { topMargin = dp(8) })
+        root.addView(advancedPanel)
 
         val pageScroll = ScrollView(this).apply {
             isFillViewport = true
@@ -637,7 +662,7 @@ class MainActivity : ComponentActivity() {
 
     private fun updatePhoneClock() {
         clockView.text = "Hora do celular: " +
-            SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(Date())
+            SimpleDateFormat("dd/MM/yyyy " + if (AppPreferences.uses24HourClock(this)) "HH:mm:ss" else "hh:mm:ss a", Locale.getDefault()).format(Date())
 
         if (::captureSessionView.isInitialized) {
             val nowMillis = System.currentTimeMillis()
@@ -908,7 +933,12 @@ class MainActivity : ComponentActivity() {
             return
         }
         healthScope.launch {
-            when (val result = healthConnectRepository.readTodaySteps()) {
+            val originPolicy = if (AppPreferences.includesExternalHealthSources(this@MainActivity)) {
+                HealthConnectOriginPolicy.INCLUDE_EXTERNAL
+            } else {
+                HealthConnectOriginPolicy.APP_ONLY
+            }
+            when (val result = healthConnectRepository.readTodaySteps(originPolicy = originPolicy)) {
                 is HealthConnectStepsResult.Success -> {
                     val count = result.snapshot.totalSteps
                     stepsView.text = StepsCountFormatter.label(count)
@@ -1008,6 +1038,8 @@ class MainActivity : ComponentActivity() {
             maxLines = 2
             gravity = Gravity.CENTER
             setPadding(dp(8), dp(5), dp(8), dp(5))
+            setTextColor(0xFFF8FAFC.toInt())
+            backgroundTintList = android.content.res.ColorStateList.valueOf(0xFF172A43.toInt())
             setOnClickListener { action() }
         }
     }
@@ -1021,7 +1053,7 @@ class MainActivity : ComponentActivity() {
         val view = TextView(this).apply {
             text = value
             textSize = size
-            setTextColor(0xFF263746.toInt())
+            setTextColor(0xFFE5EDF7.toInt())
             if (bold) setTypeface(typeface, android.graphics.Typeface.BOLD)
             setPadding(0, dp(6), 0, dp(4))
         }
@@ -1361,7 +1393,7 @@ class MainActivity : ComponentActivity() {
                 val deviceCard = LinearLayout(this).apply {
                     orientation = LinearLayout.VERTICAL
                     setPadding(dp(14), dp(12), dp(14), dp(12))
-                    background = roundedSurface(0xFFFFFFFF.toInt(), 0xFFE1E7EF.toInt())
+                    background = roundedSurface(0xFF0E1B2D.toInt(), 0xFF28415F.toInt())
                     isClickable = true
                     isFocusable = true
                     contentDescription = "Conectar a $name. Sinal ${result.rssi} dBm."
@@ -1375,12 +1407,12 @@ class MainActivity : ComponentActivity() {
                     text = name
                     textSize = 15f
                     setTypeface(typeface, android.graphics.Typeface.BOLD)
-                    setTextColor(0xFF17212B.toInt())
+                    setTextColor(0xFFF8FAFC.toInt())
                 }
                 val deviceMeta = TextView(this).apply {
                     text = "Sinal ${result.rssi} dBm  •  identificação protegida: " + maskAddress(address)
                     textSize = 12f
-                    setTextColor(0xFF526170.toInt())
+                    setTextColor(0xFF9FB4CF.toInt())
                     setPadding(0, dp(4), 0, 0)
                 }
                 deviceCard.addView(deviceName)
@@ -2769,20 +2801,43 @@ class MainActivity : ComponentActivity() {
                 appendLog("CTS bloqueado: o dispositivo conectado não corresponde ao fingerprint GATT completo do GT3 MAX Call.")
             }
             BluetoothCurrentTimeCapabilityPolicy.Capability.READY -> {
-                clockSyncButton.isEnabled = false
+                clockSyncButton.isEnabled = !clockSyncAttemptedForSession
                 if (clockSyncAttemptedForSession) {
                     deviceTimeSyncView.text = "CTS disponível; sincronização já tentada nesta conexão."
                 } else {
-                    deviceTimeSyncView.text = "CTS compatível encontrado. Enviando automaticamente a hora do Android."
-                    appendLog("CTS 0x1805/0x2A2B com WRITE confirmado. Iniciando sincronização automática única nesta sessão.")
-                    syncClockUsingCurrentTimeService(gatt)
+                    deviceTimeSyncView.text =
+                        "CTS compatível encontrado. Toque em Sincronizar hora para autorizar a escrita."
                 }
             }
         }
     }
 
+    private fun requestClockSync() {
+        val gatt = bluetoothGatt
+        if (gatt == null || !isGattConnected || isGattDisconnecting ||
+            !::clockSyncButton.isInitialized || !clockSyncButton.isEnabled
+        ) {
+            appendLog("Sincronização CTS não iniciada: sessão não está pronta ou já foi tentada.")
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Sincronizar hora do relógio")
+            .setMessage(
+                "Autoriza enviar a data e hora local deste telefone ao serviço Bluetooth padrão " +
+                    "Current Time (0x1805/0x2A2B) do GT3 MAX Call? Nenhum comando proprietário será enviado."
+            )
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Autorizar e sincronizar") { _, _ ->
+                syncClockUsingCurrentTimeService(gatt, explicitUserConsent = true)
+            }
+            .show()
+    }
+
     @SuppressLint("MissingPermission")
-    private fun syncClockUsingCurrentTimeService(gatt: BluetoothGatt) {
+    private fun syncClockUsingCurrentTimeService(
+        gatt: BluetoothGatt,
+        explicitUserConsent: Boolean
+    ) {
         if (bluetoothGatt !== gatt || !isGattConnected || isGattDisconnecting) {
             if (::clockSyncButton.isInitialized) clockSyncButton.isEnabled = false
             deviceTimeSyncView.text = "Sincronização cancelada: a sessão BLE não está mais ativa."
@@ -2815,7 +2870,7 @@ class MainActivity : ComponentActivity() {
             return
         }
         if (!AccessPolicy.DEFAULT.canWrite(
-                service.uuid, characteristic.uuid, explicitUserConsent = true
+                service.uuid, characteristic.uuid, explicitUserConsent = explicitUserConsent
             )
         ) {
             deviceTimeSyncView.text = "Escrita bloqueada pela política GATT."
@@ -3474,7 +3529,10 @@ class MainActivity : ComponentActivity() {
         val version = runCatching {
             packageManager.getPackageInfo(packageName, 0).versionName ?: "desconhecida"
         }.getOrDefault("desconhecida")
-        val discoveryEntries = listOf("droppedCount=" + droppedTelemetryCount.get()) +
+        val discoveryEntries = listOf(
+            "droppedCount=" + droppedTelemetryCount.get(),
+            "discoveryStorageWriter=" + discoveryLibraryStore.writeHealthSummary()
+        ) +
             when (val stored = discoveryLibraryStore.read()) {
             DiscoveryLibraryReadResult.Empty -> listOf("Nenhuma descoberta persistida até esta exportação.")
             is DiscoveryLibraryReadResult.Available -> stored.snapshot.records.takeLast(1_000).map { record ->
