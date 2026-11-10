@@ -31,8 +31,8 @@ internal class HealthConnectActivityHistorySync(
         day: LocalDate,
         now: Instant,
         zoneId: ZoneId
-    ): HealthConnectActivityHistorySyncStatus =
-        when (val result = source.readCompletedDaySteps(day, now, zoneId)) {
+    ): HealthConnectActivityHistorySyncStatus {
+        return when (val result = source.readCompletedDaySteps(day, now, zoneId)) {
             is HealthConnectStepsResult.Success -> {
                 val steps = result.snapshot.totalSteps
                     ?: return HealthConnectActivityHistorySyncStatus.NO_DATA
@@ -59,4 +59,5 @@ internal class HealthConnectActivityHistorySync(
             HealthConnectStepsResult.ProviderUpdateRequired -> HealthConnectActivityHistorySyncStatus.PROVIDER_UPDATE_REQUIRED
             is HealthConnectStepsResult.Failure -> HealthConnectActivityHistorySyncStatus.READ_FAILURE
         }
+    }
 }
