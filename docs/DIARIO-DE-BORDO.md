@@ -747,3 +747,11 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Integração é disparada após leitura diária bem-sucedida, com no máximo uma tentativa por dia local e processo. Não adiciona serviço de segundo plano.
 - Testes cobrem seleção de dia/fuso, ausência de agregado, dia incompleto, idempotência, falhas e transições DST.
 - CI da Fase 3 e teste físico Galaxy A06/GT3 MAX: **aguardando validação**.
+
+
+## 2026-11-12 — Pesquisa de IA aberta e separação da IA generativa
+- Confirmada a separação entre o motor local determinístico das Fases 1–3 e um LLM opcional. Qwen Code (Apache-2.0) fica como ferramenta de desenvolvimento com provedores locais; Qwen3-0.6B-GGUF Q8_0 (Apache-2.0, cerca de 639 MB) e llama.cpp são candidatos a protótipo offline; LiteRT-LM é alternativa Kotlin condicionada a modelo compatível.
+- O LLM não participa de BLE/GATT, fila de leitura, captura, Health Connect ou execução em segundo plano. Só poderá explicar insight já calculado e manter origem/proveniência; não faz diagnóstico clínico nem inventa dado GT3 MAX.
+- Criado docs/PLANO-IA-ABERTA-2026-11-12.md com licenças, links e gate de benchmark. Nenhum runtime, peso ou nova permissão adicionado.
+- Estado conhecido antes desta atualização: PR #15 CI #490 passou em 7f207b2522d5e8cede474be98e9c719af1468a27; PR #23 CI #520 passou em 2fd6696a78d668d1c7a996472b88da7d0f62a6d6. PR #20 e PR #22 tinham CI vermelhas; correções foram aplicadas em commits 9546e706a93e8924da69b6c5e4bf9167f71ab24d e c1ae0d1f611dc7e465fc2d098d523fc0582bafcf, respectivamente, e ainda aguardam CI. O novo registro documental também exigirá nova CI para este head.
+- Independência total do Wearfit Pro permanece obrigatória. Teste físico A06/GT3 MAX: **não validado**.
