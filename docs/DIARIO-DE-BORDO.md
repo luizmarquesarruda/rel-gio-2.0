@@ -936,3 +936,10 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - A auditoria da CI #448 (run 42158692574) identificou falha em app/build.gradle.kts:89: AGP ainda não havia criado a configuração diagnosticDebugImplementation quando o bloco dependencies tentou anexar LeakCanary. A compilação interrompeu antes dos testes/build.
 - Corrigido na branch work/telemetry-gatt-invariants-20261105, commit 9546e706a93e8924da69b6c5e4bf9167f71ab24d: configurações de variante são observadas com configurations.configureEach e a dependência só é anexada quando a configuração exata existe. Escopo continua restrito a diagnosticDebugImplementation e diagnosticBenchmarkImplementation; companion/release não recebem LeakCanary.
 - CI do novo SHA: **aguardando**. Não considerar corrigido até o bootstrap de dependências, lint, testes, builds e guardrails passarem.
+
+
+## 2026-11-12 — Alinhar testes de contrato à criação tardia das variantes
+- Depois da correção em app/build.gradle.kts, a CI #542 (run 43149466022) falhou em dois testes estáticos de scripts/tests/test_developer_tooling.py porque ainda exigiam o texto literal de DependencyHandler.add no bloco dependencies.
+- Atualizados os testes para exigir configurations.configureEach, a identificação exata de diagnosticDebugImplementation/diagnosticBenchmarkImplementation e a criação das dependências nos respectivos callbacks. Os guardrails de escopo permanecem: LeakCanary só na variante diagnosticDebug e ProfileInstaller só diagnosticBenchmark.
+- Commit dos testes: 043804a958652228c1f0514e7052fc8f93c8af9e. Run #544 (43149589074) foi disparado para esse SHA e estava em execução na última consulta; ainda não há conclusão de CI para este commit.
+- Não foi alterado o escopo funcional BLE/GATT, notificações, Health Connect ou telemetria. Não desativar KtLint, validação Gradle ou os guardrails para obter CI verde.
