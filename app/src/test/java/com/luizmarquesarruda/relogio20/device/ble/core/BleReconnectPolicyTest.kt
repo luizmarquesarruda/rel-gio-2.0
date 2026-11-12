@@ -8,11 +8,22 @@ import org.junit.Test
 
 class BleReconnectPolicyTest {
     @Test
-    fun doesNotRetryBeforeTheFirstSuccessfulConnection() {
+    fun doesNotRetryBeforeTheFirstConnectionRequest() {
         val policy = BleReconnectPolicy()
 
         assertFalse(policy.isEnabled)
         assertNull(policy.nextRetryDelayMillis())
+    }
+
+    @Test
+    fun explicitConnectionRequestEnablesBoundedRecoveryBeforeFirstSuccess() {
+        val policy = BleReconnectPolicy()
+
+        policy.markConnectionRequested()
+
+        assertTrue(policy.isEnabled)
+        assertEquals(1_000L, policy.nextRetryDelayMillis())
+        assertEquals(2_000L, policy.nextRetryDelayMillis())
     }
 
     @Test

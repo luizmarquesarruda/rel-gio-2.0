@@ -2,14 +2,14 @@
 
 **Data da revisão:** 03/11/2026  
 **Aplicação:** Relógio 2.0 (Android/Kotlin)  
-**Dispositivo de referência:** GT3 Maxx, pareado pelo Wearfit Pro  
+**Dispositivo de referência:** GT3 Maxx, conectado diretamente pelo Relógio 2.0  
 **Estado:** diretrizes analisadas; validação física ainda pendente.
 
 ## 1. Decisão de plataforma
 
 O app Google Pixel Watch é documentado pelo Google como aplicativo complementar para configurar e parear relógios Wear OS. Ele não é um SDK universal para smartwatches Bluetooth.
 
-O GT3 Maxx deste projeto não foi identificado como dispositivo Wear OS. O fato de expor BLE/GATT ou ser pareado por Wearfit Pro não demonstra que execute Wear OS nem que tenha Google Play Services.
+O GT3 Maxx deste projeto não foi identificado como dispositivo Wear OS. A presença de BLE/GATT não demonstra que execute Wear OS nem que tenha Google Play Services.
 
 **Decisão:** manter o Relógio 2.0 como aplicativo Android nativo que conversa com o GT3 Maxx por BLE/GATT, usando APIs Android públicas. Não declarar compatibilidade com Google Pixel Watch/Wear OS e não adicionar dependências Wear OS ao build do GT3 Maxx sem evidência de compatibilidade.
 
@@ -56,7 +56,7 @@ Referências:
 
 Em Wear OS, notificações geradas pelo app no telefone podem ser encaminhadas automaticamente pelo próprio sistema ao relógio pareado. O modelo oficial não exige que o app complementar leia todas as notificações do telefone para reenviá-las ao relógio.
 
-O GT3 Maxx não é um dispositivo Wear OS confirmado. O encaminhamento de notificações pelo Wearfit Pro e o protocolo proprietário necessário para enviar mensagens por GATT são questões distintas. A recepção Android não comprova que o firmware do GT3 aceite os mesmos dados.
+O GT3 Maxx não é um dispositivo Wear OS confirmado. A recepção de notificações Android e o protocolo proprietário necessário para enviar mensagens por GATT são questões distintas. A recepção Android não comprova que o firmware do GT3 aceite os mesmos dados.
 
 Diretrizes para o Relógio 2.0:
 - Não adicionar envio BLE de mensagens até validar formato, limites, codificação e comportamento do relógio por capturas controladas.

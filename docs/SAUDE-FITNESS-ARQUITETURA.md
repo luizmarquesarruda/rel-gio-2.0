@@ -9,7 +9,7 @@
 
 O Relógio 2.0 é um aplicativo de Saúde e Fitness que acompanha um smartwatch e conecta dados de atividade do usuário ao ecossistema Android.
 
-O relógio é a fonte das medições feitas por seus próprios sensores. O app companion recebe esses dados por integração suportada (Wearfit Pro, SDK documentado ou BLE validado), identifica origem e horário, valida os valores e os compartilha com Health Connect somente depois de autorização explícita.
+O relógio é a fonte das medições feitas por seus próprios sensores. O Relógio 2.0 recebe esses dados diretamente por BLE/GATT validado, identifica origem e horário, valida os valores e os compartilha com Health Connect somente depois de autorização explícita.
 
 O app também oferece uma ponte de notificações do telefone ao relógio: o Android publica notificações, o app lê notificações dos aplicativos escolhidos pelo usuário e a camada de transporte as encaminha ao wearable. A leitura não altera o aplicativo de origem: o Relógio 2.0 não responde, apaga, arquiva nem manipula a notificação.
 
@@ -20,7 +20,7 @@ O app também oferece uma ponte de notificações do telefone ao relógio: o And
 ```text
 Sensores do smartwatch
         ↓
-Wearfit Pro / SDK oficial / BLE validado
+BLE/GATT direto validado
         ↓
 Adaptador do dispositivo
         ↓
@@ -69,7 +69,7 @@ Regras:
 | Métrica/função | Fonte pretendida | Estado real |
 |---|---|---|
 | Passos no painel | Health Connect agregado | Leitura agregada encapsulada em HealthConnectStepsRepository; pode combinar telefone e outras fontes |
-| Passos originados no GT3 Maxx | Sensor do relógio via Wearfit Pro/BLE | Não comprovado; ainda não gravar no Health Connect |
+| Passos originados no GT3 Maxx | Sensor do relógio via BLE direto | Não comprovado; ainda não gravar no Health Connect |
 | Frequência cardíaca | Sensor óptico do relógio | Protocolo/SDK e dados não validados |
 | Sono | Sensor/algoritmo do relógio | Integração não validada |
 | SpO₂ | Sensor do relógio | Integração não validada; não usar para diagnóstico |
@@ -115,7 +115,7 @@ Estado atual:
 
 ## 7. Testes de aceitação antes de publicação
 
-1. Comparar passos do relógio, Wearfit Pro, Relógio 2.0 e Health Connect no mesmo intervalo e identificar cada origem.
+1. Comparar passos do relógio, Relógio 2.0 e Health Connect no mesmo intervalo e identificar cada origem.
 2. Validar timestamps, fuso, contagem incremental, duplicação e reconexão.
 3. Confirmar que o app não publica no Health Connect valores de telefone como se fossem do relógio.
 4. Validar leitura de notificações com cada pacote selecionado, pausa, revogação e limpeza.

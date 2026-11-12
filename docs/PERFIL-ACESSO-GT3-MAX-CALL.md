@@ -33,7 +33,7 @@ A assinatura GATT (NUS + três serviços privados) pode identificar uma compatib
 1. O app continua exigindo correspondência com o endereço Bluetooth configurado localmente. O MAC não é compilado dentro do APK nem publicado no GitHub.
 2. Após a descoberta GATT, o app compara o nome GT3 MAX/GT3 MAX Call e o conjunto de serviços/características observado.
 3. Somente se nome e fingerprint GATT completo coincidirem, o app habilita automaticamente notificações apenas na característica NUS TX, usando o descritor padrão CCCD (`0x2902`). Correspondência parcial não inicia escuta automática.
-4. O app interpreta o quadro AB `0x91/0x80` somente como **candidato de bateria**. A captura `AB 00 05 FF 91 80 00 0C` sugere 12%, mas essa semântica ainda precisa de correlação repetida com o nível mostrado pelo Wearfit Pro.
+4. O app interpreta o quadro AB `0x91/0x80` somente como **candidato de bateria**. A captura `AB 00 05 FF 91 80 00 0C` sugere 12%, mas essa semântica ainda precisa de correlação repetida com o indicador de bateria do próprio relógio.
 5. O app não escreve bytes em NUS RX nem em características privadas. A configuração CCCD não é um comando proprietário.
 
 ## Funções e limites atuais
@@ -43,21 +43,17 @@ A assinatura GATT (NUS + três serviços privados) pode identificar uma compatib
 | Localizar e conectar ao GT3 MAX configurado | Implementado por BLE/GATT; teste físico após esta fase pendente |
 | Descobrir serviços e propriedades GATT | Implementado |
 | Receber notificações NUS TX | Inscrição automática condicional adicionada; validação em relógio pendente |
-| Bateria | Parser candidato; aguarda confirmação por comparação com Wearfit Pro |
+| Bateria | Parser candidato; aguarda confirmação por comparação com o indicador do relógio |
 | Frequência cardíaca, SpO₂, pressão, sono e passos diretos | Não há parser/protocolo comprovado; não simular |
 | Chamadas e áudio da variante Call | Canal Bluetooth Classic/HFP/A2DP separado; ainda não validado |
 | Notificações Android para o relógio | Captura Android local já existe na companion; transporte ao relógio continua sem protocolo |
 | Hora, brilho, botão, bloqueio e controles | Requerem protocolo/ação documentada; não enviar comandos experimentais |
 | DFU / OTA / reset | Não fazem parte deste objetivo e continuam fora do escopo |
 
-## Canal oficial de terceiros Wearfit Pro
-
-A política Weike atualizada em 04/08/2023 declara que aplicativos de terceiros podem obter identificação aleatória por aplicativo, dados de hardware/estado, enviar notificações e, com autorização expressa, acessar sensores, sono, exercícios, estado de uso, logs e localização. Porém, o texto delimita esse canal para vestíveis Weike pareados e não publica SDK/API. Como não está confirmado que o GT3 MAX Call seja elegível ao canal de parceiros, obter confirmação de compatibilidade e o SDK oficial antes de criar o adapter. Ver [INTEGRACAO-WEARFIT-PARTNER-SDK.md](INTEGRACAO-WEARFIT-PARTNER-SDK.md).
-
 ## Próximas implementações orientadas por evidência
 
-- Correlacionar a notificação candidata de bateria com a porcentagem exibida no Wearfit Pro em diferentes níveis de carga.
-- Capturar notificações TX durante leituras individuais no Wearfit Pro: frequência cardíaca, SpO₂, pressão, passos, sono e exercícios. Cada métrica exige duas ou mais observações independentes, timestamp e comparação da UI.
+- Correlacionar a notificação candidata de bateria com a porcentagem exibida no próprio relógio em diferentes níveis de carga.
+- Capturar notificações TX durante medições iniciadas diretamente no relógio: frequência cardíaca, SpO₂, pressão, passos, sono e exercícios. Cada métrica exige duas ou mais observações independentes, timestamp e comparação da UI.
 - Identificar separadamente o canal Bluetooth Classic de chamadas/áudio; não inferir seu endereço nem reutilizar UUIDs BLE.
 - Ler somente características com semântica pública/documentada ou já comprovada por correlação.
 - Manter valores brutos, origem e estado de validação; nenhuma medição desconhecida pode ser exibida como dado de saúde.
@@ -65,6 +61,5 @@ A política Weike atualizada em 04/08/2023 declara que aplicativos de terceiros 
 ## Referências técnicas
 
 - Captura GATT do projeto: [CAPTURA-BLE-GT3-MAX-2026-11-03.md](CAPTURA-BLE-GT3-MAX-2026-11-03.md)
-- Matriz das funções: [MATRIZ-COMPATIBILIDADE-GT3-MAXX.md](MATRIZ-COMPATIBILIDADE-GT3-MAXX.md)
 - Perfil candidato de transporte: [Nordic UART Service](https://github.com/NordicSemiconductor/Android-BLE-Library)
 - O projeto público DT78 usado para comparação é apenas referência de formato/UUID; não prova identidade de chipset nem compatibilidade integral.

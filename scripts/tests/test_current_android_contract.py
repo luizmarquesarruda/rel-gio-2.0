@@ -68,6 +68,40 @@ class CurrentAndroidContractTests(unittest.TestCase):
         self.assertEqual("s", scan_permission.attrib.get(TOOLS + "targetApi"))
         self.assertIsNone(manifest.find("uses-permission-sdk-31"))
 
+    def test_weather_network_permissions_are_scoped_and_declared_once(self):
+        manifest = ET.parse(ROOT / "app/src/main/AndroidManifest.xml").getroot()
+        names = [
+            permission.attrib.get(ANDROID + "name")
+            for permission in manifest.findall("uses-permission")
+        ]
+        self.assertEqual(1, names.count("android.permission.INTERNET"))
+        self.assertEqual(1, names.count("android.permission.ACCESS_NETWORK_STATE"))
+        legacy_location_permissions = {
+            permission.attrib.get(ANDROID + "name"): permission
+            for permission in manifest.findall("uses-permission")
+            if permission.attrib.get(ANDROID + "name") in {
+                "android.permission.ACCESS_FINE_LOCATION",
+                "android.permission.ACCESS_COARSE_LOCATION",
+            }
+        }
+        for name, permission in legacy_location_permissions.items():
+            with self.subTest(permission=name):
+                max_sdk = permission.attrib.get(ANDROID + "maxSdkVersion")
+                self.assertIsNotNone(max_sdk)
+                self.assertLessEqual(int(max_sdk), 30)
+
+    def test_time_weather_screen_is_internal_and_reachable_from_feature_hub(self):
+        manifest = ET.parse(ROOT / "app/src/main/AndroidManifest.xml").getroot()
+        application = manifest.find("application")
+        activity = next(
+            node for node in application.findall("activity")
+            if node.attrib.get(ANDROID + "name") == ".ui.screens.TimeWeatherActivity"
+        )
+        self.assertEqual("false", activity.attrib.get(ANDROID + "exported"))
+        feature_hub = (ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/FeatureHubActivity.kt").read_text(encoding="utf-8")
+        self.assertIn('Feature("Hora e clima"', feature_hub)
+        self.assertIn('"time_weather" -> startActivity(Intent(this, TimeWeatherActivity::class.java))', feature_hub)
+
     def test_manifest_policy_auditor_rejects_sdk31_permission_element(self):
         xml = f'''<manifest xmlns:android="{ANDROID_NS}"
             package="com.luizmarquesarruda.relogio20.diagnostic">
@@ -92,10 +126,12 @@ class CurrentAndroidContractTests(unittest.TestCase):
         self.assertIn('id("org.jetbrains.kotlin.android") version "2.4.21"', root_build)
         self.assertIn('gradle-version: "9.5.0"', workflow)
         self.assertNotIn('gradle-version: "8.13"', workflow)
+        app_build = (ROOT / "app/build.gradle.kts").read_text(encoding="utf-8")
+        self.assertIn('androidx.work:work-runtime-ktx:2.12.0', app_build)
 
     def test_gatt_api33_helper_uses_requires_api_and_preferences_use_ktx(self):
         source = (
-            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/MainActivity.kt"
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
         ).read_text(encoding="utf-8")
         self.assertIn("@RequiresApi(Build.VERSION_CODES.TIRAMISU)", source)
         self.assertNotIn("@TargetApi", source)
@@ -188,7 +224,7 @@ class CurrentAndroidContractTests(unittest.TestCase):
 
     def test_gatt_read_callbacks_are_present_for_serialized_exploration(self):
         source = (
-            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/MainActivity.kt"
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
         ).read_text(encoding="utf-8")
         self.assertIn("override fun onCharacteristicRead(", source)
         self.assertIn("completeGattOperation(", source)

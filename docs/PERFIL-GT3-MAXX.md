@@ -4,9 +4,8 @@
 
 - Nome comercial: GT3 Maxx
 - Categoria: smartwatch genérico chinês
-- Aplicativo companheiro: Wearfit Pro
 - Telefone de desenvolvimento: Samsung Galaxy A06, Android 16
-- Estado: pareamento pelo Wearfit Pro informado pelo usuário; protocolo e chipset ainda não identificados.
+- Estado: conexão direta pelo Relógio 2.0; protocolo e chipset ainda não identificados.
 
 ## Identificação da unidade física informada (04/11/2026)
 
@@ -30,13 +29,13 @@ O usuário compartilhou a seguinte descrição geral do produto/anúncio:
 
 ## Evidência BLE adicional (03/11/2026)
 
-O inventário observado inclui Nordic UART com UUIDs terminados em dcca9e e a notificação AB 00 05 FF 91 80 00 0C. Existe uma referência pública DT78/X8 Ultra com os mesmos UUIDs e uma fixture AB de bateria. Isso sustenta um perfil **NUS/AB candidato**, mas não identifica chipset ou modelo. A hipótese de bateria 12% não foi validada com o Wearfit Pro. Detalhes: PROTOCOLO-BLE-CANDIDATO.md.
+O inventário observado inclui Nordic UART com UUIDs terminados em dcca9e e a notificação AB 00 05 FF 91 80 00 0C. Existe uma referência pública DT78/X8 Ultra com os mesmos UUIDs e uma fixture AB de bateria. Isso sustenta um perfil **NUS/AB candidato**, mas não identifica chipset ou modelo. A hipótese de bateria 12% ainda não foi validada por comparação independente. Detalhes: PROTOCOLO-BLE-CANDIDATO.md.
 
 ## Pista de identificação regulatória — ainda não vinculada à unidade física
 
 Existe um cadastro público de FCC ID `2A56X-GT3MAX`, modelo `GT3MAX`, atribuído à NJY Technology Co., Limited, com registro de 2022. Isso é apenas uma pista: o usuário ainda não confirmou que o rótulo/firmware da unidade em mãos contém esse FCC ID.
 
-Um dos PDFs listados nesse cadastro (documento 6135696) redireciona para uma cópia rotulada GT4 e descreve conexão pelo MActivePro, não pelo Wearfit Pro. Por esse conflito, esse manual não foi usado como especificação do relógio atual. A captura de tela do PDF espelhado retornou 403; o texto indexado foi tratado apenas como alerta de inconsistência.
+Um dos PDFs listados nesse cadastro (documento 6135696) redireciona para uma cópia rotulada GT4 e descreve conexão por aplicativo diferente; não foi usado como especificação do relógio atual. Por esse conflito, esse manual não foi usado como especificação do relógio atual. A captura de tela do PDF espelhado retornou 403; o texto indexado foi tratado apenas como alerta de inconsistência.
 
 Referências:
 - Cadastro FCC ID 2A56X-GT3MAX: https://fccid.io/2A56X-GT3MAX
@@ -55,7 +54,6 @@ O nome GT3 Maxx não identifica de forma inequívoca fabricante, SoC, firmware o
 2. Inspecionar serviços e características GATT com nRF Connect, sem escrever em nenhuma característica.
 3. Comparar UUIDs e propriedades com referências públicas apenas como pistas.
 4. Fazer captura repetida em duas sessões e registrar diferenças.
-5. Comparar dados exibidos pelo Wearfit Pro com qualquer notificação/leitura observada.
 6. Determinar se o relógio anuncia separadamente Bluetooth Classic para chamadas; esse canal não deve ser confundido com BLE de sensores.
 
 ## Segurança
@@ -67,4 +65,4 @@ O nome GT3 Maxx não identifica de forma inequívoca fabricante, SoC, firmware o
 
 ## Próxima evidência necessária
 
-Captura de tela do nRF Connect após scan, mostrando o dispositivo GT3 Maxx e, após conexão, a lista de serviços GATT. Ocultar endereço MAC antes de compartilhar. Se o Wearfit Pro mostrar versão de firmware/hardware, registrar também.
+Captura de tela do nRF Connect após scan, mostrando o dispositivo GT3 Maxx e, após conexão, a lista de serviços GATT. Ocultar endereço MAC antes de compartilhar. Registrar as versões de firmware/hardware exibidas pelo próprio relógio.

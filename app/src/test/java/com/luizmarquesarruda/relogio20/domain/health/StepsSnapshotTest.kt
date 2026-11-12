@@ -71,6 +71,16 @@ class StepsSnapshotTest {
     }
 
     @Test(expected = IllegalArgumentException::class)
+    fun rejectsReceiptBeforeQueriedIntervalEnds() {
+        StepsSnapshot(
+            totalSteps = 1L,
+            intervalStart = start,
+            intervalEnd = end,
+            receivedAt = end.minusSeconds(1)
+        )
+    }
+
+    @Test(expected = IllegalArgumentException::class)
     fun nonHealthConnectOriginIsRejected() {
         StepsSnapshot(
             totalSteps = 1L,

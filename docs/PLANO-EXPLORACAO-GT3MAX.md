@@ -4,7 +4,7 @@
 
 A captura local de 04/11/2026 observou seis serviços GATT e onze características. O serviço NUS (6E400001...) recebeu notificações pela característica TX (6E400003...). O serviço CTS padrão 0x1805/0x2A2B não foi anunciado. O serviço padrão de termômetro 0x1809/0x2A1C também não apareceu no inventário compartilhado.
 
-O firmware V1.07 e build SH0050-1_1.1.3_1.23_1.18_1.1 são metadados apresentados pelo app/tela, não foram lidos diretamente do GATT. Sem o arquivo de firmware (.bin/.fw/.zip) ou pacote original do Wearfit Pro, não é possível fazer análise estática real de firmware, extrair tabela de comandos ou afirmar que existe correção de RTC/temperatura implementável.
+O firmware V1.07 e build SH0050-1_1.1.3_1.23_1.18_1.1 são metadados apresentados pelo app/tela, não foram lidos diretamente do GATT. Sem o arquivo de firmware (.bin/.fw/.zip) ou imagem binária oficial do fabricante, não é possível fazer análise estática real de firmware, extrair tabela de comandos ou afirmar que existe correção de RTC/temperatura implementável.
 
 ## Implementação no branch feat/gt3max-safe-exploration-20261104
 
@@ -45,7 +45,7 @@ O firmware V1.07 e build SH0050-1_1.1.3_1.23_1.18_1.1 são metadados apresentado
 
 O CTS 0x1805 está ausente. O app sincroniza apenas pelo CTS padrão quando serviço, característica 0x2A2B e WRITE estão presentes. Na captura atual isso não ocorre. Não se deve enviar payload aleatório ao NUS RX.
 
-O atalho de menor risco requer capturar a comunicação normal do Wearfit Pro durante sincronização de hora e comparar com o tráfego do Relógio 2.0. Precisamos descobrir UUID de destino, handshake, enquadramento, timezone, checksum, resposta e sequência de inicialização. Até haver capturas repetidas, a sincronização proprietária permanece bloqueada.
+A abordagem permitida é observar passivamente a conexão direta do Relógio 2.0 com o GT3 MAX durante ações iniciadas fisicamente no relógio. Sem documentação oficial e capturas repetíveis do próprio dispositivo, UUIDs, handshake, timezone, checksum e sequência de inicialização permanecem desconhecidos; sincronização proprietária continua bloqueada.
 
 ## Temperatura
 
@@ -53,15 +53,15 @@ O serviço padrão 0x1809 não foi observado. A exploração também reconhece o
 
 ## Firmware e atalhos
 
-Para análise estática real, fornecer firmware extraído do relógio ou pacote de atualização do Wearfit Pro, com origem e hash. O serviço FE59 é associado a DFU e permanece bloqueado. Não executar atualização, downgrade, reset ou escrita em característica proprietária.
+Para análise estática real, obter firmware extraído do relógio por canal oficial do fabricante, com origem e hash. O serviço FE59 é associado a DFU e permanece bloqueado. Não executar atualização, downgrade, reset ou escrita em característica proprietária.
 
-O estudo detalhado está em docs/ATALHO-FIRMWARE-HORA-DATA-TEMPERATURA.md e docs/ANALISE-FIRMWARE-OTA-WEARFIT-PRO.md.
+O estudo técnico atualizado está em docs/ESTUDO-FIRMWARE-GT3-MAXX.md.
 
 ## Testes físicos pendentes
 
 - Confirmar leituras padrão no GT3 MAX real e comparar com a tela do relógio.
 - Ativar testes automáticos, conectar o GT3 MAX real, manter captura por pelo menos 10 minutos e exportar TXT com UUIDs, resultados READ, fingerprints, CCCD e notificações por canal.
-- Comparar hora/data após sincronização no Wearfit Pro e após reconectar o Relógio 2.0.
+- Comparar hora/data no visor do relógio antes e depois de cada ação local, sem aplicativo intermediário.
 - Comparar bateria em pelo menos três níveis.
 - Testar temperatura com identificação explícita de clima versus corporal.
 - Repetir cada correlação em pelo menos três sessões.

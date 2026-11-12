@@ -49,7 +49,7 @@ NotificationTransport (futuro)
 GT3 MAX
 ```
 
-A última etapa está bloqueada: o protocolo proprietário de notificação do GT3 MAX não foi identificado. A recepção Android não prova que o relógio aceite os mesmos bytes, formato, codificação ou comandos usados pelo Wearfit Pro.
+A última etapa está bloqueada: o protocolo proprietário de notificação do GT3 MAX não foi identificado. A recepção Android não prova que o relógio aceite os mesmos bytes, formato, codificação ou comandos de qualquer aplicativo externo.
 
 ## Configuração implementada nesta fase
 
@@ -72,15 +72,13 @@ A última etapa está bloqueada: o protocolo proprietário de notificação do G
 - O listener não equivale a permissão para ler SMS diretamente. Não solicitar `READ_SMS`, `READ_CALL_LOG`, `READ_CONTACTS`, Accessibility Service ou root para esta funcionalidade.
 - Ações de resposta devem ser uma fase separada, usando somente ações públicas `RemoteInput` quando presentes e após desenho de consentimento. Não enviar mensagens automaticamente.
 
-## Wearfit Pro versus app próprio
+## Independência do aplicativo
 
-A ajuda pública do Wearfit Pro orienta ativar Device → Message notification e lista telefone, SMS, WeChat, QQ e Weibo. WhatsApp não aparece nessa lista pública. No GT3 MAX, testar primeiro o recurso integrado do Wearfit Pro; não é possível garantir compatibilidade do modelo ou da versão instalada.
-
-O app próprio pode observar notificações Android, mas enviá-las ao GT3 MAX requer protocolo BLE de notificação validado. O serviço Android e o driver BLE devem permanecer desacoplados.
+O Relógio 2.0 não se integra, não pareia, não compartilha conexão e não sincroniza com aplicativos companheiros externos. A captura de notificações Android é local e independente; o encaminhamento ao GT3 MAX permanece bloqueado até que exista protocolo BLE documentado e validado.
 
 ## Não usar APIs de Wear OS como substituto
 
-O GT3 MAX foi identificado como relógio genérico associado ao Wearfit Pro, não como dispositivo Wear OS. As APIs oficiais de Notification Bridging e Data Layer do Wear OS não são automaticamente compatíveis com ele. A ponte BLE depende do firmware/protocolo real do fabricante.
+O GT3 MAX foi identificado como relógio BLE/GATT genérico, não como dispositivo Wear OS. As APIs oficiais de Notification Bridging e Data Layer do Wear OS não são automaticamente compatíveis com ele. A ponte BLE depende do firmware/protocolo real do fabricante.
 
 ## Estado e critérios de aceite
 
@@ -100,5 +98,4 @@ Código adicionado não significa integração validada. A próxima validação 
 
 - Android API — NotificationListenerService: https://developer.android.com/reference/android/service/notification/NotificationListenerService
 - Android 15 — proteções de conteúdo sensível e notification listeners: https://developer.android.com/about/versions/15/behavior-changes-all
-- Wearfit Pro — Message notification: https://wearfit.app/message-notification/
 - Wear OS notifications (referência apenas para dispositivos Wear OS): https://developer.android.com/training/wearables/notifications

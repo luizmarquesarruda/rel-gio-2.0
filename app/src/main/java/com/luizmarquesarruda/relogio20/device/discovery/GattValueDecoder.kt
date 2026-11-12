@@ -379,10 +379,9 @@ internal object GattValueDecoder {
         val raw = readUInt32(value, 1)
         val temperature = readFloat11073(raw) ?: return emptyList()
         val fahrenheit = flags and 0x01 != 0
-        val displayed = if (fahrenheit) temperature else temperature
         val unit = if (fahrenheit) "°F" else "°C"
         val results = mutableListOf(
-            DecodedGattValue(metric, String.format(Locale.US, "%.2f %s", displayed, unit))
+            DecodedGattValue(metric, String.format(Locale.US, "%.2f %s", temperature, unit))
         )
         var offset = 5
         if (flags and 0x02 != 0) {
@@ -400,24 +399,30 @@ internal object GattValueDecoder {
     }
 
     private fun decodeEnvironmentalPressure(value: ByteArray): List<DecodedGattValue> {
-        if (value.size != 2) return emptyList()
-        val pressure = readSFloat(value, 0) ?: return emptyList()
-        if (pressure <= 0.0) return emptyList()
+        // Bluetooth SIG Pressure (0x2A6D): uint32 little-endian, resolution 0.1 Pa.
+        if (value.size != 4) return emptyList()
+        val rawPressure = readUInt32(value, 0)
+        val pressurePa = rawPressure / 10.0
         return listOf(
             DecodedGattValue(
                 "Pressão atmosférica",
-                String.format(Locale.US, "%.2f Pa", pressure)
+                String.format(Locale.US, "%.1f Pa", pressurePa)
             )
         )
     }
 
     private fun decodeEnvironmentalTemperature(value: ByteArray): List<DecodedGattValue> {
+        // Bluetooth SIG Temperature (0x2A6E): sint16 little-endian, 0.01 °C.
         if (value.size != 2) return emptyList()
-        val temperature = readSFloat(value, 0) ?: return emptyList()
+        val raw = readUInt16(value, 0)
+        if (raw == 0x8000) return emptyList() // Bluetooth SIG: value is not known.
+        val signedHundredths = if (raw and 0x8000 != 0) raw - 0x10000 else raw
+        val temperatureCelsius = signedHundredths / 100.0
+        if (temperatureCelsius !in -273.15..327.67) return emptyList()
         return listOf(
             DecodedGattValue(
                 "Temperatura ambiente",
-                String.format(Locale.US, "%.2f °C", temperature)
+                String.format(Locale.US, "%.2f °C", temperatureCelsius)
             )
         )
     }
@@ -437,7 +442,7 @@ internal object GattValueDecoder {
     private fun decodePulseOximeterSpotCheck(value: ByteArray): List<DecodedGattValue> {
         if (value.size < 5) return emptyList()
         val flags = value[0].toInt() and 0xff
-        if (flags and 0xf0 != 0) return emptyList()
+        if (flags and 0xe0 != 0) return emptyList()
         var offset = 1
         val spo2 = readSFloat(value, offset) ?: return emptyList()
         offset += 2
@@ -447,6 +452,9 @@ internal object GattValueDecoder {
             DecodedGattValue("SpO₂ spot-check", formatSFloat(spo2, "%")),
             DecodedGattValue("Pulso spot-check", formatSFloat(pulse, "bpm"))
         )
+        if (flags and 0x10 != 0) {
+            results += DecodedGattValue("Relógio do dispositivo", "não configurado para esta medição")
+        }
         if (flags and 0x01 != 0) {
             val timestamp = decodeDateTime(value, offset) ?: return emptyList()
             results += DecodedGattValue("Horário do SpO₂", timestamp)

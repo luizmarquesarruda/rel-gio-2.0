@@ -118,6 +118,7 @@ def audit_manifest(manifest_xml: str, variant: str) -> list[AuditIssue]:
             f"Expected package {expected_package}, found {actual_package or '(missing)'}.",
         ))
 
+    internet_permission_count = 0
     for permission_tag in (
         "uses-permission",
         "uses-permission-sdk-23",
@@ -126,10 +127,7 @@ def audit_manifest(manifest_xml: str, variant: str) -> list[AuditIssue]:
         for permission in root.findall(permission_tag):
             name = _attr(permission, "name") or ""
             if name == "android.permission.INTERNET":
-                issues.append(AuditIssue(
-                    "network_permission_not_approved",
-                    "INTERNET is not approved: this build is local-first and has no network feature.",
-                ))
+                internet_permission_count += 1
             elif name in SENSITIVE_PERMISSIONS:
                 issues.append(AuditIssue(
                     "sensitive_permission_not_approved",
@@ -146,6 +144,13 @@ def audit_manifest(manifest_xml: str, variant: str) -> list[AuditIssue]:
                         "legacy_location_permission_not_limited",
                         "ACCESS_FINE_LOCATION must be capped at maxSdkVersion=30 for legacy BLE only.",
                     ))
+
+    if internet_permission_count != 1:
+        issues.append(AuditIssue(
+            "internet_permission_missing_or_duplicate",
+            "Exactly one INTERNET permission is approved for Open-Meteo weather/geocoding; "
+            f"found {internet_permission_count}.",
+        ))
 
     application = root.find("application")
     if application is None:
