@@ -930,3 +930,9 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Não foi implementado envio do clima ao relógio. O protocolo de clima da unidade não foi identificado; nenhum canal proprietário ou NUS RX foi escrito.
 - Versão alterada para 0.4.0-alpha.4 / versionCode 10.
 - Teste de rótulos WMO e cenários de auditoria INTERNET única/ausente/duplicada adicionados. Build, testes, Lint, guardrails, CI e teste físico Galaxy A06/GT3 MAXX: **não validados** nesta alteração.
+
+
+## 2026-11-12 — Correção do vínculo de dependências das variantes Gradle
+- A auditoria da CI #448 (run 42158692574) identificou falha em app/build.gradle.kts:89: AGP ainda não havia criado a configuração diagnosticDebugImplementation quando o bloco dependencies tentou anexar LeakCanary. A compilação interrompeu antes dos testes/build.
+- Corrigido na branch work/telemetry-gatt-invariants-20261105, commit 9546e706a93e8924da69b6c5e4bf9167f71ab24d: configurações de variante são observadas com configurations.configureEach e a dependência só é anexada quando a configuração exata existe. Escopo continua restrito a diagnosticDebugImplementation e diagnosticBenchmarkImplementation; companion/release não recebem LeakCanary.
+- CI do novo SHA: **aguardando**. Não considerar corrigido até o bootstrap de dependências, lint, testes, builds e guardrails passarem.
