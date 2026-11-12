@@ -755,3 +755,8 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Criado docs/PLANO-IA-ABERTA-2026-11-12.md com licenças, links e gate de benchmark. Nenhum runtime, peso ou nova permissão adicionado.
 - Estado conhecido antes desta atualização: PR #15 CI #490 passou em 7f207b2522d5e8cede474be98e9c719af1468a27; PR #23 CI #520 passou em 2fd6696a78d668d1c7a996472b88da7d0f62a6d6. PR #20 e PR #22 tinham CI vermelhas; correções foram aplicadas em commits 9546e706a93e8924da69b6c5e4bf9167f71ab24d e c1ae0d1f611dc7e465fc2d098d523fc0582bafcf, respectivamente, e ainda aguardam CI. O novo registro documental também exigirá nova CI para este head.
 - Independência total do Wearfit Pro permanece obrigatória. Teste físico A06/GT3 MAX: **não validado**.
+
+## 2026-11-12 — Modelo aberto para desenvolvimento e modelo local no dispositivo
+- A pesquisa foi refinada: Qwen3-0.6B não é o modelo recomendado para gerar/alterar código. Para o computador de desenvolvimento, recomendar Qwen Code com Qwen2.5-Coder-7B-Instruct via Ollama/LM Studio local; documentação do Qwen Code confirma uso de provedores locais OpenAI-compatible, e a ficha do modelo confirma licença Apache-2.0.
+- Separar agente que auxilia a programar (máquina de desenvolvimento) de inferência dentro do app (modelo pequeno, opcional). Sem envio a serviços externos, sem acesso a .env/secrets/dados pessoais e sem merge/deploy automático.
+- Seção de assistente de desenvolvimento adicionada a docs/PLANO-IA-ABERTA-2026-11-12.md. Não foi adicionada dependência ou IA executável nos aplicativos.
