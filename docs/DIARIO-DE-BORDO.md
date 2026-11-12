@@ -991,3 +991,9 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Ajustada apenas a quebra/indentação das duas concatenações de texto; nenhuma lógica GATT, BLE, persistência, privacidade ou interface funcional foi alterada. Commit c1ae0d1f611dc7e465fc2d098d523fc0582bafcf.
 - A branch-base da PR #20 também recebeu correção para criação tardia das configurações Gradle, commit 9546e706a93e8924da69b6c5e4bf9167f71ab24d. A nova CI desta PR precisa validar a combinação completa.
 - CI do novo SHA: **aguardando**. Não desativar KtLint nem afrouxar guardrails para obter resultado verde.
+
+
+## 2026-11-12 — Ajuste final de indentação da expressão multiline GATT
+- A CI #543 ainda marcou o gate KtLint como falho. A inspeção do trecho atualizado mostrou que a segunda expressão tinha sido quebrada em linha, mas a indentação do primeiro operando ainda estava no nível errado.
+- Corrigida a indentação do operando e da continuação em MainActivity.kt, sem alterar lógica, texto, callback, GATT ou permissões. Commit c55483d73036c920800609b93292d01c173b020e.
+- O resultado desta correção depende de nova CI no HEAD atualizado; não considerar KtLint aprovado até a execução correspondente concluir.
