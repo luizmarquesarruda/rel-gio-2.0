@@ -319,3 +319,44 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - A atualização periódica do Health Connect só é ativada após READ_STEPS concedida e é interrompida quando o acesso é negado ou revogado.
 
 - A janela diária de passos é calculada a partir do mesmo instante de consulta no fuso local; cancelamento de coroutine é propagado e a consulta periódica para quando o provider fica indisponível/precisa de atualização.
+
+
+## 04/11/2026 — Perfil de acesso ao GT3 MAX Call
+
+### Objetivo confirmado pelo usuário
+- O objetivo não é obter nem instalar firmware. O aplicativo deve usar os identificadores da unidade para reconhecer o GT3 MAX Call e acessar somente as funções comprovadas pelo relógio.
+
+### Alterações na branch `feat/gt3max-call-device-profile-20261104`
+- Registrados como metadados informados pelo proprietário: modelo GT3 MAX Call, firmware V1.07 e build SH0050-1_1.1.3_1.23_1.18_1.1. Esses valores não são lidos/autenticados pela conexão GATT.
+- Criado `Gt3MaxCallDeviceProfile` com identificação do nome BLE e fingerprint dos serviços/características observados na captura de 03/11.
+- A inscrição automática em NUS TX exige nome GT3 MAX reconhecido e fingerprint completo dos três serviços proprietários capturados, além de RX/TX NUS. Se faltar qualquer parte, o app não faz inscrição automática.
+- O app escuta apenas NUS TX com notificação padrão CCCD. Não envia comandos nem dados para NUS RX. Nenhuma característica privada é escrita.
+- O quadro AB 0x91/0x80 é mostrado como **bateria candidata**, ainda pendente de comparação com Wearfit Pro em mais de um nível de carga.
+- Acrescentado teste para impedir inscrição automática quando somente nome/NUS coincidem sem fingerprint completo.
+- Adicionada entrada de bateria ao catálogo visual de funções.
+
+### Limites
+- MAC, SN e código de pareamento não foram gravados no repositório. O endereço continua a ser salvo somente nas preferências privadas do app pelo fluxo de identificação existente.
+- Frequência cardíaca, SpO2, pressão, sono, passos originados no relógio e sessões de atividade ainda não têm parser comprovado.
+- Chamadas/áudio da variante Call dependem de investigação separada de Bluetooth Classic/HFP/A2DP.
+- Horário, brilho, botões, notificações enviadas ao relógio e outros controles ainda não possuem protocolo de comando validado.
+- OTA/DFU, reset e configurações destrutivas continuam fora deste objetivo.
+
+### Validação
+- Testes adicionados ao código; resultado real de CI neste HEAD: **não validado** até a conclusão do workflow.
+- Teste físico no Samsung Galaxy A06/Android 16 e comparação da bateria com Wearfit Pro: **não validados**.
+- A implementação não foi instalada no telefone do usuário por esta alteração.
+
+
+## 04/11/2026 — Canal de aplicativos parceiros Wearfit Pro — análise da política de 2023
+
+- Incorporada a política oficial Weike em chinês, atualizada em 04/08/2023 e efetiva desde 10/03/2022, correspondente ao texto enviado pelo proprietário.
+- A seção 1.3.2 prevê acesso por apps terceiros autorizados a um identificador aleatório exclusivo por aplicativo, nome/hardware/estado do wearable, envio de mensagens/notificações e acesso autorizado a sensores, sono, tipo de exercício, estado de uso, logs, localização e informações do dispositivo.
+- A política não fornece nome/versão de SDK, artefato Maven/AAR, APIs, callbacks, intents, exemplo Android, estrutura de dados, unidades ou timestamps.
+- A página corporativa WAKE UP descreve uma plataforma ecológica aberta/compartilhada e fornece canal de cooperação comercial; isso sugere processo de parceria, mas não confirma SDK público ou acesso automático.
+- Escopo: a cláusula de terceiros fala especificamente de vestíveis Weike pareados. A compatibilidade/eligibilidade do GT3 MAX Call ainda precisa ser confirmada; o nome comercial e o uso do Wearfit Pro não bastam para assumir que pertence ao catálogo Weike.
+- Third-Party SDK List é a lista de dependências do próprio Wearfit Pro (analytics/publicidade/mapas/push etc.), não o SDK para um app parceiro controlar o wearable.
+- Prioridade definida: obter da WAKE UP/Weike documentação, SDK Android, autorização, exemplo e confirmação explícita para GT3 MAX Call, firmware V1.07/build SH0050.
+- Nenhuma API privada foi presumida ou simulada. Nada foi lido do armazenamento interno do Wearfit Pro; nenhuma credencial foi reutilizada; nenhuma escrita proprietária/OTA/reset foi executada.
+- Perfil BLE já adicionado continua como caminho local de compatibilidade/diagnóstico; bateria é candidata e semântica de sensores/controles continua não validada.
+- A implementação do SDK de parceiros não foi feita por ausência de SDK/contrato técnico verificável. CI e teste físico permanecem **não validados**.

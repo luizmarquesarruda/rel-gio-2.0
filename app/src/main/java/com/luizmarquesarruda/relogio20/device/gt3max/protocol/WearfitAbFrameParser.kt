@@ -7,12 +7,9 @@ import java.util.UUID
  * This is a compatibility candidate, not proof of the watch chipset/model.
  */
 internal object WearfitProtocolProfile {
-    val SERVICE_UUID: UUID =
-        UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e")
-    val RX_CHARACTERISTIC_UUID: UUID =
-        UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e")
-    val TX_CHARACTERISTIC_UUID: UUID =
-        UUID.fromString("6e400003-b5a3-f393-e0a9-e50e24dcca9e")
+    val SERVICE_UUID: UUID = Gt3MaxCallDeviceProfile.NUS_SERVICE_UUID
+    val RX_CHARACTERISTIC_UUID: UUID = Gt3MaxCallDeviceProfile.NUS_RX_CHARACTERISTIC_UUID
+    val TX_CHARACTERISTIC_UUID: UUID = Gt3MaxCallDeviceProfile.NUS_TX_CHARACTERISTIC_UUID
 
     const val PROFILE_ID = "NUS_AB_FRAME_COMPATIBLE_CANDIDATE"
 }
