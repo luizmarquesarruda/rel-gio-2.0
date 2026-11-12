@@ -984,3 +984,10 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - O gate Android CI foi simplificado para executar KtLint diretamente, sem gerar baseline automática. A baseline poderia registrar violações existentes e mascará-las; agora qualquer violação bloqueia a CI até ser corrigida no código.
 - A workflow auxiliar passou a reutilizar o Gradle Wrapper versionado e a publicar a metadata de dependências como artefato para revisão, em vez de incorporá-la automaticamente ao commit.
 - Testes Android, Lint, APK e validação física Galaxy A06 + GT3 MAX: não validados neste registro.
+
+
+## 2026-11-12 — Correção de estilo KtLint na MainActivity
+- A CI #538 (run 42902067166) encontrou duas violações de formatação em MainActivity.kt, linhas 2015 e 2213: expressões multiline não começavam em uma nova linha. O restante dos guardrails de privacidade e auditoria de manifestos/assinaturas executou com sucesso; lint, testes/builds e publicação do APK foram interrompidos pelo gate.
+- Ajustada apenas a quebra/indentação das duas concatenações de texto; nenhuma lógica GATT, BLE, persistência, privacidade ou interface funcional foi alterada. Commit c1ae0d1f611dc7e465fc2d098d523fc0582bafcf.
+- A branch-base da PR #20 também recebeu correção para criação tardia das configurações Gradle, commit 9546e706a93e8924da69b6c5e4bf9167f71ab24d. A nova CI desta PR precisa validar a combinação completa.
+- CI do novo SHA: **aguardando**. Não desativar KtLint nem afrouxar guardrails para obter resultado verde.
