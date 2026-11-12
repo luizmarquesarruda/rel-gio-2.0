@@ -94,3 +94,28 @@ A fila GATT, o parser candidato e o adaptador Health Connect de passos foram iso
 - Inventários GATT são salvos como descobertas. Notificações e leituras com HEX são guardadas somente enquanto uma sessão cronometrada, iniciada com confirmação, estiver ativa.
 - A biblioteca permite pesquisa e filtros por descobertas, leituras e testes. Nenhum dado é enviado à rede e nenhuma permissão adicional foi criada.
 - O arquivo é local ao aplicativo; a implementação não declara criptografia própria. Payloads HEX ainda podem conter dados sensíveis e são mantidos no sandbox privado do Android.
+
+| `domain/intelligence/DailyActivityObservation.kt` | Domain / Intelligence | Agregado diário de passos com proveniência e validação. |
+| `domain/intelligence/ActivityTrendEngine.kt` | Domain / Intelligence | Detecta variação entre duas janelas completas de sete dias; não acessa Android, BLE ou rede. |
+
+
+| Arquivo | Módulo | Responsabilidade |
+|---|---|---|
+| data/intelligence/DailyActivityHistoryRepository.kt | Data / Intelligence | Upsert idempotente por dia e origem; impede sobrescrita por amostra antiga e recusa arquivo corrompido ou schema futuro. |
+| data/intelligence/DailyActivityHistoryCodec.kt | Data / Intelligence | Codec binário schema 1 sem Android; valida origem, status, duplicidade, tamanho e limite de observações. |
+| data/intelligence/DailyActivityHistoryAtomicFile.kt | Data / Local storage | Persiste no sandbox privado usando AtomicFile. |
+| test/data/intelligence/DailyActivityHistoryRepositoryTest.kt | Testes / Data | Cobre proveniência, deduplicação, atualização, corrupção, schema futuro e falha de gravação. |
+
+O repositório ainda não está ligado ao Health Connect nem ao motor de tendências.
+
+
+## Inteligência local — Fase 3
+
+| Arquivo | Módulo | Responsabilidade |
+|---|---|---|
+| data/healthconnect/HealthConnectActivityHistorySync.kt | Data / Health Connect | Importa o agregado do dia local anterior completo para o histórico, preservando origem e validação. |
+| data/healthconnect/HealthConnectStepsRepository.kt | Data / Health Connect | Consulta intervalos completos de calendário e recusa dias atuais/incompletos. |
+| test/data/healthconnect/HealthConnectActivityHistorySyncTest.kt | Testes / Data | Verifica fuso, ausência de dados, dia incompleto, idempotência e falhas. |
+| test/data/healthconnect/HealthConnectDayWindowTest.kt | Testes / Data | Verifica limites de calendário e transições DST de 23/25 horas. |
+
+O motor de tendências ainda não consome automaticamente o histórico. Testes físicos Galaxy A06/GT3 MAX: **não validados**.

@@ -3,6 +3,8 @@
 Este índice separa decisões de arquitetura, integrações, evidências do dispositivo e governança.
 
 ## Visão geral e arquitetura
+- [IA local — Fase 2: histórico e persistência](IA-LOCAL-FASE-2.md)
+- [IA local — Fase 3: integração Health Connect](IA-LOCAL-FASE-3.md)
 - [Arquitetura](ARQUITETURA.md) — camadas, contratos e regras de integração.
 - [Mapa de módulos](MAPA-DE-MODULOS.md) — estado real, estrutura-alvo e dívida técnica.
 - [Navegação e layout](NAVEGACAO-E-LAYOUT.md) — áreas, telas secundárias, estados e limites visuais.

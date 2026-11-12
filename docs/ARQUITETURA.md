@@ -60,3 +60,29 @@ O contrato implementado está em [CONTRATO-METRICAS-SAUDE.md](CONTRATO-METRICAS-
 6. Extrair adaptadores Platform quando os recursos Android forem priorizados.
 
 Cada extração deve ser pequena, testada e reversível. Não misturar refatoração com engenharia reversa de protocolo.
+
+## Inteligência local (Fase 1)
+
+- `domain/intelligence/DailyActivityObservation.kt`: agregado diário com origem e estado de validação.
+- `domain/intelligence/ActivityTrendEngine.kt`: comparação determinística de 7 dias contra 7 dias, sem dependências Android/BLE.
+- O motor recusa mistura de fontes e exige validação física para amostras atribuídas ao GT3 MAX.
+- Escopo e limites: [IA-LOCAL-FASE-1.md](IA-LOCAL-FASE-1.md).
+
+
+## Inteligência local — Fase 2
+
+- data/intelligence/DailyActivityHistoryRepository.kt: repositório de observações diárias com chave única por dia/origem, idempotência e rejeição de atualização antiga.
+- data/intelligence/DailyActivityHistoryCodec.kt: formato binário versionado (schema 1), ordenação estável, validação de integridade, duplicidade, tamanho e contagem.
+- data/intelligence/DailyActivityHistoryAtomicFile.kt: armazenamento privado do app com escrita atômica e recuperação gerenciada por Android AtomicFile.
+- Arquivos corrompidos e schemas futuros permanecem somente leitura; capacidade de 4.000 observações sem descarte automático.
+- Escopo: IA-LOCAL-FASE-2.md.
+
+
+## Inteligência local — Fase 3: integração Health Connect
+
+- `data/healthconnect/HealthConnectActivityHistorySync.kt` importa somente o dia local anterior já completo.
+- O início e o fim do dia são calculados com `ZoneId`; dias com 23 ou 25 horas são tratados pelo calendário, não por duração fixa.
+- Agregado ausente permanece `null`; origem `HEALTH_CONNECT_AGGREGATE` e estado `UNVALIDATED` são preservados.
+- O agregado não é atribuído ao GT3 MAX, pois Health Connect pode combinar dados do telefone e de outras fontes autorizadas.
+- A sincronização ocorre no ciclo da Activity; não foi criado trabalho em segundo plano.
+- Escopo: [IA-LOCAL-FASE-3.md](IA-LOCAL-FASE-3.md).

@@ -711,3 +711,52 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Esta decisão substitui e cancela orientações anteriores de comparar sessões com Wearfit Pro, usar o aplicativo como referência operacional ou manter plano de substituição progressiva.
 - MAC, identificadores do dispositivo e dados pessoais/de saúde devem permanecer mascarados em relatórios.
 - Estado da execução: decisão registrada; remoção integral do código, arquivos e referências ainda exige revisão/compilação/CI no HEAD resultante. Não declarar a remoção como concluída antes dessa verificação.
+
+## 10/11/2026 — IA local, Fase 1: motor de tendência de atividade
+
+- Criado núcleo Domain de inteligência local, independente de Android, BLE, Health Connect, rede e LLM.
+- Implementado contrato de observação diária de passos com origem e estado de validação explícitos.
+- Implementado comparador determinístico de duas janelas consecutivas de sete dias, com limiar inicial de 25%.
+- Queda significativa produz insight de atenção; aumento significativo produz insight informativo; variação abaixo do limiar não gera alerta.
+- Janelas incompletas, duplicadas, com origens misturadas ou sem baseline são recusadas.
+- Observações atribuídas ao GT3 MAX exigem PHYSICALLY_VALIDATED; agregados Health Connect mantêm sua origem.
+- Testes unitários adicionados para tendência, origem, validação, janela incompleta, baseline zero e limiar.
+- Sem alteração BLE, UI, permissões, notificações, armazenamento, API externa ou dependências.
+- CI e validação física no Galaxy A06/GT3 MAX: **não validados nesta alteração**.
+
+
+## 2026-11-10 — IA local, Fase 2: histórico diário versionado
+
+- Criado repositório local para agregados diários de passos, mantendo origem e estado de validação.
+- Chave de deduplicação: dia + origem. Repetição idêntica é idempotente; observação mais antiga não substitui a mais recente; origens distintas permanecem separadas.
+- Persistência no arquivo privado do aplicativo via Android AtomicFile; codec binário independente do Android, schema 1.
+- Arquivo corrompido ou schema futuro é somente leitura; nenhuma migração destrutiva é executada.
+- Limite explícito: 4.000 observações e 1 MiB. Não há expurgo automático; ao atingir o limite, novas observações são recusadas para evitar perda silenciosa.
+- Testes unitários cobrem proveniência, idempotência, atualização, amostra antiga, origens separadas, corrupção, schema futuro e falha de gravação.
+- Ainda não conectado ao fluxo Health Connect nem à UI. Teste físico no Galaxy A06/GT3 MAX: **não validado**.
+
+
+## 2026-11-10 — IA local, Fase 3: integração Health Connect
+
+- Integrada a leitura agregada de passos do Health Connect ao histórico local versionado.
+- A sincronização importa somente o dia local anterior, depois de seu intervalo de calendário terminar; usa ZoneId do Android para calcular limites.
+- Dia atual/incompleto nunca é armazenado como observação diária completa.
+- Agregado ausente permanece null e não é convertido em zero.
+- Proveniência preservada como HEALTH_CONNECT_AGGREGATE e validação UNVALIDATED; nenhum dado é atribuído ao GT3 MAX.
+- Repetição com mesma data/origem/contagem/validação não regrava o arquivo, mesmo com timestamp de recebimento posterior.
+- Integração é disparada após leitura diária bem-sucedida, com no máximo uma tentativa por dia local e processo. Não adiciona serviço de segundo plano.
+- Testes cobrem seleção de dia/fuso, ausência de agregado, dia incompleto, idempotência, falhas e transições DST.
+- CI da Fase 3 e teste físico Galaxy A06/GT3 MAX: **aguardando validação**.
+
+
+## 2026-11-12 — Pesquisa de IA aberta e separação da IA generativa
+- Confirmada a separação entre o motor local determinístico das Fases 1–3 e um LLM opcional. Qwen Code (Apache-2.0) fica como ferramenta de desenvolvimento com provedores locais; Qwen3-0.6B-GGUF Q8_0 (Apache-2.0, cerca de 639 MB) e llama.cpp são candidatos a protótipo offline; LiteRT-LM é alternativa Kotlin condicionada a modelo compatível.
+- O LLM não participa de BLE/GATT, fila de leitura, captura, Health Connect ou execução em segundo plano. Só poderá explicar insight já calculado e manter origem/proveniência; não faz diagnóstico clínico nem inventa dado GT3 MAX.
+- Criado docs/PLANO-IA-ABERTA-2026-11-12.md com licenças, links e gate de benchmark. Nenhum runtime, peso ou nova permissão adicionado.
+- Estado conhecido antes desta atualização: PR #15 CI #490 passou em 7f207b2522d5e8cede474be98e9c719af1468a27; PR #23 CI #520 passou em 2fd6696a78d668d1c7a996472b88da7d0f62a6d6. PR #20 e PR #22 tinham CI vermelhas; correções foram aplicadas em commits 9546e706a93e8924da69b6c5e4bf9167f71ab24d e c1ae0d1f611dc7e465fc2d098d523fc0582bafcf, respectivamente, e ainda aguardam CI. O novo registro documental também exigirá nova CI para este head.
+- Independência total do Wearfit Pro permanece obrigatória. Teste físico A06/GT3 MAX: **não validado**.
+
+## 2026-11-12 — Modelo aberto para desenvolvimento e modelo local no dispositivo
+- A pesquisa foi refinada: Qwen3-0.6B não é o modelo recomendado para gerar/alterar código. Para o computador de desenvolvimento, recomendar Qwen Code com Qwen2.5-Coder-7B-Instruct via Ollama/LM Studio local; documentação do Qwen Code confirma uso de provedores locais OpenAI-compatible, e a ficha do modelo confirma licença Apache-2.0.
+- Separar agente que auxilia a programar (máquina de desenvolvimento) de inferência dentro do app (modelo pequeno, opcional). Sem envio a serviços externos, sem acesso a .env/secrets/dados pessoais e sem merge/deploy automático.
+- Seção de assistente de desenvolvimento adicionada a docs/PLANO-IA-ABERTA-2026-11-12.md. Não foi adicionada dependência ou IA executável nos aplicativos.
