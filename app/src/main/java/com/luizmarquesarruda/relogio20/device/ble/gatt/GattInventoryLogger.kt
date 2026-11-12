@@ -3,7 +3,7 @@ package com.luizmarquesarruda.relogio20.device.ble.gatt
 data class GattDescriptorInventoryRow(
     val characteristicUuid: String,
     val descriptorUuid: String,
-    val instanceId: Int
+    val instanceId: Int,
 )
 
 internal object GattInventoryLogger {
@@ -12,7 +12,7 @@ internal object GattInventoryLogger {
             Triple(
                 it.characteristicUuid.trim().lowercase(),
                 it.descriptorUuid.trim().lowercase(),
-                it.instanceId
+                it.instanceId,
             )
         }
 }

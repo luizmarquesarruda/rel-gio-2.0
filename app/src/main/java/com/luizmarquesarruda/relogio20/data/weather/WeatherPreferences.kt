@@ -8,17 +8,21 @@ import org.json.JSONObject
  * Local cache only. City and forecast values stay in app-private preferences;
  * no account, device identifier, or health record is sent to the weather provider.
  */
-internal class WeatherPreferences(context: Context) {
-    private val preferences = context.applicationContext
-        .getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+internal class WeatherPreferences(
+    context: Context,
+) {
+    private val preferences =
+        context.applicationContext
+            .getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
 
     fun saveLocation(location: WeatherLocation) {
-        val value = JSONObject()
-            .put("name", location.name)
-            .put("admin1", location.admin1 ?: JSONObject.NULL)
-            .put("country", location.country)
-            .put("latitude", location.latitude)
-            .put("longitude", location.longitude)
+        val value =
+            JSONObject()
+                .put("name", location.name)
+                .put("admin1", location.admin1 ?: JSONObject.NULL)
+                .put("country", location.country)
+                .put("latitude", location.latitude)
+                .put("longitude", location.longitude)
         preferences.edit { putString(KEY_LOCATION, value.toString()) }
     }
 
@@ -30,40 +34,43 @@ internal class WeatherPreferences(context: Context) {
             val longitude = value.optDouble("longitude", Double.NaN)
             if (!latitude.isFinite() || !longitude.isFinite() ||
                 latitude !in -90.0..90.0 || longitude !in -180.0..180.0
-            ) return@runCatching null
+            ) {
+                return@runCatching null
+            }
 
             WeatherLocation(
                 name = value.optString("name", "").takeIf { it.isNotBlank() } ?: return@runCatching null,
                 admin1 = if (value.isNull("admin1")) null else value.optString("admin1").takeIf { it.isNotBlank() },
                 country = value.optString("country", ""),
                 latitude = latitude,
-                longitude = longitude
+                longitude = longitude,
             )
         }.getOrNull()
     }
 
     fun saveSnapshot(snapshot: WeatherSnapshot) {
-        val value = JSONObject()
-            .put("locationName", snapshot.locationName)
-            .put("latitude", snapshot.latitude)
-            .put("longitude", snapshot.longitude)
-            .put("timeZone", snapshot.timeZone)
-            .put("observedAt", snapshot.observedAt)
-            .put("fetchedAtEpochMillis", snapshot.fetchedAtEpochMillis)
-            .putNullable("temperatureC", snapshot.temperatureC)
-            .putNullable("apparentTemperatureC", snapshot.apparentTemperatureC)
-            .putNullable("humidityPercent", snapshot.humidityPercent)
-            .putNullable("precipitationMm", snapshot.precipitationMm)
-            .putNullable("precipitationProbabilityNextHourPercent", snapshot.precipitationProbabilityNextHourPercent)
-            .putNullable("weatherCode", snapshot.weatherCode)
-            .putNullable("windSpeedKmh", snapshot.windSpeedKmh)
-            .putNullable("windDirectionDegrees", snapshot.windDirectionDegrees)
-            .putNullable("windGustsKmh", snapshot.windGustsKmh)
-            .putNullable("todayMinimumC", snapshot.todayMinimumC)
-            .putNullable("todayMaximumC", snapshot.todayMaximumC)
-            .putNullable("todayPrecipitationProbabilityPercent", snapshot.todayPrecipitationProbabilityPercent)
-            .put("sunrise", snapshot.sunrise ?: JSONObject.NULL)
-            .put("sunset", snapshot.sunset ?: JSONObject.NULL)
+        val value =
+            JSONObject()
+                .put("locationName", snapshot.locationName)
+                .put("latitude", snapshot.latitude)
+                .put("longitude", snapshot.longitude)
+                .put("timeZone", snapshot.timeZone)
+                .put("observedAt", snapshot.observedAt)
+                .put("fetchedAtEpochMillis", snapshot.fetchedAtEpochMillis)
+                .putNullable("temperatureC", snapshot.temperatureC)
+                .putNullable("apparentTemperatureC", snapshot.apparentTemperatureC)
+                .putNullable("humidityPercent", snapshot.humidityPercent)
+                .putNullable("precipitationMm", snapshot.precipitationMm)
+                .putNullable("precipitationProbabilityNextHourPercent", snapshot.precipitationProbabilityNextHourPercent)
+                .putNullable("weatherCode", snapshot.weatherCode)
+                .putNullable("windSpeedKmh", snapshot.windSpeedKmh)
+                .putNullable("windDirectionDegrees", snapshot.windDirectionDegrees)
+                .putNullable("windGustsKmh", snapshot.windGustsKmh)
+                .putNullable("todayMinimumC", snapshot.todayMinimumC)
+                .putNullable("todayMaximumC", snapshot.todayMaximumC)
+                .putNullable("todayPrecipitationProbabilityPercent", snapshot.todayPrecipitationProbabilityPercent)
+                .put("sunrise", snapshot.sunrise ?: JSONObject.NULL)
+                .put("sunset", snapshot.sunset ?: JSONObject.NULL)
         preferences.edit { putString(KEY_SNAPSHOT, value.toString()) }
     }
 
@@ -97,13 +104,15 @@ internal class WeatherPreferences(context: Context) {
                 todayMaximumC = value.nullableDouble("todayMaximumC"),
                 todayPrecipitationProbabilityPercent = value.nullableInt("todayPrecipitationProbabilityPercent"),
                 sunrise = if (value.isNull("sunrise")) null else value.optString("sunrise").takeIf { it.isNotBlank() },
-                sunset = if (value.isNull("sunset")) null else value.optString("sunset").takeIf { it.isNotBlank() }
+                sunset = if (value.isNull("sunset")) null else value.optString("sunset").takeIf { it.isNotBlank() },
             )
         }.getOrNull()
     }
 
-    private fun JSONObject.putNullable(key: String, value: Number?): JSONObject =
-        put(key, value ?: JSONObject.NULL)
+    private fun JSONObject.putNullable(
+        key: String,
+        value: Number?,
+    ): JSONObject = put(key, value ?: JSONObject.NULL)
 
     private fun JSONObject.nullableDouble(key: String): Double? {
         if (!has(key) || isNull(key)) return null

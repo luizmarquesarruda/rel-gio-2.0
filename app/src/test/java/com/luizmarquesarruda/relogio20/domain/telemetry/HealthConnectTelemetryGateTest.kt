@@ -14,10 +14,14 @@ class HealthConnectTelemetryGateTest {
     fun candidateCannotBeWritten() {
         var writes = 0
         val gate = HealthConnectTelemetryGate(ValidatedTelemetrySink { writes += 1 })
-        val sample = TelemetrySample(
-            byteArrayOf(0x01), 100L, TrustLevel.CANDIDATO, "ab-parser-0",
-            Provenance("GT3_MAX_NUS_TX")
-        )
+        val sample =
+            TelemetrySample(
+                byteArrayOf(0x01),
+                100L,
+                TrustLevel.CANDIDATO,
+                "ab-parser-0",
+                Provenance("GT3_MAX_NUS_TX"),
+            )
 
         assertThrows(IllegalArgumentException::class.java) {
             runBlocking { gate.writeIfEligible(sample) }
@@ -29,10 +33,14 @@ class HealthConnectTelemetryGateTest {
     fun observedCannotBeWritten() {
         var writes = 0
         val gate = HealthConnectTelemetryGate(ValidatedTelemetrySink { writes += 1 })
-        val sample = TelemetrySample(
-            byteArrayOf(0x00), 100L, TrustLevel.OBSERVADO, "none",
-            Provenance("GATT_READ")
-        )
+        val sample =
+            TelemetrySample(
+                byteArrayOf(0x00),
+                100L,
+                TrustLevel.OBSERVADO,
+                "none",
+                Provenance("GATT_READ"),
+            )
 
         assertThrows(IllegalArgumentException::class.java) {
             runBlocking { gate.writeIfEligible(sample) }
@@ -43,10 +51,14 @@ class HealthConnectTelemetryGateTest {
     @Test
     fun validatedSampleIsWrittenAsDefensiveCopy() {
         val raw = byteArrayOf(0x02, 0x03)
-        val sample = TelemetrySample(
-            raw, 200L, TrustLevel.VALIDADO, "sig-parser-1",
-            Provenance("GATT_READ")
-        )
+        val sample =
+            TelemetrySample(
+                raw,
+                200L,
+                TrustLevel.VALIDADO,
+                "sig-parser-1",
+                Provenance("GATT_READ"),
+            )
         var written: TelemetrySample? = null
         val gate = HealthConnectTelemetryGate(ValidatedTelemetrySink { written = it })
 

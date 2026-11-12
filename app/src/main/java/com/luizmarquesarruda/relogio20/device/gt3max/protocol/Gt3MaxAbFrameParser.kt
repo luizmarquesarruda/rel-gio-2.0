@@ -18,7 +18,7 @@ internal data class Gt3MaxAbFrame(
     val declaredLength: Int,
     val command: Int,
     val response: Int,
-    val payload: ByteArray
+    val payload: ByteArray,
 ) {
     /**
      * 0x91/0x80 with a final value in 0..100 matches the published DT78
@@ -56,7 +56,7 @@ internal object Gt3MaxAbFrameParser {
             declaredLength = declaredLength,
             command = bytes[4].toInt() and 0xFF,
             response = bytes[5].toInt() and 0xFF,
-            payload = bytes.copyOfRange(6, bytes.size)
+            payload = bytes.copyOfRange(6, bytes.size),
         )
     }
 }

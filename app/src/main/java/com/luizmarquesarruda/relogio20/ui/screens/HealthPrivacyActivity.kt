@@ -1,8 +1,8 @@
 package com.luizmarquesarruda.relogio20.ui.screens
 
 import android.app.Activity
-import android.os.Bundle
 import android.graphics.Typeface
+import android.os.Bundle
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -15,7 +15,8 @@ class HealthPrivacyActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val content = """
+        val content =
+            """
             DADOS DE SAÚDE E PRIVACIDADE
 
             FINALIDADE
@@ -41,31 +42,33 @@ class HealthPrivacyActivity : Activity() {
 
             LIMITES
             O Relógio 2.0 é uma ferramenta de atividade e bem-estar, não um dispositivo médico. Leituras de relógios não substituem avaliação clínica nem equipamentos médicos validados. Não use estimativas de pressão, SpO₂ ou frequência cardíaca para diagnóstico.
-        """.trimIndent()
+            """.trimIndent()
 
-        val title = TextView(this).apply {
-            text = "Dados de saúde e privacidade"
-            textSize = 22f
-            typeface = Typeface.DEFAULT_BOLD
-            setTextColor(0xFFF8FAFC.toInt())
-            setPadding(dp(18), dp(18), dp(18), dp(6))
-        }
-        val body = TextView(this).apply {
-            text = content
-            textSize = 15f
-            setTextColor(0xFF9FB4CF.toInt())
-            setPadding(dp(18), dp(18), dp(18), dp(24))
-            setLineSpacing(dp(4).toFloat(), 1.0f)
-        }
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setBackgroundColor(0xFF07111F.toInt())
-            addView(title)
-            addView(body)
-        }
+        val title =
+            TextView(this).apply {
+                text = "Dados de saúde e privacidade"
+                textSize = 22f
+                typeface = Typeface.DEFAULT_BOLD
+                setTextColor(0xFFF8FAFC.toInt())
+                setPadding(dp(18), dp(18), dp(18), dp(6))
+            }
+        val body =
+            TextView(this).apply {
+                text = content
+                textSize = 15f
+                setTextColor(0xFF9FB4CF.toInt())
+                setPadding(dp(18), dp(18), dp(18), dp(24))
+                setLineSpacing(dp(4).toFloat(), 1.0f)
+            }
+        val root =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setBackgroundColor(0xFF07111F.toInt())
+                addView(title)
+                addView(body)
+            }
         setContentView(ScrollView(this).apply { addView(root) })
     }
 
-    private fun dp(value: Int): Int =
-        (value * resources.displayMetrics.density).toInt()
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 }

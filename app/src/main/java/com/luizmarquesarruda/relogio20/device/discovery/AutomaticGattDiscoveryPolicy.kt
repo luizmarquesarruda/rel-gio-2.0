@@ -5,7 +5,6 @@ internal object AutomaticGattDiscoveryPolicy {
     fun shouldStart(
         consentEnabled: Boolean,
         fullDeviceFingerprintMatched: Boolean,
-        alreadyStartedForConnection: Boolean
-    ): Boolean =
-        consentEnabled && fullDeviceFingerprintMatched && !alreadyStartedForConnection
+        alreadyStartedForConnection: Boolean,
+    ): Boolean = consentEnabled && fullDeviceFingerprintMatched && !alreadyStartedForConnection
 }

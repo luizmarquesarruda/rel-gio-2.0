@@ -9,6 +9,6 @@ internal object GattDiscoveryRecoveryPolicy {
         connectionIsCurrent: Boolean,
         connected: Boolean,
         disconnecting: Boolean,
-        callbackReceived: Boolean
+        callbackReceived: Boolean,
     ): Boolean = connectionIsCurrent && connected && !disconnecting && !callbackReceived
 }

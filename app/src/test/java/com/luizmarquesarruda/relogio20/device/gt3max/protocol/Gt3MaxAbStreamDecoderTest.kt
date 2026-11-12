@@ -5,10 +5,17 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class Gt3MaxAbStreamDecoderTest {
-    private fun batteryFrame(value: Int): ByteArray = byteArrayOf(
-        0xAB.toByte(), 0x00, 0x05, 0xFF.toByte(),
-        0x91.toByte(), 0x80.toByte(), 0x00, value.toByte()
-    )
+    private fun batteryFrame(value: Int): ByteArray =
+        byteArrayOf(
+            0xAB.toByte(),
+            0x00,
+            0x05,
+            0xFF.toByte(),
+            0x91.toByte(),
+            0x80.toByte(),
+            0x00,
+            value.toByte(),
+        )
 
     @Test
     fun emitsFrameWhenNotificationContainsCompleteFrame() {

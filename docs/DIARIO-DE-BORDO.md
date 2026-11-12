@@ -1,3 +1,12 @@
+## 10/11/2026 — Correção das duas violações bloqueantes do KtLint
+
+- A CI `42896080650` executou KtLint sem baseline e identificou somente duas violações de comprimento de linha em `MainActivity.kt` (linhas 2015 e 2212).
+- As duas mensagens de diagnóstico GATT foram divididas em concatenações de strings, sem alterar conteúdo, ordem dos eventos, callbacks, persistência ou comportamento BLE.
+- Revisão estática do diff: alteração restrita aos argumentos `detail` dos dois registros; nenhuma permissão, comando GATT, escrita de característica, política de privacidade ou fluxo de conexão foi modificado.
+- O KtLint anterior não apontou outras violações no source set principal. A validação final depende da nova CI, que deve executar KtLint sem baseline, Android Lint, testes, builds das variantes, guardrails e auditoria de APK.
+- Gradle 8.13 emite aviso de descontinuação futura em relação a Kotlin 2.5.0; não foi atualizado nesta correção porque o workflow declara AGP 8.13.2 e associa explicitamente a toolchain ao Gradle 8.13. Revisar atualização coordenada de AGP/Kotlin/Gradle em mudança própria.
+- CI disparada automaticamente pelo novo commit da PR #22. APK, testes completos e validação física do Galaxy A06 / GT3 MAX: **aguardando validação**.
+
 ## 06/11/2026 — Correção da configuração Kotlin DSL das dependências por variante
 
 - A CI #443 identificou que os acessores Kotlin DSL `diagnosticDebugImplementation` e `diagnosticBenchmarkImplementation` não estavam disponíveis para os flavors/build types criados dinamicamente.
@@ -952,3 +961,39 @@ A versão `0.2.0-alpha.1` é uma versão de desenvolvimento proposta/registrada 
 - Endereço manual opcional, laboratório, captura, inventário GATT, integração Health Connect e diagnóstico foram agrupados em um painel recolhido por padrão: “Ferramentas técnicas e integração”.
 - A mudança é apenas de hierarquia visual. Os controles e métodos existentes continuam presentes e acessíveis; nenhuma operação BLE foi removida.
 - A validação de build continua bloqueada por uma configuração Gradle herdada da branch-base: `app/build.gradle.kts:89` declara `diagnosticDebugImplementation`, configuração que o Gradle 9.5 não encontra durante a configuração do projeto. Os testes Python de contrato passaram; Kotlin/Android não chegaram a compilar nesta execução.
+
+
+## 09/11/2026 — Correção de segurança BLE, privacidade e persistência
+
+- Removida a ação de sincronização CTS 0x1805/0x2A2B e o caminho de escrita em característica da interface principal. A política de acesso agora nega toda escrita em características, inclusive com consentimento explícito. A escrita do descritor CCCD 0x2902 permanece restrita à ativação/desativação de NOTIFY/INDICATE.
+- O relatório TXT passou a omitir nome/endereço do dispositivo, conteúdo livre dos logs, valores decodificados de saúde e payload HEX. São exportadas apenas informações gerais e contagens de eventos.
+- Exportação e flush de histórico foram movidos para Dispatchers.IO. Início/finalização de sessões passaram a usar o escritor serial assíncrono; onDestroy e callback de interrupção não aguardam flush síncrono.
+- Amostras recebidas fora de uma sessão de captura consentida são ignoradas como skip, sem incrementar failedWrites ou pressionar desnecessariamente a fila.
+- Desconexão espontânea durante descoberta GATT registra a interrupção antes de cancelar o watchdog.
+- A CI de teste TDD reproduziu as falhas dos contratos antes da implementação. A validação final de Kotlin, Android Lint, build e APK ainda depende da próxima execução da CI. Teste físico Galaxy A06 + GT3 MAX: **não validado**.
+- Sem SQLite, sem mudança de schema e sem comandos de escrita ao relógio.
+
+
+## 10/11/2026 — Ajustes de contratos e invalidação GATT
+
+- A CI da PR #22 revelou duas asserções Python desatualizadas: a política de escrita passou a negar com expressão Boolean sempre falsa, e o armazenamento passou a distinguir ausência de sessão (null) de falha de persistência (false). Os testes foram ajustados para verificar os contratos sem exigir uma forma sintática antiga.
+- Adicionado teste de contrato para onServiceChanged: o watchdog é parado, a lista de características ativas é invalidada e as filas/notificações pendentes são limpas antes da redescoberta de serviços.
+- A verificação da política BLE continua fail-closed: allowWrite vazio, canWrite sempre falso e sem writeCharacteristic na aplicação.
+- O Gradle Wrapper 8.13 foi incorporado com checksum da distribuição e verificação do JAR. A metadata SHA-256 ainda depende da execução completa do bootstrap de dependências e será considerada pendente até gradle/verification-metadata.xml estar versionado e validado.
+- A primeira repetição da CI mostrou que a função `recordPayload` usa `synchronized(STORE_LOCK)` em expressão multilinha. A asserção foi refinada para validar o tipo nullable, o lock e o retorno `null` sem exigir que tudo esteja na mesma linha.
+- O gate Android CI foi simplificado para executar KtLint diretamente, sem gerar baseline automática. A baseline poderia registrar violações existentes e mascará-las; agora qualquer violação bloqueia a CI até ser corrigida no código.
+- A workflow auxiliar passou a reutilizar o Gradle Wrapper versionado e a publicar a metadata de dependências como artefato para revisão, em vez de incorporá-la automaticamente ao commit.
+- Testes Android, Lint, APK e validação física Galaxy A06 + GT3 MAX: não validados neste registro.
+
+
+## 2026-11-12 — Correção de estilo KtLint na MainActivity
+- A CI #538 (run 42902067166) encontrou duas violações de formatação em MainActivity.kt, linhas 2015 e 2213: expressões multiline não começavam em uma nova linha. O restante dos guardrails de privacidade e auditoria de manifestos/assinaturas executou com sucesso; lint, testes/builds e publicação do APK foram interrompidos pelo gate.
+- Ajustada apenas a quebra/indentação das duas concatenações de texto; nenhuma lógica GATT, BLE, persistência, privacidade ou interface funcional foi alterada. Commit c1ae0d1f611dc7e465fc2d098d523fc0582bafcf.
+- A branch-base da PR #20 também recebeu correção para criação tardia das configurações Gradle, commit 9546e706a93e8924da69b6c5e4bf9167f71ab24d. A nova CI desta PR precisa validar a combinação completa.
+- CI do novo SHA: **aguardando**. Não desativar KtLint nem afrouxar guardrails para obter resultado verde.
+
+
+## 2026-11-12 — Ajuste final de indentação da expressão multiline GATT
+- A CI #543 ainda marcou o gate KtLint como falho. A inspeção do trecho atualizado mostrou que a segunda expressão tinha sido quebrada em linha, mas a indentação do primeiro operando ainda estava no nível errado.
+- Corrigida a indentação do operando e da continuação em MainActivity.kt, sem alterar lógica, texto, callback, GATT ou permissões. Commit c55483d73036c920800609b93292d01c173b020e.
+- O resultado desta correção depende de nova CI no HEAD atualizado; não considerar KtLint aprovado até a execução correspondente concluir.

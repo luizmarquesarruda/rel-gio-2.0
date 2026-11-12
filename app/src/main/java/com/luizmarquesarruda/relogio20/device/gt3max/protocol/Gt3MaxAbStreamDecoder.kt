@@ -7,7 +7,7 @@ package com.luizmarquesarruda.relogio20.device.gt3max.protocol
  */
 internal class Gt3MaxAbStreamDecoder(
     private val maxDeclaredLength: Int = 512,
-    private val maxBufferBytes: Int = 1_024
+    private val maxBufferBytes: Int = 1_024,
 ) {
     private val buffer = ArrayList<Byte>()
 

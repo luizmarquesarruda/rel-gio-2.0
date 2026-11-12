@@ -13,19 +13,21 @@ class RelogioApplication : Application() {
         if (!BuildConfig.DEBUG) return
 
         StrictMode.setThreadPolicy(
-            StrictMode.ThreadPolicy.Builder()
+            StrictMode.ThreadPolicy
+                .Builder()
                 .detectDiskReads()
                 .detectDiskWrites()
                 .detectNetwork()
                 .penaltyLog()
-                .build()
+                .build(),
         )
         StrictMode.setVmPolicy(
-            StrictMode.VmPolicy.Builder()
+            StrictMode.VmPolicy
+                .Builder()
                 .detectLeakedClosableObjects()
                 .detectLeakedRegistrationObjects()
                 .penaltyLog()
-                .build()
+                .build(),
         )
     }
 }

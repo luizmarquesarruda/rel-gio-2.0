@@ -2,7 +2,7 @@ package com.luizmarquesarruda.relogio20.device.discovery
 
 internal data class GattDescriptorRecord(
     val uuid: String,
-    val instanceId: Int
+    val instanceId: Int,
 )
 
 internal data class GattCharacteristicRecord(
@@ -12,12 +12,12 @@ internal data class GattCharacteristicRecord(
     val descriptorInstances: List<GattDescriptorRecord> =
         descriptorUuids.sorted().mapIndexed { index, descriptorUuid ->
             GattDescriptorRecord(descriptorUuid, index)
-        }
+        },
 )
 
 internal data class GattServiceRecord(
     val uuid: String,
-    val characteristics: List<GattCharacteristicRecord>
+    val characteristics: List<GattCharacteristicRecord>,
 )
 
 internal data class FeatureFinding(
@@ -27,7 +27,7 @@ internal data class FeatureFinding(
     val status: String,
     val detail: String,
     val evidence: String,
-    val observationCount: Int = 0
+    val observationCount: Int = 0,
 )
 
 internal data class CharacteristicTraffic(
@@ -38,7 +38,7 @@ internal data class CharacteristicTraffic(
     val lastPayloadBytes: Int,
     val lastFrameCommand: Int? = null,
     val lastFrameResponse: Int? = null,
-    val batteryCandidatePercent: Int? = null
+    val batteryCandidatePercent: Int? = null,
 )
 
 internal data class DiscoverySnapshot(
@@ -47,7 +47,7 @@ internal data class DiscoverySnapshot(
     val serviceCount: Int,
     val characteristicCount: Int,
     val findings: List<FeatureFinding>,
-    val traffic: List<CharacteristicTraffic>
+    val traffic: List<CharacteristicTraffic>,
 )
 
 /**
@@ -62,30 +62,31 @@ internal object FeatureDiscoveryEngine {
         val serviceUuid: String,
         val characteristicUuid: String?,
         val category: String,
-        val title: String
+        val title: String,
     )
 
-    private val standardProfiles = listOf(
-        StandardProfile("180d", "2a37", "Saúde", "Perfil padrão de frequência cardíaca"),
-        StandardProfile("180f", "2a19", "Dispositivo", "Perfil padrão de bateria"),
-        StandardProfile("1805", "2a2b", "Dispositivo", "Sincronização de hora Bluetooth (Current Time Service)"),
-        StandardProfile("1822", "2a5e", "Saúde", "Perfil padrão de oximetria spot-check"),
-        StandardProfile("1822", "2a5f", "Saúde", "Perfil padrão de oximetria contínua"),
-        StandardProfile("1822", "2a60", "Saúde", "Recursos do perfil de oximetria"),
-        StandardProfile("1810", "2a35", "Saúde", "Medição padronizada de pressão arterial"),
-        StandardProfile("1810", "2a36", "Saúde", "Pressão intermediária do manguito"),
-        StandardProfile("1810", "2a49", "Saúde", "Recursos do perfil de pressão arterial"),
-        StandardProfile("181a", "2a6d", "Ambiente", "Pressão ambiental"),
-        StandardProfile("181a", "2a6e", "Ambiente", "Temperatura ambiente"),
-        StandardProfile("181a", "2a6f", "Ambiente", "Umidade"),
-        StandardProfile("181b", "2a9c", "Saúde", "Perfil padrão de composição corporal"),
-        StandardProfile("1814", "2a53", "Atividade", "Perfil padrão de velocidade e cadência de corrida"),
-        StandardProfile("1814", "2a54", "Atividade", "Recursos de corrida"),
-        StandardProfile("1816", "2a5b", "Atividade", "Perfil padrão de velocidade e cadência de ciclismo"),
-        StandardProfile("1816", "2a5c", "Atividade", "Recursos de ciclismo"),
-        StandardProfile("1809", "2a1c", "Saúde", "Perfil padrão de termômetro"),
-        StandardProfile("180a", null, "Dispositivo", "Serviço padrão de informações do dispositivo")
-    )
+    private val standardProfiles =
+        listOf(
+            StandardProfile("180d", "2a37", "Saúde", "Perfil padrão de frequência cardíaca"),
+            StandardProfile("180f", "2a19", "Dispositivo", "Perfil padrão de bateria"),
+            StandardProfile("1805", "2a2b", "Dispositivo", "Sincronização de hora Bluetooth (Current Time Service)"),
+            StandardProfile("1822", "2a5e", "Saúde", "Perfil padrão de oximetria spot-check"),
+            StandardProfile("1822", "2a5f", "Saúde", "Perfil padrão de oximetria contínua"),
+            StandardProfile("1822", "2a60", "Saúde", "Recursos do perfil de oximetria"),
+            StandardProfile("1810", "2a35", "Saúde", "Medição padronizada de pressão arterial"),
+            StandardProfile("1810", "2a36", "Saúde", "Pressão intermediária do manguito"),
+            StandardProfile("1810", "2a49", "Saúde", "Recursos do perfil de pressão arterial"),
+            StandardProfile("181a", "2a6d", "Ambiente", "Pressão ambiental"),
+            StandardProfile("181a", "2a6e", "Ambiente", "Temperatura ambiente"),
+            StandardProfile("181a", "2a6f", "Ambiente", "Umidade"),
+            StandardProfile("181b", "2a9c", "Saúde", "Perfil padrão de composição corporal"),
+            StandardProfile("1814", "2a53", "Atividade", "Perfil padrão de velocidade e cadência de corrida"),
+            StandardProfile("1814", "2a54", "Atividade", "Recursos de corrida"),
+            StandardProfile("1816", "2a5b", "Atividade", "Perfil padrão de velocidade e cadência de ciclismo"),
+            StandardProfile("1816", "2a5c", "Atividade", "Recursos de ciclismo"),
+            StandardProfile("1809", "2a1c", "Saúde", "Perfil padrão de termômetro"),
+            StandardProfile("180a", null, "Dispositivo", "Serviço padrão de informações do dispositivo"),
+        )
 
     private val standardServiceIds = standardProfiles.map { it.serviceUuid }.toSet() + setOf("1800", "1801")
     private const val NUS_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
@@ -95,7 +96,7 @@ internal object FeatureDiscoveryEngine {
     fun captureInventory(
         services: List<GattServiceRecord>,
         capturedAtMillis: Long,
-        previous: DiscoverySnapshot? = null
+        previous: DiscoverySnapshot? = null,
     ): DiscoverySnapshot {
         val traffic = previous?.traffic.orEmpty()
         val trafficByKey = traffic.associateBy { trafficKey(it.serviceUuid, it.characteristicUuid) }
@@ -107,30 +108,39 @@ internal object FeatureDiscoveryEngine {
         // Structural signature contains only GATT identifiers and capabilities;
         // it is not a firmware-binary hash or proof of device identity.
         val signature = GattProfileSignature.calculate(services)
-        val previousSignatureHash = previous?.findings
-            ?.firstOrNull { it.id == "firmware:gatt-signature" }
-            ?.evidence
-            ?.substringAfter("sha256=", "")
-            ?.substringBefore(";")
+        val previousSignatureHash =
+            previous
+                ?.findings
+                ?.firstOrNull { it.id == "firmware:gatt-signature" }
+                ?.evidence
+                ?.substringAfter("sha256=", "")
+                ?.substringBefore(";")
         val signatureChange = GattProfileSignature.compare(signature, previousSignatureHash)
-        val signatureStatus = when (signatureChange) {
-            GattProfileSignature.Change.FIRST_CAPTURE -> "BASELINE GATT REGISTRADO"
-            GattProfileSignature.Change.UNCHANGED -> "ASSINATURA GATT INALTERADA"
-            GattProfileSignature.Change.CHANGED -> "ASSINATURA GATT ALTERADA • REVISAR"
-        }
-        val signatureDetail = when (signatureChange) {
-            GattProfileSignature.Change.FIRST_CAPTURE ->
-                "Primeiro inventário estrutural registrado: " + serviceCount + " serviços e " +
-                    characteristicCount + " características. SHA-256=" + signature.sha256 + "."
-            GattProfileSignature.Change.UNCHANGED ->
-                "A estrutura GATT coincide com o último inventário salvo. " + serviceCount +
-                    " serviços e " + characteristicCount + " características. SHA-256=" +
-                    signature.sha256 + "."
-            GattProfileSignature.Change.CHANGED ->
-                "A estrutura GATT difere do último inventário salvo. Pode indicar revisão de " +
-                    "firmware, variação de serviços ou outra sessão/dispositivo; não prova atualização. " +
-                    "SHA-256 atual=" + signature.sha256 + "."
-        }
+        val signatureStatus =
+            when (signatureChange) {
+                GattProfileSignature.Change.FIRST_CAPTURE -> "BASELINE GATT REGISTRADO"
+                GattProfileSignature.Change.UNCHANGED -> "ASSINATURA GATT INALTERADA"
+                GattProfileSignature.Change.CHANGED -> "ASSINATURA GATT ALTERADA • REVISAR"
+            }
+        val signatureDetail =
+            when (signatureChange) {
+                GattProfileSignature.Change.FIRST_CAPTURE -> {
+                    "Primeiro inventário estrutural registrado: " + serviceCount + " serviços e " +
+                        characteristicCount + " características. SHA-256=" + signature.sha256 + "."
+                }
+
+                GattProfileSignature.Change.UNCHANGED -> {
+                    "A estrutura GATT coincide com o último inventário salvo. " + serviceCount +
+                        " serviços e " + characteristicCount + " características. SHA-256=" +
+                        signature.sha256 + "."
+                }
+
+                GattProfileSignature.Change.CHANGED -> {
+                    "A estrutura GATT difere do último inventário salvo. Pode indicar revisão de " +
+                        "firmware, variação de serviços ou outra sessão/dispositivo; não prova atualização. " +
+                        "SHA-256 atual=" + signature.sha256 + "."
+                }
+            }
         findings.add(
             FeatureFinding(
                 id = "firmware:gatt-signature",
@@ -138,10 +148,11 @@ internal object FeatureDiscoveryEngine {
                 title = "Assinatura estrutural GATT",
                 status = signatureStatus,
                 detail = signatureDetail,
-                evidence = "sha256=" + signature.sha256 +
-                    "; escopo=UUIDs de serviços/características/descritores e propriedades GATT; " +
-                    "sem MAC, serial, valores do fabricante ou payloads."
-            )
+                evidence =
+                    "sha256=" + signature.sha256 +
+                        "; escopo=UUIDs de serviços/características/descritores e propriedades GATT; " +
+                        "sem MAC, serial, valores do fabricante ou payloads.",
+            ),
         )
 
         GattCapabilityMatrix.evaluate(services, traffic).forEach { assessment ->
@@ -153,43 +164,58 @@ internal object FeatureDiscoveryEngine {
                     status = assessment.state.label,
                     detail = assessment.detail,
                     evidence = assessment.evidence,
-                    observationCount = assessment.observationCount
-                )
+                    observationCount = assessment.observationCount,
+                ),
             )
         }
 
         standardProfiles.forEach { profile ->
             val service = normalizedServices[profile.serviceUuid] ?: return@forEach
-            val matchingCharacteristics = if (profile.characteristicUuid == null) {
-                service.characteristics
-            } else {
-                service.characteristics.filter {
-                    shortUuid(it.uuid) == profile.characteristicUuid
+            val matchingCharacteristics =
+                if (profile.characteristicUuid == null) {
+                    service.characteristics
+                } else {
+                    service.characteristics.filter {
+                        shortUuid(it.uuid) == profile.characteristicUuid
+                    }
                 }
-            }
             if (matchingCharacteristics.isNotEmpty()) {
                 val props = matchingCharacteristics.flatMap { it.properties }.toSet()
-                val channel = when {
-                    profile.serviceUuid == "1805" && "WRITE" in props ->
-                        "característica Current Time com WRITE anunciada; escrita CTS suspensa pela política atual"
-                    profile.serviceUuid == "1805" ->
-                        "característica Current Time encontrada sem WRITE; ajuste não habilitável"
-                    "NOTIFY" in props || "INDICATE" in props -> "canal de notificação anunciado"
-                    "READ" in props -> "característica de leitura anunciada"
-                    else -> "serviço anunciado"
-                }
+                val channel =
+                    when {
+                        profile.serviceUuid == "1805" && "WRITE" in props -> {
+                            "característica Current Time com WRITE anunciada; escrita CTS suspensa pela política atual"
+                        }
+
+                        profile.serviceUuid == "1805" -> {
+                            "característica Current Time encontrada sem WRITE; ajuste não habilitável"
+                        }
+
+                        "NOTIFY" in props || "INDICATE" in props -> {
+                            "canal de notificação anunciado"
+                        }
+
+                        "READ" in props -> {
+                            "característica de leitura anunciada"
+                        }
+
+                        else -> {
+                            "serviço anunciado"
+                        }
+                    }
                 findings.add(
                     FeatureFinding(
                         id = "standard:" + profile.serviceUuid,
                         category = profile.category,
                         title = profile.title,
                         status = "PERFIL GATT ENCONTRADO • DADOS NÃO VALIDADOS",
-                        detail = "Foi localizado o UUID Bluetooth padrão " +
-                            profile.serviceUuid.uppercase() + " / " +
-                            (profile.characteristicUuid ?: "serviço") + ". Propriedade observada: " +
-                            channel + ". Nenhuma leitura ou inscrição adicional foi iniciada.",
-                        evidence = "Correspondência de UUID e inventário GATT."
-                    )
+                        detail =
+                            "Foi localizado o UUID Bluetooth padrão " +
+                                profile.serviceUuid.uppercase() + " / " +
+                                (profile.characteristicUuid ?: "serviço") + ". Propriedade observada: " +
+                                channel + ". Nenhuma leitura ou inscrição adicional foi iniciada.",
+                        evidence = "Correspondência de UUID e inventário GATT.",
+                    ),
                 )
             }
         }
@@ -205,16 +231,18 @@ internal object FeatureDiscoveryEngine {
                         id = "transport:nus-tx",
                         category = "Conectividade",
                         title = "Canal de notificações NUS TX",
-                        status = if ((observed?.notificationCount ?: 0) > 0) {
-                            "TRÁFEGO RECEBIDO • SEM SEMÂNTICA TOTALMENTE VALIDADA"
-                        } else {
-                            "CANAL ENCONTRADO • AGUARDANDO NOTIFICAÇÃO"
-                        },
-                        detail = "Característica Nordic UART TX localizada. O aplicativo só observa " +
-                            "notificações quando a inscrição permitida pelo perfil atual está ativa.",
+                        status =
+                            if ((observed?.notificationCount ?: 0) > 0) {
+                                "TRÁFEGO RECEBIDO • SEM SEMÂNTICA TOTALMENTE VALIDADA"
+                            } else {
+                                "CANAL ENCONTRADO • AGUARDANDO NOTIFICAÇÃO"
+                            },
+                        detail =
+                            "Característica Nordic UART TX localizada. O aplicativo só observa " +
+                                "notificações quando a inscrição permitida pelo perfil atual está ativa.",
                         evidence = "UUID NUS TX e propriedades GATT.",
-                        observationCount = observed?.notificationCount ?: 0
-                    )
+                        observationCount = observed?.notificationCount ?: 0,
+                    ),
                 )
             }
             if (rx != null) {
@@ -224,10 +252,11 @@ internal object FeatureDiscoveryEngine {
                         category = "Segurança",
                         title = "Canal de entrada NUS RX",
                         status = "ESCRITA BLOQUEADA",
-                        detail = "A característica de entrada foi identificada, mas o aplicativo não envia " +
-                            "payloads, sondagens ou comandos por este canal.",
-                        evidence = "UUID NUS RX e propriedades GATT."
-                    )
+                        detail =
+                            "A característica de entrada foi identificada, mas o aplicativo não envia " +
+                                "payloads, sondagens ou comandos por este canal.",
+                        evidence = "UUID NUS RX e propriedades GATT.",
+                    ),
                 )
             }
         }
@@ -250,16 +279,18 @@ internal object FeatureDiscoveryEngine {
                             id = "channel:" + key,
                             category = "Canal proprietário",
                             title = "Canal de notificação sem protocolo identificado",
-                            status = if ((observed?.notificationCount ?: 0) > 0) {
-                                "TRÁFEGO OBSERVADO • CONTEÚDO NÃO DECODIFICADO"
-                            } else {
-                                "CANAL LOCALIZADO • INSCRIÇÃO NÃO ATIVADA"
-                            },
-                            detail = "Serviço " + service.uuid + ", característica " +
-                                characteristic.uuid + ". O canal não foi inscrito automaticamente.",
+                            status =
+                                if ((observed?.notificationCount ?: 0) > 0) {
+                                    "TRÁFEGO OBSERVADO • CONTEÚDO NÃO DECODIFICADO"
+                                } else {
+                                    "CANAL LOCALIZADO • INSCRIÇÃO NÃO ATIVADA"
+                                },
+                            detail =
+                                "Serviço " + service.uuid + ", característica " +
+                                    characteristic.uuid + ". O canal não foi inscrito automaticamente.",
                             evidence = "Propriedade NOTIFY/INDICATE no inventário GATT.",
-                            observationCount = observed?.notificationCount ?: 0
-                        )
+                            observationCount = observed?.notificationCount ?: 0,
+                        ),
                     )
                 }
                 if (canWrite) {
@@ -269,11 +300,12 @@ internal object FeatureDiscoveryEngine {
                             category = "Segurança",
                             title = "Canal proprietário de escrita",
                             status = "BLOQUEADO • NENHUM COMANDO ENVIADO",
-                            detail = "Serviço " + service.uuid + ", característica " +
-                                characteristic.uuid + ". Propriedades de escrita são registradas " +
-                                "somente para análise; não são testadas.",
-                            evidence = "Propriedade WRITE/WRITE_NO_RESPONSE no inventário GATT."
-                        )
+                            detail =
+                                "Serviço " + service.uuid + ", característica " +
+                                    characteristic.uuid + ". Propriedades de escrita são registradas " +
+                                    "somente para análise; não são testadas.",
+                            evidence = "Propriedade WRITE/WRITE_NO_RESPONSE no inventário GATT.",
+                        ),
                     )
                 }
                 if (!canNotify && !canWrite && "READ" in props) {
@@ -284,8 +316,8 @@ internal object FeatureDiscoveryEngine {
                             title = "Característica somente leitura",
                             status = "LOCALIZADA • LEITURA NÃO EXECUTADA",
                             detail = "O UUID foi catalogado sem solicitar leitura do valor.",
-                            evidence = "Propriedade READ no inventário GATT."
-                        )
+                            evidence = "Propriedade READ no inventário GATT.",
+                        ),
                     )
                 }
             }
@@ -293,7 +325,9 @@ internal object FeatureDiscoveryEngine {
 
         // Keep protocol observations from earlier sessions; a new GATT inventory
         // must not erase the evidence collected from previous connections.
-        previous?.findings.orEmpty()
+        previous
+            ?.findings
+            .orEmpty()
             .filter { it.id.startsWith("traffic:") || it.id.startsWith("ab-frame:") || it.id == "candidate:battery" }
             .forEach { old ->
                 if (findings.none { it.id == old.id }) findings.add(old)
@@ -307,8 +341,8 @@ internal object FeatureDiscoveryEngine {
                     title = "Nenhum perfil conhecido identificado",
                     status = "INVENTÁRIO REGISTRADO",
                     detail = "Os serviços foram inventariados, mas não correspondem aos perfis atualmente catalogados.",
-                    evidence = "Inventário GATT passivo."
-                )
+                    evidence = "Inventário GATT passivo.",
+                ),
             )
         }
 
@@ -317,7 +351,7 @@ internal object FeatureDiscoveryEngine {
             serviceCount = serviceCount,
             characteristicCount = characteristicCount,
             findings = findings.distinctBy { it.id }.take(160),
-            traffic = traffic.take(128)
+            traffic = traffic.take(128),
         )
     }
 
@@ -329,26 +363,31 @@ internal object FeatureDiscoveryEngine {
         observedAtMillis: Long,
         frameCommand: Int? = null,
         frameResponse: Int? = null,
-        batteryCandidatePercent: Int? = null
+        batteryCandidatePercent: Int? = null,
     ): DiscoverySnapshot {
         if (payloadBytes < 0) return previous
         val key = trafficKey(serviceUuid, characteristicUuid)
-        val old = previous.traffic.firstOrNull {
-            trafficKey(it.serviceUuid, it.characteristicUuid) == key
-        }
-        val current = CharacteristicTraffic(
-            serviceUuid = serviceUuid,
-            characteristicUuid = characteristicUuid,
-            notificationCount = (old?.notificationCount ?: 0) + 1,
-            lastSeenAtMillis = observedAtMillis,
-            lastPayloadBytes = payloadBytes,
-            lastFrameCommand = frameCommand,
-            lastFrameResponse = frameResponse,
-            batteryCandidatePercent = batteryCandidatePercent
-        )
-        val traffic = (previous.traffic.filter {
-            trafficKey(it.serviceUuid, it.characteristicUuid) != key
-        } + current).takeLast(128)
+        val old =
+            previous.traffic.firstOrNull {
+                trafficKey(it.serviceUuid, it.characteristicUuid) == key
+            }
+        val current =
+            CharacteristicTraffic(
+                serviceUuid = serviceUuid,
+                characteristicUuid = characteristicUuid,
+                notificationCount = (old?.notificationCount ?: 0) + 1,
+                lastSeenAtMillis = observedAtMillis,
+                lastPayloadBytes = payloadBytes,
+                lastFrameCommand = frameCommand,
+                lastFrameResponse = frameResponse,
+                batteryCandidatePercent = batteryCandidatePercent,
+            )
+        val traffic =
+            (
+                previous.traffic.filter {
+                    trafficKey(it.serviceUuid, it.characteristicUuid) != key
+                } + current
+            ).takeLast(128)
 
         val findings = previous.findings.toMutableList()
         upsert(
@@ -358,12 +397,13 @@ internal object FeatureDiscoveryEngine {
                 category = "Observação BLE",
                 title = "Notificações recebidas",
                 status = "TRÁFEGO OBSERVADO • SEM INTERPRETAÇÃO AUTOMÁTICA",
-                detail = "Foram recebidas " + current.notificationCount +
-                    " notificações neste canal. Último pacote: " + payloadBytes +
-                    " bytes. O conteúdo bruto não foi persistido.",
+                detail =
+                    "Foram recebidas " + current.notificationCount +
+                        " notificações neste canal. Último pacote: " + payloadBytes +
+                        " bytes. O conteúdo bruto não foi persistido.",
                 evidence = "Callback de notificação GATT.",
-                observationCount = current.notificationCount
-            )
+                observationCount = current.notificationCount,
+            ),
         )
 
         val previousChannelFinding = findings.firstOrNull { it.id == "channel:" + key }
@@ -372,11 +412,12 @@ internal object FeatureDiscoveryEngine {
                 findings,
                 previousChannelFinding.copy(
                     status = "TRÁFEGO OBSERVADO • CONTEÚDO NÃO DECODIFICADO",
-                    detail = "Serviço " + serviceUuid + ", característica " + characteristicUuid +
-                        ". Foram observadas " + current.notificationCount +
-                        " notificações; o canal continua sem semântica confirmada.",
-                    observationCount = current.notificationCount
-                )
+                    detail =
+                        "Serviço " + serviceUuid + ", característica " + characteristicUuid +
+                            ". Foram observadas " + current.notificationCount +
+                            " notificações; o canal continua sem semântica confirmada.",
+                    observationCount = current.notificationCount,
+                ),
             )
         }
         if (normalizeUuid(serviceUuid) == NUS_SERVICE && normalizeUuid(characteristicUuid) == NUS_TX) {
@@ -387,12 +428,13 @@ internal object FeatureDiscoveryEngine {
                     category = "Conectividade",
                     title = "Canal de notificações NUS TX",
                     status = "TRÁFEGO RECEBIDO • SEM SEMÂNTICA TOTALMENTE VALIDADA",
-                    detail = "Foram recebidas " + current.notificationCount +
-                        " notificações pelo canal NUS TX. O conteúdo é classificado somente quando " +
-                        "corresponde a um formato conhecido e ainda sujeito a validação.",
+                    detail =
+                        "Foram recebidas " + current.notificationCount +
+                            " notificações pelo canal NUS TX. O conteúdo é classificado somente quando " +
+                            "corresponde a um formato conhecido e ainda sujeito a validação.",
                     evidence = "UUID NUS TX e callback de notificação GATT.",
-                    observationCount = current.notificationCount
-                )
+                    observationCount = current.notificationCount,
+                ),
             )
         }
         GattCapabilityMatrix.featureIdFor(serviceUuid, characteristicUuid)?.let { capabilityId ->
@@ -403,23 +445,25 @@ internal object FeatureDiscoveryEngine {
                     findings,
                     existing.copy(
                         status = GattCapabilityMatrix.State.TRAFFIC_OBSERVED.label,
-                        detail = "Callback de notificação recebido em " + serviceUuid + "/" +
-                            characteristicUuid + ". Total registrado no histórico: " +
-                            current.notificationCount + " notificações. O conteúdo continua sem " +
-                            "validação semântica.",
+                        detail =
+                            "Callback de notificação recebido em " + serviceUuid + "/" +
+                                characteristicUuid + ". Total registrado no histórico: " +
+                                current.notificationCount + " notificações. O conteúdo continua sem " +
+                                "validação semântica.",
                         evidence = "Notificação GATT observada; UUID e callback registrados.",
-                        observationCount = current.notificationCount
-                    )
+                        observationCount = current.notificationCount,
+                    ),
                 )
             }
         }
 
         val standardService = shortUuid(serviceUuid)
         val standardCharacteristic = shortUuid(characteristicUuid)
-        val standardProfile = standardProfiles.firstOrNull {
-            it.serviceUuid == standardService &&
-                (it.characteristicUuid == null || it.characteristicUuid == standardCharacteristic)
-        }
+        val standardProfile =
+            standardProfiles.firstOrNull {
+                it.serviceUuid == standardService &&
+                    (it.characteristicUuid == null || it.characteristicUuid == standardCharacteristic)
+            }
         if (standardProfile != null) {
             val existing = findings.firstOrNull { it.id == "standard:" + standardProfile.serviceUuid }
             if (existing != null) {
@@ -427,10 +471,11 @@ internal object FeatureDiscoveryEngine {
                     findings,
                     existing.copy(
                         status = "TRÁFEGO OBSERVADO • VALOR NÃO VALIDADO",
-                        detail = "Notificação recebida no perfil GATT padrão " +
-                            standardProfile.serviceUuid.uppercase() +
-                            ". O valor não foi decodificado nem validado como medição."
-                    )
+                        detail =
+                            "Notificação recebida no perfil GATT padrão " +
+                                standardProfile.serviceUuid.uppercase() +
+                                ". O valor não foi decodificado nem validado como medição.",
+                    ),
                 )
             }
         }
@@ -445,21 +490,23 @@ internal object FeatureDiscoveryEngine {
                     id = "ab-frame:" + commandHex + ":" + responseHex,
                     category = "Protocolo candidato",
                     title = "Quadro AB " + commandHex + "/" + responseHex,
-                    status = if (isBatteryCandidate) {
-                        "INTERPRETAÇÃO CANDIDATA • NÃO VALIDADA"
-                    } else {
-                        "FORMATO OBSERVADO • SEM SEMÂNTICA CONFIRMADA"
-                    },
-                    detail = if (isBatteryCandidate) {
-                        "O padrão coincide com a hipótese de bateria do perfil AB. É necessário " +
-                            "comparar com Wearfit Pro em diferentes níveis de carga."
-                    } else {
-                        "Cabeçalho e campos de comando/resposta foram reconhecidos, mas a finalidade " +
-                            "deste quadro permanece desconhecida."
-                    },
+                    status =
+                        if (isBatteryCandidate) {
+                            "INTERPRETAÇÃO CANDIDATA • NÃO VALIDADA"
+                        } else {
+                            "FORMATO OBSERVADO • SEM SEMÂNTICA CONFIRMADA"
+                        },
+                    detail =
+                        if (isBatteryCandidate) {
+                            "O padrão coincide com a hipótese de bateria do perfil AB. É necessário " +
+                                "comparar com Wearfit Pro em diferentes níveis de carga."
+                        } else {
+                            "Cabeçalho e campos de comando/resposta foram reconhecidos, mas a finalidade " +
+                                "deste quadro permanece desconhecida."
+                        },
                     evidence = "Parser AB local; nenhum comando foi enviado.",
-                    observationCount = current.notificationCount
-                )
+                    observationCount = current.notificationCount,
+                ),
             )
         }
 
@@ -471,37 +518,44 @@ internal object FeatureDiscoveryEngine {
                     category = "Dispositivo",
                     title = "Bateria do relógio (hipótese)",
                     status = "CANDIDATO • NÃO VALIDADO",
-                    detail = "Último valor interpretado: " + batteryCandidatePercent +
-                        "%. Não publicar em Health Connect nem tratar como medição confirmada " +
-                        "até a correlação com Wearfit Pro.",
+                    detail =
+                        "Último valor interpretado: " + batteryCandidatePercent +
+                            "%. Não publicar em Health Connect nem tratar como medição confirmada " +
+                            "até a correlação com Wearfit Pro.",
                     evidence = "Quadro AB 0x91/0x80 recebido pelo NUS TX.",
-                    observationCount = current.notificationCount
-                )
+                    observationCount = current.notificationCount,
+                ),
             )
         }
 
         return previous.copy(
             updatedAtMillis = observedAtMillis,
             findings = findings.distinctBy { it.id }.take(160),
-            traffic = traffic
+            traffic = traffic,
         )
     }
 
-    fun emptySnapshot(nowMillis: Long): DiscoverySnapshot = DiscoverySnapshot(
-        updatedAtMillis = nowMillis,
-        serviceCount = 0,
-        characteristicCount = 0,
-        findings = emptyList(),
-        traffic = emptyList()
-    )
+    fun emptySnapshot(nowMillis: Long): DiscoverySnapshot =
+        DiscoverySnapshot(
+            updatedAtMillis = nowMillis,
+            serviceCount = 0,
+            characteristicCount = 0,
+            findings = emptyList(),
+            traffic = emptyList(),
+        )
 
-    private fun upsert(items: MutableList<FeatureFinding>, finding: FeatureFinding) {
+    private fun upsert(
+        items: MutableList<FeatureFinding>,
+        finding: FeatureFinding,
+    ) {
         val index = items.indexOfFirst { it.id == finding.id }
         if (index >= 0) items[index] = finding else items.add(finding)
     }
 
-    private fun trafficKey(serviceUuid: String, characteristicUuid: String): String =
-        normalizeUuid(serviceUuid) + "/" + normalizeUuid(characteristicUuid)
+    private fun trafficKey(
+        serviceUuid: String,
+        characteristicUuid: String,
+    ): String = normalizeUuid(serviceUuid) + "/" + normalizeUuid(characteristicUuid)
 
     private fun normalizeUuid(value: String): String = value.trim().lowercase()
 

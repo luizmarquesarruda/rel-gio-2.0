@@ -90,14 +90,129 @@ class CurrentAndroidContractTests(unittest.TestCase):
                 self.assertIsNotNone(max_sdk)
                 self.assertLessEqual(int(max_sdk), 30)
 
-    def test_cts_clock_write_requires_confirmation_after_gatt_validation(self):
+    def test_all_characteristic_writes_are_forbidden(self):
         source = (
             ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
         ).read_text(encoding="utf-8")
-        self.assertIn('makeButton("Sincronizar hora") { requestClockSync() }', source)
-        self.assertIn('setPositiveButton("Autorizar e sincronizar")', source)
-        self.assertIn("explicitUserConsent = explicitUserConsent", source)
-        self.assertNotIn("Enviando automaticamente a hora do Android", source)
+        policy = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/device/ble/gatt/AccessPolicy.kt"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn("writeCharacteristic(", source)
+        self.assertNotIn('makeButton("Sincronizar hora")', source)
+        self.assertIn("allowWrite: Set<UUID> = emptySet()", policy)
+        self.assertIn("fun canWrite(", policy)
+        self.assertRegex(policy, r"fun canWrite\([\s\S]*?\): Boolean = false")
+        self.assertIn("require(allowWrite.isEmpty())", policy)
+
+    def test_spontaneous_disconnect_records_pending_gatt_discovery_interruption(self):
+        source = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
+        ).read_text(encoding="utf-8")
+        disconnected = source.split(
+            "else if (newState == BluetoothProfile.STATE_DISCONNECTED)", 1
+        )[1].split("override fun onServicesDiscovered", 1)[0]
+        self.assertIn("recordPendingGattDiscoveryInterruption", disconnected)
+        self.assertLess(
+            disconnected.index("recordPendingGattDiscoveryInterruption"),
+            disconnected.index("cancelGattServiceDiscoveryTimeout"),
+        )
+
+    def test_diagnostic_export_does_not_block_activity_or_export_raw_logs(self):
+        source = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
+        ).read_text(encoding="utf-8")
+        destroy = source.split("override fun onDestroy()", 1)[1]
+        self.assertNotIn("flushPendingWrites()", destroy)
+        export = source.split("private fun exportDiagnosticReport()", 1)[1].split(
+            "private fun appendLog", 1
+        )[0]
+        self.assertIn("withContext(Dispatchers.IO)", export)
+        self.assertNotIn("logLines.toList()", export)
+
+    def test_service_changed_invalidates_notification_state_before_rediscovery(self):
+        source = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
+        ).read_text(encoding="utf-8")
+        callback = source.split("override fun onServiceChanged", 1)[1].split(
+            "override fun onServicesDiscovered", 1
+        )[0]
+        self.assertIn("stopTelemetryWatchdog()", callback)
+        self.assertIn("pendingNotifications.clear()", callback)
+        self.assertIn("activeNotifications.clear()", callback)
+        self.assertLess(callback.index("stopTelemetryWatchdog()"), callback.index("gatt.discoverServices()"))
+        watchdog = source.split("private fun stopTelemetryWatchdog()", 1)[1].split(
+            "private fun attemptControlledTelemetryHandshake", 1
+        )[0]
+        self.assertIn("activeNotificationCharacteristics.clear()", watchdog)
+
+    def test_pending_gatt_interruption_uses_async_persistence(self):
+        source = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
+        ).read_text(encoding="utf-8")
+        interruption = source.split("private fun recordPendingGattDiscoveryInterruption", 1)[1].split(
+            "@SuppressLint", 1
+        )[0]
+        self.assertNotIn("flushPendingWrites()", interruption)
+        self.assertIn("recordDiscoveryAsync(", interruption)
+
+
+    def test_payloads_without_an_active_capture_are_skipped_not_failed(self):
+        store = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/data/discovery/DiscoveryLibraryStore.kt"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn("if (activeSession(nowMillis) == null) return true", store)
+        payload_writer = store.split("fun recordPayload(", 1)[1].split(
+            "private fun writableSnapshot", 1
+        )[0]
+        self.assertIn("): Boolean? =", payload_writer)
+        self.assertIn("synchronized(STORE_LOCK)", payload_writer)
+        self.assertIn("val session = current.activeSession ?: return@synchronized null", payload_writer)
+        self.assertIn("if (operation() == false) failedWrites.incrementAndGet()", store)
+        main = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
+        ).read_text(encoding="utf-8")
+        self.assertIn("val activeSession = discoveryLibraryStore.activeSession(nowMillis) != null", main)
+        notification_handler = main.split("private fun handleNotification(", 1)[1]
+        self.assertIn("val captureActive = discoveryLibraryStore.activeSession(observedAtMillis) != null", notification_handler)
+        self.assertIn("val payloadQueued =", notification_handler)
+        self.assertIn("if (captureActive)", notification_handler)
+        self.assertIn("} else {\n                true\n            }", notification_handler)
+
+    def test_activity_session_start_and_finish_use_ordered_async_writer(self):
+        main = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
+        ).read_text(encoding="utf-8")
+        feature = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/FeatureDiscoveryActivity.kt"
+        ).read_text(encoding="utf-8")
+        for source in (main, feature):
+            self.assertNotIn("startTestSession(", source)
+            self.assertNotIn("finishTestSession(", source)
+            self.assertIn("startTestSessionAsync", source)
+            self.assertIn("finishTestSessionAsync", source)
+
+
+    def test_ktlint_gate_requires_successful_gradle_setup(self):
+        workflow = (ROOT / ".github/workflows/android-ci.yml").read_text(encoding="utf-8")
+        self.assertIn("steps.manifest_policy_tests.outcome == 'success'", workflow)
+        self.assertIn("steps.setup_gradle.outcome == 'success'", workflow)
+        self.assertIn("run: gradle --no-daemon :app:ktlintCheck", workflow)
+        self.assertNotIn("ktlintGenerateBaseline", workflow)
+        self.assertNotIn("ktlint_baseline_bootstrap", workflow)
+
+
+    def test_automatic_gatt_probe_reserves_single_start_before_async_session_write(self):
+        source = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
+        ).read_text(encoding="utf-8")
+        probe = source.split("private fun maybeStartAutomaticGattProbe", 1)[1].split(
+            "private fun stopAutomaticGattNotifications", 1
+        )[0]
+        self.assertLess(
+            probe.index("automaticGattProbeStartedForConnection = true"),
+            probe.index("ensureAutomaticCaptureSession"),
+        )
+        self.assertIn("finishAutomaticCaptureSession(\"Conexão encerrada antes da exploração automática.\")", probe)
 
     def test_manual_screens_apply_shared_edge_to_edge_insets(self):
         ui = (ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/RelogioUi.kt").read_text(encoding="utf-8")
@@ -129,7 +244,7 @@ class CurrentAndroidContractTests(unittest.TestCase):
         )
         self.assertEqual("false", activity.attrib.get(ANDROID + "exported"))
         feature_hub = (ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/FeatureHubActivity.kt").read_text(encoding="utf-8")
-        self.assertIn('Feature("Hora e clima"', feature_hub)
+        self.assertRegex(feature_hub, r'Feature\(\s*"Hora e clima"')
         self.assertIn('"time_weather" -> startActivity(Intent(this, TimeWeatherActivity::class.java))', feature_hub)
 
     def test_manifest_policy_auditor_rejects_sdk31_permission_element(self):
@@ -327,6 +442,36 @@ class CurrentAndroidContractTests(unittest.TestCase):
         self.assertIn("HealthConnectOriginPolicy.INCLUDE_EXTERNAL", (
             ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/ActivityOverviewActivity.kt"
         ).read_text(encoding="utf-8"))
+
+
+    def test_automatic_capture_session_renewal_uses_async_completion_callback(self):
+        source = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
+        ).read_text(encoding="utf-8")
+        clock_update = source.split("private fun updatePhoneClock()", 1)[1].split(
+            "private fun updateGattProgressUi", 1
+        )[0]
+        self.assertIn("ensureAutomaticCaptureSession { sessionReady ->", clock_update)
+        self.assertIn("if (sessionReady)", clock_update)
+        self.assertNotIn("if (ensureAutomaticCaptureSession())", clock_update)
+
+    def test_notification_capture_active_state_is_declared_once(self):
+        source = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
+        ).read_text(encoding="utf-8")
+        callback = source.split("private fun handleNotification", 1)[1].split(
+            "\n    private fun ", 1
+        )[0]
+        self.assertEqual(1, callback.count("val captureActive ="))
+
+    def test_main_activity_imports_gatt_access_policy_used_by_handshake_guard(self):
+        source = (
+            ROOT / "app/src/main/java/com/luizmarquesarruda/relogio20/ui/screens/MainActivity.kt"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            "import com.luizmarquesarruda.relogio20.device.ble.gatt.AccessPolicy",
+            source,
+        )
 
 
 if __name__ == "__main__":

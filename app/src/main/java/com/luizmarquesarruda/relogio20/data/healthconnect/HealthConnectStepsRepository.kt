@@ -4,8 +4,8 @@ import android.content.Context
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.StepsRecord
-import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.AggregateGroupByPeriodRequest
+import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import com.luizmarquesarruda.relogio20.domain.health.StepsSnapshot
 import java.time.Instant
@@ -17,23 +17,40 @@ import kotlin.coroutines.cancellation.CancellationException
 internal enum class HealthConnectAvailability {
     AVAILABLE,
     PROVIDER_UNAVAILABLE,
-    PROVIDER_UPDATE_REQUIRED
+    PROVIDER_UPDATE_REQUIRED,
 }
 
 internal sealed class HealthConnectStepsResult {
-    data class Success(val snapshot: StepsSnapshot) : HealthConnectStepsResult()
+    data class Success(
+        val snapshot: StepsSnapshot,
+    ) : HealthConnectStepsResult()
+
     object PermissionRequired : HealthConnectStepsResult()
+
     object ProviderUnavailable : HealthConnectStepsResult()
+
     object ProviderUpdateRequired : HealthConnectStepsResult()
-    data class Failure(val reason: String) : HealthConnectStepsResult()
+
+    data class Failure(
+        val reason: String,
+    ) : HealthConnectStepsResult()
 }
 
-internal data class StepsHistoryDay(val date: LocalDate, val totalSteps: Long?)
+internal data class StepsHistoryDay(
+    val date: LocalDate,
+    val totalSteps: Long?,
+)
 
 internal sealed class HealthConnectStepsHistoryResult {
-    data class Success(val days: List<StepsHistoryDay>) : HealthConnectStepsHistoryResult()
+    data class Success(
+        val days: List<StepsHistoryDay>,
+    ) : HealthConnectStepsHistoryResult()
+
     object PermissionRequired : HealthConnectStepsHistoryResult()
-    data class Failure(val reason: String) : HealthConnectStepsHistoryResult()
+
+    data class Failure(
+        val reason: String,
+    ) : HealthConnectStepsHistoryResult()
 }
 
 /**
@@ -43,12 +60,15 @@ internal sealed class HealthConnectStepsHistoryResult {
  * This adapter deliberately reads aggregate steps only; it does not claim that
  * the result came from the GT3 MAX or write any data back to Health Connect.
  */
-internal class HealthConnectStepsRepository(context: Context) {
+internal class HealthConnectStepsRepository(
+    context: Context,
+) {
     private val appContext = context.applicationContext
 
-    val readPermissions: Set<String> = setOf(
-        HealthPermission.getReadPermission(StepsRecord::class)
-    )
+    val readPermissions: Set<String> =
+        setOf(
+            HealthPermission.getReadPermission(StepsRecord::class),
+        )
 
     fun availability(): HealthConnectAvailability =
         when (HealthConnectClient.getSdkStatus(appContext)) {
@@ -71,15 +91,21 @@ internal class HealthConnectStepsRepository(context: Context) {
         days: Int = 7,
         zoneId: ZoneId = ZoneId.systemDefault(),
         now: java.time.LocalDateTime = java.time.LocalDateTime.now(zoneId),
-        originPolicy: HealthConnectOriginPolicy = HealthConnectOriginPolicy.APP_ONLY
+        originPolicy: HealthConnectOriginPolicy = HealthConnectOriginPolicy.APP_ONLY,
     ): HealthConnectStepsHistoryResult {
         require(days in 1..31) { "History window must be between 1 and 31 days." }
         when (availability()) {
-            HealthConnectAvailability.PROVIDER_UNAVAILABLE ->
+            HealthConnectAvailability.PROVIDER_UNAVAILABLE -> {
                 return HealthConnectStepsHistoryResult.Failure("Health Connect não disponível.")
-            HealthConnectAvailability.PROVIDER_UPDATE_REQUIRED ->
+            }
+
+            HealthConnectAvailability.PROVIDER_UPDATE_REQUIRED -> {
                 return HealthConnectStepsHistoryResult.Failure("Health Connect precisa ser atualizado.")
-            HealthConnectAvailability.AVAILABLE -> Unit
+            }
+
+            HealthConnectAvailability.AVAILABLE -> {
+                Unit
+            }
         }
         return try {
             val client = HealthConnectClient.getOrCreate(appContext)
@@ -88,24 +114,27 @@ internal class HealthConnectStepsRepository(context: Context) {
             }
             val today = now.toLocalDate()
             val firstDay = today.minusDays((days - 1).toLong())
-            val buckets = client.aggregateGroupByPeriod(
-                AggregateGroupByPeriodRequest(
-                    metrics = setOf(StepsRecord.COUNT_TOTAL),
-                    timeRangeFilter = TimeRangeFilter.between(
-                        firstDay.atStartOfDay(),
-                        now
-                    ),
-                    timeRangeSlicer = Period.ofDays(1),
-                    dataOriginFilter = originPolicy.dataOriginFilter(appContext.packageName)
-                )
-            ).associate { bucket ->
-                bucket.startTime.toLocalDate() to bucket.result[StepsRecord.COUNT_TOTAL]
-            }
+            val buckets =
+                client
+                    .aggregateGroupByPeriod(
+                        AggregateGroupByPeriodRequest(
+                            metrics = setOf(StepsRecord.COUNT_TOTAL),
+                            timeRangeFilter =
+                                TimeRangeFilter.between(
+                                    firstDay.atStartOfDay(),
+                                    now,
+                                ),
+                            timeRangeSlicer = Period.ofDays(1),
+                            dataOriginFilter = originPolicy.dataOriginFilter(appContext.packageName),
+                        ),
+                    ).associate { bucket ->
+                        bucket.startTime.toLocalDate() to bucket.result[StepsRecord.COUNT_TOTAL]
+                    }
             HealthConnectStepsHistoryResult.Success(
                 (0 until days).map { offset ->
                     val date = firstDay.plusDays(offset.toLong())
                     StepsHistoryDay(date, buckets[date])
-                }
+                },
             )
         } catch (error: SecurityException) {
             HealthConnectStepsHistoryResult.PermissionRequired
@@ -113,7 +142,7 @@ internal class HealthConnectStepsRepository(context: Context) {
             throw error
         } catch (error: Exception) {
             HealthConnectStepsHistoryResult.Failure(
-                error.message ?: "Falha ao consultar histórico de passos."
+                error.message ?: "Falha ao consultar histórico de passos.",
             )
         }
     }
@@ -121,14 +150,20 @@ internal class HealthConnectStepsRepository(context: Context) {
     suspend fun readTodaySteps(
         now: Instant = Instant.now(),
         zoneId: ZoneId = ZoneId.systemDefault(),
-        originPolicy: HealthConnectOriginPolicy = HealthConnectOriginPolicy.APP_ONLY
+        originPolicy: HealthConnectOriginPolicy = HealthConnectOriginPolicy.APP_ONLY,
     ): HealthConnectStepsResult {
         when (availability()) {
-            HealthConnectAvailability.PROVIDER_UNAVAILABLE ->
+            HealthConnectAvailability.PROVIDER_UNAVAILABLE -> {
                 return HealthConnectStepsResult.ProviderUnavailable
-            HealthConnectAvailability.PROVIDER_UPDATE_REQUIRED ->
+            }
+
+            HealthConnectAvailability.PROVIDER_UPDATE_REQUIRED -> {
                 return HealthConnectStepsResult.ProviderUpdateRequired
-            HealthConnectAvailability.AVAILABLE -> Unit
+            }
+
+            HealthConnectAvailability.AVAILABLE -> {
+                Unit
+            }
         }
 
         return try {
@@ -139,21 +174,22 @@ internal class HealthConnectStepsRepository(context: Context) {
             }
 
             val start = HealthConnectDayWindow.startOfDay(now, zoneId)
-            val response = client.aggregate(
-                AggregateRequest(
-                    metrics = setOf(StepsRecord.COUNT_TOTAL),
-                    timeRangeFilter = TimeRangeFilter.between(start, now),
-                    dataOriginFilter = originPolicy.dataOriginFilter(appContext.packageName)
+            val response =
+                client.aggregate(
+                    AggregateRequest(
+                        metrics = setOf(StepsRecord.COUNT_TOTAL),
+                        timeRangeFilter = TimeRangeFilter.between(start, now),
+                        dataOriginFilter = originPolicy.dataOriginFilter(appContext.packageName),
+                    ),
                 )
-            )
 
             HealthConnectStepsResult.Success(
                 StepsSnapshot(
                     totalSteps = response[StepsRecord.COUNT_TOTAL],
                     intervalStart = start,
                     intervalEnd = now,
-                    receivedAt = Instant.now()
-                )
+                    receivedAt = Instant.now(),
+                ),
             )
         } catch (error: SecurityException) {
             HealthConnectStepsResult.PermissionRequired
@@ -161,7 +197,7 @@ internal class HealthConnectStepsRepository(context: Context) {
             throw error
         } catch (error: Exception) {
             HealthConnectStepsResult.Failure(
-                error.message ?: "Unknown Health Connect error."
+                error.message ?: "Unknown Health Connect error.",
             )
         }
     }

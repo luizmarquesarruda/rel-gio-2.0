@@ -7,18 +7,20 @@ import org.junit.Test
 class GattExplorationProgressTrackerTest {
     @Test
     fun summarizesReadSubscriptionNotificationsAndDecodedValues() {
-        val read = SafeGattExplorationPlan.Operation(
-            "0000180f-0000-1000-8000-00805f9b34fb",
-            "00002a19-0000-1000-8000-00805f9b34fb",
-            SafeGattExplorationPlan.Kind.READ_STANDARD_VALUE,
-            "battery"
-        )
-        val notify = SafeGattExplorationPlan.Operation(
-            "00003802-0000-1000-8000-00805f9b34fb",
-            "00004a02-0000-1000-8000-00805f9b34fb",
-            SafeGattExplorationPlan.Kind.SUBSCRIBE_PROPRIETARY_CHANNEL,
-            "custom notify"
-        )
+        val read =
+            SafeGattExplorationPlan.Operation(
+                "0000180f-0000-1000-8000-00805f9b34fb",
+                "00002a19-0000-1000-8000-00805f9b34fb",
+                SafeGattExplorationPlan.Kind.READ_STANDARD_VALUE,
+                "battery",
+            )
+        val notify =
+            SafeGattExplorationPlan.Operation(
+                "00003802-0000-1000-8000-00805f9b34fb",
+                "00004a02-0000-1000-8000-00805f9b34fb",
+                SafeGattExplorationPlan.Kind.SUBSCRIBE_PROPRIETARY_CHANNEL,
+                "custom notify",
+            )
         val tracker = GattExplorationProgressTracker()
         tracker.begin(listOf(read, notify))
 
@@ -43,11 +45,12 @@ class GattExplorationProgressTrackerTest {
 
     @Test
     fun distinguishesSubscribedButSilentFromTimedOutAndFailedChannels() {
-        val ops = listOf(
-            SafeGattExplorationPlan.Operation("180d", "2a37", SafeGattExplorationPlan.Kind.SUBSCRIBE_STANDARD_MEASUREMENT, "heart"),
-            SafeGattExplorationPlan.Operation("1810", "2a35", SafeGattExplorationPlan.Kind.READ_STANDARD_VALUE, "pressure"),
-            SafeGattExplorationPlan.Operation("181a", "2a6e", SafeGattExplorationPlan.Kind.READ_STANDARD_VALUE, "temperature")
-        )
+        val ops =
+            listOf(
+                SafeGattExplorationPlan.Operation("180d", "2a37", SafeGattExplorationPlan.Kind.SUBSCRIBE_STANDARD_MEASUREMENT, "heart"),
+                SafeGattExplorationPlan.Operation("1810", "2a35", SafeGattExplorationPlan.Kind.READ_STANDARD_VALUE, "pressure"),
+                SafeGattExplorationPlan.Operation("181a", "2a6e", SafeGattExplorationPlan.Kind.READ_STANDARD_VALUE, "temperature"),
+            )
         val tracker = GattExplorationProgressTracker()
         tracker.begin(ops)
         tracker.markSubscriptionResult("180d", "2a37", true)
@@ -65,11 +68,13 @@ class GattExplorationProgressTrackerTest {
 
     @Test
     fun disconnectMarksQueuedOperationsAsNotExecuted() {
-        val operation = SafeGattExplorationPlan.Operation(
-            "181b", "2a9c",
-            SafeGattExplorationPlan.Kind.SUBSCRIBE_STANDARD_MEASUREMENT,
-            "body composition"
-        )
+        val operation =
+            SafeGattExplorationPlan.Operation(
+                "181b",
+                "2a9c",
+                SafeGattExplorationPlan.Kind.SUBSCRIBE_STANDARD_MEASUREMENT,
+                "body composition",
+            )
         val tracker = GattExplorationProgressTracker()
         tracker.begin(listOf(operation))
         tracker.markRemainingSkipped()

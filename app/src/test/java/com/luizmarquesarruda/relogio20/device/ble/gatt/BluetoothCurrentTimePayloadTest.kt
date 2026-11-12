@@ -9,29 +9,35 @@ import java.time.LocalDateTime
 class BluetoothCurrentTimePayloadTest {
     @Test
     fun encodesTenByteCtsValueWithLittleEndianYearAndIsoWeekday() {
-        val value = BluetoothCurrentTimePayload.encode(
-            LocalDateTime.of(2026, 11, 4, 10, 16, 2)
-        )
+        val value =
+            BluetoothCurrentTimePayload.encode(
+                LocalDateTime.of(2026, 11, 4, 10, 16, 2),
+            )
         assertEquals(BluetoothCurrentTimePayload.BYTE_LENGTH, value.size)
         assertArrayEquals(
             byteArrayOf(
-                0xEA.toByte(), 0x07,
-                0x0B, 0x04,
-                0x0A, 0x10, 0x02,
+                0xEA.toByte(),
+                0x07,
+                0x0B,
+                0x04,
+                0x0A,
+                0x10,
+                0x02,
                 0x03,
                 0x00,
-                0x02
+                0x02,
             ),
-            value
+            value,
         )
     }
 
     @Test
     fun permitsAnExplicitZeroAdjustReason() {
-        val value = BluetoothCurrentTimePayload.encode(
-            LocalDateTime.of(2026, 1, 1, 0, 0, 0),
-            adjustReason = 0
-        )
+        val value =
+            BluetoothCurrentTimePayload.encode(
+                LocalDateTime.of(2026, 1, 1, 0, 0, 0),
+                adjustReason = 0,
+            )
         assertEquals(0, value[9].toInt())
     }
 
@@ -40,7 +46,7 @@ class BluetoothCurrentTimePayloadTest {
         assertThrows(IllegalArgumentException::class.java) {
             BluetoothCurrentTimePayload.encode(
                 LocalDateTime.of(2026, 1, 1, 0, 0, 0),
-                adjustReason = 0x10
+                adjustReason = 0x10,
             )
         }
     }

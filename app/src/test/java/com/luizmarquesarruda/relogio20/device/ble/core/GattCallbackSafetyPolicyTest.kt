@@ -13,36 +13,36 @@ class GattCallbackSafetyPolicyTest {
             GattCallbackSafetyPolicy.acceptsOperationCallback(
                 connectionIsCurrent = true,
                 activeOperationKey = "180f/2a19/READ",
-                callbackOperationKey = "180f/2a19/READ"
-            )
+                callbackOperationKey = "180f/2a19/READ",
+            ),
         )
         assertFalse(
             GattCallbackSafetyPolicy.acceptsOperationCallback(
                 connectionIsCurrent = false,
                 activeOperationKey = "180f/2a19/READ",
-                callbackOperationKey = "180f/2a19/READ"
-            )
+                callbackOperationKey = "180f/2a19/READ",
+            ),
         )
         assertFalse(
             GattCallbackSafetyPolicy.acceptsOperationCallback(
                 connectionIsCurrent = true,
                 activeOperationKey = null,
-                callbackOperationKey = "180f/2a19/READ"
-            )
+                callbackOperationKey = "180f/2a19/READ",
+            ),
         )
         assertFalse(
             GattCallbackSafetyPolicy.acceptsOperationCallback(
                 connectionIsCurrent = true,
                 activeOperationKey = "180f/2a19/READ",
-                callbackOperationKey = "180f/2a19/CCCD"
-            )
+                callbackOperationKey = "180f/2a19/CCCD",
+            ),
         )
         assertFalse(
             GattCallbackSafetyPolicy.acceptsOperationCallback(
                 connectionIsCurrent = true,
                 activeOperationKey = "180f/2a19/READ",
-                callbackOperationKey = " "
-            )
+                callbackOperationKey = " ",
+            ),
         )
     }
 
@@ -54,16 +54,57 @@ class GattCallbackSafetyPolicyTest {
                 connectionIsCurrent = true,
                 activeOperationKey = key,
                 callbackOperationKey = key,
-                invalidatedOperationKeys = setOf(key)
-            )
+                invalidatedOperationKeys = setOf(key),
+            ),
         )
         assertTrue(
             GattCallbackSafetyPolicy.acceptsOperationCallback(
                 connectionIsCurrent = true,
                 activeOperationKey = key,
                 callbackOperationKey = key,
-                invalidatedOperationKeys = emptySet()
-            )
+                invalidatedOperationKeys = emptySet(),
+            ),
+        )
+    }
+
+    @Test
+    fun rejectsOperationCallbacksWhileServicesAreBeingRediscovered() {
+        val key = "180f/2a19/READ"
+        assertFalse(
+            GattCallbackSafetyPolicy.acceptsOperationCallback(
+                connectionIsCurrent = true,
+                activeOperationKey = key,
+                callbackOperationKey = key,
+                servicesDiscovered = false,
+            ),
+        )
+        assertTrue(
+            GattCallbackSafetyPolicy.acceptsOperationCallback(
+                connectionIsCurrent = true,
+                activeOperationKey = key,
+                callbackOperationKey = key,
+                servicesDiscovered = true,
+            ),
+        )
+    }
+
+    @Test
+    fun rejectsNotificationsWhileServicesAreBeingRediscovered() {
+        assertFalse(
+            GattCallbackSafetyPolicy.acceptsNotificationCallback(
+                connectionIsCurrent = true,
+                connected = true,
+                disconnecting = false,
+                servicesDiscovered = false,
+            ),
+        )
+        assertTrue(
+            GattCallbackSafetyPolicy.acceptsNotificationCallback(
+                connectionIsCurrent = true,
+                connected = true,
+                disconnecting = false,
+                servicesDiscovered = true,
+            ),
         )
     }
 
@@ -74,17 +115,17 @@ class GattCallbackSafetyPolicyTest {
 
         assertEquals(
             enable,
-            GattCallbackSafetyPolicy.descriptorWriteOperationKey(enable, enable, disable)
+            GattCallbackSafetyPolicy.descriptorWriteOperationKey(enable, enable, disable),
         )
         assertEquals(
             disable,
-            GattCallbackSafetyPolicy.descriptorWriteOperationKey(disable, enable, disable)
+            GattCallbackSafetyPolicy.descriptorWriteOperationKey(disable, enable, disable),
         )
         assertNull(
-            GattCallbackSafetyPolicy.descriptorWriteOperationKey(null, enable, disable)
+            GattCallbackSafetyPolicy.descriptorWriteOperationKey(null, enable, disable),
         )
         assertNull(
-            GattCallbackSafetyPolicy.descriptorWriteOperationKey("other", enable, disable)
+            GattCallbackSafetyPolicy.descriptorWriteOperationKey("other", enable, disable),
         )
     }
 
@@ -94,29 +135,29 @@ class GattCallbackSafetyPolicyTest {
             GattCallbackSafetyPolicy.acceptsNotificationCallback(
                 connectionIsCurrent = true,
                 connected = true,
-                disconnecting = false
-            )
+                disconnecting = false,
+            ),
         )
         assertFalse(
             GattCallbackSafetyPolicy.acceptsNotificationCallback(
                 connectionIsCurrent = false,
                 connected = true,
-                disconnecting = false
-            )
+                disconnecting = false,
+            ),
         )
         assertFalse(
             GattCallbackSafetyPolicy.acceptsNotificationCallback(
                 connectionIsCurrent = true,
                 connected = false,
-                disconnecting = false
-            )
+                disconnecting = false,
+            ),
         )
         assertFalse(
             GattCallbackSafetyPolicy.acceptsNotificationCallback(
                 connectionIsCurrent = true,
                 connected = true,
-                disconnecting = true
-            )
+                disconnecting = true,
+            ),
         )
     }
 
@@ -126,29 +167,29 @@ class GattCallbackSafetyPolicyTest {
             GattCallbackSafetyPolicy.shouldRediscoverServices(
                 connectionIsCurrent = true,
                 connected = true,
-                disconnecting = false
-            )
+                disconnecting = false,
+            ),
         )
         assertFalse(
             GattCallbackSafetyPolicy.shouldRediscoverServices(
                 connectionIsCurrent = false,
                 connected = true,
-                disconnecting = false
-            )
+                disconnecting = false,
+            ),
         )
         assertFalse(
             GattCallbackSafetyPolicy.shouldRediscoverServices(
                 connectionIsCurrent = true,
                 connected = false,
-                disconnecting = false
-            )
+                disconnecting = false,
+            ),
         )
         assertFalse(
             GattCallbackSafetyPolicy.shouldRediscoverServices(
                 connectionIsCurrent = true,
                 connected = true,
-                disconnecting = true
-            )
+                disconnecting = true,
+            ),
         )
     }
 }

@@ -15,7 +15,10 @@ class HealthOverviewActivity : Activity() {
         RelogioUi.metric(body, "Pressão arterial", "N/D", "A medição do relógio não foi validada e não substitui equipamento clínico.")
         RelogioUi.metric(body, "Temperatura", "N/D", "Sensor e unidade ainda não foram confirmados.")
         RelogioUi.section(body, "ORIGEM DOS DADOS")
-        RelogioUi.message(body, "Cada medição futura deverá informar fonte, unidade, horário de recebimento e estado de validação. A conexão BLE, isoladamente, não comprova leitura de saúde.")
+        RelogioUi.message(
+            body,
+            "Cada medição futura deverá informar fonte, unidade, horário de recebimento e estado de validação. A conexão BLE, isoladamente, não comprova leitura de saúde.",
+        )
         RelogioUi.button(body, "Consultar passos em Atividade") {
             startActivity(android.content.Intent(this, ActivityOverviewActivity::class.java))
         }

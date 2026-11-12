@@ -16,8 +16,44 @@ class AccessPolicyTest {
     @Test
     fun dfuAndNusRxAreNeverWriteEligible() {
         val policy = AccessPolicy.DEFAULT
-        assertFalse(policy.canWrite(AccessPolicy.FE59_DFU_SERVICE, AccessPolicy.DFU_CONTROL_POINT, true))
-        assertFalse(policy.canWrite(AccessPolicy.NUS_SERVICE, AccessPolicy.NUS_RX, true))
+        assertFalse(
+            policy.canWrite(
+                AccessPolicy.FE59_DFU_SERVICE,
+                AccessPolicy.DFU_CONTROL_POINT,
+                true,
+            ),
+        )
+        assertFalse(
+            policy.canWrite(
+                AccessPolicy.NUS_SERVICE,
+                AccessPolicy.NUS_RX,
+                true,
+            ),
+        )
+    }
+
+    @Test
+    fun defaultPolicyHasNoAllowedCharacteristicWrites() {
+        assertTrue(AccessPolicy.DEFAULT.allowWrite.isEmpty())
+    }
+
+    @Test
+    fun currentTimeCharacteristicWriteIsRejectedEvenWithExplicitConsent() {
+        val policy = AccessPolicy.DEFAULT
+        assertFalse(
+            policy.canWrite(
+                AccessPolicy.CURRENT_TIME_SERVICE,
+                AccessPolicy.CURRENT_TIME_CHARACTERISTIC,
+                explicitUserConsent = false,
+            ),
+        )
+        assertFalse(
+            policy.canWrite(
+                AccessPolicy.CURRENT_TIME_SERVICE,
+                AccessPolicy.CURRENT_TIME_CHARACTERISTIC,
+                explicitUserConsent = true,
+            ),
+        )
     }
 
     @Test
@@ -27,20 +63,5 @@ class AccessPolicyTest {
         assertThrows(UnsupportedOperationException::class.java) {
             mutableView.add(java.util.UUID.randomUUID())
         }
-    }
-
-    @Test
-    fun onlyExplicitlyConfirmedSigCurrentTimeWriteIsPermitted() {
-        val policy = AccessPolicy.DEFAULT
-        assertFalse(policy.canWrite(
-            AccessPolicy.CURRENT_TIME_SERVICE,
-            AccessPolicy.CURRENT_TIME_CHARACTERISTIC,
-            explicitUserConsent = false
-        ))
-        assertTrue(policy.canWrite(
-            AccessPolicy.CURRENT_TIME_SERVICE,
-            AccessPolicy.CURRENT_TIME_CHARACTERISTIC,
-            explicitUserConsent = true
-        ))
     }
 }

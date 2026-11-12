@@ -4,15 +4,18 @@ package com.luizmarquesarruda.relogio20.device.ble.core
  * Bounded retry schedule for a connection explicitly requested by the user.
  * This class is intentionally platform-independent and does not perform BLE operations.
  */
-internal class BleReconnectPolicy(initiallyEnabled: Boolean = false) {
-    private val retryDelaysMillis = longArrayOf(
-        1_000L,
-        2_000L,
-        5_000L,
-        10_000L,
-        20_000L,
-        30_000L
-    )
+internal class BleReconnectPolicy(
+    initiallyEnabled: Boolean = false,
+) {
+    private val retryDelaysMillis =
+        longArrayOf(
+            1_000L,
+            2_000L,
+            5_000L,
+            10_000L,
+            20_000L,
+            30_000L,
+        )
 
     var isEnabled: Boolean = initiallyEnabled
         private set

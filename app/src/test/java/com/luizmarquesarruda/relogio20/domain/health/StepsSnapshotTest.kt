@@ -14,12 +14,13 @@ class StepsSnapshotTest {
 
     @Test
     fun zeroStepsIsARealAggregateAndNotMissingData() {
-        val snapshot = StepsSnapshot(
-            totalSteps = 0L,
-            intervalStart = start,
-            intervalEnd = end,
-            receivedAt = received
-        )
+        val snapshot =
+            StepsSnapshot(
+                totalSteps = 0L,
+                intervalStart = start,
+                intervalEnd = end,
+                receivedAt = received,
+            )
 
         assertTrue(snapshot.hasRecords)
         assertEquals(0L, snapshot.totalSteps)
@@ -27,12 +28,13 @@ class StepsSnapshotTest {
 
     @Test
     fun nullStepsPreservesAbsenceOfRecords() {
-        val snapshot = StepsSnapshot(
-            totalSteps = null,
-            intervalStart = start,
-            intervalEnd = end,
-            receivedAt = received
-        )
+        val snapshot =
+            StepsSnapshot(
+                totalSteps = null,
+                intervalStart = start,
+                intervalEnd = end,
+                receivedAt = received,
+            )
 
         assertFalse(snapshot.hasRecords)
         assertNull(snapshot.totalSteps)
@@ -40,12 +42,13 @@ class StepsSnapshotTest {
 
     @Test
     fun healthConnectAggregateOriginIsPreserved() {
-        val snapshot = StepsSnapshot(
-            totalSteps = 1250L,
-            intervalStart = start,
-            intervalEnd = end,
-            receivedAt = received
-        )
+        val snapshot =
+            StepsSnapshot(
+                totalSteps = 1250L,
+                intervalStart = start,
+                intervalEnd = end,
+                receivedAt = received,
+            )
 
         assertEquals(HealthDataOrigin.HEALTH_CONNECT_AGGREGATE, snapshot.origin)
     }
@@ -56,7 +59,7 @@ class StepsSnapshotTest {
             totalSteps = -1L,
             intervalStart = start,
             intervalEnd = end,
-            receivedAt = received
+            receivedAt = received,
         )
     }
 
@@ -66,7 +69,7 @@ class StepsSnapshotTest {
             totalSteps = 1L,
             intervalStart = end,
             intervalEnd = start,
-            receivedAt = received
+            receivedAt = received,
         )
     }
 
@@ -76,7 +79,7 @@ class StepsSnapshotTest {
             totalSteps = 1L,
             intervalStart = start,
             intervalEnd = end,
-            receivedAt = end.minusSeconds(1)
+            receivedAt = end.minusSeconds(1),
         )
     }
 
@@ -87,7 +90,7 @@ class StepsSnapshotTest {
             intervalStart = start,
             intervalEnd = end,
             receivedAt = received,
-            origin = HealthDataOrigin.GT3_MAX
+            origin = HealthDataOrigin.GT3_MAX,
         )
     }
 }

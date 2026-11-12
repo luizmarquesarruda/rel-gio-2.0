@@ -44,15 +44,21 @@ class GattValueDecoderTest {
 
     @Test
     fun decodesEnvironmentalTemperatureAsSignedHundredthsAndHumidity() {
-        val positiveTemperature = GattValueDecoder.decode(
-            "181a", "2a6e", byteArrayOf(0x42, 0x0e)
-        )
+        val positiveTemperature =
+            GattValueDecoder.decode(
+                "181a",
+                "2a6e",
+                byteArrayOf(0x42, 0x0e),
+            )
         assertEquals("Temperatura ambiente", positiveTemperature.single().metric)
         assertEquals("36.50 °C", positiveTemperature.single().value)
 
-        val negativeTemperature = GattValueDecoder.decode(
-            "181a", "2a6e", byteArrayOf(0xf3.toByte(), 0xfd.toByte())
-        )
+        val negativeTemperature =
+            GattValueDecoder.decode(
+                "181a",
+                "2a6e",
+                byteArrayOf(0xf3.toByte(), 0xfd.toByte()),
+            )
         assertEquals("-5.25 °C", negativeTemperature.single().value)
 
         assertTrue(GattValueDecoder.decode("181a", "2a6e", byteArrayOf(0, 0x80.toByte())).isEmpty())
@@ -64,18 +70,22 @@ class GattValueDecoderTest {
 
     @Test
     fun decodesSpotCheckAndContinuousOximetryFrames() {
-        val spot = GattValueDecoder.decode(
-            "1822", "2a5e",
-            byteArrayOf(0, 0x62, 0, 0x48, 0)
-        )
+        val spot =
+            GattValueDecoder.decode(
+                "1822",
+                "2a5e",
+                byteArrayOf(0, 0x62, 0, 0x48, 0),
+            )
         assertEquals(2, spot.size)
         assertEquals("98.00 %", spot[0].value)
         assertEquals("72.00 bpm", spot[1].value)
 
-        val continuous = GattValueDecoder.decode(
-            "1822", "2a5f",
-            byteArrayOf(0, 0x62, 0, 0x48, 0)
-        )
+        val continuous =
+            GattValueDecoder.decode(
+                "1822",
+                "2a5f",
+                byteArrayOf(0, 0x62, 0, 0x48, 0),
+            )
         assertEquals(2, continuous.size)
         assertEquals("98.00 %", continuous[0].value)
     }
@@ -86,25 +96,34 @@ class GattValueDecoderTest {
         assertTrue(GattValueDecoder.decode("12345678-1234-5678-1234-56789abcdef0", "abcd", byteArrayOf(1, 2)).isEmpty())
         assertTrue(GattValueDecoder.decode("180d", "2a37", byteArrayOf()).isEmpty())
     }
+
     @Test
     fun decodesHeartRateSensorContactFlagsCorrectly() {
-        val notDetected = GattValueDecoder.decode(
-            "180d", "2a37", byteArrayOf(0x04, 72)
-        )
+        val notDetected =
+            GattValueDecoder.decode(
+                "180d",
+                "2a37",
+                byteArrayOf(0x04, 72),
+            )
         assertEquals("Sem contato detectado", notDetected.last().value)
 
-        val detected = GattValueDecoder.decode(
-            "180d", "2a37", byteArrayOf(0x06, 72)
-        )
+        val detected =
+            GattValueDecoder.decode(
+                "180d",
+                "2a37",
+                byteArrayOf(0x06, 72),
+            )
         assertEquals("Contato detectado", detected.last().value)
 
         // Status bit without the support bit must not be interpreted as contact.
-        val unsupported = GattValueDecoder.decode(
-            "180d", "2a37", byteArrayOf(0x02, 72)
-        )
+        val unsupported =
+            GattValueDecoder.decode(
+                "180d",
+                "2a37",
+                byteArrayOf(0x02, 72),
+            )
         assertEquals(1, unsupported.size)
     }
-
 
     @Test
     fun decodesIntermediateCuffPressureOnlyWithRequiredNaNPlaceholders() {
@@ -119,9 +138,12 @@ class GattValueDecoderTest {
 
     @Test
     fun decodesEnvironmentalPressureAsUint32InTenthsOfPascalAndBodySensorLocation() {
-        val pressure = GattValueDecoder.decode(
-            "181a", "2a6d", byteArrayOf(0x02, 0x76, 0x0f, 0)
-        )
+        val pressure =
+            GattValueDecoder.decode(
+                "181a",
+                "2a6d",
+                byteArrayOf(0x02, 0x76, 0x0f, 0),
+            )
         assertEquals("Pressão atmosférica", pressure.single().metric)
         assertEquals("101325.0 Pa", pressure.single().value)
 
@@ -136,47 +158,58 @@ class GattValueDecoderTest {
 
     @Test
     fun decodesRscAndCscMeasurementsWithoutInventingDerivedSpeedOrCadence() {
-        val rsc = GattValueDecoder.decode(
-            "1814", "2a53",
-            byteArrayOf(0x07, 0x00, 0x01, 90, 0x2c, 0x01, 0x64, 0, 0, 0)
-        )
+        val rsc =
+            GattValueDecoder.decode(
+                "1814",
+                "2a53",
+                byteArrayOf(0x07, 0x00, 0x01, 90, 0x2c, 0x01, 0x64, 0, 0, 0),
+            )
         assertTrue(rsc.any { it.metric == "Velocidade instantânea RSC" && it.value == "1.000 m/s" })
         assertTrue(rsc.any { it.metric == "Cadência instantânea RSC" && it.value == "90 passos/min" })
         assertTrue(rsc.any { it.metric == "Comprimento de passada RSC" && it.value == "3.00 m" })
         assertTrue(rsc.any { it.metric == "Distância total RSC" && it.value == "10.0 m" })
         assertTrue(rsc.any { it.metric == "Estado de deslocamento RSC" && it.value == "corrida" })
 
-        val walking = GattValueDecoder.decode(
-            "1814", "2a53",
-            byteArrayOf(0x00, 0x00, 0x01, 90)
-        )
+        val walking =
+            GattValueDecoder.decode(
+                "1814",
+                "2a53",
+                byteArrayOf(0x00, 0x00, 0x01, 90),
+            )
         assertTrue(walking.any { it.metric == "Estado de deslocamento RSC" && it.value == "caminhada" })
 
-        val csc = GattValueDecoder.decode(
-            "1816", "2a5b",
-            byteArrayOf(0x03, 0x10, 0, 0, 0, 0x00, 0x04, 0x04, 0x00, 0x00, 0x00)
-        )
+        val csc =
+            GattValueDecoder.decode(
+                "1816",
+                "2a5b",
+                byteArrayOf(0x03, 0x10, 0, 0, 0, 0x00, 0x04, 0x04, 0x00, 0x00, 0x00),
+            )
         assertTrue(csc.any { it.metric == "Revoluções acumuladas da roda CSC" && it.value == "16" })
         assertTrue(csc.any { it.metric == "Revoluções acumuladas do pedivela CSC" && it.value == "4" })
     }
 
-
     @Test
     fun acceptsSpotCheckDeviceClockNotSetFlagButRejectsReservedFlags() {
-        val clockNotSet = GattValueDecoder.decode(
-            "1822", "2a5e",
-            byteArrayOf(0x10, 0x62, 0x00, 0x48, 0x00)
+        val clockNotSet =
+            GattValueDecoder.decode(
+                "1822",
+                "2a5e",
+                byteArrayOf(0x10, 0x62, 0x00, 0x48, 0x00),
+            )
+        assertTrue(
+            clockNotSet.any {
+                it.metric == "Relógio do dispositivo" &&
+                    it.value == "não configurado para esta medição"
+            },
         )
-        assertTrue(clockNotSet.any {
-            it.metric == "Relógio do dispositivo" &&
-                it.value == "não configurado para esta medição"
-        })
         assertTrue(clockNotSet.any { it.metric == "SpO₂ spot-check" && it.value == "98.00 %" })
 
-        val reservedBit = GattValueDecoder.decode(
-            "1822", "2a5e",
-            byteArrayOf(0x20, 0x62, 0x00, 0x48, 0x00)
-        )
+        val reservedBit =
+            GattValueDecoder.decode(
+                "1822",
+                "2a5e",
+                byteArrayOf(0x20, 0x62, 0x00, 0x48, 0x00),
+            )
         assertTrue(reservedBit.isEmpty())
     }
 
@@ -184,94 +217,117 @@ class GattValueDecoderTest {
     fun decodesPulseOximeterFeaturesAndOptionalSupportBitfields() {
         val base = GattValueDecoder.decode("1822", "2a60", byteArrayOf(0xfc.toByte(), 0))
         assertEquals(8, base.size)
-        assertTrue(base.any {
-            it.metric == "Recurso de oximetria • Armazenamento de medições spot-check" &&
-                it.value == "suportado"
-        })
-
-        val extended = GattValueDecoder.decode(
-            "1822", "2a60",
-            byteArrayOf(0x03, 0, 0x20, 0, 0x00, 0x02, 0)
+        assertTrue(
+            base.any {
+                it.metric == "Recurso de oximetria • Armazenamento de medições spot-check" &&
+                    it.value == "suportado"
+            },
         )
-        assertTrue(extended.any {
-            it.metric == "Recurso de oximetria • Status da medição bit 5" &&
-                it.value == "suportado"
-        })
-        assertTrue(extended.any {
-            it.metric == "Recurso de oximetria • Status do dispositivo/sensor bit 9" &&
-                it.value == "suportado"
-        })
+
+        val extended =
+            GattValueDecoder.decode(
+                "1822",
+                "2a60",
+                byteArrayOf(0x03, 0, 0x20, 0, 0x00, 0x02, 0),
+            )
+        assertTrue(
+            extended.any {
+                it.metric == "Recurso de oximetria • Status da medição bit 5" &&
+                    it.value == "suportado"
+            },
+        )
+        assertTrue(
+            extended.any {
+                it.metric == "Recurso de oximetria • Status do dispositivo/sensor bit 9" &&
+                    it.value == "suportado"
+            },
+        )
         assertTrue(GattValueDecoder.decode("1822", "2a60", byteArrayOf(0x01, 0)).isEmpty())
     }
-
 
     @Test
     fun decodesBodyCompositionFeatureFlagsAndResolution() {
         val flags = (1L shl 0) or (1L shl 9) or (7L shl 11) or (3L shl 15)
-        val data = byteArrayOf(
-            flags.toByte(),
-            (flags ushr 8).toByte(),
-            (flags ushr 16).toByte(),
-            (flags ushr 24).toByte()
-        )
+        val data =
+            byteArrayOf(
+                flags.toByte(),
+                (flags ushr 8).toByte(),
+                (flags ushr 16).toByte(),
+                (flags ushr 24).toByte(),
+            )
         val decoded = GattValueDecoder.decode("181b", "2a9b", data)
-        assertTrue(decoded.any {
-            it.metric == "Recurso de composição corporal • Timestamp" &&
-                it.value == "suportado"
-        })
-        assertTrue(decoded.any {
-            it.metric == "Resolução declarada de peso" &&
-                it.value == "0,005 kg / 0,01 lb"
-        })
-        assertTrue(decoded.any {
-            it.metric == "Resolução declarada de altura" &&
-                it.value == "0,001 m / 0,1 in"
-        })
+        assertTrue(
+            decoded.any {
+                it.metric == "Recurso de composição corporal • Timestamp" &&
+                    it.value == "suportado"
+            },
+        )
+        assertTrue(
+            decoded.any {
+                it.metric == "Resolução declarada de peso" &&
+                    it.value == "0,005 kg / 0,01 lb"
+            },
+        )
+        assertTrue(
+            decoded.any {
+                it.metric == "Resolução declarada de altura" &&
+                    it.value == "0,001 m / 0,1 in"
+            },
+        )
         assertTrue(GattValueDecoder.decode("181b", "2a9b", byteArrayOf(1, 0, 0)).isEmpty())
     }
-
 
     @Test
     fun rejectsReservedFlagsAndUnexpectedTrailingBytes() {
         assertTrue(
-            GattValueDecoder.decode("180d", "2a37", byteArrayOf(0x20, 72)).isEmpty()
+            GattValueDecoder.decode("180d", "2a37", byteArrayOf(0x20, 72)).isEmpty(),
         )
         assertTrue(
-            GattValueDecoder.decode(
-                "1810", "2a35",
-                byteArrayOf(0, 0x78, 0, 0x4b, 0, 0x5a, 0, 0)
-            ).isEmpty()
+            GattValueDecoder
+                .decode(
+                    "1810",
+                    "2a35",
+                    byteArrayOf(0, 0x78, 0, 0x4b, 0, 0x5a, 0, 0),
+                ).isEmpty(),
         )
         assertTrue(
-            GattValueDecoder.decode(
-                "1814", "2a53",
-                byteArrayOf(0x08, 0x00, 0x01, 90)
-            ).isEmpty()
+            GattValueDecoder
+                .decode(
+                    "1814",
+                    "2a53",
+                    byteArrayOf(0x08, 0x00, 0x01, 90),
+                ).isEmpty(),
         )
         assertTrue(
-            GattValueDecoder.decode("1816", "2a5b", byteArrayOf(0x04)).isEmpty()
+            GattValueDecoder.decode("1816", "2a5b", byteArrayOf(0x04)).isEmpty(),
         )
         assertTrue(
-            GattValueDecoder.decode(
-                "1809", "2a1c",
-                byteArrayOf(0x08, 0x6d, 0x01, 0, 0xff.toByte())
-            ).isEmpty()
+            GattValueDecoder
+                .decode(
+                    "1809",
+                    "2a1c",
+                    byteArrayOf(0x08, 0x6d, 0x01, 0, 0xff.toByte()),
+                ).isEmpty(),
         )
         assertTrue(
-            GattValueDecoder.decode(
-                "1822", "2a5e",
-                byteArrayOf(0x80.toByte(), 0x62, 0, 0x48, 0)
-            ).isEmpty()
+            GattValueDecoder
+                .decode(
+                    "1822",
+                    "2a5e",
+                    byteArrayOf(0x80.toByte(), 0x62, 0, 0x48, 0),
+                ).isEmpty(),
         )
     }
 
     @Test
     fun decodesDeviceInformationFirmwareString() {
-        val decoded = GattValueDecoder.decode(
-            "180a", "2a26", "V1.07".toByteArray(Charsets.UTF_8)
-        )
+        val decoded =
+            GattValueDecoder.decode(
+                "180a",
+                "2a26",
+                "V1.07".toByteArray(Charsets.UTF_8),
+            )
         assertEquals("Versão de firmware anunciada", decoded.single().metric)
         assertEquals("V1.07", decoded.single().value)
     }
-
 }

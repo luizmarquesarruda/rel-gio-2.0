@@ -15,25 +15,41 @@ class ExplorationPolicyTest {
 
     @Test
     fun emptyAllowlistFailsClosedForUnknownCharacteristic() {
-        assertFalse(ExplorationPolicy.failClosed().isEligible(
-            "00003802-0000-1000-8000-00805f9b34fb",
-            "00004a02-0000-1000-8000-00805f9b34fb",
-            ExplorationPolicy.Operation.READ
-        ))
+        assertFalse(
+            ExplorationPolicy.failClosed().isEligible(
+                "00003802-0000-1000-8000-00805f9b34fb",
+                "00004a02-0000-1000-8000-00805f9b34fb",
+                ExplorationPolicy.Operation.READ,
+            ),
+        )
     }
 
     @Test
     fun buildConfigPolicyNeverAllowsCharacteristicWrites() {
-        val service = GattServiceRecord(
-            "00003802-0000-1000-8000-00805f9b34fb",
-            listOf(GattCharacteristicRecord(
-                "00004a02-0000-1000-8000-00805f9b34fb", setOf("READ", "WRITE")
-            ))
-        )
+        val service =
+            GattServiceRecord(
+                "00003802-0000-1000-8000-00805f9b34fb",
+                listOf(
+                    GattCharacteristicRecord(
+                        "00004a02-0000-1000-8000-00805f9b34fb",
+                        setOf("READ", "WRITE"),
+                    ),
+                ),
+            )
         val policy = ExplorationPolicy.forObservedInventory(listOf(service))
-        assertTrue(policy.isEligible(service.uuid, service.characteristics.single().uuid,
-            ExplorationPolicy.Operation.READ))
-        assertFalse(policy.isEligible(service.uuid, service.characteristics.single().uuid,
-            ExplorationPolicy.Operation.WRITE))
+        assertTrue(
+            policy.isEligible(
+                service.uuid,
+                service.characteristics.single().uuid,
+                ExplorationPolicy.Operation.READ,
+            ),
+        )
+        assertFalse(
+            policy.isEligible(
+                service.uuid,
+                service.characteristics.single().uuid,
+                ExplorationPolicy.Operation.WRITE,
+            ),
+        )
     }
 }

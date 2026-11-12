@@ -9,7 +9,7 @@ import java.io.IOException
 
 class WeatherSyncWorker(
     appContext: Context,
-    workerParameters: WorkerParameters
+    workerParameters: WorkerParameters,
 ) : CoroutineWorker(appContext, workerParameters) {
     override suspend fun doWork(): Result {
         val preferences = WeatherPreferences(applicationContext)
@@ -17,9 +17,11 @@ class WeatherSyncWorker(
         val cached = preferences.readSnapshot()
         if (WeatherRefreshPolicy.shouldSkipPeriodicRefresh(
                 cached?.fetchedAtEpochMillis,
-                System.currentTimeMillis()
+                System.currentTimeMillis(),
             )
-        ) return Result.success()
+        ) {
+            return Result.success()
+        }
         return try {
             val snapshot = OpenMeteoWeatherRepository().fetchForecast(location)
             preferences.saveSnapshot(snapshot)
@@ -32,5 +34,4 @@ class WeatherSyncWorker(
             Result.failure()
         }
     }
-
 }

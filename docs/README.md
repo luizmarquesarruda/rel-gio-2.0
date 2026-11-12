@@ -34,6 +34,7 @@ O aplicativo opera de forma independente, com conexão BLE/GATT direta ao GT3 MA
 - [Perfil BLE candidato NUS/AB](PROTOCOLO-BLE-CANDIDATO.md)
 
 ## Qualidade, segurança e desempenho
+- [Auditoria de segurança BLE e privacidade — 09/11/2026](audits/2026-11-09-SEGURANCA-BLE-PRIVACIDADE.md) — achados, correções, limites e validação pendente.
 - [Ferramentas de diagnóstico, integridade e desempenho](FERRAMENTAS-DIAGNOSTICO-DESEMPENHO.md) — LeakCanary, SHA-256 Gradle, Renovate e Macrobenchmark.
 
 ## Governança e versões

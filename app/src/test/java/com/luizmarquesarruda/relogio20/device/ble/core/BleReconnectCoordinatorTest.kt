@@ -15,8 +15,8 @@ class BleReconnectCoordinatorTest {
             coordinator.planSchedule(
                 activityResumed = true,
                 gattSessionExists = false,
-                scanInProgress = false
-            )
+                scanInProgress = false,
+            ),
         )
     }
 
@@ -29,16 +29,16 @@ class BleReconnectCoordinatorTest {
             coordinator.planSchedule(
                 activityResumed = false,
                 gattSessionExists = false,
-                scanInProgress = false
-            )
+                scanInProgress = false,
+            ),
         )
         assertEquals(
             BleReconnectCoordinator.ScheduleDecision.Scheduled(1_000L),
             coordinator.planSchedule(
                 activityResumed = true,
                 gattSessionExists = false,
-                scanInProgress = false
-            )
+                scanInProgress = false,
+            ),
         )
     }
 
@@ -51,24 +51,24 @@ class BleReconnectCoordinatorTest {
             coordinator.planSchedule(
                 activityResumed = true,
                 gattSessionExists = true,
-                scanInProgress = false
-            )
+                scanInProgress = false,
+            ),
         )
         assertEquals(
             BleReconnectCoordinator.ScheduleDecision.AlreadyActive,
             coordinator.planSchedule(
                 activityResumed = true,
                 gattSessionExists = false,
-                scanInProgress = true
-            )
+                scanInProgress = true,
+            ),
         )
         assertEquals(
             BleReconnectCoordinator.ScheduleDecision.Scheduled(1_000L),
             coordinator.planSchedule(
                 activityResumed = true,
                 gattSessionExists = false,
-                scanInProgress = false
-            )
+                scanInProgress = false,
+            ),
         )
     }
 
@@ -82,16 +82,16 @@ class BleReconnectCoordinatorTest {
                 activityResumed = true,
                 gattSessionExists = false,
                 scanInProgress = false,
-                immediate = true
-            )
+                immediate = true,
+            ),
         )
         assertEquals(
             BleReconnectCoordinator.ScheduleDecision.Scheduled(1_000L),
             coordinator.planSchedule(
                 activityResumed = true,
                 gattSessionExists = false,
-                scanInProgress = false
-            )
+                scanInProgress = false,
+            ),
         )
     }
 
@@ -100,15 +100,16 @@ class BleReconnectCoordinatorTest {
         val coordinator = BleReconnectCoordinator(BleReconnectPolicy(initiallyEnabled = true))
         var permissionCheckCalled = false
 
-        val decision = coordinator.evaluateAttempt(
-            activityResumed = false,
-            gattSessionExists = false,
-            scanInProgress = false,
-            hasBlePermissions = {
-                permissionCheckCalled = true
-                true
-            }
-        )
+        val decision =
+            coordinator.evaluateAttempt(
+                activityResumed = false,
+                gattSessionExists = false,
+                scanInProgress = false,
+                hasBlePermissions = {
+                    permissionCheckCalled = true
+                    true
+                },
+            )
 
         assertEquals(BleReconnectCoordinator.AttemptDecision.Skip, decision)
         assertFalse(permissionCheckCalled)
@@ -124,8 +125,8 @@ class BleReconnectCoordinatorTest {
                 activityResumed = true,
                 gattSessionExists = false,
                 scanInProgress = false,
-                hasBlePermissions = { false }
-            )
+                hasBlePermissions = { false },
+            ),
         )
     }
 
@@ -139,8 +140,8 @@ class BleReconnectCoordinatorTest {
                 activityResumed = true,
                 gattSessionExists = false,
                 scanInProgress = false,
-                hasBlePermissions = { true }
-            )
+                hasBlePermissions = { true },
+            ),
         )
     }
 }

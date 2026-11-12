@@ -12,8 +12,8 @@ class BluetoothCurrentTimeCapabilityPolicyTest {
                 connected = false,
                 servicePresent = true,
                 characteristicPresent = true,
-                supportsWrite = true
-            )
+                supportsWrite = true,
+            ),
         )
     }
 
@@ -25,8 +25,8 @@ class BluetoothCurrentTimeCapabilityPolicyTest {
                 connected = true,
                 servicePresent = false,
                 characteristicPresent = false,
-                supportsWrite = false
-            )
+                supportsWrite = false,
+            ),
         )
     }
 
@@ -38,8 +38,8 @@ class BluetoothCurrentTimeCapabilityPolicyTest {
                 connected = true,
                 servicePresent = true,
                 characteristicPresent = false,
-                supportsWrite = false
-            )
+                supportsWrite = false,
+            ),
         )
     }
 
@@ -51,8 +51,8 @@ class BluetoothCurrentTimeCapabilityPolicyTest {
                 connected = true,
                 servicePresent = true,
                 characteristicPresent = true,
-                supportsWrite = false
-            )
+                supportsWrite = false,
+            ),
         )
     }
 
@@ -65,8 +65,8 @@ class BluetoothCurrentTimeCapabilityPolicyTest {
                 servicePresent = true,
                 characteristicPresent = true,
                 supportsWrite = true,
-                deviceProfileConfirmed = true
-            )
+                deviceProfileConfirmed = true,
+            ),
         )
     }
 
@@ -79,9 +79,8 @@ class BluetoothCurrentTimeCapabilityPolicyTest {
                 servicePresent = true,
                 characteristicPresent = true,
                 supportsWrite = true,
-                deviceProfileConfirmed = false
-            )
+                deviceProfileConfirmed = false,
+            ),
         )
     }
-
 }

@@ -9,37 +9,53 @@ internal data class ExplorationPolicy(
     val allowlist: Set<String>,
     val blocklist: Set<String>,
     val allowReads: Boolean,
-    val allowWrites: Boolean
+    val allowWrites: Boolean,
 ) {
     enum class Operation { READ, WRITE }
 
-    fun isEligible(serviceUuid: String, characteristicUuid: String, operation: Operation): Boolean {
+    fun isEligible(
+        serviceUuid: String,
+        characteristicUuid: String,
+        operation: Operation,
+    ): Boolean {
         val service = normalize(serviceUuid)
         val characteristic = normalize(characteristicUuid)
         val key = "$service/$characteristic"
         if (service in HARD_BLOCKLIST || characteristic in HARD_BLOCKLIST ||
             "service:$service" in blocklist || "characteristic:$characteristic" in blocklist ||
             key in blocklist || key !in allowlist
-        ) return false
+        ) {
+            return false
+        }
 
         return when (operation) {
-            Operation.READ -> allowReads
-            Operation.WRITE -> allowWrites &&
-                service == CTS_SERVICE && characteristic == CTS_CURRENT_TIME
+            Operation.READ -> {
+                allowReads
+            }
+
+            Operation.WRITE -> {
+                allowWrites &&
+                    service == CTS_SERVICE && characteristic == CTS_CURRENT_TIME
+            }
         }
     }
 
-    fun serialize(): String = buildString {
-        append("source=").append(source.name)
-        append(";allowReads=").append(allowReads)
-        append(";allowWrites=").append(allowWrites)
-        append(";allowlist=").append(allowlist.map(::normalize).sorted().joinToString(","))
-        append(";blocklist=").append(
-            (blocklist + HARD_BLOCKLIST.map { "characteristic:$it" } +
-                "service:$DFU_SERVICE" + "service:$NUS_SERVICE")
-                .map(::normalize).distinct().sorted().joinToString(",")
-        )
-    }
+    fun serialize(): String =
+        buildString {
+            append("source=").append(source.name)
+            append(";allowReads=").append(allowReads)
+            append(";allowWrites=").append(allowWrites)
+            append(";allowlist=").append(allowlist.map(::normalize).sorted().joinToString(","))
+            append(";blocklist=").append(
+                (
+                    blocklist + HARD_BLOCKLIST.map { "characteristic:$it" } +
+                        "service:$DFU_SERVICE" + "service:$NUS_SERVICE"
+                ).map(::normalize)
+                    .distinct()
+                    .sorted()
+                    .joinToString(","),
+            )
+        }
 
     companion object {
         private const val DFU_SERVICE = "0000fe59-0000-1000-8000-00805f9b34fb"
@@ -53,26 +69,32 @@ internal data class ExplorationPolicy(
 
         fun forObservedInventory(
             services: List<GattServiceRecord>,
-            source: PolicySource = PolicySource.BUILD_CONFIG
+            source: PolicySource = PolicySource.BUILD_CONFIG,
         ): ExplorationPolicy {
-            val allow = services.flatMap { service ->
-                val id = normalize(service.uuid)
-                if (id == DFU_SERVICE || id == NUS_SERVICE ||
-                    id == "00001800-0000-1000-8000-00805f9b34fb" ||
-                    id == "00001801-0000-1000-8000-00805f9b34fb"
-                ) emptyList() else service.characteristics
-                    .filter { characteristic ->
-                        val characteristicId = normalize(characteristic.uuid)
-                        characteristicId !in HARD_BLOCKLIST &&
-                            characteristicId !in setOf(
-                                "00002a23-0000-1000-8000-00805f9b34fb",
-                                "00002a25-0000-1000-8000-00805f9b34fb",
-                                "00002a50-0000-1000-8000-00805f9b34fb"
-                            ) &&
-                            characteristic.properties.any { it == "READ" || it == "NOTIFY" || it == "INDICATE" }
-                    }
-                    .map { "$id/${normalize(it.uuid)}" }
-            }.toSet()
+            val allow =
+                services
+                    .flatMap { service ->
+                        val id = normalize(service.uuid)
+                        if (id == DFU_SERVICE || id == NUS_SERVICE ||
+                            id == "00001800-0000-1000-8000-00805f9b34fb" ||
+                            id == "00001801-0000-1000-8000-00805f9b34fb"
+                        ) {
+                            emptyList()
+                        } else {
+                            service.characteristics
+                                .filter { characteristic ->
+                                    val characteristicId = normalize(characteristic.uuid)
+                                    characteristicId !in HARD_BLOCKLIST &&
+                                        characteristicId !in
+                                        setOf(
+                                            "00002a23-0000-1000-8000-00805f9b34fb",
+                                            "00002a25-0000-1000-8000-00805f9b34fb",
+                                            "00002a50-0000-1000-8000-00805f9b34fb",
+                                        ) &&
+                                        characteristic.properties.any { it == "READ" || it == "NOTIFY" || it == "INDICATE" }
+                                }.map { "$id/${normalize(it.uuid)}" }
+                        }
+                    }.toSet()
 
             return ExplorationPolicy(
                 source,
@@ -80,7 +102,7 @@ internal data class ExplorationPolicy(
                 HARD_BLOCKLIST.map { "characteristic:$it" }.toSet() +
                     "service:$DFU_SERVICE" + "service:$NUS_SERVICE",
                 allowReads = true,
-                allowWrites = false
+                allowWrites = false,
             )
         }
 
@@ -91,7 +113,7 @@ internal data class ExplorationPolicy(
                 HARD_BLOCKLIST.map { "characteristic:$it" }.toSet() +
                     "service:$DFU_SERVICE" + "service:$NUS_SERVICE",
                 allowReads = false,
-                allowWrites = false
+                allowWrites = false,
             )
 
         private fun normalize(value: String): String = value.trim().lowercase(Locale.ROOT)

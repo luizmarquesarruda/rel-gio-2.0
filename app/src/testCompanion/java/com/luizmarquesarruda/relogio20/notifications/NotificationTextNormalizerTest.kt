@@ -8,7 +8,7 @@ class NotificationTextNormalizerTest {
     fun collapsesWhitespaceAndTrimsText() {
         assertEquals(
             "Nova mensagem de teste",
-            NotificationTextNormalizer.normalize("  Nova\n\t mensagem   de teste  ")
+            NotificationTextNormalizer.normalize("  Nova\n\t mensagem   de teste  "),
         )
     }
 

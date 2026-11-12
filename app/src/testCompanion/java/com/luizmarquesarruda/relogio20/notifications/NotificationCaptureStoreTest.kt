@@ -24,11 +24,11 @@ class NotificationCaptureStoreTest {
     fun clearRemovesAllNotificationPreviews() {
         NotificationCaptureStore.add(
             preview("wa-1", "com.whatsapp"),
-            nowElapsedRealtimeMillis = testElapsedRealtime
+            nowElapsedRealtimeMillis = testElapsedRealtime,
         )
         NotificationCaptureStore.add(
             preview("mail-1", "com.example.mail"),
-            nowElapsedRealtimeMillis = testElapsedRealtime
+            nowElapsedRealtimeMillis = testElapsedRealtime,
         )
 
         NotificationCaptureStore.clear()
@@ -38,11 +38,12 @@ class NotificationCaptureStoreTest {
 
     @Test
     fun rejectsNotificationWhenConsentGateIsFalse() {
-        val accepted = NotificationCaptureStore.addIfAllowed(
-            event = preview("blocked", "com.whatsapp"),
-            isAllowed = { false },
-            nowElapsedRealtimeMillis = testElapsedRealtime
-        )
+        val accepted =
+            NotificationCaptureStore.addIfAllowed(
+                event = preview("blocked", "com.whatsapp"),
+                isAllowed = { false },
+                nowElapsedRealtimeMillis = testElapsedRealtime,
+            )
 
         assertFalse(accepted)
         assertTrue(NotificationCaptureStore.snapshot(testElapsedRealtime).isEmpty())
@@ -50,11 +51,12 @@ class NotificationCaptureStoreTest {
 
     @Test
     fun addsNotificationOnlyWhenConsentGateAllowsIt() {
-        val accepted = NotificationCaptureStore.addIfAllowed(
-            event = preview("allowed", "com.whatsapp"),
-            isAllowed = { true },
-            nowElapsedRealtimeMillis = testElapsedRealtime
-        )
+        val accepted =
+            NotificationCaptureStore.addIfAllowed(
+                event = preview("allowed", "com.whatsapp"),
+                isAllowed = { true },
+                nowElapsedRealtimeMillis = testElapsedRealtime,
+            )
 
         assertTrue(accepted)
         assertEquals("allowed", NotificationCaptureStore.snapshot(testElapsedRealtime).single().key)
@@ -64,7 +66,7 @@ class NotificationCaptureStoreTest {
     fun removesNotificationByAndroidKey() {
         NotificationCaptureStore.add(
             preview("android-key", "com.whatsapp"),
-            nowElapsedRealtimeMillis = testElapsedRealtime
+            nowElapsedRealtimeMillis = testElapsedRealtime,
         )
         NotificationCaptureStore.remove("android-key")
 
@@ -75,11 +77,11 @@ class NotificationCaptureStoreTest {
     fun removingAnAppPurgesOnlyItsPreviews() {
         NotificationCaptureStore.add(
             preview("wa-1", "com.whatsapp"),
-            nowElapsedRealtimeMillis = testElapsedRealtime
+            nowElapsedRealtimeMillis = testElapsedRealtime,
         )
         NotificationCaptureStore.add(
             preview("mail-1", "com.example.mail"),
-            nowElapsedRealtimeMillis = testElapsedRealtime
+            nowElapsedRealtimeMillis = testElapsedRealtime,
         )
 
         NotificationCaptureStore.removePackage("com.whatsapp")
@@ -95,7 +97,7 @@ class NotificationCaptureStoreTest {
         repeat(35) { index ->
             NotificationCaptureStore.add(
                 preview("key-$index", "com.example.app"),
-                nowElapsedRealtimeMillis = testElapsedRealtime
+                nowElapsedRealtimeMillis = testElapsedRealtime,
             )
         }
 
@@ -109,15 +111,17 @@ class NotificationCaptureStoreTest {
     fun expiresPreviewsAfterFifteenMinutes() {
         NotificationCaptureStore.add(
             preview("temporary", "com.example.app"),
-            nowElapsedRealtimeMillis = testElapsedRealtime
+            nowElapsedRealtimeMillis = testElapsedRealtime,
         )
 
-        val beforeExpiry = NotificationCaptureStore.snapshot(
-            testElapsedRealtime + NotificationCaptureStore.RETENTION_MILLIS - 1
-        )
-        val afterExpiry = NotificationCaptureStore.snapshot(
-            testElapsedRealtime + NotificationCaptureStore.RETENTION_MILLIS
-        )
+        val beforeExpiry =
+            NotificationCaptureStore.snapshot(
+                testElapsedRealtime + NotificationCaptureStore.RETENTION_MILLIS - 1,
+            )
+        val afterExpiry =
+            NotificationCaptureStore.snapshot(
+                testElapsedRealtime + NotificationCaptureStore.RETENTION_MILLIS,
+            )
 
         assertEquals(1, beforeExpiry.size)
         assertTrue(afterExpiry.isEmpty())
@@ -127,28 +131,31 @@ class NotificationCaptureStoreTest {
     fun reportsDelayUntilTheOldestPreviewExpires() {
         NotificationCaptureStore.add(
             preview("first", "com.example.app"),
-            nowElapsedRealtimeMillis = testElapsedRealtime
+            nowElapsedRealtimeMillis = testElapsedRealtime,
         )
         NotificationCaptureStore.add(
             preview("second", "com.example.app").copy(
-                capturedAtElapsedRealtimeMillis = testElapsedRealtime + 2_000L
+                capturedAtElapsedRealtimeMillis = testElapsedRealtime + 2_000L,
             ),
-            nowElapsedRealtimeMillis = testElapsedRealtime + 2_000L
+            nowElapsedRealtimeMillis = testElapsedRealtime + 2_000L,
         )
 
         assertEquals(
             NotificationCaptureStore.RETENTION_MILLIS,
-            NotificationCaptureStore.millisUntilNextExpiry(testElapsedRealtime)
+            NotificationCaptureStore.millisUntilNextExpiry(testElapsedRealtime),
         )
     }
 
-    private fun preview(key: String, packageName: String) = NotificationPreview(
+    private fun preview(
+        key: String,
+        packageName: String,
+    ) = NotificationPreview(
         key = key,
         packageName = packageName,
         appLabel = packageName,
         title = "title",
         body = "body",
         receivedAtMillis = 1_000L,
-        capturedAtElapsedRealtimeMillis = testElapsedRealtime
+        capturedAtElapsedRealtimeMillis = testElapsedRealtime,
     )
 }

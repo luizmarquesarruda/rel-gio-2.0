@@ -5,7 +5,7 @@ data class TelemetrySample(
     val receivedAt: Long,
     val trustLevel: TrustLevel,
     val parserVersion: String,
-    val provenance: Provenance
+    val provenance: Provenance,
 ) {
     init {
         require(receivedAt >= 0L)

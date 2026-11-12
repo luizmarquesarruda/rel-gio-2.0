@@ -7,10 +7,11 @@ import org.junit.Test
 
 class HandshakeRequiredTest {
     @Test
-    fun discoveryOnlyNeverEmitsMetrics() = runBlocking {
-        val source = DiscoveryOnlySource()
-        val handle = source.initiateSession().getOrThrow()
-        assertTrue(handle is SessionHandle.DiscoveryOnly)
-        assertTrue(source.observeMetrics(handle).toList().isEmpty())
-    }
+    fun discoveryOnlyNeverEmitsMetrics() =
+        runBlocking {
+            val source = DiscoveryOnlySource()
+            val handle = source.initiateSession().getOrThrow()
+            assertTrue(handle is SessionHandle.DiscoveryOnly)
+            assertTrue(source.observeMetrics(handle).toList().isEmpty())
+        }
 }

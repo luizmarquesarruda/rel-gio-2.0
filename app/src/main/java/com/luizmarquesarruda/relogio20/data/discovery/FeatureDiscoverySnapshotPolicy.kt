@@ -31,8 +31,16 @@ internal object FeatureDiscoverySnapshotPolicy {
                     finding.evidence.length > 1_024 ||
                     finding.observationCount < 0
             }
-        ) return false
-        if (snapshot.findings.map { it.id }.toSet().size != snapshot.findings.size) return false
+        ) {
+            return false
+        }
+        if (snapshot.findings
+                .map { it.id }
+                .toSet()
+                .size != snapshot.findings.size
+        ) {
+            return false
+        }
 
         if (snapshot.traffic.any { item ->
                 !isValidUuidToken(item.serviceUuid) ||
@@ -44,10 +52,13 @@ internal object FeatureDiscoverySnapshotPolicy {
                     item.lastFrameResponse?.let { it !in 0..255 } == true ||
                     item.batteryCandidatePercent?.let { it !in 0..100 } == true
             }
-        ) return false
-        val trafficKeys = snapshot.traffic.map {
-            it.serviceUuid.lowercase() + "/" + it.characteristicUuid.lowercase()
+        ) {
+            return false
         }
+        val trafficKeys =
+            snapshot.traffic.map {
+                it.serviceUuid.lowercase() + "/" + it.characteristicUuid.lowercase()
+            }
         if (trafficKeys.toSet().size != trafficKeys.size) return false
         return true
     }

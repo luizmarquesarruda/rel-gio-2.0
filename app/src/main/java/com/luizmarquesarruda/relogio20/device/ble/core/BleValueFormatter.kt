@@ -1,4 +1,5 @@
 package com.luizmarquesarruda.relogio20.device.ble.core
+
 internal object BleValueFormatter {
     fun toHex(bytes: ByteArray): String {
         if (bytes.isEmpty()) return "(vazio)"

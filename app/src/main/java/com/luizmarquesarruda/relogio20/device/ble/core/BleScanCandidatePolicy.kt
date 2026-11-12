@@ -9,13 +9,14 @@ internal object BleScanCandidatePolicy {
         savedAddress: String?,
         observedAddress: String?,
         advertisedName: String?,
-        advertisedServiceUuids: Set<String>
+        advertisedServiceUuids: Set<String>,
     ): Match {
         if (BleDeviceIdentity.matches(savedAddress, observedAddress)) return Match.SAVED_ADDRESS
         if (Gt3MaxCallDeviceProfile.isKnownDeviceName(advertisedName)) return Match.DEVICE_NAME
-        val hasNus = advertisedServiceUuids.any {
-            it.equals(Gt3MaxCallDeviceProfile.NUS_SERVICE_UUID.toString(), ignoreCase = true)
-        }
+        val hasNus =
+            advertisedServiceUuids.any {
+                it.equals(Gt3MaxCallDeviceProfile.NUS_SERVICE_UUID.toString(), ignoreCase = true)
+            }
         return if (hasNus) Match.ADVERTISED_NUS else Match.OTHER
     }
 }

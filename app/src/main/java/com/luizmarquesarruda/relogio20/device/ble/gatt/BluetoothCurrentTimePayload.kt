@@ -14,7 +14,7 @@ internal object BluetoothCurrentTimePayload {
 
     fun encode(
         localDateTime: LocalDateTime,
-        adjustReason: Int = EXTERNAL_REFERENCE_UPDATE
+        adjustReason: Int = EXTERNAL_REFERENCE_UPDATE,
     ): ByteArray {
         require(localDateTime.year in 1..0xFFFF) { "Year does not fit CTS uint16 field." }
         require(adjustReason in 0..0x0F) { "CTS adjust reason contains unsupported bits." }
@@ -29,7 +29,7 @@ internal object BluetoothCurrentTimePayload {
             localDateTime.second.toByte(),
             localDateTime.dayOfWeek.value.toByte(),
             0,
-            adjustReason.toByte()
+            adjustReason.toByte(),
         )
     }
 }

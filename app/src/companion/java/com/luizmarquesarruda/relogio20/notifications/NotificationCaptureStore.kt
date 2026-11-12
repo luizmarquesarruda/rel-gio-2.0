@@ -1,8 +1,8 @@
 package com.luizmarquesarruda.relogio20.notifications
 
 import android.content.Context
-import androidx.core.content.edit
 import android.os.SystemClock
+import androidx.core.content.edit
 import java.util.ArrayDeque
 
 internal data class NotificationPreview(
@@ -12,7 +12,7 @@ internal data class NotificationPreview(
     val title: String,
     val body: String,
     val receivedAtMillis: Long,
-    val capturedAtElapsedRealtimeMillis: Long
+    val capturedAtElapsedRealtimeMillis: Long,
 )
 
 internal object NotificationCaptureSettings {
@@ -20,10 +20,12 @@ internal object NotificationCaptureSettings {
     private const val KEY_ENABLED = "capture_enabled"
     private const val KEY_ALLOWED_PACKAGES = "allowed_packages"
 
-    fun isEnabled(context: Context): Boolean =
-        preferences(context).getBoolean(KEY_ENABLED, false)
+    fun isEnabled(context: Context): Boolean = preferences(context).getBoolean(KEY_ENABLED, false)
 
-    fun setEnabled(context: Context, enabled: Boolean) {
+    fun setEnabled(
+        context: Context,
+        enabled: Boolean,
+    ) {
         NotificationCaptureStore.updateSettings {
             preferences(context).edit { putBoolean(KEY_ENABLED, enabled) }
             if (!enabled) NotificationCaptureStore.clearLocked()
@@ -31,11 +33,15 @@ internal object NotificationCaptureSettings {
     }
 
     fun allowedPackages(context: Context): Set<String> =
-        preferences(context).getStringSet(KEY_ALLOWED_PACKAGES, emptySet())
+        preferences(context)
+            .getStringSet(KEY_ALLOWED_PACKAGES, emptySet())
             ?.toSet()
             ?: emptySet()
 
-    fun setAllowedPackages(context: Context, packages: Set<String>) {
+    fun setAllowedPackages(
+        context: Context,
+        packages: Set<String>,
+    ) {
         val allowed = packages.toSet()
         NotificationCaptureStore.updateSettings {
             preferences(context).edit { putStringSet(KEY_ALLOWED_PACKAGES, allowed) }
@@ -43,8 +49,7 @@ internal object NotificationCaptureSettings {
         }
     }
 
-    private fun preferences(context: Context) =
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private fun preferences(context: Context) = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 }
 
 internal object NotificationCaptureStore {
@@ -55,7 +60,7 @@ internal object NotificationCaptureStore {
 
     fun add(
         event: NotificationPreview,
-        nowElapsedRealtimeMillis: Long = SystemClock.elapsedRealtime()
+        nowElapsedRealtimeMillis: Long = SystemClock.elapsedRealtime(),
     ) {
         synchronized(lock) { addLocked(event, nowElapsedRealtimeMillis) }
     }
@@ -68,12 +73,13 @@ internal object NotificationCaptureStore {
     fun addIfAllowed(
         event: NotificationPreview,
         isAllowed: () -> Boolean,
-        nowElapsedRealtimeMillis: Long = SystemClock.elapsedRealtime()
-    ): Boolean = synchronized(lock) {
-        if (!runCatching(isAllowed).getOrDefault(false)) return@synchronized false
-        addLocked(event, nowElapsedRealtimeMillis)
-        true
-    }
+        nowElapsedRealtimeMillis: Long = SystemClock.elapsedRealtime(),
+    ): Boolean =
+        synchronized(lock) {
+            if (!runCatching(isAllowed).getOrDefault(false)) return@synchronized false
+            addLocked(event, nowElapsedRealtimeMillis)
+            true
+        }
 
     internal fun updateSettings(update: () -> Unit) {
         synchronized(lock) { update() }
@@ -87,16 +93,17 @@ internal object NotificationCaptureStore {
         events.removeAll { it.packageName !in allowedPackages }
     }
 
-    private fun addLocked(event: NotificationPreview, nowElapsedRealtimeMillis: Long) {
+    private fun addLocked(
+        event: NotificationPreview,
+        nowElapsedRealtimeMillis: Long,
+    ) {
         removeExpired(nowElapsedRealtimeMillis)
         events.removeAll { it.key == event.key }
         events.addFirst(event)
         while (events.size > MAX_EVENTS) events.removeLast()
     }
 
-    fun snapshot(
-        nowElapsedRealtimeMillis: Long = SystemClock.elapsedRealtime()
-    ): List<NotificationPreview> =
+    fun snapshot(nowElapsedRealtimeMillis: Long = SystemClock.elapsedRealtime()): List<NotificationPreview> =
         synchronized(lock) {
             removeExpired(nowElapsedRealtimeMillis)
             events.toList()
@@ -110,14 +117,15 @@ internal object NotificationCaptureStore {
         synchronized(lock) { events.removeAll { it.packageName == packageName } }
     }
 
-    fun millisUntilNextExpiry(
-        nowElapsedRealtimeMillis: Long = SystemClock.elapsedRealtime()
-    ): Long? = synchronized(lock) {
-        removeExpired(nowElapsedRealtimeMillis)
-        events.minOfOrNull {
-            it.capturedAtElapsedRealtimeMillis + RETENTION_MILLIS
-        }?.minus(nowElapsedRealtimeMillis)?.coerceAtLeast(0L)
-    }
+    fun millisUntilNextExpiry(nowElapsedRealtimeMillis: Long = SystemClock.elapsedRealtime()): Long? =
+        synchronized(lock) {
+            removeExpired(nowElapsedRealtimeMillis)
+            events
+                .minOfOrNull {
+                    it.capturedAtElapsedRealtimeMillis + RETENTION_MILLIS
+                }?.minus(nowElapsedRealtimeMillis)
+                ?.coerceAtLeast(0L)
+        }
 
     fun clear() {
         synchronized(lock) { clearLocked() }
@@ -134,7 +142,8 @@ internal object NotificationTextNormalizer {
     private const val MAX_LENGTH = 500
 
     fun normalize(value: CharSequence?): String =
-        value?.toString()
+        value
+            ?.toString()
             ?.replace(Regex("\\s+"), " ")
             ?.trim()
             ?.take(MAX_LENGTH)

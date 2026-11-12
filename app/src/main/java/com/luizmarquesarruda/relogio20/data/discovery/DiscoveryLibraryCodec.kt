@@ -66,34 +66,36 @@ internal object DiscoveryLibraryCodec {
                 }
                 if (schema != SCHEMA_VERSION) return DiscoveryLibraryReadResult.Corrupt
 
-                val session = if (data.readBoolean()) {
-                    DiscoveryTestSession(
-                        id = data.readUTF(),
-                        startedAtMillis = data.readLong(),
-                        endsAtMillis = data.readLong(),
-                        durationSeconds = data.readInt()
-                    )
-                } else {
-                    null
-                }
+                val session =
+                    if (data.readBoolean()) {
+                        DiscoveryTestSession(
+                            id = data.readUTF(),
+                            startedAtMillis = data.readLong(),
+                            endsAtMillis = data.readLong(),
+                            durationSeconds = data.readInt(),
+                        )
+                    } else {
+                        null
+                    }
 
                 val count = data.readInt()
                 if (count !in 0..MAX_RECORDS) return DiscoveryLibraryReadResult.Corrupt
                 val records = ArrayList<DiscoveryLibraryRecord>(count)
                 repeat(count) {
-                    records += DiscoveryLibraryRecord(
-                        id = data.readUTF(),
-                        occurredAtMillis = data.readLong(),
-                        sessionId = readNullable(data),
-                        kind = data.readUTF(),
-                        title = data.readUTF(),
-                        detail = data.readUTF(),
-                        source = data.readUTF(),
-                        confidence = data.readUTF(),
-                        serviceUuid = readNullable(data),
-                        characteristicUuid = readNullable(data),
-                        payloadHex = readNullable(data)
-                    )
+                    records +=
+                        DiscoveryLibraryRecord(
+                            id = data.readUTF(),
+                            occurredAtMillis = data.readLong(),
+                            sessionId = readNullable(data),
+                            kind = data.readUTF(),
+                            title = data.readUTF(),
+                            detail = data.readUTF(),
+                            source = data.readUTF(),
+                            confidence = data.readUTF(),
+                            serviceUuid = readNullable(data),
+                            characteristicUuid = readNullable(data),
+                            payloadHex = readNullable(data),
+                        )
                 }
                 if (data.available() != 0) return DiscoveryLibraryReadResult.Corrupt
                 validateRecords(records)
@@ -101,8 +103,8 @@ internal object DiscoveryLibraryCodec {
                     DiscoveryLibrarySnapshot(
                         schemaVersion = schema,
                         activeSession = session,
-                        records = records
-                    )
+                        records = records,
+                    ),
                 )
             }
         } catch (_: Exception) {
@@ -139,17 +141,18 @@ internal object DiscoveryLibraryCodec {
         }
     }
 
-    private fun isBoundedIdentifier(value: String): Boolean =
-        value.isNotBlank() && value.length <= 128 && value.none { it.isWhitespace() }
+    private fun isBoundedIdentifier(value: String): Boolean = value.isNotBlank() && value.length <= 128 && value.none { it.isWhitespace() }
 
     private fun isValidPayloadHex(value: String): Boolean =
         value == "(vazio)" || (value.length <= MAX_PAYLOAD_HEX_CHARS && payloadPattern.matches(value))
 
-    private fun writeNullable(data: DataOutputStream, value: String?) {
+    private fun writeNullable(
+        data: DataOutputStream,
+        value: String?,
+    ) {
         data.writeBoolean(value != null)
         if (value != null) data.writeUTF(value)
     }
 
-    private fun readNullable(data: DataInputStream): String? =
-        if (data.readBoolean()) data.readUTF() else null
+    private fun readNullable(data: DataInputStream): String? = if (data.readBoolean()) data.readUTF() else null
 }
