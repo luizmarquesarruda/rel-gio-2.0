@@ -2212,8 +2212,8 @@ class MainActivity : ComponentActivity() {
                         discoveryLibraryStore.recordDiscoveryAsync(
                             title = "Inscrição GATT confirmada • " + characteristic.uuid,
                             detail =
-                            "Callback Android confirmou o descritor CCCD 0x2902. " +
-                                "O app passa a aguardar dados emitidos pelo relógio.",
+                                "Callback Android confirmou o descritor CCCD 0x2902. " +
+                                    "O app passa a aguardar dados emitidos pelo relógio.",
                             nowMillis = System.currentTimeMillis(),
                             source = "GATT_CCCD",
                             confidence = "SUBSCRICAO_CONFIRMADA",
